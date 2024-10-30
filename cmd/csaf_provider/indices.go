@@ -18,7 +18,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 func updateIndex(dir, fname string) error {

@@ -15,7 +15,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/csaf-poc/csaf_distribution/v3/internal/options"
+	"github.com/gocsaf/csaf/v3/internal/options"
 )
 
 func run(cfg *config, domains []string) error {

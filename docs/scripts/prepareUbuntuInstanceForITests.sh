@@ -2,7 +2,7 @@
 set -e
 
 # This script prepares a naked Ubuntu LTS amd64
-# for the csaf_distribution integration tests
+# for the csaf integration tests
 # by installing the required packages.
 
 apt update

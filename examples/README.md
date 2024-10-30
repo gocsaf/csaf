@@ -1,6 +1,6 @@
 # API examples
 
-An experimental example of how to use `github.com/csaf-poc/csaf_distribution`
+An experimental example of how to use `github.com/gocsaf/csaf`
 as a library.
 As usage of the repository as an API is currently a _work in progress_,
 these examples are likely to be changed.

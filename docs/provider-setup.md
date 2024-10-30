@@ -115,7 +115,7 @@ sudo chmod g+r,o-rwx /etc/csaf/config.toml
 
 Here is a minimal example configuration,
 which you need to customize for a production setup,
-see the [options of `csaf_provider`](https://github.com/csaf-poc/csaf_distribution/blob/main/docs/csaf_provider.md).
+see the [options of `csaf_provider`](https://github.com/gocsaf/csaf/blob/main/docs/csaf_provider.md).
 
 <!-- MARKDOWN-AUTO-DOCS:START (CODE:src=../docs/scripts/setupProviderForITest.sh&lines=94-101) -->
 <!-- The below code snippet is automatically added from ../docs/scripts/setupProviderForITest.sh -->

@@ -9,7 +9,7 @@
 // Implements a command line tool that uploads csaf documents to csaf_provider.
 package main
 
-import "github.com/csaf-poc/csaf_distribution/v3/internal/options"
+import "github.com/gocsaf/csaf/v3/internal/options"
 
 func main() {
 	args, cfg, err := parseArgsConfig()

@@ -20,12 +20,12 @@ import (
 	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/csaf-poc/csaf_distribution/v3/csaf"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/certs"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/filter"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/models"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/options"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/certs"
+	"github.com/gocsaf/csaf/v3/internal/filter"
+	"github.com/gocsaf/csaf/v3/internal/models"
+	"github.com/gocsaf/csaf/v3/internal/options"
+	"github.com/gocsaf/csaf/v3/util"
 	"golang.org/x/time/rate"
 )
 
