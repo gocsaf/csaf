@@ -1,5 +1,5 @@
 // Package main implements a simple demo program to
-// work with the csaf_distribution library.
+// work with the csaf library.
 package main
 
 import (
@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/csaf-poc/csaf_distribution/v3/csaf"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 func main() {

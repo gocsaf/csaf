@@ -6,7 +6,7 @@
 # SPDX-FileCopyrightText: 2021 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 # Software-Engineering: 2021 Intevation GmbH <https://intevation.de>
 #
-# Makefile to build csaf_distribution components
+# Makefile to build csaf components
 
 SHELL = /bin/bash
 BUILD = go build
@@ -59,7 +59,7 @@ testsemver:
 
 
 # Set -ldflags parameter to pass the semversion.
-LDFLAGS = -ldflags "-X github.com/csaf-poc/csaf_distribution/v3/util.SemVersion=$(SEMVER)"
+LDFLAGS = -ldflags "-X github.com/gocsaf/csaf/v3/util.SemVersion=$(SEMVER)"
 
 # Build binaries and place them under bin-$(GOOS)-$(GOARCH)
 # Using 'Target-specific Variable Values' to specify the build target system
@@ -78,7 +78,7 @@ build_linux build_win build_mac_amd64 build_mac_arm64:
 	env GOARCH=$(GOARCH) GOOS=$(GOOS) $(BUILD) -o $(BINDIR) $(LDFLAGS) -v ./cmd/...
 
 
-DISTDIR := csaf_distribution-$(SEMVER)
+DISTDIR := csaf-$(SEMVER)
 dist: build_linux build_win build_mac_amd64 build_mac_arm64
 	mkdir -p dist
 	mkdir -p dist/$(DISTDIR)-windows-amd64/bin-windows-amd64

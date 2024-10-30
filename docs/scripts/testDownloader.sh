@@ -10,7 +10,7 @@
 
 set -e  # to exit if a command in the script fails
 
-cd ~/csaf_distribution
+cd ~/csaf
 
 echo
 echo '==== run downloader (1)'

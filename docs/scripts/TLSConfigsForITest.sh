@@ -17,7 +17,7 @@ set -e
 
 NGINX_CONFIG_PATH=/etc/nginx/sites-available/default
 
-cd ~/csaf_distribution/docs/scripts/
+cd ~/csaf/docs/scripts/
 ## Create Root CA
 ./createRootCAForITest.sh
 

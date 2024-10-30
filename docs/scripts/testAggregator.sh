@@ -29,6 +29,6 @@ popd
 echo
 echo '=== run aggregator'
 
-cd ~/csaf_distribution/
+cd ~/csaf/
 sudo cp docs/examples/aggregator.toml /etc/csaf
 sudo ./bin-linux-amd64/csaf_aggregator -c /etc/csaf/aggregator.toml

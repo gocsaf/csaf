@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 // TLPLabel is the traffic light policy of the CSAF.

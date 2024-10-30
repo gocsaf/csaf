@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/csaf-poc/csaf_distribution/v3/csaf"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 const (

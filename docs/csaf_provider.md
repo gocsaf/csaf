@@ -141,5 +141,5 @@ contact_details = "Example Company can be reached at contact_us@example.com, or 
 
 There is an experimental upload interface which works with a web browser.
 It is disabled by default, as there are known issues, notably:
- * https://github.com/csaf-poc/csaf_distribution/issues/43
- * https://github.com/csaf-poc/csaf_distribution/issues/256
+ * https://github.com/gocsaf/csaf/issues/43
+ * https://github.com/gocsaf/csaf/issues/256
