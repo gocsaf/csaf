@@ -47,13 +47,13 @@ tag_checked_out:
 #   In this case we might in some situations see an error like
 #   `/bin/bash: line 1: 2b55bbb: value too great for base (error token is "2b55bbb")`
 #   which can be ignored.
-GITDESC := $(shell git describe --tags --always)
-GITDESCPATCH := $(shell echo '$(GITDESC)' | sed -E 's/v?[0-9]+\.[0-9]+\.([0-9]+)[-+]?.*/\1/')
+GITDESC := $(shell git describe --tags --always | sed -E 's/^v//')
+GITDESCPATCH := $(shell echo '$(GITDESC)' | sed -E 's/[0-9]+\.[0-9]+\.([0-9]+)[-+]?.*/\1/')
 SEMVERPATCH := $(shell echo $$(( $(GITDESCPATCH) + 1 )))
 # Hint: The regexp in the next line only matches if there is a hyphen (`-`)
 #       followed by a number, by which we assume that git describe
 #       has added a string after the tag
-SEMVER := $(shell echo '$(GITDESC)' | sed -E 's/v?([0-9]+\.[0-9]+\.)([0-9]+)(-[1-9].*)/\1$(SEMVERPATCH)\3/' )
+SEMVER := $(shell echo '$(GITDESC)' | sed -E 's/([0-9]+\.[0-9]+\.)([0-9]+)(-[1-9].*)/\1$(SEMVERPATCH)\3/' )
 testsemver:
 	@echo from \'$(GITDESC)\' transformed to \'$(SEMVER)\'
 
