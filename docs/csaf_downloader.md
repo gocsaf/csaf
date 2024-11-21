@@ -22,6 +22,7 @@ Application Options:
   -f, --folder=FOLDER                            Download into a given subFOLDER
   -i, --ignore_pattern=PATTERN                   Do not download files if their URLs match any of the given PATTERNs
   -H, --header=                                  One or more extra HTTP header fields
+      --enumerate_pmd_only                       If this flag is set to true, the downloader will only enumerate valid provider metadata files, but not download documents
       --validator=URL                            URL to validate documents remotely
       --validator_cache=FILE                     FILE to cache remote validations
       --validator_preset=PRESETS                 One or more PRESETS to validate remotely (default: [mandatory])
@@ -30,8 +31,8 @@ Application Options:
       --forward_header=                          One or more extra HTTP header fields used by forwarding
       --forward_queue=LENGTH                     Maximal queue LENGTH before forwarder (default: 5)
       --forward_insecure                         Do not check TLS certificates from forward endpoint
-      --logfile=FILE                             FILE to log downloading to (default: downloader.log)
-      --loglevel=LEVEL[debug|info|warn|error]    LEVEL of logging details (default: info)
+      --log_file=FILE                            FILE to log downloading to (default: downloader.log)
+      --log_level=LEVEL[debug|info|warn|error]   LEVEL of logging details (default: info)
   -c, --config=TOML-FILE                         Path to config TOML file
 
 Help Options:
