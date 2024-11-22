@@ -783,9 +783,8 @@ func loadHashes(client util.Client, hashes []hashFetchInfo) ([]byte, []byte, []b
 		}
 		if a.preferred && !b.preferred {
 			return -1
-		} else {
-			return 1
 		}
+		return 1
 	})
 	for _, h := range hashes {
 		if remote, data, err := loadHash(client, h.url); err != nil {
