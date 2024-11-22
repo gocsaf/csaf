@@ -25,6 +25,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -36,6 +37,13 @@ import (
 	"github.com/csaf-poc/csaf_distribution/v3/csaf"
 	"github.com/csaf-poc/csaf_distribution/v3/util"
 )
+
+type hashFetchInfo struct {
+	url       string
+	preferred bool
+	warn      bool
+	hashType  hashAlgorithm
+}
 
 type downloader struct {
 	cfg       *config
@@ -496,35 +504,39 @@ nextAdvisory:
 			signData                   []byte
 		)
 
-		if (d.cfg.PreferredHash != "sha512" || file.SHA512URL() == "") && file.SHA256URL() != "" {
-			// Only hash when we have a remote counterpart we can compare it with.
-			if remoteSHA256, s256Data, err = loadHash(client, file.SHA256URL()); err != nil {
-				if !file.IsDirectory() {
-					slog.Warn("Cannot fetch SHA256",
-						"url", file.SHA256URL(),
-						"error", err)
-				} else {
-					slog.Info("SHA256 not present", "file", file.URL())
-				}
-			} else {
-				s256 = sha256.New()
-				writers = append(writers, s256)
+		hashToFetch := []hashFetchInfo{}
+		if file.SHA512URL() != "" {
+			hashToFetch = append(hashToFetch, hashFetchInfo{
+				url:       file.SHA512URL(),
+				warn:      true,
+				hashType:  algSha512,
+				preferred: strings.EqualFold(string(d.cfg.PreferredHash), string(algSha512))})
+		} else {
+			slog.Info("SHA512 not present")
+		}
+		if file.SHA256URL() != "" {
+			hashToFetch = append(hashToFetch, hashFetchInfo{
+				url:       file.SHA256URL(),
+				warn:      true,
+				hashType:  algSha256,
+				preferred: strings.EqualFold(string(d.cfg.PreferredHash), string(algSha256))})
+		} else {
+			slog.Info("SHA256 not present")
+		}
+		if file.IsDirectory() {
+			for i := range hashToFetch {
+				hashToFetch[i].warn = false
 			}
 		}
 
-		if (d.cfg.PreferredHash != "sha256" || file.SHA256URL() == "") && file.SHA512URL() != "" {
-			if remoteSHA512, s512Data, err = loadHash(client, file.SHA512URL()); err != nil {
-				if !file.IsDirectory() {
-					slog.Warn("Cannot fetch SHA512",
-						"url", file.SHA512URL(),
-						"error", err)
-				} else {
-					slog.Info("SHA512 not present", "file", file.URL())
-				}
-			} else {
-				s512 = sha512.New()
-				writers = append(writers, s512)
-			}
+		remoteSHA256, s256Data, remoteSHA512, s512Data = loadHashes(client, hashToFetch)
+		if remoteSHA512 != nil {
+			s512 = sha512.New()
+			writers = append(writers, s512)
+		}
+		if remoteSHA256 != nil {
+			s256 = sha256.New()
+			writers = append(writers, s256)
 		}
 
 		// Remember the data as we need to store it to file later.
@@ -753,6 +765,51 @@ func loadSignature(client util.Client, p string) (*crypto.PGPSignature, []byte, 
 		return nil, nil, err
 	}
 	return sign, data, nil
+}
+
+func loadHashes(client util.Client, hashes []hashFetchInfo) ([]byte, []byte, []byte, []byte) {
+	var remoteSha256, remoteSha512, sha256Data, sha512Data []byte
+
+	// Load preferred hashes first
+	slices.SortStableFunc(hashes, func(a, b hashFetchInfo) int {
+		if a.preferred == b.preferred {
+			return 0
+		}
+		if a.preferred && !b.preferred {
+			return -1
+		} else {
+			return 1
+		}
+	})
+	for _, h := range hashes {
+		if remote, data, err := loadHash(client, h.url); err != nil {
+			if h.warn {
+				slog.Warn("Cannot fetch hash",
+					"hash", h.hashType,
+					"url", h.url,
+					"error", err)
+			} else {
+				slog.Info("Hash not present", "hash", h.hashType, "file", h.url)
+			}
+		} else {
+			switch h.hashType {
+			case algSha512:
+				{
+					remoteSha512 = remote
+					sha512Data = data
+				}
+			case algSha256:
+				{
+					remoteSha256 = remote
+					sha256Data = data
+				}
+			}
+			if h.preferred {
+				break
+			}
+		}
+	}
+	return remoteSha256, sha256Data, remoteSha512, sha512Data
 }
 
 func loadHash(client util.Client, p string) ([]byte, []byte, error) {
