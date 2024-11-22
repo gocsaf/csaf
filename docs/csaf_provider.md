@@ -4,7 +4,7 @@ The [setup docs](../README.md#setup-trusted-provider)
 explain how to wire this up with nginx and where the config file lives.
 
 When installed, two endpoints are offered,
-and you should use the [csaf_uploader](../docs/csaf_uploader)
+and you should use the [csaf_uploader](../docs/csaf_uploader.md)
 to access them:
 
 ### /api/create
