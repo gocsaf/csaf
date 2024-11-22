@@ -32,6 +32,7 @@ Application Options:
       --logfile=FILE                             FILE to log downloading to (default: downloader.log)
       --loglevel=LEVEL[debug|info|warn|error]    LEVEL of logging details (default: info)
   -c, --config=TOML-FILE                         Path to config TOML file
+      --preferred_hash=HASH[sha256|sha512]       HASH to prefer
 
 Help Options:
   -h, --help                                     Show this help message
