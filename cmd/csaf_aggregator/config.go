@@ -284,6 +284,7 @@ func (c *config) httpClient(p *provider) util.Client {
 
 	hClient.Transport = &http.Transport{
 		TLSClientConfig: &tlsConfig,
+		Proxy: http.ProxyFromEnvironment,
 	}
 
 	client := util.Client(&hClient)
