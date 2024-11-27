@@ -430,7 +430,7 @@ func (p *processor) fullClient() util.Client {
 
 	hClient.Transport = &http.Transport{
 		TLSClientConfig: &tlsConfig,
-		Proxy: http.ProxyFromEnvironment,
+		Proxy:           http.ProxyFromEnvironment,
 	}
 
 	client := util.Client(&hClient)
@@ -461,7 +461,7 @@ func (p *processor) basicClient() *http.Client {
 	if p.cfg.Insecure {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			Proxy: http.ProxyFromEnvironment,
+			Proxy:           http.ProxyFromEnvironment,
 		}
 		return &http.Client{Transport: tr}
 	}

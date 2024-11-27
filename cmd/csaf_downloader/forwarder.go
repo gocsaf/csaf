@@ -106,7 +106,7 @@ func (f *forwarder) httpClient() util.Client {
 
 	hClient.Transport = &http.Transport{
 		TLSClientConfig: &tlsConfig,
-		Proxy: http.ProxyFromEnvironment,
+		Proxy:           http.ProxyFromEnvironment,
 	}
 
 	client := util.Client(&hClient)

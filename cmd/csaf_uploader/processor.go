@@ -51,7 +51,7 @@ func (p *processor) httpClient() *http.Client {
 
 	client.Transport = &http.Transport{
 		TLSClientConfig: &tlsConfig,
-		Proxy: http.ProxyFromEnvironment,
+		Proxy:           http.ProxyFromEnvironment,
 	}
 
 	return &client
