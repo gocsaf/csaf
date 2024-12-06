@@ -41,6 +41,13 @@ const (
 	validationUnsafe = validationMode("unsafe")
 )
 
+type hashAlgorithm string
+
+const (
+	algSha256 = hashAlgorithm("sha256")
+	algSha512 = hashAlgorithm("sha512")
+)
+
 type config struct {
 	Directory            string            `short:"d" long:"directory" description:"DIRectory to store the downloaded files in" value-name:"DIR" toml:"directory"`
 	Insecure             bool              `long:"insecure" description:"Do not check TLS certificates from provider" toml:"insecure"`
@@ -79,6 +86,9 @@ type config struct {
 
 	clientCerts   []tls.Certificate
 	ignorePattern filter.PatternMatcher
+
+	//lint:ignore SA5008 We are using choice or than once: sha256, sha512
+	PreferredHash hashAlgorithm `long:"preferred_hash" choice:"sha256" choice:"sha512" value-name:"HASH" description:"HASH to prefer" toml:"preferred_hash"`
 }
 
 // configPaths are the potential file locations of the config file.
@@ -220,7 +230,7 @@ func (cfg *config) prepareLogging() error {
 		w = f
 	}
 	ho := slog.HandlerOptions{
-		//AddSource: true,
+		// AddSource: true,
 		Level:       cfg.LogLevel.Level,
 		ReplaceAttr: dropSubSeconds,
 	}
