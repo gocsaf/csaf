@@ -22,6 +22,13 @@ import (
 	"github.com/gocsaf/csaf/v3/util"
 )
 
+const (
+	exitCodeSchemaInvalid = 1 << iota
+	exitCodeNoRemoteValidator
+	exitCodeFailedRemoteValidation
+	exitCodeAllValid = 0
+)
+
 type options struct {
 	Version                bool     `long:"version" description:"Display version of the binary"`
 	RemoteValidator        string   `long:"validator" description:"URL to validate documents remotely" value-name:"URL"`
@@ -53,6 +60,7 @@ func main() {
 
 // run validates the given files.
 func run(opts *options, files []string) error {
+	exitCode := exitCodeAllValid
 
 	var validator csaf.RemoteValidator
 	eval := util.NewPathEval()
@@ -69,6 +77,9 @@ func run(opts *options, files []string) error {
 				"preparing remote validator failed: %w", err)
 		}
 		defer validator.Close()
+	} else {
+		exitCode |= exitCodeNoRemoteValidator
+		log.Printf("warn: no remote validator specified")
 	}
 
 	// Select amount level of output for remote validation.
@@ -104,6 +115,7 @@ func run(opts *options, files []string) error {
 
 		}
 		if len(validationErrs) > 0 {
+			exitCode |= exitCodeSchemaInvalid
 			fmt.Printf("schema validation errors of %q\n", file)
 			for _, vErr := range validationErrs {
 				fmt.Printf("  * %s\n", vErr)
@@ -130,12 +142,15 @@ func run(opts *options, files []string) error {
 			if rvr.Valid {
 				passes = "passes"
 			} else {
+				exitCode |= exitCodeFailedRemoteValidation
 				passes = "does not pass"
 			}
 			fmt.Printf("%q %s remote validation.\n", file, passes)
 		}
 	}
 
+	// Exit code is based on validation results
+	os.Exit(exitCode)
 	return nil
 }
 
