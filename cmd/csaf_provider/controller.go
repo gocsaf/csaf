@@ -174,7 +174,7 @@ func (c *controller) web(
 // writeJSON sets the header for the response and writes the JSON encoding of the given "content".
 // It logs out an error message in case of an error.
 func writeJSON(rw http.ResponseWriter, content any, code int) {
-	rw.Header().Set("Content-type", "application/json; charset=utf-8")
+	rw.Header().Set("Content-type", "application/json")
 	rw.Header().Set("X-Content-Type-Options", "nosniff")
 	rw.WriteHeader(code)
 	if err := json.NewEncoder(rw).Encode(content); err != nil {
