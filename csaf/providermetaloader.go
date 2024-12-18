@@ -352,7 +352,7 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(path string) *LoadedProviderMeta
 	case len(errors) > 0:
 		result.Messages = []ProviderMetadataLoadMessage{{
 			Type:    SchemaValidationFailed,
-			Message: fmt.Sprintf("%s: Validating against JSON schema failed: %v", path, err),
+			Message: fmt.Sprintf("%s: Validating against JSON schema failed", path),
 		}}
 		for _, msg := range errors {
 			result.Messages.Add(
