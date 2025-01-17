@@ -1,0 +1,61 @@
+{
+  "feed": {
+    "id": "csaf-feed-tlp-white",
+    "title": "CSAF feed (TLP:WHITE)",
+    "link": [
+      {
+        "rel": "self",
+        "href": "{{.URL}}/white/csaf-feed-tlp-white.json"
+      },
+      {
+        "rel": "service",
+        "href": "{{.URL}}/service.json"
+      }
+    ],
+    "category": [
+      {
+        "scheme": "urn:ietf:params:rolie:category:information-type",
+        "term": "csaf"
+      }
+    ],
+    "updated": "2020-01-01T00:00:00Z",
+    "entry": [
+      {
+        "id": "Avendor-advisory-0004",
+        "title": "Test CSAF document",
+        "link": [
+          {
+            "rel": "self",
+            "href": "{{.URL}}/white/avendor-advisory-0004.json"
+          },
+          {{if .EnableSha256}}
+          {
+            "rel": "hash",
+            "href": "{{.URL}}/white/avendor-advisory-0004.json.sha256"
+          },
+          {{end}}
+          {{if .EnableSha512}}
+          {
+            "rel": "hash",
+            "href": "{{.URL}}/white/avendor-advisory-0004.json.sha512"
+          },
+          {{end}}
+          {
+            "rel": "signature",
+            "href": "{{.URL}}/white/avendor-advisory-0004.json.asc"
+          }
+        ],
+        "published": "2020-01-01T00:00:00Z",
+        "updated": "2020-01-01T00:00:00Z",
+        "content": {
+          "type": "application/json",
+          "src": "{{.URL}}/avendor-advisory-0004.json"
+        },
+        "format": {
+          "schema": "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf_json_schema.json",
+          "version": "2.0"
+        }
+      }
+    ]
+  }
+}
