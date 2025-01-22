@@ -53,6 +53,7 @@ type processor struct {
 	pmd            any
 	keys           *crypto.KeyRing
 	labelChecker   labelChecker
+	times          map[csaf.AdvisoryFile]time.Time
 
 	invalidAdvisories      topicMessages
 	badFilenames           topicMessages
@@ -213,6 +214,7 @@ func (p *processor) reset() {
 	p.pmd256 = nil
 	p.pmd = nil
 	p.keys = nil
+	clear(p.times)
 
 	p.invalidAdvisories.reset()
 	p.badFilenames.reset()
@@ -620,6 +622,8 @@ func makeAbsolute(base *url.URL) func(*url.URL) *url.URL {
 
 var yearFromURL = regexp.MustCompile(`.*/(\d{4})/[^/]+$`)
 
+// integrity checks several csaf.AdvisoryFiles for formal
+// mistakes, from conforming filenames to invalid advisories.
 func (p *processor) integrity(
 	files []csaf.AdvisoryFile,
 	base string,
@@ -748,6 +752,24 @@ func (p *processor) integrity(
 			p.badFolders.error("No year folder found in %s", u)
 		} else if d.UTC().Year() != *folderYear {
 			p.badFolders.error("%s should be in folder %d", u, d.UTC().Year())
+		}
+
+		if len(p.times) > 0 && p.badChanges.used() {
+			current, err := p.expr.Eval(`$.document.tracking.current_release_date`, doc)
+			if err != nil {
+				p.badChanges.error("Extracting 'current_release_date' from %s failed: %v", u, err)
+			} else if text, ok := current.(string); !ok {
+				p.badChanges.error("'current_release_date' is not a string in %s", u)
+			} else if d, err := time.Parse(time.RFC3339, text); err != nil {
+				p.badChanges.error(
+					"Parsing 'initial_release_date' as RFC3339 failed in %s: %v", u, err)
+			} else {
+				fmt.Println(p.times[f])
+				fmt.Println(d)
+				if p.times[f] != d {
+					p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
+				}
+			}
 		}
 
 		// Check hashes
@@ -941,6 +963,10 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 	}
 	p.badChanges.info("Found %v", changes)
 
+	if p.times == nil {
+		p.times = map[csaf.AdvisoryFile]time.Time{}
+	}
+
 	times, files, err := func() ([]time.Time, []csaf.AdvisoryFile, error) {
 		defer res.Body.Close()
 		var times []time.Time
@@ -973,6 +999,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 			times, files =
 				append(times, t),
 				append(files, csaf.PlainAdvisoryFile(path))
+			p.times[csaf.PlainAdvisoryFile(path)] = t
 		}
 		return times, files, nil
 	}()
