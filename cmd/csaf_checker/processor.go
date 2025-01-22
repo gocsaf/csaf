@@ -192,6 +192,8 @@ func newProcessor(cfg *config) (*processor, error) {
 			advisories:      map[csaf.TLPLabel]util.Set[string]{},
 			whiteAdvisories: map[identifier]bool{},
 		},
+		times:   map[csaf.AdvisoryFile]time.Time{},
+		noneTLS: util.Set[string]{},
 	}, nil
 }
 
@@ -206,14 +208,12 @@ func (p *processor) close() {
 // reset clears the fields values of the given processor.
 func (p *processor) reset() {
 	p.redirects = nil
-	p.noneTLS = nil
-	for k := range p.alreadyChecked {
-		delete(p.alreadyChecked, k)
-	}
 	p.pmdURL = ""
 	p.pmd256 = nil
 	p.pmd = nil
 	p.keys = nil
+	clear(p.alreadyChecked)
+	clear(p.noneTLS)
 	clear(p.times)
 
 	p.invalidAdvisories.reset()
@@ -379,9 +379,6 @@ func (p *processor) checkDomain(domain string) error {
 // checkTLS parses the given URL to check its schema, as a result it sets
 // the value of "noneTLS" field if it is not HTTPS.
 func (p *processor) checkTLS(u string) {
-	if p.noneTLS == nil {
-		p.noneTLS = util.Set[string]{}
-	}
 	if x, err := url.Parse(u); err == nil && x.Scheme != "https" {
 		p.noneTLS.Add(u)
 	}
@@ -960,8 +957,6 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 		return errContinue
 	}
 	p.badChanges.info("Found %v", changes)
-
-	p.times = map[csaf.AdvisoryFile]time.Time{}
 
 	times, files, err := func() ([]time.Time, []csaf.AdvisoryFile, error) {
 		defer res.Body.Close()
