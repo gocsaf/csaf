@@ -762,10 +762,8 @@ func (p *processor) integrity(
 				p.badChanges.error("'current_release_date' is not a string in %s", u)
 			} else if d, err := time.Parse(time.RFC3339, text); err != nil {
 				p.badChanges.error(
-					"Parsing 'initial_release_date' as RFC3339 failed in %s: %v", u, err)
+					"Parsing 'current_release_date' as RFC3339 failed in %s: %v", u, err)
 			} else {
-				fmt.Println(p.times[f])
-				fmt.Println(d)
 				if p.times[f] != d {
 					p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
 				}
@@ -963,9 +961,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 	}
 	p.badChanges.info("Found %v", changes)
 
-	if p.times == nil {
-		p.times = map[csaf.AdvisoryFile]time.Time{}
-	}
+	p.times = map[csaf.AdvisoryFile]time.Time{}
 
 	times, files, err := func() ([]time.Time, []csaf.AdvisoryFile, error) {
 		defer res.Body.Close()
