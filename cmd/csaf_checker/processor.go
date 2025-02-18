@@ -736,34 +736,20 @@ func (p *processor) integrity(
 		// Check if file is in the right folder.
 		p.badFolders.use()
 
-		if date, err := p.expr.Eval(
-			`$.document.tracking.initial_release_date`, doc); err != nil {
-			p.badFolders.error(
-				"Extracting 'initial_release_date' from %s failed: %v", u, err)
-		} else if text, ok := date.(string); !ok {
-			p.badFolders.error("'initial_release_date' is not a string in %s", u)
-		} else if d, err := time.Parse(time.RFC3339, text); err != nil {
-			p.badFolders.error(
-				"Parsing 'initial_release_date' as RFC3339 failed in %s: %v", u, err)
+		date, fault := p.extractTime(doc, `$.document.tracking.initial_release_date`, u)
+		if fault != "" {
+			p.badFolders.error(fault)
 		} else if folderYear == nil {
 			p.badFolders.error("No year folder found in %s", u)
-		} else if d.UTC().Year() != *folderYear {
-			p.badFolders.error("%s should be in folder %d", u, d.UTC().Year())
+		} else if date.UTC().Year() != *folderYear {
+			p.badFolders.error("%s should be in folder %d", u, date.UTC().Year())
 		}
-
 		if len(p.times) > 0 && p.badChanges.used() {
-			current, err := p.expr.Eval(`$.document.tracking.current_release_date`, doc)
-			if err != nil {
-				p.badChanges.error("Extracting 'current_release_date' from %s failed: %v", u, err)
-			} else if text, ok := current.(string); !ok {
-				p.badChanges.error("'current_release_date' is not a string in %s", u)
-			} else if d, err := time.Parse(time.RFC3339, text); err != nil {
-				p.badChanges.error(
-					"Parsing 'current_release_date' as RFC3339 failed in %s: %v", u, err)
-			} else {
-				if p.times[f] != d {
-					p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
-				}
+			current, fault := p.extractTime(doc, `$.document.tracking.current_release_date`, u)
+			if fault != "" {
+				p.badChanges.error(fault)
+			} else if t, ok := p.times[f]; !ok || current.Equal(t) {
+				p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
 			}
 		}
 
@@ -859,6 +845,22 @@ func (p *processor) integrity(
 	}
 
 	return nil
+}
+
+// extractTime extracts a time.Time value from a json document and returns it and an empty string or zero time alongside
+// a string representing the error message that prevented obtaining the proper time value.
+func (p *processor) extractTime(doc any, value string, u any) (time.Time, string) {
+	filter := fmt.Sprintf("$.document.tracking.%s", value)
+	defaultTime := time.Time{}
+	if date, err := p.expr.Eval(filter, doc); err != nil {
+		return defaultTime, fmt.Sprintf("Extracting '%s' from %s failed: %v", value, u, err)
+	} else if text, ok := date.(string); !ok {
+		return defaultTime, fmt.Sprintf("'%s' is not a string in %s", value, u)
+	} else if d, err := time.Parse(time.RFC3339, text); err != nil {
+		return defaultTime, fmt.Sprintf("Parsing '%s' as RFC3339 failed in %s: %v", value, u, err)
+	} else {
+		return d, ""
+	}
 }
 
 // checkIndex fetches the "index.txt" and calls "checkTLS" method for HTTPS checks.
