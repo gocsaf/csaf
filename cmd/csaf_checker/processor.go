@@ -53,6 +53,7 @@ type processor struct {
 	pmd            any
 	keys           *crypto.KeyRing
 	labelChecker   labelChecker
+	times          map[csaf.AdvisoryFile]time.Time
 
 	invalidAdvisories      topicMessages
 	badFilenames           topicMessages
@@ -191,6 +192,8 @@ func newProcessor(cfg *config) (*processor, error) {
 			advisories:      map[csaf.TLPLabel]util.Set[string]{},
 			whiteAdvisories: map[identifier]bool{},
 		},
+		times:   map[csaf.AdvisoryFile]time.Time{},
+		noneTLS: util.Set[string]{},
 	}, nil
 }
 
@@ -205,14 +208,13 @@ func (p *processor) close() {
 // reset clears the fields values of the given processor.
 func (p *processor) reset() {
 	p.redirects = nil
-	p.noneTLS = nil
-	for k := range p.alreadyChecked {
-		delete(p.alreadyChecked, k)
-	}
 	p.pmdURL = ""
 	p.pmd256 = nil
 	p.pmd = nil
 	p.keys = nil
+	clear(p.alreadyChecked)
+	clear(p.noneTLS)
+	clear(p.times)
 
 	p.invalidAdvisories.reset()
 	p.badFilenames.reset()
@@ -377,9 +379,6 @@ func (p *processor) checkDomain(domain string) error {
 // checkTLS parses the given URL to check its schema, as a result it sets
 // the value of "noneTLS" field if it is not HTTPS.
 func (p *processor) checkTLS(u string) {
-	if p.noneTLS == nil {
-		p.noneTLS = util.Set[string]{}
-	}
 	if x, err := url.Parse(u); err == nil && x.Scheme != "https" {
 		p.noneTLS.Add(u)
 	}
@@ -620,6 +619,8 @@ func makeAbsolute(base *url.URL) func(*url.URL) *url.URL {
 
 var yearFromURL = regexp.MustCompile(`.*/(\d{4})/[^/]+$`)
 
+// integrity checks several csaf.AdvisoryFiles for formal
+// mistakes, from conforming filenames to invalid advisories.
 func (p *processor) integrity(
 	files []csaf.AdvisoryFile,
 	base string,
@@ -735,19 +736,21 @@ func (p *processor) integrity(
 		// Check if file is in the right folder.
 		p.badFolders.use()
 
-		if date, err := p.expr.Eval(
-			`$.document.tracking.initial_release_date`, doc); err != nil {
-			p.badFolders.error(
-				"Extracting 'initial_release_date' from %s failed: %v", u, err)
-		} else if text, ok := date.(string); !ok {
-			p.badFolders.error("'initial_release_date' is not a string in %s", u)
-		} else if d, err := time.Parse(time.RFC3339, text); err != nil {
-			p.badFolders.error(
-				"Parsing 'initial_release_date' as RFC3339 failed in %s: %v", u, err)
+		date, fault := p.extractTime(doc, `$.document.tracking.initial_release_date`, u)
+		if fault != "" {
+			p.badFolders.error(fault)
 		} else if folderYear == nil {
 			p.badFolders.error("No year folder found in %s", u)
-		} else if d.UTC().Year() != *folderYear {
-			p.badFolders.error("%s should be in folder %d", u, d.UTC().Year())
+		} else if date.UTC().Year() != *folderYear {
+			p.badFolders.error("%s should be in folder %d", u, date.UTC().Year())
+		}
+		if len(p.times) > 0 && p.badChanges.used() {
+			current, fault := p.extractTime(doc, `$.document.tracking.current_release_date`, u)
+			if fault != "" {
+				p.badChanges.error(fault)
+			} else if t, ok := p.times[f]; !ok || current.Equal(t) {
+				p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
+			}
 		}
 
 		// Check hashes
@@ -842,6 +845,22 @@ func (p *processor) integrity(
 	}
 
 	return nil
+}
+
+// extractTime extracts a time.Time value from a json document and returns it and an empty string or zero time alongside
+// a string representing the error message that prevented obtaining the proper time value.
+func (p *processor) extractTime(doc any, value string, u any) (time.Time, string) {
+	filter := fmt.Sprintf("$.document.tracking.%s", value)
+	defaultTime := time.Time{}
+	if date, err := p.expr.Eval(filter, doc); err != nil {
+		return defaultTime, fmt.Sprintf("Extracting '%s' from %s failed: %v", value, u, err)
+	} else if text, ok := date.(string); !ok {
+		return defaultTime, fmt.Sprintf("'%s' is not a string in %s", value, u)
+	} else if d, err := time.Parse(time.RFC3339, text); err != nil {
+		return defaultTime, fmt.Sprintf("Parsing '%s' as RFC3339 failed in %s: %v", value, u, err)
+	} else {
+		return d, ""
+	}
 }
 
 // checkIndex fetches the "index.txt" and calls "checkTLS" method for HTTPS checks.
@@ -973,6 +992,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 			times, files =
 				append(times, t),
 				append(files, csaf.PlainAdvisoryFile(path))
+			p.times[csaf.PlainAdvisoryFile(path)] = t
 		}
 		return times, files, nil
 	}()
