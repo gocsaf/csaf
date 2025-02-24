@@ -736,7 +736,7 @@ func (p *processor) integrity(
 		// Check if file is in the right folder.
 		p.badFolders.use()
 
-		date, fault := p.extractTime(doc, `$.document.tracking.initial_release_date`, u)
+		date, fault := p.extractTime(doc, `initial_release_date`, u)
 		if fault != "" {
 			p.badFolders.error(fault)
 		} else if folderYear == nil {
@@ -745,10 +745,10 @@ func (p *processor) integrity(
 			p.badFolders.error("%s should be in folder %d", u, date.UTC().Year())
 		}
 		if len(p.times) > 0 && p.badChanges.used() {
-			current, fault := p.extractTime(doc, `$.document.tracking.current_release_date`, u)
+			current, fault := p.extractTime(doc, `current_release_date`, u)
 			if fault != "" {
 				p.badChanges.error(fault)
-			} else if t, ok := p.times[f]; !ok || current.Equal(t) {
+			} else if t, ok := p.times[f]; !ok || !current.Equal(t) {
 				p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
 			}
 		}
@@ -852,15 +852,19 @@ func (p *processor) integrity(
 func (p *processor) extractTime(doc any, value string, u any) (time.Time, string) {
 	filter := fmt.Sprintf("$.document.tracking.%s", value)
 	defaultTime := time.Time{}
-	if date, err := p.expr.Eval(filter, doc); err != nil {
+	date, err := p.expr.Eval(filter, doc)
+	if err != nil {
 		return defaultTime, fmt.Sprintf("Extracting '%s' from %s failed: %v", value, u, err)
-	} else if text, ok := date.(string); !ok {
-		return defaultTime, fmt.Sprintf("'%s' is not a string in %s", value, u)
-	} else if d, err := time.Parse(time.RFC3339, text); err != nil {
-		return defaultTime, fmt.Sprintf("Parsing '%s' as RFC3339 failed in %s: %v", value, u, err)
-	} else {
-		return d, ""
 	}
+	text, ok := date.(string)
+	if !ok {
+		return defaultTime, fmt.Sprintf("'%s' is not a string in %s", value, u)
+	}
+	d, err := time.Parse(time.RFC3339, text)
+	if err != nil {
+		return defaultTime, fmt.Sprintf("Parsing '%s' as RFC3339 failed in %s: %v", value, u, err)
+	}
+	return d, ""
 }
 
 // checkIndex fetches the "index.txt" and calls "checkTLS" method for HTTPS checks.
