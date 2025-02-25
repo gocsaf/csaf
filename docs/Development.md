@@ -3,7 +3,7 @@
 ## Supported Go versions
 
 We support the latest version and the one before
-the latest version of Go (currently 1.22 and 1.23).
+the latest version of Go (currently 1.23 and 1.24).
 
 ## Generated files
 

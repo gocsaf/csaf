@@ -79,7 +79,7 @@ Download the binaries from the most recent release assets on Github.
 
 ### Build from sources
 
-- A recent version of **Go** (1.22+) should be installed. [Go installation](https://go.dev/doc/install)
+- A recent version of **Go** (1.23+) should be installed. [Go installation](https://go.dev/doc/install)
 
 - Clone the repository `git clone https://github.com/gocsaf/csaf.git `
 
