@@ -114,7 +114,6 @@ func printProductIDMapping(adv *csaf.Advisory) error {
 	}
 
 	productIDMap := map[csaf.ProductID][]productNameHelperMapping{}
-
 	visitFullProductNames(adv, func(fpn *csaf.FullProductName) {
 		productIDMap[*fpn.ProductID] = append(productIDMap[*fpn.ProductID], productNameHelperMapping{
 			FullProductName:             fpn,
