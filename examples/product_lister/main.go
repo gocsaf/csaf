@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/gocsaf/csaf/v3/csaf"
 	"log"
 	"os"
+
+	"github.com/gocsaf/csaf/v3/csaf"
 )
 
 func main() {
@@ -27,7 +28,15 @@ func main() {
 		log.Println("No files given.")
 		return
 	}
-	if err := run(files, *printProductIdentHelper); err != nil {
+
+	var printer func(*csaf.Advisory) error
+	if *printProductIdentHelper {
+		printer = printProductIdentHelperMapping
+	} else {
+		printer = printProductIDMapping
+	}
+
+	if err := run(files, printer); err != nil {
 		log.Fatalf("error: %v\n", err)
 	}
 }
@@ -76,28 +85,32 @@ func visitFullProductNames(
 	}
 }
 
-// run prints all product IDs and their full_product_names and product_identification_helpers.
-func run(files []string, printProductIdentHelper bool) error {
+// run applies fn to all loaded advisories.
+func run(files []string, fn func(*csaf.Advisory) error) error {
 	for _, file := range files {
 		adv, err := csaf.LoadAdvisory(file)
 		if err != nil {
 			return fmt.Errorf("loading %q failed: %w", file, err)
 		}
-		if printProductIdentHelper {
-			printProductIdentHelperMapping(adv)
-		} else {
-			printProductIDMapping(adv)
+		if err := fn(adv); err != nil {
+			return err
 		}
 	}
-
 	return nil
 }
 
+// printJSON serializes v as indented JSON to stdout.
+func printJSON(v any) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(v)
+}
+
 // printProductIDMapping prints all product ids with their name and identification helper.
-func printProductIDMapping(adv *csaf.Advisory) {
+func printProductIDMapping(adv *csaf.Advisory) error {
 	type productNameHelperMapping struct {
-		FullProductName             *csaf.FullProductName
-		ProductIdentificationHelper *csaf.ProductIdentificationHelper
+		FullProductName             *csaf.FullProductName             `json:"product"`
+		ProductIdentificationHelper *csaf.ProductIdentificationHelper `json:"product_identification_helper"`
 	}
 
 	productIDMap := map[csaf.ProductID][]productNameHelperMapping{}
@@ -108,16 +121,14 @@ func printProductIDMapping(adv *csaf.Advisory) {
 			ProductIdentificationHelper: fpn.ProductIdentificationHelper,
 		})
 	})
-
-	jsonData, _ := json.MarshalIndent(productIDMap, "", "  ")
-	fmt.Println(string(jsonData))
+	return printJSON(productIDMap)
 }
 
 // printProductIdentHelperMapping prints all product identifier helper with their product id.
-func printProductIdentHelperMapping(adv *csaf.Advisory) {
+func printProductIdentHelperMapping(adv *csaf.Advisory) error {
 	type productIdentIDMapping struct {
-		ProductNameHelperMapping csaf.ProductIdentificationHelper
-		ProductID                *csaf.ProductID
+		ProductNameHelperMapping csaf.ProductIdentificationHelper `json:"product_identification_helper"`
+		ProductID                *csaf.ProductID                  `json:"product_id"`
 	}
 
 	productIdentMap := []productIdentIDMapping{}
@@ -127,6 +138,5 @@ func printProductIdentHelperMapping(adv *csaf.Advisory) {
 			ProductID:                fpn.ProductID,
 		})
 	})
-	jsonData, _ := json.MarshalIndent(productIdentMap, "", "  ")
-	fmt.Println(string(jsonData))
+	return printJSON(productIdentMap)
 }
