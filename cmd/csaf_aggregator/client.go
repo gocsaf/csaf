@@ -10,6 +10,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -20,13 +21,14 @@ var errNotFound = errors.New("not found")
 
 func downloadJSON(c util.Client, url string, found func(io.Reader) error) error {
 	res, err := c.Get(url)
-	if err != nil || res.StatusCode != http.StatusOK ||
+	if err != nil {
+		return fmt.Errorf("not found: %w", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK ||
 		res.Header.Get("Content-Type") != "application/json" {
 		// ignore this as it is expected.
 		return errNotFound
 	}
-	return func() error {
-		defer res.Body.Close()
-		return found(res.Body)
-	}()
+	return found(res.Body)
 }
