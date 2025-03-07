@@ -83,10 +83,8 @@ type reporter interface {
 	report(*processor, *Domain)
 }
 
-var (
-	// errContinue indicates that the current check should continue.
-	errContinue = errors.New("continue")
-)
+// errContinue indicates that the current check should continue.
+var errContinue = errors.New("continue")
 
 type whereType byte
 
@@ -138,7 +136,7 @@ func (m *topicMessages) info(format string, args ...any) {
 	m.add(InfoType, format, args...)
 }
 
-// use signals that we going to use this topic.
+// use signals that we're going to use this topic.
 func (m *topicMessages) use() {
 	if *m == nil {
 		*m = []Message{}
@@ -164,9 +162,8 @@ func (m *topicMessages) hasErrors() bool {
 	return false
 }
 
-// newProcessor returns an initilaized processor.
+// newProcessor returns an initialized processor.
 func newProcessor(cfg *config) (*processor, error) {
-
 	var validator csaf.RemoteValidator
 
 	if cfg.RemoteValidator != "" {
@@ -239,7 +236,6 @@ func (p *processor) reset() {
 // Then it calls the report method on each report from the given "reporters" parameter for each domain.
 // It returns a pointer to the report and nil, otherwise an error.
 func (p *processor) run(domains []string) (*Report, error) {
-
 	report := Report{
 		Date:      ReportTime{Time: time.Now().UTC()},
 		Version:   util.SemVersion,
@@ -296,7 +292,6 @@ func (p *processor) run(domains []string) (*Report, error) {
 
 // fillMeta fills the report with extra informations from provider metadata.
 func (p *processor) fillMeta(domain *Domain) error {
-
 	if p.pmd == nil {
 		return nil
 	}
@@ -322,7 +317,6 @@ func (p *processor) fillMeta(domain *Domain) error {
 // domainChecks compiles a list of checks which should be performed
 // for a given domain.
 func (p *processor) domainChecks(domain string) []func(*processor, string) error {
-
 	// If we have a direct domain url we dont need to
 	// perform certain checks.
 	direct := strings.HasPrefix(domain, "https://")
@@ -392,7 +386,6 @@ func (p *processor) markChecked(s string, mask whereType) bool {
 }
 
 func (p *processor) checkRedirect(r *http.Request, via []*http.Request) error {
-
 	url := r.URL.String()
 	p.checkTLS(url)
 	if p.redirects == nil {
@@ -494,7 +487,6 @@ func (p *processor) usedAuthorizedClient() bool {
 
 // rolieFeedEntries loads the references to the advisory files for a given feed.
 func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
-
 	client := p.httpClient()
 	res, err := client.Get(feed)
 	p.badDirListings.use()
@@ -545,7 +537,6 @@ func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
 	var files []csaf.AdvisoryFile
 
 	rfeed.Entries(func(entry *csaf.Entry) {
-
 		// Filter if we have date checking.
 		if accept := p.cfg.Range; accept != nil {
 			if t := time.Time(entry.Updated); !t.IsZero() && !accept.Contains(t) {
@@ -594,11 +585,17 @@ func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
 
 		var file csaf.AdvisoryFile
 
-		if sha256 != "" || sha512 != "" || sign != "" {
-			file = csaf.HashedAdvisoryFile{url, sha256, sha512, sign}
-		} else {
-			file = csaf.PlainAdvisoryFile(url)
+		switch {
+		case sha256 == "" && sha512 != "":
+			p.badROLIEFeed.info("%s has no sha256 hash file listed", url)
+		case sha256 != "" && sha512 == "":
+			p.badROLIEFeed.info("%s has no sha512 hash file listed", url)
+		case sha256 == "" && sha512 == "":
+			p.badROLIEFeed.error("No hash listed on ROLIE feed %s", url)
+		case sign == "":
+			p.badROLIEFeed.error("No signature listed on ROLIE feed %s", url)
 		}
+		file = csaf.PlainAdvisoryFile{Path: url, SHA256: sha256, SHA512: sha512, Sign: sign}
 
 		files = append(files, file)
 	})
@@ -753,14 +750,23 @@ func (p *processor) integrity(
 		// Check hashes
 		p.badIntegrities.use()
 
-		for _, x := range []struct {
+		type hash struct {
 			ext  string
 			url  func() string
 			hash []byte
-		}{
-			{"SHA256", f.SHA256URL, s256.Sum(nil)},
-			{"SHA512", f.SHA512URL, s512.Sum(nil)},
-		} {
+		}
+		hashes := []hash{}
+		if f.SHA256URL() != "" {
+			hashes = append(hashes, hash{"SHA256", f.SHA256URL, s256.Sum(nil)})
+		}
+		if f.SHA512URL() != "" {
+			hashes = append(hashes, hash{"SHA512", f.SHA512URL, s512.Sum(nil)})
+		}
+
+		couldFetchHash := false
+		hashFetchErrors := []string{}
+
+		for _, x := range hashes {
 			hu, err := url.Parse(x.url())
 			if err != nil {
 				lg(ErrorType, "Bad URL %s: %v", x.url(), err)
@@ -771,14 +777,15 @@ func (p *processor) integrity(
 
 			p.checkTLS(hashFile)
 			if res, err = client.Get(hashFile); err != nil {
-				p.badIntegrities.error("Fetching %s failed: %v.", hashFile, err)
+				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: %v.", hashFile, err))
 				continue
 			}
 			if res.StatusCode != http.StatusOK {
-				p.badIntegrities.error("Fetching %s failed: Status code %d (%s)",
-					hashFile, res.StatusCode, res.Status)
+				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: Status code %d (%s)",
+					hashFile, res.StatusCode, res.Status))
 				continue
 			}
+			couldFetchHash = true
 			h, err := func() ([]byte, error) {
 				defer res.Body.Close()
 				return util.HashFromReader(res.Body)
@@ -796,6 +803,19 @@ func (p *processor) integrity(
 					x.ext, u, hashFile)
 			}
 		}
+
+		msgType := ErrorType
+		// Log only as warning, if the other hash could be fetched
+		if couldFetchHash {
+			msgType = WarnType
+		}
+		if f.IsDirectory() {
+			msgType = InfoType
+		}
+		for _, fetchError := range hashFetchErrors {
+			p.badIntegrities.add(msgType, fetchError)
+		}
+
 		// Check signature
 		su, err := url.Parse(f.SignURL())
 		if err != nil {
@@ -888,7 +908,8 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 				p.badIntegrities.error("index.txt contains invalid URL %q in line %d", u, line)
 				continue
 			}
-			files = append(files, csaf.PlainAdvisoryFile(u))
+
+			files = append(files, csaf.DirectoryAdvisoryFile{Path: u})
 		}
 		return files, scanner.Err()
 	}()
@@ -911,7 +932,6 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 // of the fields' values and if they are sorted properly. Then it passes the files to the
 // "integrity" functions. It returns error if some test fails, otherwise nil.
 func (p *processor) checkChanges(base string, mask whereType) error {
-
 	bu, err := url.Parse(base)
 	if err != nil {
 		return err
@@ -970,9 +990,9 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 				continue
 			}
 			path := r[pathColumn]
-			times, files =
-				append(times, t),
-				append(files, csaf.PlainAdvisoryFile(path))
+
+			times, files = append(times, t),
+				append(files, csaf.DirectoryAdvisoryFile{Path: path})
 		}
 		return times, files, nil
 	}()
@@ -1144,7 +1164,6 @@ func (p *processor) checkMissing(string) error {
 // checkInvalid goes over all found adivisories URLs and checks
 // if file name conforms to standard.
 func (p *processor) checkInvalid(string) error {
-
 	p.badDirListings.use()
 	var invalids []string
 
@@ -1166,7 +1185,6 @@ func (p *processor) checkInvalid(string) error {
 // checkListing goes over all found adivisories URLs and checks
 // if their parent directory is listable.
 func (p *processor) checkListing(string) error {
-
 	p.badDirListings.use()
 
 	pgs := pages{}
@@ -1201,7 +1219,6 @@ func (p *processor) checkListing(string) error {
 // checkWhitePermissions checks if the TLP:WHITE advisories are
 // available with unprotected access.
 func (p *processor) checkWhitePermissions(string) error {
-
 	var ids []string
 	for id, open := range p.labelChecker.whiteAdvisories {
 		if !open {
@@ -1227,7 +1244,6 @@ func (p *processor) checkWhitePermissions(string) error {
 // According to the result, the respective error messages added to
 // badProviderMetadata.
 func (p *processor) checkProviderMetadata(domain string) bool {
-
 	p.badProviderMetadata.use()
 
 	client := p.httpClient()
@@ -1274,7 +1290,6 @@ func (p *processor) checkSecurity(domain string, legacy bool) (int, string) {
 
 // checkSecurityFolder checks the security.txt in a given folder.
 func (p *processor) checkSecurityFolder(folder string) string {
-
 	client := p.httpClient()
 	path := folder + "security.txt"
 	res, err := client.Get(path)
@@ -1340,9 +1355,7 @@ func (p *processor) checkSecurityFolder(folder string) string {
 // checkDNS checks if the "csaf.data.security.domain.tld" DNS record is available
 // and serves the "provider-metadata.json".
 func (p *processor) checkDNS(domain string) {
-
 	p.badDNSPath.use()
-
 	client := p.httpClient()
 	path := "https://csaf.data.security." + domain
 	res, err := client.Get(path)
@@ -1352,9 +1365,8 @@ func (p *processor) checkDNS(domain string) {
 		return
 	}
 	if res.StatusCode != http.StatusOK {
-		p.badDNSPath.add(ErrorType,
-			fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
-				path, res.StatusCode, res.Status))
+		p.badDNSPath.add(ErrorType, fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
+			path, res.StatusCode, res.Status))
 	}
 	hash := sha256.New()
 	defer res.Body.Close()
@@ -1376,7 +1388,6 @@ func (p *processor) checkDNS(domain string) {
 func (p *processor) checkWellknown(domain string) {
 
 	p.badWellknownMetadata.use()
-
 	client := p.httpClient()
 	path := "https://" + domain + "/.well-known/csaf/provider-metadata.json"
 
@@ -1405,9 +1416,7 @@ func (p *processor) checkWellknown(domain string) {
 // for the legacy location will be made. If this fails as well, then an
 // error is given.
 func (p *processor) checkWellknownSecurityDNS(domain string) error {
-
 	p.checkWellknown(domain)
-
 	// Security check for well known (default) and legacy location
 	warnings, sDMessage := p.checkSecurity(domain, false)
 	// if the security.txt under .well-known was not okay
@@ -1445,7 +1454,6 @@ func (p *processor) checkWellknownSecurityDNS(domain string) error {
 // As a result of these checks respective error messages are passed
 // to badPGP methods. It returns nil if all checks are passed.
 func (p *processor) checkPGPKeys(_ string) error {
-
 	p.badPGPs.use()
 
 	src, err := p.expr.Eval("$.public_openpgp_keys", p.pmd)
@@ -1504,7 +1512,6 @@ func (p *processor) checkPGPKeys(_ string) error {
 			defer res.Body.Close()
 			return crypto.NewKeyFromArmoredReader(res.Body)
 		}()
-
 		if err != nil {
 			p.badPGPs.error("Reading public OpenPGP key %s failed: %v", u, err)
 			continue

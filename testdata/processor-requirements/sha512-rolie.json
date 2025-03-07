@@ -1,0 +1,210 @@
+[
+  {
+    "num": 1,
+    "description": "Valid CSAF documents",
+    "messages": [
+      {
+        "type": 1,
+        "text": "No remote validator configured"
+      },
+      {
+        "type": 0,
+        "text": "All advisories validated fine against the schema."
+      }
+    ]
+  },
+  {
+    "num": 2,
+    "description": "Filename",
+    "messages": [
+      {
+        "type": 0,
+        "text": "All found filenames are conforming."
+      }
+    ]
+  },
+  {
+    "num": 3,
+    "description": "TLS",
+    "messages": [
+      {
+        "type": 0,
+        "text": "All tested URLs were HTTPS."
+      }
+    ]
+  },
+  {
+    "num": 4,
+    "description": "TLP:WHITE",
+    "messages": [
+      {
+        "type": 0,
+        "text": "All advisories labeled TLP:WHITE were freely accessible."
+      }
+    ]
+  },
+  {
+    "num": 5,
+    "description": "TLP:AMBER and TLP:RED",
+    "messages": [
+      {
+        "type": 0,
+        "text": "No advisories labeled TLP:AMBER or TLP:RED tested for accessibility."
+      }
+    ]
+  },
+  {
+    "num": 6,
+    "description": "Redirects",
+    "messages": [
+      {
+        "type": 0,
+        "text": "No redirections found."
+      }
+    ]
+  },
+  {
+    "num": 7,
+    "description": "provider-metadata.json",
+    "messages": [
+      {
+        "type": 0,
+        "text": "Found good provider metadata."
+      }
+    ]
+  },
+  {
+    "num": 8,
+    "description": "security.txt",
+    "messages": [
+      {
+        "type": 0,
+        "text": "Performed no test of security.txt since the direct url of the provider-metadata.json was used."
+      }
+    ]
+  },
+  {
+    "num": 9,
+    "description": "/.well-known/csaf/provider-metadata.json",
+    "messages": [
+      {
+        "type": 0,
+        "text": "Performed no test on whether the provider-metadata.json is available under the .well-known path since the direct url of the provider-metadata.json was used."
+      }
+    ]
+  },
+  {
+    "num": 10,
+    "description": "DNS path",
+    "messages": [
+      {
+        "type": 0,
+        "text": "Performed no test on the contents of https://csaf.data.security.DOMAIN since the direct url of the provider-metadata.json was used."
+      }
+    ]
+  },
+  {
+    "num": 11,
+    "description": "One folder per year",
+    "messages": [
+      {
+        "type": 2,
+        "text": "No year folder found in {{.URL}}/white/avendor-advisory-0004.json"
+      }
+    ]
+  },
+  {
+    "num": 12,
+    "description": "index.txt",
+    "messages": [
+      {
+        "type": 2,
+        "text": "Fetching index.txt failed: {{.URL}}/index.txt not found."
+      }
+    ]
+  },
+  {
+    "num": 13,
+    "description": "changes.csv",
+    "messages": [
+      {
+        "type": 2,
+        "text": "Fetching changes.csv failed: {{.URL}}/changes.csv not found."
+      }
+    ]
+  },
+  {
+    "num": 14,
+    "description": "Directory listings",
+    "messages": [
+      {
+        "type": 2,
+        "text": "Fetching {{.URL}}/white/ failed. Status code 404 (404 Not Found)"
+      },
+      {
+        "type": 2,
+        "text": "Not listed advisories: {{.URL}}/white/avendor-advisory-0004.json"
+      }
+    ]
+  },
+  {
+    "num": 15,
+    "description": "ROLIE feed",
+    "messages": [
+      {
+        "type": 0,
+        "text": "{{.URL}}/white/avendor-advisory-0004.json has no sha256 hash file listed"
+      }
+    ]
+  },
+  {
+    "num": 16,
+    "description": "ROLIE service document",
+    "messages": [
+      {
+        "type": 0,
+        "text": "ROLIE service document validated fine."
+      }
+    ]
+  },
+  {
+    "num": 17,
+    "description": "ROLIE category document",
+    "messages": [
+      {
+        "type": 1,
+        "text": "Fetching {{.URL}}/white/category-white.json failed. Status code 404 (404 Not Found)"
+      }
+    ]
+  },
+  {
+    "num": 18,
+    "description": "Integrity",
+    "messages": [
+      {
+        "type": 0,
+        "text": "All checksums match."
+      }
+    ]
+  },
+  {
+    "num": 19,
+    "description": "Signatures",
+    "messages": [
+      {
+        "type": 0,
+        "text": "All signatures verified."
+      }
+    ]
+  },
+  {
+    "num": 20,
+    "description": "Public OpenPGP Key",
+    "messages": [
+      {
+        "type": 0,
+        "text": "1 public OpenPGP key(s) loaded."
+      }
+    ]
+  }
+]
