@@ -462,8 +462,9 @@ func (w *worker) extractCategories(label string, advisory any) error {
 			expr := cat[len(exprPrefix):]
 			// Compile first to check that the expression is okay.
 			if _, err := w.expr.Compile(expr); err != nil {
-				fmt.Printf("Compiling category expression %q failed: %v\n",
-					expr, err)
+				slog.Error("Compiling category expression failed",
+					"expr", expr,
+					"err", err)
 				continue
 			}
 			// Ignore errors here as they result from not matching.
@@ -588,12 +589,10 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 			if err := os.MkdirAll(yearDir, 0755); err != nil {
 				return err
 			}
-			//log.Printf("created %s\n", yearDir)
 			yearDirs[year] = yearDir
 		}
 
 		fname := filepath.Join(yearDir, filename)
-		//log.Printf("write: %s\n", fname)
 		data := content.Bytes()
 		if err := writeFileHashes(
 			fname, filename,
