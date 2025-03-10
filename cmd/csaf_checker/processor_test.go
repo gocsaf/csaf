@@ -14,6 +14,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"slices"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -63,6 +65,57 @@ func getRequirementTestData(t *testing.T, params testutil.ProviderParams, direct
 		t.Fatal(err)
 	}
 	return requirement
+}
+
+func TestContentTypeReport(t *testing.T) {
+	serverURL := ""
+	params := testutil.ProviderParams{
+		URL:             "",
+		EnableSha256:    true,
+		EnableSha512:    true,
+		ForbidSha256:    true,
+		ForbidSha512:    true,
+		JSONContentType: "application/json; charset=utf-8",
+	}
+	server := httptest.NewTLSServer(testutil.ProviderHandler(&params, false))
+	defer server.Close()
+
+	serverURL = server.URL
+	params.URL = server.URL
+
+	hClient := server.Client()
+	client := util.Client(hClient)
+
+	cfg := config{}
+	err := cfg.prepare()
+	if err != nil {
+		t.Fatalf("SHA marking config failed: %v", err)
+	}
+	p, err := newProcessor(&cfg)
+	if err != nil {
+		t.Fatalf("could not init downloader: %v", err)
+	}
+	p.client = client
+
+	report, err := p.run([]string{serverURL + "/provider-metadata.json"})
+	if err != nil {
+		t.Errorf("Content-Type-Report: Expected no error, got: %v", err)
+	}
+
+	got := report.Domains[0].Requirements
+	idx := slices.IndexFunc(got, func(e *Requirement) bool {
+		return e.Num == 7
+	})
+	if idx == -1 {
+		t.Error("Content-Type-Report: Could not find requirement")
+	} else {
+		message := got[idx].Messages[0]
+		if message.Type != ErrorType || !strings.Contains(message.Text, "should be 'application/json'") {
+			t.Errorf("Content-Type-Report: Content Type Error, got %v", message)
+		}
+	}
+
+	p.close()
 }
 
 func TestShaMarking(t *testing.T) {

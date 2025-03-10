@@ -678,9 +678,9 @@ func (p *processor) integrity(
 			continue
 		}
 
-		// Warn if we do not get JSON.
+		// Error if we do not get JSON.
 		if ct := res.Header.Get("Content-Type"); ct != "application/json" {
-			lg(WarnType,
+			lg(ErrorType,
 				"The content type of %s should be 'application/json' but is '%s'",
 				u, ct)
 		}

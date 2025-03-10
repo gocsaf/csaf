@@ -18,11 +18,12 @@ import (
 
 // ProviderParams configures the test provider.
 type ProviderParams struct {
-	URL          string
-	EnableSha256 bool
-	EnableSha512 bool
-	ForbidSha256 bool
-	ForbidSha512 bool
+	URL             string
+	EnableSha256    bool
+	EnableSha512    bool
+	ForbidSha256    bool
+	ForbidSha512    bool
+	JSONContentType string
 }
 
 // ProviderHandler returns a test provider handler with the specified configuration.
@@ -33,6 +34,11 @@ func ProviderHandler(params *ProviderParams, directoryProvider bool) http.Handle
 			path += "simple-directory-provider"
 		} else {
 			path += "simple-rolie-provider"
+		}
+
+		jsonContenType := "application/json"
+		if params.JSONContentType != "" {
+			jsonContenType = params.JSONContentType
 		}
 
 		path += r.URL.Path
@@ -50,7 +56,7 @@ func ProviderHandler(params *ProviderParams, directoryProvider bool) http.Handle
 		case strings.HasSuffix(path, ".html"):
 			w.Header().Add("Content-Type", "text/html")
 		case strings.HasSuffix(path, ".json"):
-			w.Header().Add("Content-Type", "application/json")
+			w.Header().Add("Content-Type", jsonContenType)
 		case (strings.HasSuffix(path, ".sha256")) && params.ForbidSha256:
 			w.WriteHeader(http.StatusForbidden)
 			return
