@@ -12,9 +12,11 @@ import (
 	"bytes"
 	_ "embed" // Used for embedding.
 	"io"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
@@ -90,10 +92,42 @@ func loadURL(s string) (io.ReadCloser, error) {
 	}
 }
 
+var (
+	uriRegexp     *regexp.Regexp
+	uriRegexpOnce sync.Once
+)
+
+func compileURIRegexp() {
+	// Taken from
+	//   https://github.com/ajv-validator/ajv-formats/blob/master/src/formats.ts#L116
+	// which refers to
+	//   https://github.com/mafintosh/is-my-json-valid/blob/master/formats.js
+	uriRegexp = regexp.MustCompile(
+		`^(?:[a-zA-Z][a-zA-Z0-9+\-.]*:)(?:\/?\/)?[^\s]*$`)
+}
+
+func isValidURI(v any) bool {
+	uri, ok := v.(string)
+	if !ok {
+		return false
+	}
+	for _, r := range uri {
+		if r > unicode.MaxASCII {
+			return false
+		}
+	}
+	uriRegexpOnce.Do(compileURIRegexp)
+	return uriRegexp.MatchString(uri)
+}
+
 func (cs *compiledSchema) compile() {
 	c := jsonschema.NewCompiler()
 	c.AssertFormat = true
 	c.LoadURL = loadURL
+	// TODO: We should further investigate if this is really necessary.
+	// This is mainly done to emulate the behaviour of the
+	// validator service.
+	c.Formats["uri"] = isValidURI
 	cs.compiled, cs.err = c.Compile(cs.url)
 }
 
