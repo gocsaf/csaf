@@ -484,6 +484,15 @@ nextAdvisory:
 				"error", err)
 			continue
 		}
+		responseBody, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			stats.downloadFailed++
+			slog.Warn("Cannot read response body",
+				"url", file.URL(),
+				"error", err)
+			continue
+		}
 
 		if resp.StatusCode != http.StatusOK {
 			stats.downloadFailed++
@@ -556,8 +565,7 @@ nextAdvisory:
 		var doc any
 
 		if err := func() error {
-			defer resp.Body.Close()
-			tee := io.TeeReader(resp.Body, hasher)
+			tee := io.TeeReader(bytes.NewReader(responseBody), hasher)
 			return json.NewDecoder(tee).Decode(&doc)
 		}(); err != nil {
 			stats.downloadFailed++
@@ -758,11 +766,11 @@ func loadSignature(client util.Client, p string) (*crypto.PGPSignature, []byte, 
 	if err != nil {
 		return nil, nil, err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, nil, fmt.Errorf(
 			"fetching signature from '%s' failed: %s (%d)", p, resp.Status, resp.StatusCode)
 	}
-	defer resp.Body.Close()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, nil, err
@@ -823,11 +831,11 @@ func loadHash(client util.Client, p string) ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, nil, fmt.Errorf(
 			"fetching hash from '%s' failed: %s (%d)", p, resp.Status, resp.StatusCode)
 	}
-	defer resp.Body.Close()
 	var data bytes.Buffer
 	tee := io.TeeReader(resp.Body, &data)
 	hash, err := util.HashFromReader(tee)
