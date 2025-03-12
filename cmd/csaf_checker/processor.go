@@ -736,12 +736,12 @@ func (p *processor) integrity(
 		// Check if file is in the right folder.
 		p.badFolders.use()
 
-		date, fault := p.extractTime(doc, `initial_release_date`, u)
-		if fault != "" {
+		switch date, fault := p.extractTime(doc, `initial_release_date`, u); {
+		case fault != "":
 			p.badFolders.error(fault)
-		} else if folderYear == nil {
+		case folderYear == nil:
 			p.badFolders.error("No year folder found in %s", u)
-		} else if date.UTC().Year() != *folderYear {
+		case date.UTC().Year() != *folderYear:
 			p.badFolders.error("%s should be in folder %d", u, date.UTC().Year())
 		}
 		if len(p.times) > 0 && p.badChanges.used() {
@@ -850,19 +850,18 @@ func (p *processor) integrity(
 // extractTime extracts a time.Time value from a json document and returns it and an empty string or zero time alongside
 // a string representing the error message that prevented obtaining the proper time value.
 func (p *processor) extractTime(doc any, value string, u any) (time.Time, string) {
-	filter := fmt.Sprintf("$.document.tracking.%s", value)
-	defaultTime := time.Time{}
+	filter := "$.document.tracking." + value
 	date, err := p.expr.Eval(filter, doc)
 	if err != nil {
-		return defaultTime, fmt.Sprintf("Extracting '%s' from %s failed: %v", value, u, err)
+		return time.Time{}, fmt.Sprintf("Extracting '%s' from %s failed: %v", value, u, err)
 	}
 	text, ok := date.(string)
 	if !ok {
-		return defaultTime, fmt.Sprintf("'%s' is not a string in %s", value, u)
+		return time.Time{}, fmt.Sprintf("'%s' is not a string in %s", value, u)
 	}
 	d, err := time.Parse(time.RFC3339, text)
 	if err != nil {
-		return defaultTime, fmt.Sprintf("Parsing '%s' as RFC3339 failed in %s: %v", value, u, err)
+		return time.Time{}, fmt.Sprintf("Parsing '%s' as RFC3339 failed in %s: %v", value, u, err)
 	}
 	return d, ""
 }
