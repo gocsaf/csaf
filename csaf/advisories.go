@@ -29,58 +29,62 @@ type AdvisoryFile interface {
 	SHA256URL() string
 	SHA512URL() string
 	SignURL() string
+	IsDirectory() bool
 }
 
-// PlainAdvisoryFile is a simple implementation of checkFile.
-// The hash and signature files are directly constructed by extending
-// the file name.
-type PlainAdvisoryFile string
+// PlainAdvisoryFile contains all relevant urls of a remote file.
+type PlainAdvisoryFile struct {
+	Path   string
+	SHA256 string
+	SHA512 string
+	Sign   string
+}
 
 // URL returns the URL of this advisory.
-func (paf PlainAdvisoryFile) URL() string { return string(paf) }
+func (paf PlainAdvisoryFile) URL() string { return paf.Path }
 
 // SHA256URL returns the URL of SHA256 hash file of this advisory.
-func (paf PlainAdvisoryFile) SHA256URL() string { return string(paf) + ".sha256" }
+func (paf PlainAdvisoryFile) SHA256URL() string { return paf.SHA256 }
 
 // SHA512URL returns the URL of SHA512 hash file of this advisory.
-func (paf PlainAdvisoryFile) SHA512URL() string { return string(paf) + ".sha512" }
+func (paf PlainAdvisoryFile) SHA512URL() string { return paf.SHA512 }
 
 // SignURL returns the URL of signature file of this advisory.
-func (paf PlainAdvisoryFile) SignURL() string { return string(paf) + ".asc" }
+func (paf PlainAdvisoryFile) SignURL() string { return paf.Sign }
+
+// IsDirectory returns true, if was fetched via directory feeds.
+func (paf PlainAdvisoryFile) IsDirectory() bool { return false }
 
 // LogValue implements [slog.LogValuer]
 func (paf PlainAdvisoryFile) LogValue() slog.Value {
 	return slog.GroupValue(slog.String("url", paf.URL()))
 }
 
-// HashedAdvisoryFile is a more involed version of checkFile.
-// Here each component can be given explicitly.
-// If a component is not given it is constructed by
-// extending the first component.
-type HashedAdvisoryFile [4]string
-
-func (haf HashedAdvisoryFile) name(i int, ext string) string {
-	if haf[i] != "" {
-		return haf[i]
-	}
-	return haf[0] + ext
+// DirectoryAdvisoryFile only contains the base file path.
+// The hash and signature files are directly constructed by extending
+// the file name.
+type DirectoryAdvisoryFile struct {
+	Path string
 }
 
 // URL returns the URL of this advisory.
-func (haf HashedAdvisoryFile) URL() string { return haf[0] }
+func (daf DirectoryAdvisoryFile) URL() string { return daf.Path }
 
 // SHA256URL returns the URL of SHA256 hash file of this advisory.
-func (haf HashedAdvisoryFile) SHA256URL() string { return haf.name(1, ".sha256") }
+func (daf DirectoryAdvisoryFile) SHA256URL() string { return daf.Path + ".sha256" }
 
 // SHA512URL returns the URL of SHA512 hash file of this advisory.
-func (haf HashedAdvisoryFile) SHA512URL() string { return haf.name(2, ".sha512") }
+func (daf DirectoryAdvisoryFile) SHA512URL() string { return daf.Path + ".sha512" }
 
 // SignURL returns the URL of signature file of this advisory.
-func (haf HashedAdvisoryFile) SignURL() string { return haf.name(3, ".asc") }
+func (daf DirectoryAdvisoryFile) SignURL() string { return daf.Path + ".asc" }
+
+// IsDirectory returns true, if was fetched via directory feeds.
+func (daf DirectoryAdvisoryFile) IsDirectory() bool { return true }
 
 // LogValue implements [slog.LogValuer]
-func (haf HashedAdvisoryFile) LogValue() slog.Value {
-	return slog.GroupValue(slog.String("url", haf.URL()))
+func (daf DirectoryAdvisoryFile) LogValue() slog.Value {
+	return slog.GroupValue(slog.String("url", daf.URL()))
 }
 
 // AdvisoryFileProcessor implements the extraction of
@@ -94,7 +98,7 @@ type AdvisoryFileProcessor struct {
 	base      *url.URL
 }
 
-// NewAdvisoryFileProcessor constructs an filename extractor
+// NewAdvisoryFileProcessor constructs a filename extractor
 // for a given metadata document.
 func NewAdvisoryFileProcessor(
 	client util.Client,
@@ -120,7 +124,7 @@ func empty(arr []string) bool {
 	return true
 }
 
-// Process extracts the adivisory filenames and passes them with
+// Process extracts the advisory filenames and passes them with
 // the corresponding label to fn.
 func (afp *AdvisoryFileProcessor) Process(
 	fn func(TLPLabel, []AdvisoryFile) error,
@@ -257,8 +261,9 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 			lg("%q contains an invalid URL %q in line %d", changesURL, path, line)
 			continue
 		}
+
 		files = append(files,
-			PlainAdvisoryFile(base.JoinPath(path).String()))
+			DirectoryAdvisoryFile{Path: base.JoinPath(path).String()})
 	}
 	return files, nil
 }
@@ -325,7 +330,6 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		}
 
 		rfeed.Entries(func(entry *Entry) {
-
 			// Filter if we have date checking.
 			if afp.AgeAccept != nil {
 				if t := time.Time(entry.Updated); !t.IsZero() && !afp.AgeAccept(t) {
@@ -359,10 +363,15 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 
 			var file AdvisoryFile
 
-			if sha256 != "" || sha512 != "" || sign != "" {
-				file = HashedAdvisoryFile{self, sha256, sha512, sign}
-			} else {
-				file = PlainAdvisoryFile(self)
+			switch {
+			case sha256 == "" && sha512 == "":
+				slog.Error("No hash listed on ROLIE feed", "file", self)
+				return
+			case sign == "":
+				slog.Error("No signature listed on ROLIE feed", "file", self)
+				return
+			default:
+				file = PlainAdvisoryFile{self, sha256, sha512, sign}
 			}
 
 			files = append(files, file)

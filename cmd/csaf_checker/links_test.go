@@ -10,8 +10,12 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 const page0 = `<html>
@@ -31,7 +35,6 @@ const page0 = `<html>
 </html>`
 
 func TestLinksOnPage(t *testing.T) {
-
 	var links []string
 
 	err := linksOnPage(
@@ -56,5 +59,80 @@ func TestLinksOnPage(t *testing.T) {
 		if href != link {
 			t.Fatalf("Expected link '%s', got '%s'\n", href, link)
 		}
+	}
+}
+
+func Test_listed(t *testing.T) {
+	tests := []struct {
+		name    string
+		badDirs util.Set[string]
+		path    string
+		want    bool
+	}{
+		{
+			name:    "listed path",
+			badDirs: util.Set[string]{},
+			path:    "/white/avendor-advisory-0004.json",
+			want:    true,
+		},
+		{
+			name:    "badDirs contains path",
+			badDirs: util.Set[string]{"/white/": {}},
+			path:    "/white/avendor-advisory-0004.json",
+			want:    false,
+		},
+		{
+			name:    "not found",
+			badDirs: util.Set[string]{},
+			path:    "/not-found/resource.json",
+			want:    false,
+		},
+		{
+			name:    "badDirs does not contain path",
+			badDirs: util.Set[string]{"/bad-dir/": {}},
+			path:    "/white/avendor-advisory-0004.json",
+			want:    true,
+		},
+		{
+			name:    "unlisted path",
+			badDirs: util.Set[string]{},
+			path:    "/white/avendor-advisory-0004-not-listed.json",
+			want:    false,
+		},
+	}
+
+	t.Parallel()
+	for _, testToRun := range tests {
+		test := testToRun
+		t.Run(test.name, func(tt *testing.T) {
+			tt.Parallel()
+			serverURL := ""
+			fs := http.FileServer(http.Dir("../../testdata/simple-directory-provider"))
+			server := httptest.NewTLSServer(fs)
+			defer server.Close()
+
+			serverURL = server.URL
+
+			hClient := server.Client()
+			client := util.Client(hClient)
+
+			pgs := pages{}
+			cfg := config{RemoteValidator: "", RemoteValidatorCache: ""}
+			p, err := newProcessor(&cfg)
+			if err != nil {
+				t.Error(err)
+			}
+			p.client = client
+
+			badDirs := util.Set[string]{}
+			for dir := range test.badDirs {
+				badDirs.Add(serverURL + dir)
+			}
+
+			got, _ := pgs.listed(serverURL+test.path, p, badDirs)
+			if got != test.want {
+				t.Errorf("%q: Expected %t but got %t.", test.name, test.want, got)
+			}
+		})
 	}
 }

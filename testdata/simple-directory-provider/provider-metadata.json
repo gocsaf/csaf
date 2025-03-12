@@ -1,0 +1,25 @@
+{
+  "canonical_url": "{{.URL}}/provider-metadata.json",
+  "distributions": [
+    {
+      "directory_url": "{{.URL}}/white/"
+    }
+  ],
+  "last_updated": "2020-01-01T00:00:00Z",
+  "list_on_CSAF_aggregators": true,
+  "metadata_version": "2.0",
+  "mirror_on_CSAF_aggregators": true,
+  "public_openpgp_keys": [
+    {
+      "fingerprint": "A8914CA2F11139C6A69A0018FB3CD9B15DE61596",
+      "url": "{{.URL}}/openpgp/pubkey.asc"
+    }
+  ],
+  "publisher": {
+    "category": "vendor",
+    "name": "ACME Inc",
+    "namespace": "https://example.com",
+    "contact_details": "mailto:security@example.com"
+  },
+  "role": "csaf_trusted_provider"
+}

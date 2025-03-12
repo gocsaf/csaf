@@ -20,7 +20,7 @@
 
 # csaf
 
-Implements a [CSAF](https://csaf.io/)
+Implements a [CSAF](https://oasis-open.github.io/csaf-documentation/)
 ([specification v2.0](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
 and its [errata](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html))
 trusted provider, checker, aggregator and downloader.
@@ -79,7 +79,7 @@ Download the binaries from the most recent release assets on Github.
 
 ### Build from sources
 
-- A recent version of **Go** (1.22+) should be installed. [Go installation](https://go.dev/doc/install)
+- A recent version of **Go** (1.23+) should be installed. [Go installation](https://go.dev/doc/install)
 
 - Clone the repository `git clone https://github.com/gocsaf/csaf.git `
 
