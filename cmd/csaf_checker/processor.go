@@ -651,6 +651,23 @@ func (p *processor) integrity(
 			continue
 		}
 
+		if p.markChecked(u, mask) {
+			continue
+		}
+		p.checkTLS(u)
+
+		// Check if the filename is conforming.
+		p.badFilenames.use()
+		if !util.ConformingFileName(filepath.Base(u)) {
+			p.badFilenames.error("%s does not have a conforming filename.", u)
+		}
+
+		var folderYear *int
+		if m := yearFromURL.FindStringSubmatch(u); m != nil {
+			year, _ := strconv.Atoi(m[1])
+			folderYear = &year
+		}
+
 		res, err := client.Get(u)
 		if err != nil {
 			lg(ErrorType, "Fetching %s failed: %v.", u, err)
@@ -683,32 +700,6 @@ func (p *processor) integrity(
 		}(); err != nil {
 			lg(ErrorType, "Reading %s failed: %v", u, err)
 			continue
-		}
-
-		if len(p.times) > 0 && p.badChanges.used() {
-			current, fault := p.extractTime(doc, `current_release_date`, u)
-			if fault != "" {
-				p.badChanges.error(fault)
-			} else if t, ok := p.times[f.URL()]; !ok || !current.Equal(t) {
-				p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
-			}
-		}
-
-		if p.markChecked(u, mask) {
-			continue
-		}
-		p.checkTLS(u)
-
-		// Check if the filename is conforming.
-		p.badFilenames.use()
-		if !util.ConformingFileName(filepath.Base(u)) {
-			p.badFilenames.error("%s does not have a conforming filename.", u)
-		}
-
-		var folderYear *int
-		if m := yearFromURL.FindStringSubmatch(u); m != nil {
-			year, _ := strconv.Atoi(m[1])
-			folderYear = &year
 		}
 
 		p.invalidAdvisories.use()
@@ -749,6 +740,14 @@ func (p *processor) integrity(
 			p.badFolders.error("No year folder found in %s", u)
 		case date.UTC().Year() != *folderYear:
 			p.badFolders.error("%s should be in folder %d", u, date.UTC().Year())
+		}
+		if len(p.times) > 0 && p.badChanges.used() {
+			current, fault := p.extractTime(doc, `current_release_date`, u)
+			if fault != "" {
+				p.badChanges.error(fault)
+			} else if t, ok := p.times[f.URL()]; !ok || !current.Equal(t) {
+				p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
+			}
 		}
 
 		// Check hashes
