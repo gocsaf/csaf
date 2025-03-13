@@ -53,7 +53,8 @@ type processor struct {
 	pmd            any
 	keys           *crypto.KeyRing
 	labelChecker   labelChecker
-	times          map[string]time.Time
+	timesChanges   map[string]time.Time
+	timesAdv       map[string]time.Time
 
 	invalidAdvisories      topicMessages
 	badFilenames           topicMessages
@@ -189,8 +190,9 @@ func newProcessor(cfg *config) (*processor, error) {
 			advisories:      map[csaf.TLPLabel]util.Set[string]{},
 			whiteAdvisories: map[identifier]bool{},
 		},
-		times:   map[string]time.Time{},
-		noneTLS: util.Set[string]{},
+		timesAdv:     map[string]time.Time{},
+		timesChanges: map[string]time.Time{},
+		noneTLS:      util.Set[string]{},
 	}, nil
 }
 
@@ -211,7 +213,8 @@ func (p *processor) reset() {
 	p.keys = nil
 	clear(p.alreadyChecked)
 	clear(p.noneTLS)
-	clear(p.times)
+	clear(p.timesAdv)
+	clear(p.timesChanges)
 
 	p.invalidAdvisories.reset()
 	p.badFilenames.reset()
@@ -741,13 +744,11 @@ func (p *processor) integrity(
 		case date.UTC().Year() != *folderYear:
 			p.badFolders.error("%s should be in folder %d", u, date.UTC().Year())
 		}
-		if len(p.times) > 0 && p.badChanges.used() {
-			current, fault := p.extractTime(doc, `current_release_date`, u)
-			if fault != "" {
-				p.badChanges.error(fault)
-			} else if t, ok := p.times[f.URL()]; !ok || !current.Equal(t) {
-				p.badChanges.error("Current release date in changes.csv and %s is not identical", u)
-			}
+		current, fault := p.extractTime(doc, `current_release_date`, u)
+		if fault != "" {
+			p.badChanges.error(fault)
+		} else {
+			p.timesAdv[f.URL()] = current
 		}
 
 		// Check hashes
@@ -860,6 +861,26 @@ func (p *processor) integrity(
 			t := crypto.GetUnixTime()
 			if err := p.keys.VerifyDetached(pm, sig, t); err != nil {
 				p.badSignatures.error("Signature of %s could not be verified: %v.", u, err)
+			}
+		}
+	}
+
+	// If we tested an existing changes.csv
+	if len(p.timesAdv) > 0 && p.badChanges.used() {
+		// Iterate over all files again
+		for _, f := range files {
+			// If there was no previous error when extracting times from advisories and we have a valid time
+			if timeAdv, ok := p.timesAdv[f.URL()]; ok {
+				// If there was no previous error when extracting times from changes and the file was listed in changes.csv
+				if timeCha, ok := p.timesChanges[f.URL()]; ok {
+					// check if the time matches
+					if timeAdv != timeCha {
+						// if not, give an error and remove the pair so it isn't reported multiple times should integrity be called again
+						p.badChanges.error("Current release date in changes.csv and %s is not identical.", f.URL())
+						delete(p.timesAdv, f.URL())
+						delete(p.timesChanges, f.URL())
+					}
+				}
 			}
 		}
 	}
@@ -1016,7 +1037,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 			times, files =
 				append(times, t),
 				append(files, csaf.DirectoryAdvisoryFile{Path: path})
-			p.times[path] = t
+			p.timesChanges[path] = t
 		}
 		return times, files, nil
 	}()
