@@ -874,7 +874,7 @@ func (p *processor) integrity(
 				// If there was no previous error when extracting times from changes and the file was listed in changes.csv
 				if timeCha, ok := p.timesChanges[f.URL()]; ok {
 					// check if the time matches
-					if timeAdv != timeCha {
+					if !timeAdv.Equal(timeCha) {
 						// if not, give an error and remove the pair so it isn't reported multiple times should integrity be called again
 						p.badChanges.error("Current release date in changes.csv and %s is not identical.", f.URL())
 						delete(p.timesAdv, f.URL())
