@@ -264,8 +264,14 @@ func (c *config) privateOpenPGPKey() (*crypto.Key, error) {
 	return c.key, c.keyErr
 }
 
-func (c *config) httpClient(p *provider) util.Client {
+// httpLog does structured logging in a [util.LoggingClient].
+func httpLog(method, url string) {
+	slog.Debug("http",
+		"method", method,
+		"url", url)
+}
 
+func (c *config) httpClient(p *provider) util.Client {
 	hClient := http.Client{}
 
 	var tlsConfig tls.Config
@@ -310,7 +316,10 @@ func (c *config) httpClient(p *provider) util.Client {
 	}
 
 	if c.Verbose {
-		client = &util.LoggingClient{Client: client}
+		client = &util.LoggingClient{
+			Client: client,
+			Log:    httpLog,
+		}
 	}
 
 	if p.Rate == nil && c.Rate == nil {
@@ -331,7 +340,6 @@ func (c *config) httpClient(p *provider) util.Client {
 }
 
 func (c *config) checkProviders() error {
-
 	if !c.AllowSingleProvider && len(c.Providers) < 2 {
 		return errors.New("need at least two providers")
 	}
@@ -471,7 +479,6 @@ func (c *config) prepareCertificates() error {
 
 // prepare prepares internal state of a loaded configuration.
 func (c *config) prepare() error {
-
 	if len(c.Providers) == 0 {
 		return errors.New("no providers given in configuration")
 	}

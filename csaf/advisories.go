@@ -9,10 +9,10 @@
 package csaf
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -91,7 +91,7 @@ func (daf DirectoryAdvisoryFile) LogValue() slog.Value {
 // advisory file names from a given provider metadata.
 type AdvisoryFileProcessor struct {
 	AgeAccept func(time.Time) bool
-	Log       func(format string, args ...any)
+	Log       func(loglevel slog.Level, format string, args ...any)
 	client    util.Client
 	expr      *util.PathEval
 	doc       any
@@ -131,8 +131,8 @@ func (afp *AdvisoryFileProcessor) Process(
 ) error {
 	lg := afp.Log
 	if lg == nil {
-		lg = func(format string, args ...any) {
-			log.Printf("AdvisoryFileProcessor.Process: "+format, args...)
+		lg = func(loglevel slog.Level, format string, args ...any) {
+			slog.Log(context.Background(), loglevel, "AdvisoryFileProcessor.Process: "+format, args...)
 		}
 	}
 
@@ -140,7 +140,7 @@ func (afp *AdvisoryFileProcessor) Process(
 	rolie, err := afp.expr.Eval(
 		"$.distributions[*].rolie.feeds", afp.doc)
 	if err != nil {
-		lg("rolie check failed: %v\n", err)
+		lg(slog.LevelError, "rolie check failed", "err", err)
 		return err
 	}
 
@@ -152,7 +152,7 @@ func (afp *AdvisoryFileProcessor) Process(
 		if err := util.ReMarshalJSON(&feeds, rolie); err != nil {
 			return err
 		}
-		lg("Found %d ROLIE feed(s).\n", len(feeds))
+		lg(slog.LevelInfo, "Found ROLIE feed(s)", "length", len(feeds))
 
 		for _, feed := range feeds {
 			if err := afp.processROLIE(feed, fn); err != nil {
@@ -168,12 +168,12 @@ func (afp *AdvisoryFileProcessor) Process(
 		var dirURLs []string
 
 		if err != nil {
-			lg("extracting directory URLs failed: %v\n", err)
+			lg(slog.LevelError, "extracting directory URLs failed", "err", err)
 		} else {
 			var ok bool
 			dirURLs, ok = util.AsStrings(directoryURLs)
 			if !ok {
-				lg("directory_urls are not strings.\n")
+				lg(slog.LevelError, "directory_urls are not strings")
 			}
 		}
 
@@ -209,9 +209,8 @@ func (afp *AdvisoryFileProcessor) Process(
 // prefixed by baseURL/.
 func (afp *AdvisoryFileProcessor) loadChanges(
 	baseURL string,
-	lg func(string, ...any),
+	lg func(slog.Level, string, ...any),
 ) ([]AdvisoryFile, error) {
-
 	base, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
@@ -244,12 +243,12 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 			return nil, err
 		}
 		if len(r) < 2 {
-			lg("%q has not enough columns in line %d", line)
+			lg(slog.LevelError, "Not enough columns", "line", line)
 			continue
 		}
 		t, err := time.Parse(time.RFC3339, r[timeColumn])
 		if err != nil {
-			lg("%q has an invalid time stamp in line %d: %v", changesURL, line, err)
+			lg(slog.LevelError, "Invalid time stamp in line", "url", changesURL, "line", line, "err", err)
 			continue
 		}
 		// Apply date range filtering.
@@ -258,7 +257,7 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 		}
 		path := r[pathColumn]
 		if _, err := url.Parse(path); err != nil {
-			lg("%q contains an invalid URL %q in line %d", changesURL, path, line)
+			lg(slog.LevelError, "Contains an invalid URL", "url", changesURL, "path", path, "line", line)
 			continue
 		}
 
@@ -279,31 +278,31 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		}
 		up, err := url.Parse(string(*feed.URL))
 		if err != nil {
-			log.Printf("Invalid URL %s in feed: %v.", *feed.URL, err)
+			slog.Error("Invalid URL in feed", "feed", *feed.URL, "err", err)
 			continue
 		}
 		feedURL := afp.base.ResolveReference(up)
-		log.Printf("Feed URL: %s\n", feedURL)
+		slog.Info("Got feed URL", "feed", feedURL)
 
 		fb, err := util.BaseURL(feedURL)
 		if err != nil {
-			log.Printf("error: Invalid feed base URL '%s': %v\n", fb, err)
+			slog.Error("Invalid feed base URL", "url", fb, "err", err)
 			continue
 		}
 		feedBaseURL, err := url.Parse(fb)
 		if err != nil {
-			log.Printf("error: Cannot parse feed base URL '%s': %v\n", fb, err)
+			slog.Error("Cannot parse feed base URL", "url", fb, "err", err)
 			continue
 		}
 
 		res, err := afp.client.Get(feedURL.String())
 		if err != nil {
-			log.Printf("error: Cannot get feed '%s'\n", err)
+			slog.Error("Cannot get feed", "err", err)
 			continue
 		}
 		if res.StatusCode != http.StatusOK {
-			log.Printf("error: Fetching %s failed. Status code %d (%s)",
-				feedURL, res.StatusCode, res.Status)
+			slog.Error("Fetching failed",
+				"url", feedURL, "status_code", res.StatusCode, "status", res.Status)
 			continue
 		}
 		rfeed, err := func() (*ROLIEFeed, error) {
@@ -311,7 +310,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			return LoadROLIEFeed(res.Body)
 		}()
 		if err != nil {
-			log.Printf("Loading ROLIE feed failed: %v.", err)
+			slog.Error("Loading ROLIE feed failed", "err", err)
 			continue
 		}
 
@@ -323,7 +322,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			}
 			p, err := url.Parse(u)
 			if err != nil {
-				log.Printf("error: Invalid URL '%s': %v", u, err)
+				slog.Error("Invalid URL", "url", u, "err", err)
 				return ""
 			}
 			return feedBaseURL.ResolveReference(p).String()
