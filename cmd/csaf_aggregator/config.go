@@ -265,12 +265,10 @@ func (c *config) privateOpenPGPKey() (*crypto.Key, error) {
 }
 
 // httpLog does structured logging in a [util.LoggingClient].
-func httpLog() func(string, string) {
-	return func(method, url string) {
-		slog.Debug("http",
-			"method", method,
-			"url", url)
-	}
+func httpLog(method, url string) {
+	slog.Debug("http",
+		"method", method,
+		"url", url)
 }
 
 func (c *config) httpClient(p *provider) util.Client {
@@ -321,7 +319,7 @@ func (c *config) httpClient(p *provider) util.Client {
 	if c.Verbose {
 		client = &util.LoggingClient{
 			Client: client,
-			Log:    httpLog(),
+			Log:    httpLog,
 		}
 	}
 
@@ -343,7 +341,6 @@ func (c *config) httpClient(p *provider) util.Client {
 }
 
 func (c *config) checkProviders() error {
-
 	if !c.AllowSingleProvider && len(c.Providers) < 2 {
 		return errors.New("need at least two providers")
 	}
