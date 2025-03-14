@@ -272,7 +272,6 @@ func httpLog(method, url string) {
 }
 
 func (c *config) httpClient(p *provider) util.Client {
-
 	hClient := http.Client{}
 
 	var tlsConfig tls.Config
@@ -480,7 +479,6 @@ func (c *config) prepareCertificates() error {
 
 // prepare prepares internal state of a loaded configuration.
 func (c *config) prepare() error {
-
 	if len(c.Providers) == 0 {
 		return errors.New("no providers given in configuration")
 	}
