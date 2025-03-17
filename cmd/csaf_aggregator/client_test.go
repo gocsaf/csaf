@@ -49,10 +49,10 @@ func Test_downloadJSON(t *testing.T) {
 		test := testToRun
 		t.Run(test.name, func(tt *testing.T) {
 			tt.Parallel()
-			found := func(r io.Reader) error {
+			found := func(_ io.Reader) error {
 				return nil
 			}
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("Content-Type", test.contentType)
 				w.WriteHeader(test.statusCode)
 			}))

@@ -37,10 +37,10 @@ func TestParse(t *testing.T) {
 		},
 		Usage:      "[OPTIONS] domain...",
 		HasVersion: func(cfg *config) bool { return cfg.Version },
-		SetDefaults: func(cfg *config) {
+		SetDefaults: func(_ *config) {
 		},
 		// Re-establish default values if not set.
-		EnsureDefaults: func(cfg *config) {
+		EnsureDefaults: func(_ *config) {
 		},
 	}
 
@@ -157,7 +157,6 @@ func TestErrorCheck(t *testing.T) {
 		return
 	}
 	t.Fatalf("process ran with err %v, want exit status 1", err)
-
 }
 
 // TestSecondPassCommandlineParsing checks if the second pass
@@ -168,7 +167,7 @@ func TestSecondPassCommandlineParsing(t *testing.T) {
 
 	os.Args = []string{"cmd"}
 	p := Parser[config]{
-		ConfigLocation: func(cfg *config) string {
+		ConfigLocation: func(_ *config) string {
 			// This is a bit stupid.
 			os.Args = []string{"cmd", "--invalid"}
 			return "data/empty.toml"
@@ -188,7 +187,7 @@ func TestSecondPassCommandlineHelp(t *testing.T) {
 
 		os.Args = []string{"cmd"}
 		p := Parser[config]{
-			ConfigLocation: func(cfg *config) string {
+			ConfigLocation: func(_ *config) string {
 				// This is a bit stupid.
 				os.Args = []string{"cmd", "--help"}
 				return "data/empty.toml"

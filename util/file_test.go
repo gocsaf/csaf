@@ -155,7 +155,7 @@ func TestMakeUniqFile(t *testing.T) {
 
 func Test_mkUniq(t *testing.T) {
 	dir := t.TempDir()
-	name, err := mkUniq(dir+"/", func(name string) error {
+	name, err := mkUniq(dir+"/", func(_ string) error {
 		return nil
 	})
 	if err != nil {

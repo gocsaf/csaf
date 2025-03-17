@@ -24,12 +24,10 @@ import (
 func checkIfFileExists(path string, t *testing.T) bool {
 	if _, err := os.Stat(path); err == nil {
 		return true
-	} else if errors.Is(err, os.ErrNotExist) {
-		return false
-	} else {
+	} else if !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("Failed to check if file exists: %v", err)
-		return false
 	}
+	return false
 }
 
 func TestShaMarking(t *testing.T) {

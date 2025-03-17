@@ -48,7 +48,7 @@ func main() {
 
 	cfg, err := loadConfig()
 	if err != nil {
-		cgi.Serve(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		cgi.Serve(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 			http.Error(rw, "Something went wrong. Check server logs for more details",
 				http.StatusInternalServerError)
 		}))

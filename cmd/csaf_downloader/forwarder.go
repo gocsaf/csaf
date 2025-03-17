@@ -224,12 +224,12 @@ func (f *forwarder) storeFailed(filename, doc, sha256, sha512 string) {
 
 // limitedString reads max bytes from reader and returns it as a string.
 // Longer strings are indicated by "..." as a suffix.
-func limitedString(r io.Reader, max int) (string, error) {
+func limitedString(r io.Reader, maxLength int) (string, error) {
 	var msg strings.Builder
-	if _, err := io.Copy(&msg, io.LimitReader(r, int64(max))); err != nil {
+	if _, err := io.Copy(&msg, io.LimitReader(r, int64(maxLength))); err != nil {
 		return "", err
 	}
-	if msg.Len() >= max {
+	if msg.Len() >= maxLength {
 		msg.WriteString("...")
 	}
 	return msg.String(), nil
