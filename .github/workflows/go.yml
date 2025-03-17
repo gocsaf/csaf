@@ -31,10 +31,10 @@ jobs:
           gofmt-flags: "-l -d"
 
       - name: golint
-        uses: Jerome1337/golint-action@v1.0.2
+        uses: Jerome1337/golint-action@v1.0.3
 
       - name: Revive Action
-        uses: morphy2k/revive-action@v2.5.1
+        uses: morphy2k/revive-action@v2.7.4
 
       - name: Tests
         run: go test -v ./...
