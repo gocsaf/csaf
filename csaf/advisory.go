@@ -383,7 +383,6 @@ type Relationship struct {
 	FullProductName           *FullProductName      `json:"full_product_name"`            // required
 	ProductReference          *ProductID            `json:"product_reference"`            // required
 	RelatesToProductReference *ProductID            `json:"relates_to_product_reference"` // required
-
 }
 
 // Relationships is a list of Relationship.
