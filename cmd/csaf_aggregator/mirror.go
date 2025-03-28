@@ -103,9 +103,13 @@ func (w *worker) mirrorInternal() (*csaf.AggregatorCSAFProvider, error) {
 	}
 
 	// Add us as a mirror.
+	mirror, err := w.getProviderBaseURL()
+	if err != nil {
+		return nil, err
+	}
 	mirrorURL := csaf.ProviderURL(
-		fmt.Sprintf("%s/.well-known/csaf-aggregator/%s/provider-metadata.json",
-			w.processor.cfg.Domain, w.provider.Name))
+		mirror.JoinPath("provider-metadata.json").String(),
+	)
 
 	acp.Mirrors = []csaf.ProviderURL{
 		mirrorURL,
@@ -128,8 +132,12 @@ func (w *worker) writeProviderMetadata() error {
 
 	fname := filepath.Join(w.dir, "provider-metadata.json")
 
+	prefixURL, err := w.getProviderBaseURL()
+	if err != nil {
+		return err
+	}
 	pm := csaf.NewProviderMetadataPrefix(
-		w.processor.cfg.Domain+"/.well-known/csaf-aggregator/"+w.provider.Name,
+		prefixURL.String(),
 		w.labelsFromSummaries())
 
 	// Fill in directory URLs if needed.
@@ -139,9 +147,8 @@ func (w *worker) writeProviderMetadata() error {
 			labels = append(labels, label)
 		}
 		sort.Strings(labels)
-		prefix := w.processor.cfg.Domain + "/.well-known/csaf-aggregator/" + w.provider.Name + "/"
 		for _, label := range labels {
-			pm.AddDirectoryDistribution(prefix + label)
+			pm.AddDirectoryDistribution(prefixURL.JoinPath(label).String())
 		}
 	}
 
@@ -188,9 +195,12 @@ func (w *worker) mirrorPGPKeys(pm *csaf.ProviderMetadata) error {
 		return err
 	}
 
+	keyURL, err := w.getProviderBaseURL()
+	if err != nil {
+		return err
+	}
 	localKeyURL := func(fingerprint string) string {
-		return fmt.Sprintf("%s/.well-known/csaf-aggregator/%s/openpgp/%s.asc",
-			w.processor.cfg.Domain, w.provider.Name, fingerprint)
+		return keyURL.JoinPath("openpgp").JoinPath(fingerprint + ".asc").String()
 	}
 
 	for i := range pm.PGPKeys {
@@ -240,8 +250,8 @@ func (w *worker) mirrorPGPKeys(pm *csaf.ProviderMetadata) error {
 		}
 
 		// replace the URL
-		url := localKeyURL(fingerprint)
-		pgpKey.URL = &url
+		u := localKeyURL(fingerprint)
+		pgpKey.URL = &u
 	}
 
 	// If we have public key configured copy it into the new folder
@@ -308,7 +318,7 @@ func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error
 	var (
 		lastUpdated = csaf.TimeStamp(lastUpdatedT)
 		role        = csaf.MetadataRole(roleS)
-		url         = csaf.ProviderURL(urlS)
+		providerURL = csaf.ProviderURL(urlS)
 	)
 
 	return &csaf.AggregatorCSAFProvider{
@@ -316,7 +326,7 @@ func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error
 			LastUpdated: &lastUpdated,
 			Publisher:   &pub,
 			Role:        &role,
-			URL:         &url,
+			URL:         &providerURL,
 		},
 	}, nil
 }
