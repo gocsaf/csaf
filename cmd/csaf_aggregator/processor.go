@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -110,6 +111,18 @@ func (w *worker) locateProviderMetadata(domain string) error {
 	w.loc = lpmd.URL
 
 	return nil
+}
+
+// getProviderBaseURL returns the base URL for the provider.
+func (w *worker) getProviderBaseURL() (*url.URL, error) {
+	baseURL, err := url.Parse(w.processor.cfg.Domain)
+	if err != nil {
+		return nil, err
+	}
+	baseURL = baseURL.JoinPath(".well-known").
+		JoinPath("csaf-aggregator").
+		JoinPath(w.provider.Name)
+	return baseURL, nil
 }
 
 // removeOrphans removes the directories that are not in the providers list.
