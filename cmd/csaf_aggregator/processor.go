@@ -119,9 +119,9 @@ func (w *worker) getProviderBaseURL() (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
-	baseURL = baseURL.JoinPath(".well-known").
-		JoinPath("csaf-aggregator").
-		JoinPath(w.provider.Name)
+	baseURL = baseURL.JoinPath(".well-known",
+		"csaf-aggregator",
+		w.provider.Name)
 	return baseURL, nil
 }
 

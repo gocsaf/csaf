@@ -200,7 +200,7 @@ func (w *worker) mirrorPGPKeys(pm *csaf.ProviderMetadata) error {
 		return err
 	}
 	localKeyURL := func(fingerprint string) string {
-		return keyURL.JoinPath("openpgp").JoinPath(fingerprint + ".asc").String()
+		return keyURL.JoinPath("openpgp", (fingerprint + ".asc")).String()
 	}
 
 	for i := range pm.PGPKeys {

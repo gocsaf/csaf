@@ -187,7 +187,7 @@ func (w *worker) writeROLIENoSummaries(label string) error {
 	if err != nil {
 		return err
 	}
-	feedURL = feedURL.JoinPath(labelFolder).JoinPath(fname)
+	feedURL = feedURL.JoinPath(labelFolder, fname)
 
 	links := []csaf.Link{{
 		Rel:  "self",
@@ -234,7 +234,7 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 	if err != nil {
 		return err
 	}
-	feedURL = feedURL.JoinPath(labelFolder).JoinPath(fname)
+	feedURL = feedURL.JoinPath(labelFolder, fname)
 
 	entries := make([]*csaf.Entry, len(summaries))
 
@@ -250,9 +250,9 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 		if err != nil {
 			return err
 		}
-		csafURLString := csafURL.JoinPath(label).
-			JoinPath(strconv.Itoa(s.summary.InitialReleaseDate.Year())).
-			JoinPath(s.filename).String()
+		csafURLString := csafURL.JoinPath(label,
+			strconv.Itoa(s.summary.InitialReleaseDate.Year()),
+			s.filename).String()
 
 		entries[i] = &csaf.Entry{
 			ID:        s.summary.ID,
@@ -365,7 +365,7 @@ func (w *worker) writeService() error {
 		if err != nil {
 			return err
 		}
-		hrefURL = hrefURL.JoinPath(ts).JoinPath(feedName)
+		hrefURL = hrefURL.JoinPath(ts, feedName)
 
 		collection := csaf.ROLIEServiceWorkspaceCollection{
 			Title:      "CSAF feed (TLP:" + strings.ToUpper(ts) + ")",
