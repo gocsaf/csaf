@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2022 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2022 Intevation GmbH <https://intevation.de>
@@ -12,7 +12,6 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -20,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/csaf-poc/csaf_distribution/v3/csaf"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 const (
@@ -184,19 +183,26 @@ func (w *worker) writeROLIENoSummaries(label string) error {
 
 	fname := "csaf-feed-tlp-" + labelFolder + ".json"
 
-	feedURL := w.processor.cfg.Domain + "/.well-known/csaf-aggregator/" +
-		w.provider.Name + "/" + labelFolder + "/" + fname
+	feedURL, err := w.getProviderBaseURL()
+	if err != nil {
+		return err
+	}
+	feedURL = feedURL.JoinPath(labelFolder, fname)
 
 	links := []csaf.Link{{
 		Rel:  "self",
-		HRef: feedURL,
+		HRef: feedURL.String(),
 	}}
 
 	if w.provider.serviceDocument(w.processor.cfg) {
+		serviceURL, err := w.getProviderBaseURL()
+		if err != nil {
+			return err
+		}
+		serviceURL = serviceURL.JoinPath("service.json")
 		links = append(links, csaf.Link{
-			Rel: "service",
-			HRef: w.processor.cfg.Domain + "/.well-known/csaf-aggregator/" +
-				w.provider.Name + "/service.json",
+			Rel:  "service",
+			HRef: serviceURL.String(),
 		})
 	}
 
@@ -224,8 +230,11 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 
 	fname := "csaf-feed-tlp-" + labelFolder + ".json"
 
-	feedURL := w.processor.cfg.Domain + "/.well-known/csaf-aggregator/" +
-		w.provider.Name + "/" + labelFolder + "/" + fname
+	feedURL, err := w.getProviderBaseURL()
+	if err != nil {
+		return err
+	}
+	feedURL = feedURL.JoinPath(labelFolder, fname)
 
 	entries := make([]*csaf.Entry, len(summaries))
 
@@ -237,10 +246,13 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 	for i := range summaries {
 		s := &summaries[i]
 
-		csafURL := w.processor.cfg.Domain + "/.well-known/csaf-aggregator/" +
-			w.provider.Name + "/" + label + "/" +
-			strconv.Itoa(s.summary.InitialReleaseDate.Year()) + "/" +
-			s.filename
+		csafURL, err := w.getProviderBaseURL()
+		if err != nil {
+			return err
+		}
+		csafURLString := csafURL.JoinPath(label,
+			strconv.Itoa(s.summary.InitialReleaseDate.Year()),
+			s.filename).String()
 
 		entries[i] = &csaf.Entry{
 			ID:        s.summary.ID,
@@ -248,15 +260,15 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 			Published: csaf.TimeStamp(s.summary.InitialReleaseDate),
 			Updated:   csaf.TimeStamp(s.summary.CurrentReleaseDate),
 			Link: []csaf.Link{
-				{Rel: "self", HRef: csafURL},
-				{Rel: "hash", HRef: csafURL + ".sha256"},
-				{Rel: "hash", HRef: csafURL + ".sha512"},
-				{Rel: "signature", HRef: csafURL + ".asc"},
+				{Rel: "self", HRef: csafURLString},
+				{Rel: "hash", HRef: csafURLString + ".sha256"},
+				{Rel: "hash", HRef: csafURLString + ".sha512"},
+				{Rel: "signature", HRef: csafURLString + ".asc"},
 			},
 			Format: format,
 			Content: csaf.Content{
 				Type: "application/json",
-				Src:  csafURL,
+				Src:  csafURLString,
 			},
 		}
 		if s.summary.Summary != "" {
@@ -268,14 +280,18 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 
 	links := []csaf.Link{{
 		Rel:  "self",
-		HRef: feedURL,
+		HRef: feedURL.String(),
 	}}
 
 	if w.provider.serviceDocument(w.processor.cfg) {
+		serviceURL, err := w.getProviderBaseURL()
+		if err != nil {
+			return err
+		}
+		serviceURL = serviceURL.JoinPath("service.json")
 		links = append(links, csaf.Link{
-			Rel: "service",
-			HRef: w.processor.cfg.Domain + "/.well-known/csaf-aggregator/" +
-				w.provider.Name + "/service.json",
+			Rel:  "service",
+			HRef: serviceURL.String(),
 		})
 	}
 
@@ -345,12 +361,15 @@ func (w *worker) writeService() error {
 	for _, ts := range labels {
 		feedName := "csaf-feed-tlp-" + ts + ".json"
 
-		href := w.processor.cfg.Domain + "/.well-known/csaf-aggregator/" +
-			w.provider.Name + "/" + ts + "/" + feedName
+		hrefURL, err := w.getProviderBaseURL()
+		if err != nil {
+			return err
+		}
+		hrefURL = hrefURL.JoinPath(ts, feedName)
 
 		collection := csaf.ROLIEServiceWorkspaceCollection{
 			Title:      "CSAF feed (TLP:" + strings.ToUpper(ts) + ")",
-			HRef:       href,
+			HRef:       hrefURL.String(),
 			Categories: categories,
 		}
 		collections = append(collections, collection)
@@ -377,7 +396,7 @@ func (w *worker) writeIndices() error {
 	}
 
 	for label, summaries := range w.summaries {
-		log.Printf("%s: %d\n", label, len(summaries))
+		w.log.Debug("Writing indices", "label", label, "summaries.num", len(summaries))
 		if err := w.writeInterims(label, summaries); err != nil {
 			return err
 		}

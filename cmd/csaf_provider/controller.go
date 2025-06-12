@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2021 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2021 Intevation GmbH <https://intevation.de>
@@ -174,7 +174,7 @@ func (c *controller) web(
 // writeJSON sets the header for the response and writes the JSON encoding of the given "content".
 // It logs out an error message in case of an error.
 func writeJSON(rw http.ResponseWriter, content any, code int) {
-	rw.Header().Set("Content-type", "application/json; charset=utf-8")
+	rw.Header().Set("Content-type", "application/json")
 	rw.Header().Set("X-Content-Type-Options", "nosniff")
 	rw.WriteHeader(code)
 	if err := json.NewEncoder(rw).Encode(content); err != nil {

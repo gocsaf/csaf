@@ -1,7 +1,28 @@
-# csaf_distribution
+<!--
+ This file is Free Software under the Apache-2.0 License
+ without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 
-An implementation of a
-[CSAF 2.0](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html)
+ SPDX-License-Identifier: Apache-2.0
+
+ SPDX-FileCopyrightText: 2024 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
+ Software-Engineering: 2024 Intevation GmbH <https://intevation.de>
+-->
+
+
+> [!IMPORTANT]
+> To avoid future breakage, if you still use `csaf-poc`:
+> 1. Adjust your HTML links.
+> 2. Adjust your go module paths, see [#579](https://github.com/gocsaf/csaf/issues/579#issuecomment-2497244379).
+>
+> (This repository was moved here on 2024-10-28. The old one is deprecated
+> and redirection will be switched off a few months later.)
+
+
+# csaf
+
+Implements a [CSAF](https://oasis-open.github.io/csaf-documentation/)
+([specification v2.0](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
+and its [errata](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html))
 trusted provider, checker, aggregator and downloader.
 Includes an uploader command line tool for the trusted provider.
 
@@ -31,10 +52,10 @@ is a CSAF Aggregator, to list or mirror providers.
 ## Other stuff
 
 ### [examples](./examples/README.md)
-are small examples of how to use `github.com/csaf-poc/csaf_distribution`
+are small examples of how to use `github.com/gocsaf/csaf`
 as an API. Currently this is a work in progress, as usage of this repository
 as a library to access is _not officially supported_, e.g.
-see https://github.com/csaf-poc/csaf_distribution/issues/367 .
+see https://github.com/gocsaf/csaf/issues/367 .
 
 ## Setup
 Binaries for the server side are only available and tested
@@ -58,9 +79,9 @@ Download the binaries from the most recent release assets on Github.
 
 ### Build from sources
 
-- A recent version of **Go** (1.20+) should be installed. [Go installation](https://go.dev/doc/install)
+- A recent version of **Go** (1.23+) should be installed. [Go installation](https://go.dev/doc/install)
 
-- Clone the repository `git clone https://github.com/csaf-poc/csaf_distribution.git `
+- Clone the repository `git clone https://github.com/gocsaf/csaf.git `
 
 - Build Go components Makefile supplies the following targets:
 	- Build for GNU/Linux system: `make build_linux`
@@ -89,7 +110,7 @@ For further details of the development process consult our [development page](./
 
 ## License
 
-- `csaf_distribution` is licensed as Free Software under MIT License.
+- `csaf` is licensed as Free Software under the terms of the [Apache License, Version 2.0](./LICENSES/Apache-2.0.txt).
 
 - See the specific source files
   for details, the license itself can be found in the directory `LICENSES/`.

@@ -1,0 +1,26 @@
+name: Go
+
+on:
+  push:
+    paths:
+      - "**.go"
+  pull_request:
+    paths:
+      - "**.go"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'oldstable'
+
+      - name: Build
+        run: go build -v ./cmd/...
+
+      - name: Tests
+        run: go test -v ./...

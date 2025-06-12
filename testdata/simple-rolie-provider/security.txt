@@ -1,0 +1,2 @@
+CSAF: /provider-metadata.json
+

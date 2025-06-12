@@ -5,7 +5,9 @@ calls it a *CSAF publisher*.
 
 After manually downloading the advisories from such a publisher,
 the tools here can be used to offer the CSAF files for automated downloading
-as *CSAF aggregator*. (The construct is called *CSAF proxy provider*. See [Section 7.2.5](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html#725-role-csaf-aggregator) for more details.)
+as *CSAF aggregator*. (The construct is called *CSAF proxy provider*.
+See [Section 7.2.5](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#725-role-csaf-aggregator)
+for more details.)
 
 There are three necessary steps, easiest is to use
 one single virtual maschine (or container) per internal provider.

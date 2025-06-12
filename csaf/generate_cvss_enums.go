@@ -1,9 +1,9 @@
 //go:build ignore
 
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
@@ -14,21 +14,21 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"go/format"
 	"log"
 	"os"
-	"slices"
+	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 )
 
-const tmplText = `// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
-//
-// SPDX-License-Identifier: MIT
-//
-// SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
-// Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
+// We from Intevation consider the source code parts in the following
+// template file as too insignificant to be a piece of work that gains
+// "copyrights" protection in the European Union. So the license(s)
+// of the output files are fully determined by the input file.
+const tmplText = `// {{ $.License }}
 //
 // THIS FILE IS MACHINE GENERATED. EDIT WITH CARE!
 
@@ -69,6 +69,7 @@ type definition struct {
 }
 
 type schema struct {
+	License     []string               `json:"license"`
 	Definitions map[string]*definition `json:"definitions"`
 }
 
@@ -135,11 +136,24 @@ func main() {
 			defs = append(defs, k)
 		}
 	}
-	slices.Sort(defs)
+	sort.Strings(defs)
+
+	license := "determine license(s) from input file and replace this line"
+
+	pattern := regexp.MustCompile(`Copyright \(c\) (\d+), FIRST.ORG, INC.`)
+	for _, line := range s.License {
+		if m := pattern.FindStringSubmatch(line); m != nil {
+			license = fmt.Sprintf(
+				"SPDX-License-Identifier: BSD-3-Clause\n"+
+					"// SPDX-FileCopyrightText: %s FIRST.ORG, INC.", m[1])
+			break
+		}
+	}
 
 	var source bytes.Buffer
 
 	check(tmpl.Execute(&source, map[string]any{
+		"License":     license,
 		"Prefix":      *prefix,
 		"Definitions": s.Definitions,
 		"Keys":        defs,

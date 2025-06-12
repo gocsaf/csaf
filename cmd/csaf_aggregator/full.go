@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2022 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2022 Intevation GmbH <https://intevation.de>
@@ -11,15 +11,15 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/csaf-poc/csaf_distribution/v3/csaf"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 type fullJob struct {
@@ -29,11 +29,13 @@ type fullJob struct {
 	err                error
 }
 
-// setupProviderFull fetches the provider-metadate.json for a specific provider.
+// setupProviderFull fetches the provider-metadata.json for a specific provider.
 func (w *worker) setupProviderFull(provider *provider) error {
-	log.Printf("worker #%d: %s (%s)\n",
-		w.num, provider.Name, provider.Domain)
-
+	w.log.Info("Setting up provider",
+		"provider", slog.GroupValue(
+			slog.String("name", provider.Name),
+			slog.String("domain", provider.Domain),
+		))
 	w.dir = ""
 	w.provider = provider
 
@@ -55,7 +57,7 @@ func (w *worker) setupProviderFull(provider *provider) error {
 			"provider-metadata.json has %d validation issues", len(errors))
 	}
 
-	log.Printf("provider-metadata: %s\n", w.loc)
+	w.log.Info("Using provider-metadata", "url", w.loc)
 	return nil
 }
 
@@ -79,7 +81,7 @@ func (w *worker) fullWork(wg *sync.WaitGroup, jobs <-chan *fullJob) {
 func (p *processor) full() error {
 
 	if p.cfg.runAsMirror() {
-		log.Println("Running in aggregator mode")
+		p.log.Info("Running in aggregator mode")
 
 		// check if we need to setup a remote validator
 		if p.cfg.RemoteValidatorOptions != nil {
@@ -96,16 +98,18 @@ func (p *processor) full() error {
 			}()
 		}
 	} else {
-		log.Println("Running in lister mode")
+		p.log.Info("Running in lister mode")
 	}
 
 	queue := make(chan *fullJob)
 	var wg sync.WaitGroup
 
-	log.Printf("Starting %d workers.\n", p.cfg.Workers)
+	p.log.Info("Starting workers...", "num", p.cfg.Workers)
+
 	for i := 1; i <= p.cfg.Workers; i++ {
 		wg.Add(1)
 		w := newWorker(i, p)
+
 		go w.fullWork(&wg, queue)
 	}
 
@@ -135,12 +139,22 @@ func (p *processor) full() error {
 	for i := range jobs {
 		j := &jobs[i]
 		if j.err != nil {
-			log.Printf("error: '%s' failed: %v\n", j.provider.Name, j.err)
+			p.log.Error("Job execution failed",
+				slog.Group("job",
+					slog.Group("provider"),
+					"name", j.provider.Name,
+				),
+				"err", j.err,
+			)
 			continue
 		}
 		if j.aggregatorProvider == nil {
-			log.Printf(
-				"error: '%s' does not produce any result.\n", j.provider.Name)
+			p.log.Error("Job did not produce any result",
+				slog.Group("job",
+					slog.Group("provider"),
+					"name", j.provider.Name,
+				),
+			)
 			continue
 		}
 

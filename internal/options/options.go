@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
@@ -12,13 +12,14 @@ package options
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
+
+	"github.com/gocsaf/csaf/v3/util"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/go-homedir"
-
-	"github.com/csaf-poc/csaf_distribution/v3/util"
 )
 
 // Parser helps parsing command line arguments and loading
@@ -145,5 +146,15 @@ func loadTOML(cfg any, path string) error {
 func ErrorCheck(err error) {
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
+	}
+}
+
+// ErrorCheckStructured checks if err is not nil and terminates the program if
+// so. This is similar to [ErrorCheck], but uses [slog] instead of the
+// non-structured Go logging.
+func ErrorCheckStructured(err error) {
+	if err != nil {
+		slog.Error("Error while executing program", "err", err)
+		os.Exit(1)
 	}
 }

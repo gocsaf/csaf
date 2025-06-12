@@ -7,9 +7,9 @@ jobs:
     steps:
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.21.0
+          go-version: '^1.23.6'
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -17,7 +17,7 @@ jobs:
           node-version: 16
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Execute the scripts
         run: |
@@ -25,7 +25,7 @@ jobs:
           sudo apt install -y make nginx fcgiwrap gnutls-bin
           cp -r $GITHUB_WORKSPACE ~
           cd ~
-          cd csaf_distribution/docs/scripts/
+          cd csaf/docs/scripts/
           # keep in sync with docs/scripts/Readme.md
           export FOLDERNAME=devca1 ORGANAME="CSAF Tools Development (internal)"
           source ./TLSConfigsForITest.sh
@@ -36,7 +36,7 @@ jobs:
         shell: bash
 
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
             name: checker-results
             path: |

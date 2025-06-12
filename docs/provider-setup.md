@@ -78,6 +78,9 @@ server {
 
         # directory listings
         autoindex on;
+
+        # allow others web applications to get the static information
+        add_header Access-Control-Allow-Origin "*";
     }
 
     # enable CGI
@@ -115,7 +118,7 @@ sudo chmod g+r,o-rwx /etc/csaf/config.toml
 
 Here is a minimal example configuration,
 which you need to customize for a production setup,
-see the [options of `csaf_provider`](https://github.com/csaf-poc/csaf_distribution/blob/main/docs/csaf_provider.md).
+see the [options of `csaf_provider`](https://github.com/gocsaf/csaf/blob/main/docs/csaf_provider.md).
 
 <!-- MARKDOWN-AUTO-DOCS:START (CODE:src=../docs/scripts/setupProviderForITest.sh&lines=94-101) -->
 <!-- The below code snippet is automatically added from ../docs/scripts/setupProviderForITest.sh -->
@@ -155,7 +158,7 @@ Again replacing `{clientCert.crt}` and `{clientKey.pem}` accordingly.
 
 
 To let nginx resolves the DNS record `csaf.data.security.domain.tld` to fulfill the [Requirement 10](https://docs.oasis-open.org/csaf/csaf/v2.0/cs01/csaf-v2.0-cs01.html#7110-requirement-10-dns-path) configure a new server block (virtual host) in a separated file under `/etc/nginx/available-sites/{DNSNAME}` like following:
-<!-- MARKDOWN-AUTO-DOCS:START (CODE:src=../docs/scripts/DNSConfigForItest.sh&lines=18-35) -->
+<!-- MARKDOWN-AUTO-DOCS:START (CODE:src=../docs/scripts/DNSConfigForItest.sh&lines=18-37) -->
 <!-- The below code snippet is automatically added from ../docs/scripts/DNSConfigForItest.sh -->
 ```sh
     server {

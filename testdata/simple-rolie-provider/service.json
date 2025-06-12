@@ -1,0 +1,23 @@
+{
+  "service": {
+    "workspace": [
+      {
+        "title": "CSAF feeds",
+        "collection": [
+          {
+            "title": "CSAF feed (TLP:WHITE)",
+            "href": "{{.URL}}/white/white-feed.json",
+            "categories": {
+              "category": [
+                {
+                  "scheme": "urn:ietf:params:rolie:category:information-type",
+                  "term": "csaf"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

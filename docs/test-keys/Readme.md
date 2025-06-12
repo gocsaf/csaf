@@ -1,6 +1,6 @@
 OpenPGP key-pairs for testing only.
 
-Note: as the keypairs wre fully public, **do not use them for production**.
+Note: as the keypairs are fully public, **do not use them for production**.
 Create your own keypair(s) with the security properties and operational
 security you need.
 

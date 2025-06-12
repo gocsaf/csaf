@@ -55,7 +55,7 @@ signing_key
 encryption_key
 non_repudiation
 
-dns_name = "*.local"
+dns_name = "*.test"
 dns_name = "localhost"
 
 serial = 010

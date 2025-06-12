@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2022 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2022 Intevation GmbH <https://intevation.de>
@@ -10,14 +10,15 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"net/url"
 	"os"
 	"path/filepath"
 
-	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/util"
 
-	"github.com/csaf-poc/csaf_distribution/v3/csaf"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/ProtonMail/gopenpgp/v2/crypto"
 )
 
 type processor struct {
@@ -26,6 +27,9 @@ type processor struct {
 
 	// remoteValidator is a globally configured remote validator.
 	remoteValidator csaf.RemoteValidator
+
+	// log is the structured logger for the whole processor.
+	log *slog.Logger
 }
 
 type summary struct {
@@ -48,6 +52,7 @@ type worker struct {
 	dir              string                      // Directory to store data to.
 	summaries        map[string][]summary        // the summaries of the advisories.
 	categories       map[string]util.Set[string] // the categories per label.
+	log              *slog.Logger                // the structured logger, supplied with the worker number.
 }
 
 func newWorker(num int, processor *processor) *worker {
@@ -55,6 +60,7 @@ func newWorker(num int, processor *processor) *worker {
 		num:       num,
 		processor: processor,
 		expr:      util.NewPathEval(),
+		log:       processor.log.With(slog.Int("worker", num)),
 	}
 }
 
@@ -84,22 +90,39 @@ func (w *worker) locateProviderMetadata(domain string) error {
 
 	lpmd := loader.Load(domain)
 
-	if w.processor.cfg.Verbose {
-		for i := range lpmd.Messages {
-			log.Printf(
-				"Loading provider-metadata.json of %q: %s\n",
-				domain, lpmd.Messages[i].Message)
-		}
-	}
-
 	if !lpmd.Valid() {
+		for i := range lpmd.Messages {
+			w.log.Error(
+				"Loading provider-metadata.json",
+				"domain", domain,
+				"message", lpmd.Messages[i].Message)
+		}
 		return fmt.Errorf("no valid provider-metadata.json found for '%s'", domain)
+	} else if w.processor.cfg.Verbose {
+		for i := range lpmd.Messages {
+			w.log.Debug(
+				"Loading provider-metadata.json",
+				"domain", domain,
+				"message", lpmd.Messages[i].Message)
+		}
 	}
 
 	w.metadataProvider = lpmd.Document
 	w.loc = lpmd.URL
 
 	return nil
+}
+
+// getProviderBaseURL returns the base URL for the provider.
+func (w *worker) getProviderBaseURL() (*url.URL, error) {
+	baseURL, err := url.Parse(w.processor.cfg.Domain)
+	if err != nil {
+		return nil, err
+	}
+	baseURL = baseURL.JoinPath(".well-known",
+		"csaf-aggregator",
+		w.provider.Name)
+	return baseURL, nil
 }
 
 // removeOrphans removes the directories that are not in the providers list.
@@ -141,7 +164,7 @@ func (p *processor) removeOrphans() error {
 
 		fi, err := entry.Info()
 		if err != nil {
-			log.Printf("error: %v\n", err)
+			p.log.Error("Could not retrieve file info", "err", err)
 			continue
 		}
 
@@ -153,13 +176,13 @@ func (p *processor) removeOrphans() error {
 		d := filepath.Join(path, entry.Name())
 		r, err := filepath.EvalSymlinks(d)
 		if err != nil {
-			log.Printf("error: %v\n", err)
+			p.log.Error("Could not evaluate symlink", "err", err)
 			continue
 		}
 
 		fd, err := os.Stat(r)
 		if err != nil {
-			log.Printf("error: %v\n", err)
+			p.log.Error("Could not retrieve file stats", "err", err)
 			continue
 		}
 
@@ -169,18 +192,18 @@ func (p *processor) removeOrphans() error {
 		}
 
 		// Remove the link.
-		log.Printf("removing link %s -> %s\n", d, r)
+		p.log.Info("Removing link", "path", fmt.Sprintf("%s -> %s", d, r))
 		if err := os.Remove(d); err != nil {
-			log.Printf("error: %v\n", err)
+			p.log.Error("Could not remove symlink", "err", err)
 			continue
 		}
 
 		// Only remove directories which are in our folder.
 		if rel, err := filepath.Rel(prefix, r); err == nil &&
 			rel == filepath.Base(r) {
-			log.Printf("removing directory %s\n", r)
+			p.log.Info("Remove directory", "path", r)
 			if err := os.RemoveAll(r); err != nil {
-				log.Printf("error: %v\n", err)
+				p.log.Error("Could not remove directory", "err", err)
 			}
 		}
 	}

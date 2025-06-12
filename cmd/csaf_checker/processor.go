@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2021 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2021 Intevation GmbH <https://intevation.de>
@@ -32,9 +32,8 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/time/rate"
 
-	"github.com/csaf-poc/csaf_distribution/v3/csaf"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/models"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 // topicMessages stores the collected topicMessages for a specific topic.
@@ -54,6 +53,8 @@ type processor struct {
 	pmd            any
 	keys           *crypto.KeyRing
 	labelChecker   labelChecker
+	timesChanges   map[string]time.Time
+	timesAdv       map[string]time.Time
 
 	invalidAdvisories      topicMessages
 	badFilenames           topicMessages
@@ -84,10 +85,8 @@ type reporter interface {
 	report(*processor, *Domain)
 }
 
-var (
-	// errContinue indicates that the current check should continue.
-	errContinue = errors.New("continue")
-)
+// errContinue indicates that the current check should continue.
+var errContinue = errors.New("continue")
 
 type whereType byte
 
@@ -139,7 +138,7 @@ func (m *topicMessages) info(format string, args ...any) {
 	m.add(InfoType, format, args...)
 }
 
-// use signals that we going to use this topic.
+// use signals that we're going to use this topic.
 func (m *topicMessages) use() {
 	if *m == nil {
 		*m = []Message{}
@@ -165,9 +164,8 @@ func (m *topicMessages) hasErrors() bool {
 	return false
 }
 
-// newProcessor returns an initilaized processor.
+// newProcessor returns an initialized processor.
 func newProcessor(cfg *config) (*processor, error) {
-
 	var validator csaf.RemoteValidator
 
 	if cfg.RemoteValidator != "" {
@@ -192,6 +190,9 @@ func newProcessor(cfg *config) (*processor, error) {
 			advisories:      map[csaf.TLPLabel]util.Set[string]{},
 			whiteAdvisories: map[identifier]bool{},
 		},
+		timesAdv:     map[string]time.Time{},
+		timesChanges: map[string]time.Time{},
+		noneTLS:      util.Set[string]{},
 	}, nil
 }
 
@@ -203,17 +204,17 @@ func (p *processor) close() {
 	}
 }
 
-// clean clears the fields values of the given processor.
-func (p *processor) clean() {
+// reset clears the fields values of the given processor.
+func (p *processor) reset() {
 	p.redirects = nil
-	p.noneTLS = nil
-	for k := range p.alreadyChecked {
-		delete(p.alreadyChecked, k)
-	}
 	p.pmdURL = ""
 	p.pmd256 = nil
 	p.pmd = nil
 	p.keys = nil
+	clear(p.alreadyChecked)
+	clear(p.noneTLS)
+	clear(p.timesAdv)
+	clear(p.timesChanges)
 
 	p.invalidAdvisories.reset()
 	p.badFilenames.reset()
@@ -240,7 +241,6 @@ func (p *processor) clean() {
 // Then it calls the report method on each report from the given "reporters" parameter for each domain.
 // It returns a pointer to the report and nil, otherwise an error.
 func (p *processor) run(domains []string) (*Report, error) {
-
 	report := Report{
 		Date:      ReportTime{Time: time.Now().UTC()},
 		Version:   util.SemVersion,
@@ -248,6 +248,8 @@ func (p *processor) run(domains []string) (*Report, error) {
 	}
 
 	for _, d := range domains {
+		p.reset()
+
 		if !p.checkProviderMetadata(d) {
 			// We cannot build a report if the provider metadata cannot be parsed.
 			log.Printf("Could not parse the Provider-Metadata.json of: %s\n", d)
@@ -288,7 +290,6 @@ func (p *processor) run(domains []string) (*Report, error) {
 		domain.Passed = rules.eval(p)
 
 		report.Domains = append(report.Domains, domain)
-		p.clean()
 	}
 
 	return &report, nil
@@ -296,7 +297,6 @@ func (p *processor) run(domains []string) (*Report, error) {
 
 // fillMeta fills the report with extra informations from provider metadata.
 func (p *processor) fillMeta(domain *Domain) error {
-
 	if p.pmd == nil {
 		return nil
 	}
@@ -322,7 +322,6 @@ func (p *processor) fillMeta(domain *Domain) error {
 // domainChecks compiles a list of checks which should be performed
 // for a given domain.
 func (p *processor) domainChecks(domain string) []func(*processor, string) error {
-
 	// If we have a direct domain url we dont need to
 	// perform certain checks.
 	direct := strings.HasPrefix(domain, "https://")
@@ -377,9 +376,6 @@ func (p *processor) checkDomain(domain string) error {
 // checkTLS parses the given URL to check its schema, as a result it sets
 // the value of "noneTLS" field if it is not HTTPS.
 func (p *processor) checkTLS(u string) {
-	if p.noneTLS == nil {
-		p.noneTLS = util.Set[string]{}
-	}
 	if x, err := url.Parse(u); err == nil && x.Scheme != "https" {
 		p.noneTLS.Add(u)
 	}
@@ -392,7 +388,6 @@ func (p *processor) markChecked(s string, mask whereType) bool {
 }
 
 func (p *processor) checkRedirect(r *http.Request, via []*http.Request) error {
-
 	url := r.URL.String()
 	p.checkTLS(url)
 	if p.redirects == nil {
@@ -430,16 +425,15 @@ func (p *processor) fullClient() util.Client {
 
 	hClient.Transport = &http.Transport{
 		TLSClientConfig: &tlsConfig,
+		Proxy:           http.ProxyFromEnvironment,
 	}
 
 	client := util.Client(&hClient)
 
 	// Add extra headers.
-	if len(p.cfg.ExtraHeader) > 0 {
-		client = &util.HeaderClient{
-			Client: client,
-			Header: p.cfg.ExtraHeader,
-		}
+	client = &util.HeaderClient{
+		Client: client,
+		Header: p.cfg.ExtraHeader,
 	}
 
 	// Add optional URL logging.
@@ -462,6 +456,7 @@ func (p *processor) basicClient() *http.Client {
 	if p.cfg.Insecure {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			Proxy:           http.ProxyFromEnvironment,
 		}
 		return &http.Client{Transport: tr}
 	}
@@ -494,7 +489,6 @@ func (p *processor) usedAuthorizedClient() bool {
 
 // rolieFeedEntries loads the references to the advisory files for a given feed.
 func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
-
 	client := p.httpClient()
 	res, err := client.Get(feed)
 	p.badDirListings.use()
@@ -545,10 +539,9 @@ func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
 	var files []csaf.AdvisoryFile
 
 	rfeed.Entries(func(entry *csaf.Entry) {
-
 		// Filter if we have date checking.
 		if accept := p.cfg.Range; accept != nil {
-			if pub := time.Time(entry.Published); !pub.IsZero() && !accept.Contains(pub) {
+			if t := time.Time(entry.Updated); !t.IsZero() && !accept.Contains(t) {
 				return
 			}
 		}
@@ -594,11 +587,17 @@ func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
 
 		var file csaf.AdvisoryFile
 
-		if sha256 != "" || sha512 != "" || sign != "" {
-			file = csaf.HashedAdvisoryFile{url, sha256, sha512, sign}
-		} else {
-			file = csaf.PlainAdvisoryFile(url)
+		switch {
+		case sha256 == "" && sha512 != "":
+			p.badROLIEFeed.info("%s has no sha256 hash file listed", url)
+		case sha256 != "" && sha512 == "":
+			p.badROLIEFeed.info("%s has no sha512 hash file listed", url)
+		case sha256 == "" && sha512 == "":
+			p.badROLIEFeed.error("No hash listed on ROLIE feed %s", url)
+		case sign == "":
+			p.badROLIEFeed.error("No signature listed on ROLIE feed %s", url)
 		}
+		file = csaf.PlainAdvisoryFile{Path: url, SHA256: sha256, SHA512: sha512, Sign: sign}
 
 		files = append(files, file)
 	})
@@ -620,6 +619,8 @@ func makeAbsolute(base *url.URL) func(*url.URL) *url.URL {
 
 var yearFromURL = regexp.MustCompile(`.*/(\d{4})/[^/]+$`)
 
+// integrity checks several csaf.AdvisoryFiles for formal
+// mistakes, from conforming filenames to invalid advisories.
 func (p *processor) integrity(
 	files []csaf.AdvisoryFile,
 	base string,
@@ -667,11 +668,6 @@ func (p *processor) integrity(
 		var folderYear *int
 		if m := yearFromURL.FindStringSubmatch(u); m != nil {
 			year, _ := strconv.Atoi(m[1])
-			// Check if the year is in the accepted time interval.
-			if accept := p.cfg.Range; accept != nil &&
-				!accept.Intersects(models.Year(year)) {
-				continue
-			}
 			folderYear = &year
 		}
 
@@ -686,9 +682,9 @@ func (p *processor) integrity(
 			continue
 		}
 
-		// Warn if we do not get JSON.
+		// Error if we do not get JSON.
 		if ct := res.Header.Get("Content-Type"); ct != "application/json" {
-			lg(WarnType,
+			lg(ErrorType,
 				"The content type of %s should be 'application/json' but is '%s'",
 				u, ct)
 		}
@@ -740,32 +736,41 @@ func (p *processor) integrity(
 		// Check if file is in the right folder.
 		p.badFolders.use()
 
-		if date, err := p.expr.Eval(
-			`$.document.tracking.initial_release_date`, doc); err != nil {
-			p.badFolders.error(
-				"Extracting 'initial_release_date' from %s failed: %v", u, err)
-		} else if text, ok := date.(string); !ok {
-			p.badFolders.error("'initial_release_date' is not a string in %s", u)
-		} else if d, err := time.Parse(time.RFC3339, text); err != nil {
-			p.badFolders.error(
-				"Parsing 'initial_release_date' as RFC3339 failed in %s: %v", u, err)
-		} else if folderYear == nil {
+		switch date, fault := p.extractTime(doc, `initial_release_date`, u); {
+		case fault != "":
+			p.badFolders.error(fault)
+		case folderYear == nil:
 			p.badFolders.error("No year folder found in %s", u)
-		} else if d.UTC().Year() != *folderYear {
-			p.badFolders.error("%s should be in folder %d", u, d.UTC().Year())
+		case date.UTC().Year() != *folderYear:
+			p.badFolders.error("%s should be in folder %d", u, date.UTC().Year())
+		}
+		current, fault := p.extractTime(doc, `current_release_date`, u)
+		if fault != "" {
+			p.badChanges.error(fault)
+		} else {
+			p.timesAdv[f.URL()] = current
 		}
 
 		// Check hashes
 		p.badIntegrities.use()
 
-		for _, x := range []struct {
+		type hash struct {
 			ext  string
 			url  func() string
 			hash []byte
-		}{
-			{"SHA256", f.SHA256URL, s256.Sum(nil)},
-			{"SHA512", f.SHA512URL, s512.Sum(nil)},
-		} {
+		}
+		hashes := []hash{}
+		if f.SHA256URL() != "" {
+			hashes = append(hashes, hash{"SHA256", f.SHA256URL, s256.Sum(nil)})
+		}
+		if f.SHA512URL() != "" {
+			hashes = append(hashes, hash{"SHA512", f.SHA512URL, s512.Sum(nil)})
+		}
+
+		couldFetchHash := false
+		hashFetchErrors := []string{}
+
+		for _, x := range hashes {
 			hu, err := url.Parse(x.url())
 			if err != nil {
 				lg(ErrorType, "Bad URL %s: %v", x.url(), err)
@@ -776,14 +781,15 @@ func (p *processor) integrity(
 
 			p.checkTLS(hashFile)
 			if res, err = client.Get(hashFile); err != nil {
-				p.badIntegrities.error("Fetching %s failed: %v.", hashFile, err)
+				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: %v.", hashFile, err))
 				continue
 			}
 			if res.StatusCode != http.StatusOK {
-				p.badIntegrities.error("Fetching %s failed: Status code %d (%s)",
-					hashFile, res.StatusCode, res.Status)
+				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: Status code %d (%s)",
+					hashFile, res.StatusCode, res.Status))
 				continue
 			}
+			couldFetchHash = true
 			h, err := func() ([]byte, error) {
 				defer res.Body.Close()
 				return util.HashFromReader(res.Body)
@@ -801,6 +807,19 @@ func (p *processor) integrity(
 					x.ext, u, hashFile)
 			}
 		}
+
+		msgType := ErrorType
+		// Log only as warning, if the other hash could be fetched
+		if couldFetchHash {
+			msgType = WarnType
+		}
+		if f.IsDirectory() {
+			msgType = InfoType
+		}
+		for _, fetchError := range hashFetchErrors {
+			p.badIntegrities.add(msgType, fetchError)
+		}
+
 		// Check signature
 		su, err := url.Parse(f.SignURL())
 		if err != nil {
@@ -846,7 +865,46 @@ func (p *processor) integrity(
 		}
 	}
 
+	// If we tested an existing changes.csv
+	if len(p.timesAdv) > 0 && p.badChanges.used() {
+		// Iterate over all files again
+		for _, f := range files {
+			// If there was no previous error when extracting times from advisories and we have a valid time
+			if timeAdv, ok := p.timesAdv[f.URL()]; ok {
+				// If there was no previous error when extracting times from changes and the file was listed in changes.csv
+				if timeCha, ok := p.timesChanges[f.URL()]; ok {
+					// check if the time matches
+					if !timeAdv.Equal(timeCha) {
+						// if not, give an error and remove the pair so it isn't reported multiple times should integrity be called again
+						p.badChanges.error("Current release date in changes.csv and %s is not identical.", f.URL())
+						delete(p.timesAdv, f.URL())
+						delete(p.timesChanges, f.URL())
+					}
+				}
+			}
+		}
+	}
+
 	return nil
+}
+
+// extractTime extracts a time.Time value from a json document and returns it and an empty string or zero time alongside
+// a string representing the error message that prevented obtaining the proper time value.
+func (p *processor) extractTime(doc any, value string, u any) (time.Time, string) {
+	filter := "$.document.tracking." + value
+	date, err := p.expr.Eval(filter, doc)
+	if err != nil {
+		return time.Time{}, fmt.Sprintf("Extracting '%s' from %s failed: %v", value, u, err)
+	}
+	text, ok := date.(string)
+	if !ok {
+		return time.Time{}, fmt.Sprintf("'%s' is not a string in %s", value, u)
+	}
+	d, err := time.Parse(time.RFC3339, text)
+	if err != nil {
+		return time.Time{}, fmt.Sprintf("Parsing '%s' as RFC3339 failed in %s: %v", value, u, err)
+	}
+	return d, ""
 }
 
 // checkIndex fetches the "index.txt" and calls "checkTLS" method for HTTPS checks.
@@ -893,7 +951,8 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 				p.badIntegrities.error("index.txt contains invalid URL %q in line %d", u, line)
 				continue
 			}
-			files = append(files, csaf.PlainAdvisoryFile(u))
+
+			files = append(files, csaf.DirectoryAdvisoryFile{Path: u})
 		}
 		return files, scanner.Err()
 	}()
@@ -916,7 +975,6 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 // of the fields' values and if they are sorted properly. Then it passes the files to the
 // "integrity" functions. It returns error if some test fails, otherwise nil.
 func (p *processor) checkChanges(base string, mask whereType) error {
-
 	bu, err := url.Parse(base)
 	if err != nil {
 		return err
@@ -975,9 +1033,11 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 				continue
 			}
 			path := r[pathColumn]
+
 			times, files =
 				append(times, t),
-				append(files, csaf.PlainAdvisoryFile(path))
+				append(files, csaf.DirectoryAdvisoryFile{Path: path})
+			p.timesChanges[path] = t
 		}
 		return times, files, nil
 	}()
@@ -1149,7 +1209,6 @@ func (p *processor) checkMissing(string) error {
 // checkInvalid goes over all found adivisories URLs and checks
 // if file name conforms to standard.
 func (p *processor) checkInvalid(string) error {
-
 	p.badDirListings.use()
 	var invalids []string
 
@@ -1171,7 +1230,6 @@ func (p *processor) checkInvalid(string) error {
 // checkListing goes over all found adivisories URLs and checks
 // if their parent directory is listable.
 func (p *processor) checkListing(string) error {
-
 	p.badDirListings.use()
 
 	pgs := pages{}
@@ -1206,7 +1264,6 @@ func (p *processor) checkListing(string) error {
 // checkWhitePermissions checks if the TLP:WHITE advisories are
 // available with unprotected access.
 func (p *processor) checkWhitePermissions(string) error {
-
 	var ids []string
 	for id, open := range p.labelChecker.whiteAdvisories {
 		if !open {
@@ -1232,7 +1289,6 @@ func (p *processor) checkWhitePermissions(string) error {
 // According to the result, the respective error messages added to
 // badProviderMetadata.
 func (p *processor) checkProviderMetadata(domain string) bool {
-
 	p.badProviderMetadata.use()
 
 	client := p.httpClient()
@@ -1279,7 +1335,6 @@ func (p *processor) checkSecurity(domain string, legacy bool) (int, string) {
 
 // checkSecurityFolder checks the security.txt in a given folder.
 func (p *processor) checkSecurityFolder(folder string) string {
-
 	client := p.httpClient()
 	path := folder + "security.txt"
 	res, err := client.Get(path)
@@ -1344,50 +1399,52 @@ func (p *processor) checkSecurityFolder(folder string) string {
 
 // checkDNS checks if the "csaf.data.security.domain.tld" DNS record is available
 // and serves the "provider-metadata.json".
-// It returns an empty string if all checks are passed, otherwise the errormessage.
-func (p *processor) checkDNS(domain string) string {
-
+func (p *processor) checkDNS(domain string) {
+	p.badDNSPath.use()
 	client := p.httpClient()
 	path := "https://csaf.data.security." + domain
 	res, err := client.Get(path)
 	if err != nil {
-		return fmt.Sprintf("Fetching %s failed: %v", path, err)
+		p.badDNSPath.add(ErrorType,
+			fmt.Sprintf("Fetching %s failed: %v", path, err))
+		return
 	}
 	if res.StatusCode != http.StatusOK {
-		return fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
-			path, res.StatusCode, res.Status)
-
+		p.badDNSPath.add(ErrorType, fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
+			path, res.StatusCode, res.Status))
 	}
 	hash := sha256.New()
 	defer res.Body.Close()
 	content, err := io.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Sprintf("Error while reading the response from %s", path)
+		p.badDNSPath.add(ErrorType,
+			fmt.Sprintf("Error while reading the response from %s", path))
 	}
 	hash.Write(content)
 	if !bytes.Equal(hash.Sum(nil), p.pmd256) {
-		return fmt.Sprintf("%s does not serve the same provider-metadata.json as previously found", path)
+		p.badDNSPath.add(ErrorType,
+			fmt.Sprintf("%s does not serve the same provider-metadata.json as previously found",
+				path))
 	}
-	return ""
 }
 
-// checkWellknownMetadataReporter checks if the provider-metadata.json file is
-// available under the /.well-known/csaf/ directory. Returns the errormessage if
-// an error was encountered, or an empty string otherwise
-func (p *processor) checkWellknown(domain string) string {
+// checkWellknown checks if the provider-metadata.json file is
+// available under the /.well-known/csaf/ directory.
+func (p *processor) checkWellknown(domain string) {
 
+	p.badWellknownMetadata.use()
 	client := p.httpClient()
 	path := "https://" + domain + "/.well-known/csaf/provider-metadata.json"
 
 	res, err := client.Get(path)
 	if err != nil {
-		return fmt.Sprintf("Fetching %s failed: %v", path, err)
+		p.badWellknownMetadata.add(ErrorType,
+			fmt.Sprintf("Fetching %s failed: %v", path, err))
 	}
 	if res.StatusCode != http.StatusOK {
-		return fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
-			path, res.StatusCode, res.Status)
+		p.badWellknownMetadata.add(ErrorType, fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
+			path, res.StatusCode, res.Status))
 	}
-	return ""
 }
 
 // checkWellknownSecurityDNS
@@ -1399,66 +1456,49 @@ func (p *processor) checkWellknown(domain string) string {
 //  4. Finally it checks if the "csaf.data.security.domain.tld" DNS record
 //     is available and serves the "provider-metadata.json".
 //
-// /
-// If all three checks fail, errors are given,
-// otherwise warnings for all failed checks.
-// The function returns nil, unless errors outside the checks were found.
-// In that case, errors are returned.
+// For the security.txt checks, it first checks the default location.
+// Should this lookup fail, a warning is will be given and a lookup
+// for the legacy location will be made. If this fails as well, then an
+// error is given.
 func (p *processor) checkWellknownSecurityDNS(domain string) error {
-
-	warningsW := p.checkWellknown(domain)
+	p.checkWellknown(domain)
 	// Security check for well known (default) and legacy location
-	warningsS, sDMessage := p.checkSecurity(domain, false)
+	warnings, sDMessage := p.checkSecurity(domain, false)
 	// if the security.txt under .well-known was not okay
 	// check for a security.txt within its legacy location
 	sLMessage := ""
-	if warningsS == 1 {
-		warningsS, sLMessage = p.checkSecurity(domain, true)
+	if warnings == 1 {
+		warnings, sLMessage = p.checkSecurity(domain, true)
 	}
-	warningsD := p.checkDNS(domain)
 
-	p.badWellknownMetadata.use()
 	p.badSecurity.use()
-	p.badDNSPath.use()
 
-	var kind MessageType
-	if warningsS != 1 || warningsD == "" || warningsW == "" {
-		kind = WarnType
-	} else {
-		kind = ErrorType
-	}
-
-	// Info, Warning or Error depending on kind and warningS
-	kindSD := kind
-	if warningsS == 0 {
-		kindSD = InfoType
-	}
-	kindSL := kind
-	if warningsS == 2 {
-		kindSL = InfoType
+	// Report about Securitytxt:
+	// Only report about default location if it was succesful (0).
+	// Report default and legacy as errors if neither was succesful (1).
+	// Warn about missing security in the default position if not found
+	// but found in the legacy location, and inform about finding it there (2).
+	switch warnings {
+	case 0:
+		p.badSecurity.add(InfoType, sDMessage)
+	case 1:
+		p.badSecurity.add(ErrorType, sDMessage)
+		p.badSecurity.add(ErrorType, sLMessage)
+	case 2:
+		p.badSecurity.add(WarnType, sDMessage)
+		p.badSecurity.add(InfoType, sLMessage)
 	}
 
-	if warningsW != "" {
-		p.badWellknownMetadata.add(kind, warningsW)
-	}
-	p.badSecurity.add(kindSD, sDMessage)
-	// only if the well-known security.txt was not successful:
-	// report about the legacy location
-	if warningsS != 0 {
-		p.badSecurity.add(kindSL, sLMessage)
-	}
-	if warningsD != "" {
-		p.badDNSPath.add(kind, warningsD)
-	}
+	p.checkDNS(domain)
+
 	return nil
 }
 
 // checkPGPKeys checks if the OpenPGP keys are available and valid, fetches
-// the the remotely keys and compares the fingerprints.
-// As a result of these a respective error messages are passed to badPGP method
-// in case of errors. It returns nil if all checks are passed.
+// the remote pubkeys and compares the fingerprints.
+// As a result of these checks respective error messages are passed
+// to badPGP methods. It returns nil if all checks are passed.
 func (p *processor) checkPGPKeys(_ string) error {
-
 	p.badPGPs.use()
 
 	src, err := p.expr.Eval("$.public_openpgp_keys", p.pmd)
@@ -1517,14 +1557,13 @@ func (p *processor) checkPGPKeys(_ string) error {
 			defer res.Body.Close()
 			return crypto.NewKeyFromArmoredReader(res.Body)
 		}()
-
 		if err != nil {
 			p.badPGPs.error("Reading public OpenPGP key %s failed: %v", u, err)
 			continue
 		}
 
 		if !strings.EqualFold(ckey.GetFingerprint(), string(key.Fingerprint)) {
-			p.badPGPs.error("Fingerprint of public OpenPGP key %s does not match remotely loaded.", u)
+			p.badPGPs.error("Given Fingerprint (%q) of public OpenPGP key %q does not match remotely loaded (%q).", string(key.Fingerprint), u, ckey.GetFingerprint())
 			continue
 		}
 		if p.keys == nil {

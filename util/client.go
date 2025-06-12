@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2022 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2022 Intevation GmbH <https://intevation.de>
@@ -60,6 +60,11 @@ func (hc *HeaderClient) Do(req *http.Request) (*http.Response, error) {
 		for _, v := range values {
 			req.Header.Add(key, v)
 		}
+	}
+
+	// Use default user agent if none is set
+	if userAgent := hc.Header.Get("User-Agent"); userAgent == "" {
+		req.Header.Add("User-Agent", "csaf_distribution/"+SemVersion)
 	}
 	return hc.Client.Do(req)
 }

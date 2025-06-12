@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
@@ -37,10 +37,10 @@ func TestParse(t *testing.T) {
 		},
 		Usage:      "[OPTIONS] domain...",
 		HasVersion: func(cfg *config) bool { return cfg.Version },
-		SetDefaults: func(cfg *config) {
+		SetDefaults: func(_ *config) {
 		},
 		// Re-establish default values if not set.
-		EnsureDefaults: func(cfg *config) {
+		EnsureDefaults: func(_ *config) {
 		},
 	}
 
@@ -157,7 +157,6 @@ func TestErrorCheck(t *testing.T) {
 		return
 	}
 	t.Fatalf("process ran with err %v, want exit status 1", err)
-
 }
 
 // TestSecondPassCommandlineParsing checks if the second pass
@@ -168,7 +167,7 @@ func TestSecondPassCommandlineParsing(t *testing.T) {
 
 	os.Args = []string{"cmd"}
 	p := Parser[config]{
-		ConfigLocation: func(cfg *config) string {
+		ConfigLocation: func(_ *config) string {
 			// This is a bit stupid.
 			os.Args = []string{"cmd", "--invalid"}
 			return "data/empty.toml"
@@ -188,7 +187,7 @@ func TestSecondPassCommandlineHelp(t *testing.T) {
 
 		os.Args = []string{"cmd"}
 		p := Parser[config]{
-			ConfigLocation: func(cfg *config) string {
+			ConfigLocation: func(_ *config) string {
 				// This is a bit stupid.
 				os.Args = []string{"cmd", "--help"}
 				return "data/empty.toml"

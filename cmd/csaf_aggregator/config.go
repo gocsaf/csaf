@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2022 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2022 Intevation GmbH <https://intevation.de>
@@ -12,7 +12,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
@@ -20,12 +20,12 @@ import (
 	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/csaf-poc/csaf_distribution/v3/csaf"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/certs"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/filter"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/models"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/options"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/certs"
+	"github.com/gocsaf/csaf/v3/internal/filter"
+	"github.com/gocsaf/csaf/v3/internal/models"
+	"github.com/gocsaf/csaf/v3/internal/options"
+	"github.com/gocsaf/csaf/v3/util"
 	"golang.org/x/time/rate"
 )
 
@@ -178,9 +178,11 @@ func (p *provider) ageAccept(c *config) func(time.Time) bool {
 	}
 
 	if c.Verbose {
-		log.Printf(
-			"Setting up filter to accept advisories within time range %s to %s\n",
-			r[0].Format(time.RFC3339), r[1].Format(time.RFC3339))
+		slog.Debug(
+			"Setting up filter to accept advisories within time range",
+			"from", r[0].Format(time.RFC3339),
+			"to", r[1].Format(time.RFC3339),
+		)
 	}
 	return r.Contains
 }
@@ -262,8 +264,14 @@ func (c *config) privateOpenPGPKey() (*crypto.Key, error) {
 	return c.key, c.keyErr
 }
 
-func (c *config) httpClient(p *provider) util.Client {
+// httpLog does structured logging in a [util.LoggingClient].
+func httpLog(method, url string) {
+	slog.Debug("http",
+		"method", method,
+		"url", url)
+}
 
+func (c *config) httpClient(p *provider) util.Client {
 	hClient := http.Client{}
 
 	var tlsConfig tls.Config
@@ -282,6 +290,7 @@ func (c *config) httpClient(p *provider) util.Client {
 
 	hClient.Transport = &http.Transport{
 		TLSClientConfig: &tlsConfig,
+		Proxy:           http.ProxyFromEnvironment,
 	}
 
 	client := util.Client(&hClient)
@@ -299,10 +308,18 @@ func (c *config) httpClient(p *provider) util.Client {
 			Client: client,
 			Header: c.ExtraHeader,
 		}
+	default:
+		client = &util.HeaderClient{
+			Client: client,
+			Header: http.Header{},
+		}
 	}
 
 	if c.Verbose {
-		client = &util.LoggingClient{Client: client}
+		client = &util.LoggingClient{
+			Client: client,
+			Log:    httpLog,
+		}
 	}
 
 	if p.Rate == nil && c.Rate == nil {
@@ -323,7 +340,6 @@ func (c *config) httpClient(p *provider) util.Client {
 }
 
 func (c *config) checkProviders() error {
-
 	if !c.AllowSingleProvider && len(c.Providers) < 2 {
 		return errors.New("need at least two providers")
 	}
@@ -393,6 +409,17 @@ func (c *config) setDefaults() {
 	}
 }
 
+// prepareLogging sets up the structured logging.
+func (c *config) prepareLogging() error {
+	ho := slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, &ho)
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
+	return nil
+}
+
 // compileIgnorePatterns compiles the configured patterns to be ignored.
 func (p *provider) compileIgnorePatterns() error {
 	pm, err := filter.NewPatternMatcher(p.IgnorePattern)
@@ -452,7 +479,6 @@ func (c *config) prepareCertificates() error {
 
 // prepare prepares internal state of a loaded configuration.
 func (c *config) prepare() error {
-
 	if len(c.Providers) == 0 {
 		return errors.New("no providers given in configuration")
 	}

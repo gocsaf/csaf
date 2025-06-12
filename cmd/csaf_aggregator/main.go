@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2022 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2022 Intevation GmbH <https://intevation.de>
@@ -11,10 +11,12 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	"github.com/csaf-poc/csaf_distribution/v3/internal/options"
+	"github.com/gocsaf/csaf/v3/internal/options"
+
 	"github.com/gofrs/flock"
 )
 
@@ -44,8 +46,9 @@ func lock(lockFile *string, fn func() error) error {
 
 func main() {
 	_, cfg, err := parseArgsConfig()
-	options.ErrorCheck(err)
-	options.ErrorCheck(cfg.prepare())
-	p := processor{cfg: cfg}
-	options.ErrorCheck(lock(cfg.LockFile, p.process))
+	cfg.prepareLogging()
+	options.ErrorCheckStructured(err)
+	options.ErrorCheckStructured(cfg.prepare())
+	p := processor{cfg: cfg, log: slog.Default()}
+	options.ErrorCheckStructured(lock(cfg.LockFile, p.process))
 }

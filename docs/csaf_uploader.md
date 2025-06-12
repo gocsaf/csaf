@@ -43,6 +43,12 @@ E.g. uploading a csaf-document
 
 which asks to enter a password interactively.
 
+To upload an already signed document, use the `-x` option
+```bash
+# Note: The file CSAF-document-1.json.asc must exist
+./csaf_uploader -x -a upload -I -t white -u https://localhost/cgi-bin/csaf_provider.go  CSAF-document-1.json
+```
+
 By default csaf_uploader will try to load a config file
 from the following places:
 

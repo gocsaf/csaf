@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2022 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2022 Intevation GmbH <https://intevation.de>
@@ -10,6 +10,8 @@ package util
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -55,8 +57,51 @@ func TestConformingFileName(t *testing.T) {
 	}
 }
 
-func TestNWriter(t *testing.T) {
+func TestIDMatchesFilename(t *testing.T) {
+	pathEval := NewPathEval()
 
+	doc := make(map[string]any)
+	doc["document"] = map[string]any{
+		"tracking": map[string]any{
+			"id": "valid.json",
+		},
+	}
+
+	if err := IDMatchesFilename(pathEval, doc, "valid.json"); err != nil {
+		t.Errorf("IDMatchesFilename: Expected nil, got %q", err)
+	}
+
+	if err := IDMatchesFilename(pathEval, doc, "different_file_name.json"); err == nil {
+		t.Error("IDMatchesFilename: Expected error, got nil")
+	}
+
+	doc["document"] = map[string]any{
+		"tracking": map[string]any{},
+	}
+	if err := IDMatchesFilename(pathEval, doc, "valid.json"); err == nil {
+		t.Error("IDMatchesFilename: Expected error, got nil")
+	}
+}
+
+func TestPathExists(t *testing.T) {
+	got, err := PathExists("/this/path/does/not/exist")
+	if err != nil {
+		t.Error(err)
+	}
+	if got != false {
+		t.Error("PathExists: Expected false, got true")
+	}
+	dir := t.TempDir()
+	got, err = PathExists(dir)
+	if err != nil {
+		t.Error(err)
+	}
+	if got != true {
+		t.Error("PathExists: Expected true, got false")
+	}
+}
+
+func TestNWriter(t *testing.T) {
 	msg := []byte("Gruß!\n")
 
 	first, second := msg[:len(msg)/2], msg[len(msg)/2:]
@@ -76,5 +121,95 @@ func TestNWriter(t *testing.T) {
 
 	if out := buf.Bytes(); !bytes.Equal(msg, out) {
 		t.Errorf("Expected %q, but got %q", msg, out)
+	}
+}
+
+func TestWriteToFile(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "test_file")
+	wt := bytes.NewBufferString("test_data")
+	if err := WriteToFile(filename, wt); err != nil {
+		t.Error(err)
+	}
+	fileData, err := os.ReadFile(filename)
+	if err != nil {
+		t.Error(err)
+	}
+	if !bytes.Equal(fileData, []byte("test_data")) {
+		t.Errorf("DeepCopy: Expected test_data, got %v", fileData)
+	}
+}
+
+func TestMakeUniqFile(t *testing.T) {
+	dir := t.TempDir()
+	_, file, err := MakeUniqFile(dir)
+	if err != nil {
+		t.Error(err)
+	}
+	if _, err = file.Write([]byte("test_data")); err != nil {
+		t.Error(err)
+	}
+	if err = file.Close(); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_mkUniq(t *testing.T) {
+	dir := t.TempDir()
+	name, err := mkUniq(dir+"/", func(_ string) error {
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	firstTime := true
+	name1, err := mkUniq(dir+"/", func(_ string) error {
+		if firstTime {
+			firstTime = false
+			return os.ErrExist
+		}
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	if name == name1 {
+		t.Errorf("mkUniq: Expected unique names, got %v and %v", name, name1)
+	}
+}
+
+func TestDeepCopy(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "src/folder0"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "dst"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "dst1"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "src/folder0/test_file"), []byte("test_data"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := DeepCopy(filepath.Join(dir, "dst"), filepath.Join(dir, "src")); err != nil {
+		t.Error(err)
+	}
+
+	fileData, err := os.ReadFile(filepath.Join(dir, "dst/folder0/test_file"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !bytes.Equal(fileData, []byte("test_data")) {
+		t.Errorf("DeepCopy: Expected test_data, got %v", fileData)
+	}
+
+	if err = DeepCopy("/path/does/not/exist", filepath.Join(dir, "src")); err == nil {
+		t.Error("DeepCopy: Expected error, got nil")
+	}
+
+	if err = DeepCopy(filepath.Join(dir, "dst1"), "/path/does/not/exist"); err == nil {
+		t.Error("DeepCopy: Expected error, got nil")
 	}
 }

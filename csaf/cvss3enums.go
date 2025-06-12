@@ -1,10 +1,5 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
-//
-// SPDX-License-Identifier: MIT
-//
-// SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
-// Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
+// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-FileCopyrightText: 2017 FIRST.ORG, INC.
 //
 // THIS FILE IS MACHINE GENERATED. EDIT WITH CARE!
 

@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
@@ -170,30 +170,6 @@ func TestTimeRangeIntersects(t *testing.T) {
 		}
 		if got1 != x.expected {
 			t.Fatalf("%v: got %t expected %t", x.ranges, got1, x.expected)
-		}
-	}
-}
-
-// TestTimeRangeYear checks if the Year construction works.
-func TestTimeRangeYear(t *testing.T) {
-	var (
-		year   = Year(1984)
-		first  = time.Date(1984, time.January, 1, 0, 0, 0, 0, time.UTC)
-		before = first.Add(-time.Nanosecond)
-		after  = time.Date(1984+1, time.January, 1, 0, 0, 0, 0, time.UTC)
-		last   = after.Add(-time.Nanosecond)
-	)
-	for _, x := range []struct {
-		t        time.Time
-		expected bool
-	}{
-		{t: first, expected: true},
-		{t: before, expected: false},
-		{t: last, expected: true},
-		{t: after, expected: false},
-	} {
-		if got := year.Contains(x.t); got != x.expected {
-			t.Fatalf("%v: got %t expected %t", x.t, got, x.expected)
 		}
 	}
 }

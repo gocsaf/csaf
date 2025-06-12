@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
@@ -29,14 +29,6 @@ func NewTimeInterval(a, b time.Time) TimeRange {
 		a, b = b, a
 	}
 	return TimeRange{a, b}
-}
-
-// Year returns the time range for a given year.
-func Year(year int) TimeRange {
-	return TimeRange{
-		time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC),
-		time.Date(year, time.December, 31, 23, 59, 59, int(time.Second-time.Nanosecond), time.UTC),
-	}
 }
 
 // guessDate tries to guess an RFC 3339 date time from a given string.

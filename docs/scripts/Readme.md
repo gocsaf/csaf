@@ -1,6 +1,7 @@
-Scripts for assisting the Integration tests. They are written on Ubuntu 20.04 TLS amd64.
+Scripts for assisting the Integration tests.
+They were written on Ubuntu 20.04 TLS amd64 and also tested with 24.04 TLS.
 
-- `prepareUbunutForITest.sh` installs the required packages for the csaf_distribution integration tests on a naked ubuntu 20.04 LTS amd64.
+- `prepareUbuntuInstanceForITests.sh` installs the required packages for the csaf integration tests on a naked Ubuntu LTS amd64.
 
 - `TLSConfigsForITest.sh` generates a root CA and webserver cert by running `createRootCAForITest.sh` and `createWebserverCertForITest.sh`
 and configures nginx for serving TLS connections.
@@ -11,13 +12,13 @@ and configures nginx for serving TLS connections.
 
 As creating the folders needs to authenticate with the csaf_provider, the configurations of TLS server and Client certificate authentication should be set. So it is recommended to call the scripts in this order: `TLSConfigsForITest.sh`, `TLSClientConfigsForITest.sh`, `setupProviderForITest.sh`
 
-Calling example (as root):
+Calling example (as user with sudo privileges):
 ``` bash
-    curl --fail -O https://raw.githubusercontent.com/csaf-poc/csaf_distribution/main/docs/scripts/prepareUbuntuInstanceForITests.sh
-    bash prepareUbuntuInstanceForITests.sh
+    curl --fail -O https://raw.githubusercontent.com/gocsaf/csaf/main/docs/scripts/prepareUbuntuInstanceForITests.sh
+    sudo bash prepareUbuntuInstanceForITests.sh
 
-    git clone https://github.com/csaf-poc/csaf_distribution.git # --branch <name>
-    pushd csaf_distribution/docs/scripts/
+    git clone https://github.com/gocsaf/csaf.git # --branch <name>
+    pushd csaf/docs/scripts/
 
     export FOLDERNAME=devca1 ORGANAME="CSAF Tools Development (internal)"
     source ./TLSConfigsForITest.sh

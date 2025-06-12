@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2022 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2022 Intevation GmbH <https://intevation.de>
@@ -13,17 +13,16 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
-	"golang.org/x/exp/slog"
-
-	"github.com/csaf-poc/csaf_distribution/v3/internal/certs"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/filter"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/models"
-	"github.com/csaf-poc/csaf_distribution/v3/internal/options"
+	"github.com/gocsaf/csaf/v3/internal/certs"
+	"github.com/gocsaf/csaf/v3/internal/filter"
+	"github.com/gocsaf/csaf/v3/internal/models"
+	"github.com/gocsaf/csaf/v3/internal/options"
 )
 
 const (
@@ -42,6 +41,13 @@ const (
 	validationUnsafe = validationMode("unsafe")
 )
 
+type hashAlgorithm string
+
+const (
+	algSha256 = hashAlgorithm("sha256")
+	algSha512 = hashAlgorithm("sha512")
+)
+
 type config struct {
 	Directory            string            `short:"d" long:"directory" description:"DIRectory to store the downloaded files in" value-name:"DIR" toml:"directory"`
 	Insecure             bool              `long:"insecure" description:"Do not check TLS certificates from provider" toml:"insecure"`
@@ -57,6 +63,8 @@ type config struct {
 	Folder               string            `long:"folder" short:"f" description:"Download into a given subFOLDER" value-name:"FOLDER" toml:"folder"`
 	IgnorePattern        []string          `long:"ignore_pattern" short:"i" description:"Do not download files if their URLs match any of the given PATTERNs" value-name:"PATTERN" toml:"ignore_pattern"`
 	ExtraHeader          http.Header       `long:"header" short:"H" description:"One or more extra HTTP header fields" toml:"header"`
+
+	EnumeratePMDOnly bool `long:"enumerate_pmd_only" description:"If this flag is set to true, the downloader will only enumerate valid provider metadata files, but not download documents" toml:"enumerate_pmd_only"`
 
 	RemoteValidator        string   `long:"validator" description:"URL to validate documents remotely" value-name:"URL" toml:"validator"`
 	RemoteValidatorCache   string   `long:"validator_cache" description:"FILE to cache remote validations" value-name:"FILE" toml:"validator_cache"`
@@ -78,6 +86,9 @@ type config struct {
 
 	clientCerts   []tls.Certificate
 	ignorePattern filter.PatternMatcher
+
+	//lint:ignore SA5008 We are using choice or than once: sha256, sha512
+	PreferredHash hashAlgorithm `long:"preferred_hash" choice:"sha256" choice:"sha512" value-name:"HASH" description:"HASH to prefer" toml:"preferred_hash"`
 }
 
 // configPaths are the potential file locations of the config file.
@@ -219,7 +230,7 @@ func (cfg *config) prepareLogging() error {
 		w = f
 	}
 	ho := slog.HandlerOptions{
-		//AddSource: true,
+		// AddSource: true,
 		Level:       cfg.LogLevel.Level,
 		ReplaceAttr: dropSubSeconds,
 	}

@@ -1,7 +1,7 @@
-// This file is Free Software under the MIT License
-// without warranty, see README.md and LICENSES/MIT.txt for details.
+// This file is Free Software under the Apache-2.0 License
+// without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 //
 // SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
@@ -12,16 +12,15 @@ import (
 	"bytes"
 	"crypto/tls"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/exp/slog"
-
-	"github.com/csaf-poc/csaf_distribution/v3/internal/misc"
-	"github.com/csaf-poc/csaf_distribution/v3/util"
+	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v3/util"
 )
 
 // failedForwardDir is the name of the special sub folder
@@ -107,16 +106,15 @@ func (f *forwarder) httpClient() util.Client {
 
 	hClient.Transport = &http.Transport{
 		TLSClientConfig: &tlsConfig,
+		Proxy:           http.ProxyFromEnvironment,
 	}
 
 	client := util.Client(&hClient)
 
 	// Add extra headers.
-	if len(f.cfg.ForwardHeader) > 0 {
-		client = &util.HeaderClient{
-			Client: client,
-			Header: f.cfg.ForwardHeader,
-		}
+	client = &util.HeaderClient{
+		Client: client,
+		Header: f.cfg.ForwardHeader,
 	}
 
 	// Add optional URL logging.
@@ -226,12 +224,12 @@ func (f *forwarder) storeFailed(filename, doc, sha256, sha512 string) {
 
 // limitedString reads max bytes from reader and returns it as a string.
 // Longer strings are indicated by "..." as a suffix.
-func limitedString(r io.Reader, max int) (string, error) {
+func limitedString(r io.Reader, maxLength int) (string, error) {
 	var msg strings.Builder
-	if _, err := io.Copy(&msg, io.LimitReader(r, int64(max))); err != nil {
+	if _, err := io.Copy(&msg, io.LimitReader(r, int64(maxLength))); err != nil {
 		return "", err
 	}
-	if msg.Len() >= max {
+	if msg.Len() >= maxLength {
 		msg.WriteString("...")
 	}
 	return msg.String(), nil
