@@ -53,6 +53,7 @@ func (w *worker) setupProviderFull(provider *provider) error {
 		return err
 	}
 	if len(errors) > 0 {
+		w.log.Error("invalid prodivider-metadata.json", "err", errors)
 		return fmt.Errorf(
 			"provider-metadata.json has %d validation issues", len(errors))
 	}
@@ -79,7 +80,6 @@ func (w *worker) fullWork(wg *sync.WaitGroup, jobs <-chan *fullJob) {
 
 // full performs the complete lister/download
 func (p *processor) full() error {
-
 	if p.cfg.runAsMirror() {
 		p.log.Info("Running in aggregator mode")
 
