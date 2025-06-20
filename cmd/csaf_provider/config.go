@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"strings"
 
@@ -261,6 +262,14 @@ func loadConfig() (*config, error) {
 
 	if cfg.CanonicalURLPrefix == "" {
 		cfg.CanonicalURLPrefix = "https://" + os.Getenv("SERVER_NAME")
+	}
+	// Check if canonical url prefix is invalid
+	parsedURL, err := url.ParseRequestURI(cfg.CanonicalURLPrefix)
+	if err != nil {
+		return nil, err
+	}
+	if parsedURL.Scheme != "https" && parsedURL.Scheme != "http" {
+		return nil, fmt.Errorf("invalid canonical URL: %q", cfg.CanonicalURLPrefix)
 	}
 
 	if cfg.TLPs == nil {
