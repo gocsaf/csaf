@@ -47,7 +47,7 @@ tag_checked_out:
 #   In this case we might in some situations see an error like
 #   `/bin/bash: line 1: 2b55bbb: value too great for base (error token is "2b55bbb")`
 #   which can be ignored.
-GITDESC := $(shell git describe --tags --always 2>/dev/null || true)
+GITDESC := $(shell git describe --tags --always --dirty=-modified 2>/dev/null || true)
 CURRENT_FOLDER_NAME := $(notdir $(CURDIR))
 ifeq ($(strip $(GITDESC)),)
 SEMVER := $(CURRENT_FOLDER_NAME)
