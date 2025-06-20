@@ -253,12 +253,10 @@ func (p *processor) run(domains []string) (*Report, error) {
 		if !p.checkProviderMetadata(d) {
 			// We cannot build a report if the provider metadata cannot be parsed.
 			log.Printf("Could not parse the Provider-Metadata.json of: %s\n", d)
-			continue
 		}
 		if err := p.checkDomain(d); err != nil {
 			log.Printf("Failed to find valid provider-metadata.json for domain %s: %v. "+
 				"Continuing with next domain.", d, err)
-			continue
 		}
 		domain := &Domain{Name: d}
 
@@ -1431,7 +1429,6 @@ func (p *processor) checkDNS(domain string) {
 // checkWellknown checks if the provider-metadata.json file is
 // available under the /.well-known/csaf/ directory.
 func (p *processor) checkWellknown(domain string) {
-
 	p.badWellknownMetadata.use()
 	client := p.httpClient()
 	path := "https://" + domain + "/.well-known/csaf/provider-metadata.json"
