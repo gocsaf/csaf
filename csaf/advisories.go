@@ -12,6 +12,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"io"
 	"log/slog"
 	"net/http"
@@ -281,7 +282,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			slog.Error("Invalid URL in feed", "feed", *feed.URL, "err", err)
 			continue
 		}
-		feedURL := afp.base.ResolveReference(up)
+		feedURL := misc.JoinURL(afp.base, up)
 		slog.Info("Got feed URL", "feed", feedURL)
 
 		fb, err := util.BaseURL(feedURL)
@@ -294,6 +295,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			slog.Error("Cannot parse feed base URL", "url", fb, "err", err)
 			continue
 		}
+		feedBaseURL.Path = ""
 
 		res, err := afp.client.Get(feedURL.String())
 		if err != nil {
@@ -325,7 +327,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 				slog.Error("Invalid URL", "url", u, "err", err)
 				return ""
 			}
-			return feedBaseURL.ResolveReference(p).String()
+			return misc.JoinURL(feedBaseURL, p).String()
 		}
 
 		rfeed.Entries(func(entry *Entry) {

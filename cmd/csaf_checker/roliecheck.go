@@ -10,6 +10,7 @@ package main
 
 import (
 	"errors"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"net/http"
 	"net/url"
 	"sort"
@@ -221,6 +222,7 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 	if err != nil {
 		return err
 	}
+	base.Path = ""
 	p.badROLIEFeed.use()
 
 	advisories := map[*csaf.Feed][]csaf.AdvisoryFile{}
@@ -237,7 +239,7 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
 				continue
 			}
-			feedBase := base.ResolveReference(up)
+			feedBase := misc.JoinURL(base, up)
 			feedURL := feedBase.String()
 			p.checkTLS(feedURL)
 
@@ -270,7 +272,7 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 				continue
 			}
 
-			feedURL := base.ResolveReference(up)
+			feedURL := misc.JoinURL(base, up)
 			feedBase, err := util.BaseURL(feedURL)
 			if err != nil {
 				p.badProviderMetadata.error("Bad base path: %v", err)
@@ -290,7 +292,7 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 			// TODO: Issue a warning if we want check AMBER+ without an
 			// authorizing client.
 
-			if err := p.integrity(files, feedBase, rolieMask, p.badProviderMetadata.add); err != nil {
+			if err := p.integrity(files, base.String(), rolieMask, p.badProviderMetadata.add); err != nil {
 				if err != errContinue {
 					return err
 				}
@@ -325,7 +327,7 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 				continue
 			}
 
-			feedBase := base.ResolveReference(up)
+			feedBase := misc.JoinURL(base, up)
 			makeAbs := makeAbsolute(feedBase)
 			label := defaults(feed.TLPLabel, csaf.TLPLabelUnlabeled)
 

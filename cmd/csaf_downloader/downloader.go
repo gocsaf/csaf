@@ -229,6 +229,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 	if err != nil {
 		return fmt.Errorf("invalid URL '%s': %v", lpmd.URL, err)
 	}
+	base.Path = ""
 
 	expr := util.NewPathEval()
 
@@ -343,7 +344,7 @@ func (d *downloader) loadOpenPGPKeys(
 			continue
 		}
 
-		u := base.ResolveReference(up).String()
+		u := base.JoinPath(up.Path).String()
 
 		res, err := client.Get(u)
 		if err != nil {

@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"io"
 	"log"
 	"net/http"
@@ -631,7 +632,6 @@ func (p *processor) integrity(
 	if err != nil {
 		return err
 	}
-	makeAbs := makeAbsolute(b)
 	client := p.httpClient()
 
 	var data bytes.Buffer
@@ -642,9 +642,8 @@ func (p *processor) integrity(
 			lg(ErrorType, "Bad URL %s: %v", f, err)
 			continue
 		}
-		fp = makeAbs(fp)
 
-		u := b.ResolveReference(fp).String()
+		u := misc.JoinURL(b, fp).String()
 
 		// Should this URL be ignored?
 		if p.cfg.ignoreURL(u) {
@@ -776,8 +775,7 @@ func (p *processor) integrity(
 				lg(ErrorType, "Bad URL %s: %v", x.url(), err)
 				continue
 			}
-			hu = makeAbs(hu)
-			hashFile := b.ResolveReference(hu).String()
+			hashFile := misc.JoinURL(b, hu).String()
 
 			p.checkTLS(hashFile)
 			if res, err = client.Get(hashFile); err != nil {
@@ -826,8 +824,7 @@ func (p *processor) integrity(
 			lg(ErrorType, "Bad URL %s: %v", f.SignURL(), err)
 			continue
 		}
-		su = makeAbs(su)
-		sigFile := b.ResolveReference(su).String()
+		sigFile := misc.JoinURL(b, su).String()
 		p.checkTLS(sigFile)
 
 		p.badSignatures.use()
@@ -1374,7 +1371,7 @@ func (p *processor) checkSecurityFolder(folder string) string {
 		return err.Error()
 	}
 
-	u = base.ResolveReference(up).String()
+	u = misc.JoinURL(base, up).String()
 	p.checkTLS(u)
 	if res, err = client.Get(u); err != nil {
 		return fmt.Sprintf("Cannot fetch %s from security.txt: %v", u, err)
@@ -1526,6 +1523,7 @@ func (p *processor) checkPGPKeys(_ string) error {
 	if err != nil {
 		return err
 	}
+	base.Path = ""
 
 	for i := range keys {
 		key := &keys[i]
@@ -1539,7 +1537,7 @@ func (p *processor) checkPGPKeys(_ string) error {
 			continue
 		}
 
-		u := base.ResolveReference(up).String()
+		u := misc.JoinURL(base, up).String()
 		p.checkTLS(u)
 
 		res, err := client.Get(u)
