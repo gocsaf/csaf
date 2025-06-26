@@ -383,7 +383,6 @@ type Relationship struct {
 	FullProductName           *FullProductName      `json:"full_product_name"`            // required
 	ProductReference          *ProductID            `json:"product_reference"`            // required
 	RelatesToProductReference *ProductID            `json:"relates_to_product_reference"` // required
-
 }
 
 // Relationships is a list of Relationship.
@@ -446,7 +445,7 @@ type Flag struct {
 	Date       *string        `json:"date,omitempty"`
 	GroupIDs   *ProductGroups `json:"group_ids,omitempty"`
 	Label      *FlagLabel     `json:"label"` // required
-	ProductIds *Products      `json:"product_ids,omitempty"`
+	ProductIDs *Products      `json:"product_ids,omitempty"`
 }
 
 // Flags is a list if Flag elements.
@@ -609,8 +608,8 @@ type Remediation struct {
 	Date            *string              `json:"date,omitempty"`
 	Details         *string              `json:"details"` // required
 	Entitlements    []*string            `json:"entitlements,omitempty"`
-	GroupIds        *ProductGroups       `json:"group_ids,omitempty"`
-	ProductIds      *Products            `json:"product_ids,omitempty"`
+	GroupIDs        *ProductGroups       `json:"group_ids,omitempty"`
+	ProductIDs      *Products            `json:"product_ids,omitempty"`
 	RestartRequired *RestartRequired     `json:"restart_required,omitempty"`
 	URL             *string              `json:"url,omitempty"`
 }
@@ -741,8 +740,8 @@ type Threat struct {
 	Category   *ThreatCategory `json:"category"` // required
 	Date       *string         `json:"date,omitempty"`
 	Details    *string         `json:"details"` // required
-	GroupIds   *ProductGroups  `json:"group_ids,omitempty"`
-	ProductIds *Products       `json:"product_ids,omitempty"`
+	GroupIDs   *ProductGroups  `json:"group_ids,omitempty"`
+	ProductIDs *Products       `json:"product_ids,omitempty"`
 }
 
 // Threats is a list of Threat elements.
