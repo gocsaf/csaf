@@ -11,7 +11,6 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -91,7 +90,7 @@ func (p *processor) create() error {
 		Errors  []string `json:"errors"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
 		return err
 	}
 
@@ -115,7 +114,7 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 
 	if !p.cfg.NoSchemaCheck {
 		var doc any
-		if err := json.NewDecoder(bytes.NewReader(data)).Decode(&doc); err != nil {
+		if err := misc.StrictJSONParse(bytes.NewReader(data), &doc); err != nil {
 			return nil, err
 		}
 		errs, err := csaf.ValidateCSAF(doc)
@@ -201,7 +200,6 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 // process attemps to upload a file to the server.
 // It prints the response messages.
 func (p *processor) process(filename string) error {
-
 	if bn := filepath.Base(filename); !util.ConformingFileName(bn) {
 		return fmt.Errorf("%q is not a conforming file name", bn)
 	}
@@ -239,7 +237,7 @@ func (p *processor) process(filename string) error {
 		Errors      []string `json:"errors"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
 		return err
 	}
 
@@ -257,7 +255,6 @@ func (p *processor) process(filename string) error {
 }
 
 func (p *processor) run(args []string) error {
-
 	if p.cfg.Action == "create" {
 		if err := p.create(); err != nil {
 			return err

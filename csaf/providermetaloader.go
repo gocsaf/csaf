@@ -11,13 +11,13 @@ package csaf
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -33,7 +33,7 @@ type ProviderMetadataLoader struct {
 type ProviderMetadataLoadMessageType int
 
 const (
-	//JSONDecodingFailed indicates problems with JSON decoding
+	// JSONDecodingFailed indicates problems with JSON decoding
 	JSONDecodingFailed ProviderMetadataLoadMessageType = iota
 	// SchemaValidationFailed indicates a general problem with schema validation.
 	SchemaValidationFailed
@@ -113,7 +113,6 @@ func NewProviderMetadataLoader(client util.Client) *ProviderMetadataLoader {
 // As specified in CSAF 2.0, it looks for PMDs using the well-known URL and
 // the security.txt, and if no PMDs have been found, it also checks the DNS-URL.
 func (pmdl *ProviderMetadataLoader) Enumerate(domain string) []*LoadedProviderMetadata {
-
 	// Our array of PMDs to be found
 	var resPMDs []*LoadedProviderMetadata
 
@@ -149,14 +148,12 @@ func (pmdl *ProviderMetadataLoader) Enumerate(domain string) []*LoadedProviderMe
 	}
 	dnsURL := "https://csaf.data.security." + domain
 	return []*LoadedProviderMetadata{pmdl.loadFromURL(dnsURL)}
-
 }
 
 // Load loads one valid provider metadata for a given path.
 // If the domain starts with `https://` it only attempts to load
 // the data from that URL.
 func (pmdl *ProviderMetadataLoader) Load(domain string) *LoadedProviderMetadata {
-
 	// Check direct path
 	if strings.HasPrefix(domain, "https://") {
 		return pmdl.loadFromURL(domain)
@@ -235,7 +232,6 @@ func (pmdl *ProviderMetadataLoader) Load(domain string) *LoadedProviderMetadata 
 
 // loadFromSecurity loads the PMDs mentioned in the security.txt. Only valid PMDs are returned.
 func (pmdl *ProviderMetadataLoader) loadFromSecurity(domain string) []*LoadedProviderMetadata {
-
 	// If .well-known fails try legacy location.
 	for _, path := range []string{
 		"https://" + domain + "/.well-known/security.txt",
@@ -260,7 +256,6 @@ func (pmdl *ProviderMetadataLoader) loadFromSecurity(domain string) []*LoadedPro
 			defer res.Body.Close()
 			return ExtractProviderURL(res.Body, true)
 		}()
-
 		if err != nil {
 			pmdl.messages.Add(
 				HTTPFailed,
@@ -295,7 +290,6 @@ func (pmdl *ProviderMetadataLoader) loadFromSecurity(domain string) []*LoadedPro
 
 // loadFromURL loads a provider metadata from a given URL.
 func (pmdl *ProviderMetadataLoader) loadFromURL(path string) *LoadedProviderMetadata {
-
 	result := LoadedProviderMetadata{URL: path}
 
 	res, err := pmdl.client.Get(path)
@@ -323,7 +317,7 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(path string) *LoadedProviderMeta
 
 	var doc any
 
-	if err := json.NewDecoder(tee).Decode(&doc); err != nil {
+	if err := misc.StrictJSONParse(tee, &doc); err != nil {
 		result.Messages.Add(
 			JSONDecodingFailed,
 			fmt.Sprintf("JSON decoding failed: %v", err))

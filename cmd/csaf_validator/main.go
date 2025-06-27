@@ -10,7 +10,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -19,6 +18,7 @@ import (
 	"github.com/jessevdk/go-flags"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -112,7 +112,6 @@ func run(opts *options, files []string) error {
 		if err != nil {
 			log.Printf("error: validating %q against schema failed: %v\n",
 				file, err)
-
 		}
 		if len(validationErrs) > 0 {
 			exitCode |= exitCodeSchemaInvalid
@@ -213,7 +212,6 @@ func (mipl messageInstancePathsList) print(info string) {
 
 // printShort outputs the validation result in an aggregated version.
 func printShort(rvr *csaf.RemoteValidationResult) {
-
 	var errors, warnings, infos messageInstancePathsList
 
 	for i := range rvr.Tests {
@@ -262,7 +260,6 @@ func printRemoteValidationResult(
 	rvr *csaf.RemoteValidationResult,
 	accept func(*csaf.RemoteTest) bool,
 ) {
-
 	fmt.Printf("isValid: %t\n", rvr.Valid)
 	fmt.Println("tests:")
 	nl := false
@@ -301,7 +298,7 @@ func loadJSONFromFile(fname string) (any, error) {
 	}
 	defer f.Close()
 	var doc any
-	if err = json.NewDecoder(f).Decode(&doc); err != nil {
+	if err = misc.StrictJSONParse(f, &doc); err != nil {
 		return nil, err
 	}
 	return doc, err

@@ -14,6 +14,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -54,7 +55,7 @@ type ROLIEServiceDocument struct {
 // LoadROLIEServiceDocument loads a ROLIE service document from a reader.
 func LoadROLIEServiceDocument(r io.Reader) (*ROLIEServiceDocument, error) {
 	var rsd ROLIEServiceDocument
-	if err := json.NewDecoder(r).Decode(&rsd); err != nil {
+	if err := misc.StrictJSONParse(r, &rsd); err != nil {
 		return nil, err
 	}
 	return &rsd, nil
@@ -122,7 +123,7 @@ func (rcd *ROLIECategoryDocument) Merge(categories ...string) bool {
 // LoadROLIECategoryDocument loads a ROLIE category document from a reader.
 func LoadROLIECategoryDocument(r io.Reader) (*ROLIECategoryDocument, error) {
 	var rcd ROLIECategoryDocument
-	if err := json.NewDecoder(r).Decode(&rcd); err != nil {
+	if err := misc.StrictJSONParse(r, &rcd); err != nil {
 		return nil, err
 	}
 	return &rcd, nil
@@ -195,9 +196,8 @@ type ROLIEFeed struct {
 
 // LoadROLIEFeed loads a ROLIE feed from a reader.
 func LoadROLIEFeed(r io.Reader) (*ROLIEFeed, error) {
-	dec := json.NewDecoder(r)
 	var rf ROLIEFeed
-	if err := dec.Decode(&rf); err != nil {
+	if err := misc.StrictJSONParse(r, &rf); err != nil {
 		return nil, err
 	}
 	return &rf, nil
