@@ -13,7 +13,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,6 +24,7 @@ import (
 	"time"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -45,7 +45,6 @@ func (w *worker) checkInterims(
 	label string,
 	interims []interimsEntry,
 ) ([]interimsEntry, error) {
-
 	var data bytes.Buffer
 
 	labelPath := filepath.Join(tx.Src(), label)
@@ -81,7 +80,7 @@ func (w *worker) checkInterims(
 		if err := func() error {
 			defer res.Body.Close()
 			tee := io.TeeReader(res.Body, hasher)
-			return json.NewDecoder(tee).Decode(&doc)
+			return misc.StrictJSONParse(tee, &doc)
 		}(); err != nil {
 			return nil, err
 		}
@@ -252,7 +251,6 @@ func joinErrors(errs []error) error {
 
 // interim performs the short interim check/update.
 func (p *processor) interim() error {
-
 	if !p.cfg.runAsMirror() {
 		return errors.New("interim in lister mode does not work")
 	}
@@ -295,7 +293,6 @@ func (ie interimsEntry) path() string { return ie[1] }
 func (ie interimsEntry) url() string  { return ie[2] }
 
 func writeInterims(interimsCSV string, interims []interimsEntry) error {
-
 	if len(interims) == 0 {
 		return os.RemoveAll(interimsCSV)
 	}
@@ -331,7 +328,6 @@ func readInterims(
 	interimsCSV string,
 	tooOld func(time.Time) bool,
 ) ([]interimsEntry, []interimsEntry, error) {
-
 	interimsF, err := os.Open(interimsCSV)
 	if err != nil {
 		// None existing file -> no interims.

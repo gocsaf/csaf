@@ -12,7 +12,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"go/format"
@@ -22,6 +21,8 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+
+	"github.com/gocsaf/csaf/v3/internal/misc"
 )
 
 // We from Intevation consider the source code parts in the following
@@ -98,7 +99,7 @@ func loadSchema(filename string) (*schema, error) {
 	}
 	defer f.Close()
 	var s schema
-	if err := json.NewDecoder(f).Decode(&s); err != nil {
+	if err := misc.StrictJSONParse(f, &s); err != nil {
 		return nil, err
 	}
 	return &s, nil

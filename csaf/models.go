@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -575,7 +576,6 @@ func (d *Distribution) Validate() error {
 // Validate checks if the provider metadata is valid.
 // Returns an error if the validation fails otherwise nil.
 func (pmd *ProviderMetadata) Validate() error {
-
 	switch {
 	case pmd.CanonicalURL == nil:
 		return errors.New("canonical_url is mandatory")
@@ -648,7 +648,6 @@ func NewProviderMetadataDomain(domain string, tlps []TLPLabel) *ProviderMetadata
 // NewProviderMetadataPrefix creates a new provider with a given prefix
 // and tlps feeds.
 func NewProviderMetadataPrefix(prefix string, tlps []TLPLabel) *ProviderMetadata {
-
 	pm := NewProviderMetadata(
 		prefix + "/provider-metadata.json")
 
@@ -693,10 +692,8 @@ func (pmd *ProviderMetadata) WriteTo(w io.Writer) (int64, error) {
 
 // LoadProviderMetadata loads a metadata provider from a reader.
 func LoadProviderMetadata(r io.Reader) (*ProviderMetadata, error) {
-
 	var pmd ProviderMetadata
-	dec := json.NewDecoder(r)
-	if err := dec.Decode(&pmd); err != nil {
+	if err := misc.StrictJSONParse(r, &pmd); err != nil {
 		return nil, err
 	}
 

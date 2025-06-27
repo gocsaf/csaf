@@ -13,7 +13,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -31,6 +30,7 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -54,7 +54,6 @@ func (w *worker) mirror() (*csaf.AggregatorCSAFProvider, error) {
 }
 
 func (w *worker) mirrorInternal() (*csaf.AggregatorCSAFProvider, error) {
-
 	// Check if we are allowed to mirror this domain.
 	if !w.mirrorAllowed() {
 		return nil, fmt.Errorf(
@@ -97,7 +96,6 @@ func (w *worker) mirrorInternal() (*csaf.AggregatorCSAFProvider, error) {
 	}
 
 	acp, err := w.createAggregatorProvider()
-
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +127,6 @@ func (w *worker) labelsFromSummaries() []csaf.TLPLabel {
 
 // writeProviderMetadata writes a local provider metadata for a mirror.
 func (w *worker) writeProviderMetadata() error {
-
 	fname := filepath.Join(w.dir, "provider-metadata.json")
 
 	prefixURL, err := w.getProviderBaseURL()
@@ -333,7 +330,6 @@ func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error
 
 // doMirrorTransaction performs an atomic directory swap.
 func (w *worker) doMirrorTransaction() error {
-
 	webTarget := filepath.Join(
 		w.processor.cfg.Web, ".well-known", "csaf-aggregator", w.provider.Name)
 
@@ -442,7 +438,6 @@ func (w *worker) sign(data []byte) (string, error) {
 }
 
 func (w *worker) extractCategories(label string, advisory any) error {
-
 	// use provider or global categories
 	var categories []string
 	if w.provider.Categories != nil {
@@ -538,7 +533,7 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 
 		download := func(r io.Reader) error {
 			tee := io.TeeReader(r, hasher)
-			return json.NewDecoder(tee).Decode(&advisory)
+			return misc.StrictJSONParse(tee, &advisory)
 		}
 
 		if err := downloadJSON(w.client, file.URL(), download); err != nil {
@@ -627,7 +622,6 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 // If this fails it creates a signature itself with the configured key.
 func (w *worker) downloadSignatureOrSign(url, fname string, data []byte) error {
 	sig, err := w.downloadSignature(url)
-
 	if err != nil {
 		if err != errNotFound {
 			w.log.Error("Could not find signature URL", "url", url, "err", err)

@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -156,7 +157,6 @@ func prepareCache(config string) (cache, error) {
 
 	// Create the bucket.
 	if err := db.Update(func(tx *bolt.Tx) error {
-
 		// Create a new bucket with version set.
 		create := func() error {
 			b, err := tx.CreateBucket(validationsBucket)
@@ -180,7 +180,6 @@ func prepareCache(config string) (cache, error) {
 			return create()
 		}
 		return nil
-
 	}); err != nil {
 		db.Close()
 		return nil, err
@@ -256,7 +255,7 @@ func deserialize(value []byte) (*RemoteValidationResult, error) {
 	}
 	defer r.Close()
 	var rvr RemoteValidationResult
-	if err := json.NewDecoder(r).Decode(&rvr); err != nil {
+	if err := misc.StrictJSONParse(r, &rvr); err != nil {
 		return nil, err
 	}
 	return &rvr, nil
@@ -264,7 +263,6 @@ func deserialize(value []byte) (*RemoteValidationResult, error) {
 
 // Validate executes a remote validation of an advisory.
 func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
-
 	var key []byte
 
 	// First look into cache.
@@ -296,7 +294,6 @@ func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 		v.url,
 		"application/json",
 		bytes.NewReader(buf.Bytes()))
-
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +320,7 @@ func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 			// no cache -> process directly.
 			in = resp.Body
 		}
-		return json.NewDecoder(in).Decode(&rvr)
+		return misc.StrictJSONParse(in, &rvr)
 	}(); err != nil {
 		return nil, err
 	}
