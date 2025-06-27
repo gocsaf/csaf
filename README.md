@@ -9,14 +9,6 @@
 -->
 
 
-> [!IMPORTANT]
-> To avoid future breakage, if you still use `csaf-poc`:
-> 1. Adjust your HTML links.
-> 2. Adjust your go module paths, see [#579](https://github.com/gocsaf/csaf/issues/579#issuecomment-2497244379).
->
-> (This repository was moved here on 2024-10-28. The old one is deprecated
-> and redirection will be switched off a few months later.)
-
 
 # csaf
 
@@ -49,13 +41,21 @@ is a tool for testing a CSAF Trusted Provider according to [Section 7 of the CSA
 ### [csaf_aggregator](docs/csaf_aggregator.md)
 is a CSAF Aggregator, to list or mirror providers.
 
-## Other stuff
+
+## Use as go library
+
+The modules of this repository can be used as library from other Go applications. [ISDuBA](https://github.com/ISDuBA/ISDuBA) does so, for example.
+But there is only limited support, and thus it is _not officially supported_.
+There are plans to change this without concrete schedule, with a future major release, e.g. see [#367](https://github.com/gocsaf/csaf/issues/367).
+
+Initially envisioned as toolbox, it was not constructed as a library,
+and to name one issue, exposes to many functions.
+This leads to problems like [#634](https://github.com/gocsaf/csaf/issues/634), where we have to accept that with 3.2.0 there was an unintended API change,
+that we now have to live with.
 
 ### [examples](./examples/README.md)
-are small examples of how to use `github.com/gocsaf/csaf`
-as an API. Currently this is a work in progress, as usage of this repository
-as a library to access is _not officially supported_, e.g.
-see https://github.com/gocsaf/csaf/issues/367 .
+are small examples of how to use `github.com/gocsaf/csaf` as an API. Currently this is a work in progress.
+
 
 ## Setup
 Binaries for the server side are only available and tested
@@ -107,6 +107,14 @@ Binaries will be placed in directories named like `bin-linux-amd64/` and `bin-wi
 
 For further details of the development process consult our [development page](./docs/Development.md).
 
+## Previous repo URLs
+
+> [!NOTE]
+> To avoid future breakage, if you have `csaf-poc` in some of your URLs:
+> 1. Adjust your HTML links.
+> 2. Adjust your go module paths, see [#579](https://github.com/gocsaf/csaf/issues/579#issuecomment-2497244379).
+>
+> (This repository was moved here from https://github.com/csaf-poc/csaf_distribution on 2024-10-28. The old one is deprecated and redirection will be switched off somtimes in 2025.)
 
 ## License
 

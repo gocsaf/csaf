@@ -6,7 +6,11 @@
 // SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
 
-// Package csaf contains the core data models used by the csaf distribution.
+// Package csaf contains the core data models used by the csaf distribution
+// tools.
+//
+// See https://github.com/gocsaf/csaf/tab=readme-ov-file#use-as-go-library
+// about hints and limits for its use as a library.
 package csaf
 
 //go:generate go run ./generate_cvss_enums.go -o cvss20enums.go -i ./schema/cvss-v2.0.json -p CVSS20
