@@ -11,7 +11,6 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -91,7 +90,7 @@ func (p *processor) create() error {
 		Errors  []string `json:"errors"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
 		return err
 	}
 
@@ -115,7 +114,7 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 
 	if !p.cfg.NoSchemaCheck {
 		var doc any
-		if err := json.NewDecoder(bytes.NewReader(data)).Decode(&doc); err != nil {
+		if err := misc.StrictJSONParse(bytes.NewReader(data), &doc); err != nil {
 			return nil, err
 		}
 		errs, err := csaf.ValidateCSAF(doc)
@@ -239,7 +238,7 @@ func (p *processor) process(filename string) error {
 		Errors      []string `json:"errors"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
 		return err
 	}
 

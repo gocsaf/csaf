@@ -10,7 +10,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -19,6 +18,7 @@ import (
 	"github.com/jessevdk/go-flags"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -301,7 +301,7 @@ func loadJSONFromFile(fname string) (any, error) {
 	}
 	defer f.Close()
 	var doc any
-	if err = json.NewDecoder(f).Decode(&doc); err != nil {
+	if err = misc.StrictJSONParse(f, &doc); err != nil {
 		return nil, err
 	}
 	return doc, err

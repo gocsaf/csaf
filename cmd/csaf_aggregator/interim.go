@@ -13,7 +13,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,6 +24,7 @@ import (
 	"time"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -81,7 +81,7 @@ func (w *worker) checkInterims(
 		if err := func() error {
 			defer res.Body.Close()
 			tee := io.TeeReader(res.Body, hasher)
-			return json.NewDecoder(tee).Decode(&doc)
+			return misc.StrictJSONParse(tee, &doc)
 		}(); err != nil {
 			return nil, err
 		}

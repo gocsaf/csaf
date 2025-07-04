@@ -35,6 +35,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -551,7 +552,7 @@ func (dc *downloadContext) downloadAdvisory(
 
 	tee := io.TeeReader(resp.Body, hasher)
 
-	if err := json.NewDecoder(tee).Decode(&doc); err != nil {
+	if err := misc.StrictJSONParse(tee, &doc); err != nil {
 		dc.stats.downloadFailed++
 		slog.Warn("Downloading failed",
 			"url", file.URL(),

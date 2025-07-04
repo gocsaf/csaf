@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/gocsaf/csaf/v3/internal/misc"
 )
 
 // Acknowledgement reflects the 'acknowledgement' object in the list of acknowledgements.
@@ -383,7 +385,6 @@ type Relationship struct {
 	FullProductName           *FullProductName      `json:"full_product_name"`            // required
 	ProductReference          *ProductID            `json:"product_reference"`            // required
 	RelatesToProductReference *ProductID            `json:"relates_to_product_reference"` // required
-
 }
 
 // Relationships is a list of Relationship.
@@ -1391,7 +1392,7 @@ func LoadAdvisory(fname string) (*Advisory, error) {
 	}
 	defer f.Close()
 	var advisory Advisory
-	if err := json.NewDecoder(f).Decode(&advisory); err != nil {
+	if err := misc.StrictJSONParse(f, &advisory); err != nil {
 		return nil, err
 	}
 	if err := advisory.Validate(); err != nil {

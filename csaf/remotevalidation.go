@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -180,7 +181,6 @@ func prepareCache(config string) (cache, error) {
 			return create()
 		}
 		return nil
-
 	}); err != nil {
 		db.Close()
 		return nil, err
@@ -256,7 +256,7 @@ func deserialize(value []byte) (*RemoteValidationResult, error) {
 	}
 	defer r.Close()
 	var rvr RemoteValidationResult
-	if err := json.NewDecoder(r).Decode(&rvr); err != nil {
+	if err := misc.StrictJSONParse(r, &rvr); err != nil {
 		return nil, err
 	}
 	return &rvr, nil
@@ -323,7 +323,7 @@ func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 			// no cache -> process directly.
 			in = resp.Body
 		}
-		return json.NewDecoder(in).Decode(&rvr)
+		return misc.StrictJSONParse(in, &rvr)
 	}(); err != nil {
 		return nil, err
 	}

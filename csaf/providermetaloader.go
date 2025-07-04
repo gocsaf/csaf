@@ -11,13 +11,13 @@ package csaf
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -33,7 +33,7 @@ type ProviderMetadataLoader struct {
 type ProviderMetadataLoadMessageType int
 
 const (
-	//JSONDecodingFailed indicates problems with JSON decoding
+	// JSONDecodingFailed indicates problems with JSON decoding
 	JSONDecodingFailed ProviderMetadataLoadMessageType = iota
 	// SchemaValidationFailed indicates a general problem with schema validation.
 	SchemaValidationFailed
@@ -149,7 +149,6 @@ func (pmdl *ProviderMetadataLoader) Enumerate(domain string) []*LoadedProviderMe
 	}
 	dnsURL := "https://csaf.data.security." + domain
 	return []*LoadedProviderMetadata{pmdl.loadFromURL(dnsURL)}
-
 }
 
 // Load loads one valid provider metadata for a given path.
@@ -323,7 +322,7 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(path string) *LoadedProviderMeta
 
 	var doc any
 
-	if err := json.NewDecoder(tee).Decode(&doc); err != nil {
+	if err := misc.StrictJSONParse(tee, &doc); err != nil {
 		result.Messages.Add(
 			JSONDecodingFailed,
 			fmt.Sprintf("JSON decoding failed: %v", err))

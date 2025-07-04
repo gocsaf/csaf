@@ -15,10 +15,8 @@ import (
 	"crypto/sha512"
 	"crypto/tls"
 	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gocsaf/csaf/v3/internal/misc"
 	"io"
 	"log"
 	"net/http"
@@ -29,6 +27,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gocsaf/csaf/v3/internal/misc"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/time/rate"
@@ -518,7 +518,7 @@ func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
 			return nil, nil, fmt.Errorf("%s: %v", feed, err)
 		}
 		var rolieDoc any
-		err = json.NewDecoder(bytes.NewReader(all)).Decode(&rolieDoc)
+		err = misc.StrictJSONParse(bytes.NewReader(all), &rolieDoc)
 		return rfeed, rolieDoc, err
 	}()
 	if err != nil {
@@ -702,7 +702,7 @@ func (p *processor) integrity(
 		if err := func() error {
 			defer res.Body.Close()
 			tee := io.TeeReader(res.Body, hasher)
-			return json.NewDecoder(tee).Decode(&doc)
+			return misc.StrictJSONParse(tee, &doc)
 		}(); err != nil {
 			lg(ErrorType, "Reading %s failed: %v", u, err)
 			continue
@@ -1035,8 +1035,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 			}
 			path := r[pathColumn]
 
-			times, files =
-				append(times, t),
+			times, files = append(times, t),
 				append(files, csaf.DirectoryAdvisoryFile{Path: path})
 			p.timesChanges[path] = t
 		}

@@ -13,7 +13,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -31,6 +30,7 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -539,7 +539,7 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 
 		download := func(r io.Reader) error {
 			tee := io.TeeReader(r, hasher)
-			return json.NewDecoder(tee).Decode(&advisory)
+			return misc.StrictJSONParse(tee, &advisory)
 		}
 
 		if err := downloadJSON(w.client, file.URL(), download); err != nil {
@@ -628,7 +628,6 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 // If this fails it creates a signature itself with the configured key.
 func (w *worker) downloadSignatureOrSign(url, fname string, data []byte) error {
 	sig, err := w.downloadSignature(url)
-
 	if err != nil {
 		if err != errNotFound {
 			w.log.Error("Could not find signature URL", "url", url, "err", err)
