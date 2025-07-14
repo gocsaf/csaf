@@ -51,6 +51,12 @@ to download more advisories at once. This may improve the overall speed of the d
 However, since this also increases the load on the servers, their administrators could
 have taken countermeasures to limit this.
 
+For example, some providers may limit the rate of requests that may be send to retrieve advisories.
+This may cause the downloader to be unable to retrieve all advisories. In this case, the --rate option
+can be used to adjust the requests per second send by the downloader to an acceptable rate.
+(Which rate is deemed acceptable depends on the provider.)
+
+
 If no config file is explictly given the follwing places are searched for a config file:
 
 ```
