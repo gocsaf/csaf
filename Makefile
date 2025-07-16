@@ -12,15 +12,15 @@ SHELL = /bin/bash
 BUILD = go build
 MKDIR = mkdir -p
 
-.PHONY: build build_linux build_win build_mac_amd64 build_mac_arm64 tag_checked_out mostlyclean
+.PHONY: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 tag_checked_out mostlyclean
 
 all:
-	@echo choose a target from: build build_linux build_win build_mac_amd64 build_mac_arm64 mostlyclean
+	@echo choose a target from: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 mostlyclean
 	@echo prepend \`make BUILDTAG=1\` to checkout the highest git tag before building
 	@echo or set BUILDTAG to a specific tag
 
 # Build all binaries
-build: build_linux build_win build_mac_amd64 build_mac_arm64
+build: build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64
 
 # if BUILDTAG == 1 set it to the highest git tag
 ifeq ($(strip $(BUILDTAG)),1)
@@ -29,7 +29,7 @@ endif
 
 ifdef BUILDTAG
 # add the git tag checkout to the requirements of our build targets
-build_linux build_win build_mac_amd64 build_mac_arm64: tag_checked_out
+build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64: tag_checked_out
 endif
 
 tag_checked_out:
@@ -69,31 +69,49 @@ LDFLAGS = -ldflags "-X github.com/gocsaf/csaf/v3/util.SemVersion=$(SEMVER)"
 # Build binaries and place them under bin-$(GOOS)-$(GOARCH)
 # Using 'Target-specific Variable Values' to specify the build target system
 
-GOARCH = amd64
-build_linux: GOOS = linux
-build_win: GOOS = windows
-build_mac_amd64: GOOS = darwin
+build_linux: GOOS=linux
+build_linux: GOARCH=amd64
 
-build_mac_arm64: GOARCH = arm64
-build_mac_arm64: GOOS = darwin
+build_win: GOOS=windows
+build_win: GOARCH=amd64
 
-build_linux build_win build_mac_amd64 build_mac_arm64:
+build_mac_amd64: GOOS=darwin
+build_mac_amd64: GOARCH=amd64
+
+build_mac_arm64: GOOS=darwin
+build_mac_arm64: GOARCH=arm64
+
+build_linux_arm64: GOOS=linux
+build_linux_arm64: GOARCH=arm64
+
+build_win_arm64: GOOS=windows
+build_win_arm64: GOARCH=arm64
+
+build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64:
 	$(eval BINDIR = bin-$(GOOS)-$(GOARCH)/ )
 	$(MKDIR) $(BINDIR)
 	env GOARCH=$(GOARCH) GOOS=$(GOOS) $(BUILD) -o $(BINDIR) $(LDFLAGS) -v ./cmd/...
 
 
 DISTDIR := csaf-$(SEMVER)
-dist: build_linux build_win build_mac_amd64 build_mac_arm64
+dist: build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64
 	mkdir -p dist
 	mkdir -p dist/$(DISTDIR)-windows-amd64/bin-windows-amd64
+	mkdir -p dist/$(DISTDIR)-windows-arm64/bin-windows-arm64
 	cp README.md dist/$(DISTDIR)-windows-amd64
+	cp README.md dist/$(DISTDIR)-windows-arm64
 	cp bin-windows-amd64/csaf_uploader.exe bin-windows-amd64/csaf_validator.exe \
 	  bin-windows-amd64/csaf_checker.exe bin-windows-amd64/csaf_downloader.exe \
 	  dist/$(DISTDIR)-windows-amd64/bin-windows-amd64/
+	cp bin-windows-arm64/csaf_uploader.exe bin-windows-arm64/csaf_validator.exe \
+	  bin-windows-arm64/csaf_checker.exe bin-windows-arm64/csaf_downloader.exe \
+	  dist/$(DISTDIR)-windows-arm64/bin-windows-arm64/
 	mkdir -p dist/$(DISTDIR)-windows-amd64/docs
+	mkdir -p dist/$(DISTDIR)-windows-arm64/docs
 	cp docs/csaf_uploader.md docs/csaf_validator.md docs/csaf_checker.md \
 	  docs/csaf_downloader.md dist/$(DISTDIR)-windows-amd64/docs
+	cp docs/csaf_uploader.md docs/csaf_validator.md docs/csaf_checker.md \
+	  docs/csaf_downloader.md dist/$(DISTDIR)-windows-arm64/docs
 	mkdir -p dist/$(DISTDIR)-macos/bin-darwin-amd64 \
 		     dist/$(DISTDIR)-macos/bin-darwin-arm64 \
 			 dist/$(DISTDIR)-macos/docs
@@ -103,15 +121,20 @@ dist: build_linux build_win build_mac_amd64 build_mac_arm64
 		cp docs/$${f}.md dist/$(DISTDIR)-macos/docs ; \
 	done
 	mkdir dist/$(DISTDIR)-gnulinux-amd64
+	mkdir dist/$(DISTDIR)-gnulinux-arm64
 	cp -r README.md bin-linux-amd64 dist/$(DISTDIR)-gnulinux-amd64
+	cp -r README.md bin-linux-arm64 dist/$(DISTDIR)-gnulinux-arm64
 	# adjust which docs to copy
 	mkdir -p dist/tmp_docs
 	cp -r docs/examples dist/tmp_docs
 	cp docs/*.md dist/tmp_docs
 	cp -r dist/tmp_docs dist/$(DISTDIR)-gnulinux-amd64/docs
+	cp -r dist/tmp_docs dist/$(DISTDIR)-gnulinux-arm64/docs
 	rm -rf dist/tmp_docs
 	cd dist/ ; zip -r $(DISTDIR)-windows-amd64.zip $(DISTDIR)-windows-amd64/
+	cd dist/ ; zip -r $(DISTDIR)-windows-arm64.zip $(DISTDIR)-windows-arm64/
 	cd dist/ ; tar -cvmlzf $(DISTDIR)-gnulinux-amd64.tar.gz $(DISTDIR)-gnulinux-amd64/
+	cd dist/ ; tar -cvmlzf $(DISTDIR)-gnulinux-arm64.tar.gz $(DISTDIR)-gnulinux-arm64/
 	cd dist/ ; tar -cvmlzf $(DISTDIR)-macos.tar.gz $(DISTDIR)-macos
 
 # Remove bin-*-* and dist directories
