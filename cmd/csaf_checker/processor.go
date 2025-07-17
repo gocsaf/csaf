@@ -636,6 +636,7 @@ func (p *processor) integrity(
 	if err != nil {
 		return err
 	}
+	b.Path = ""
 	client := p.httpClient()
 
 	var data bytes.Buffer
@@ -953,7 +954,7 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 				continue
 			}
 
-			files = append(files, csaf.DirectoryAdvisoryFile{Path: u})
+			files = append(files, csaf.DirectoryAdvisoryFile{Path: bu.JoinPath(u).String()})
 		}
 		return files, scanner.Err()
 	}()
@@ -1036,7 +1037,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 			path := r[pathColumn]
 
 			times, files = append(times, t),
-				append(files, csaf.DirectoryAdvisoryFile{Path: path})
+				append(files, csaf.DirectoryAdvisoryFile{Path: bu.JoinPath(path).String()})
 			p.timesChanges[path] = t
 		}
 		return times, files, nil
