@@ -12,6 +12,10 @@ import "net/url"
 
 // JoinURL joins the two URLs while preserving the query and fragment part of the latter.
 func JoinURL(baseURL *url.URL, relativeURL *url.URL) *url.URL {
+	// Check if we already have an absolute url
+	if relativeURL.Host != "" && relativeURL.Host != baseURL.Host && relativeURL.Scheme == "https" {
+		return relativeURL
+	}
 	u := baseURL.JoinPath(relativeURL.Path)
 	u.RawQuery = relativeURL.RawQuery
 	u.RawFragment = relativeURL.RawFragment
