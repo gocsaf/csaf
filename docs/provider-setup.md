@@ -144,7 +144,7 @@ on a GNU/Linux operating system.
 
 Create the folders:
 ```(shell)
-curl https://192.168.56.102/cgi-bin/csaf_provider.go/create --cert-type p12 --cert {clientCertificat.p12}
+curl https://192.168.56.102/cgi-bin/csaf_provider.go/api/create --cert-type p12 --cert {clientCertificat.p12}
 ```
 Replace {clientCertificate.p12} with the client certificate file
 in pkcs12 format which includes the corresponding key as well.
