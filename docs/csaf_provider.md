@@ -58,7 +58,8 @@ The following example file documents all available configuration options:
 # The following shows an example of a manually set prefix:
 #canonical_url_prefix  = "https://localhost"
 
-# Require users to use a password and a valid Client Certificate for write access.
+# Require users to use both
+# (1) a password and (2) a valid Client Certificate for write access.
 #certificate_and_password = false
 
 # Allow the user to send the request without having to send a passphrase
