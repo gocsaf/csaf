@@ -82,7 +82,7 @@ func (p *processor) create() error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Create failed: %s\n", resp.Status)
+		return fmt.Errorf("create failed: %s", resp.Status)
 	}
 
 	var result struct {
