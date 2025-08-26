@@ -628,14 +628,9 @@ var yearFromURL = regexp.MustCompile(`.*/(\d{4})/[^/]+$`)
 // mistakes, from conforming filenames to invalid advisories.
 func (p *processor) integrity(
 	files []csaf.AdvisoryFile,
-	base string,
 	mask whereType,
 	lg func(MessageType, string, ...any),
 ) error {
-	b, err := url.Parse(base)
-	if err != nil {
-		return err
-	}
 	client := p.httpClient()
 
 	var data bytes.Buffer
@@ -647,7 +642,7 @@ func (p *processor) integrity(
 			continue
 		}
 
-		u := misc.JoinURL(b, fp).String()
+		u := fp.String()
 
 		// Should this URL be ignored?
 		if p.cfg.ignoreURL(u) {
@@ -779,7 +774,7 @@ func (p *processor) integrity(
 				lg(ErrorType, "Bad URL %s: %v", x.url(), err)
 				continue
 			}
-			hashFile := misc.JoinURL(b, hu).String()
+			hashFile := hu.String()
 
 			p.checkTLS(hashFile)
 			if res, err = client.Get(hashFile); err != nil {
@@ -828,7 +823,7 @@ func (p *processor) integrity(
 			lg(ErrorType, "Bad URL %s: %v", f.SignURL(), err)
 			continue
 		}
-		sigFile := misc.JoinURL(b, su).String()
+		sigFile := su.String()
 		p.checkTLS(sigFile)
 
 		p.badSignatures.use()
@@ -948,12 +943,13 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 		scanner := bufio.NewScanner(res.Body)
 		for line := 1; scanner.Scan(); line++ {
 			u := scanner.Text()
-			if _, err := url.Parse(u); err != nil {
+			up, err := url.Parse(u)
+			if err != nil {
 				p.badIntegrities.error("index.txt contains invalid URL %q in line %d", u, line)
 				continue
 			}
 
-			files = append(files, csaf.DirectoryAdvisoryFile{Path: u})
+			files = append(files, csaf.DirectoryAdvisoryFile{Path: misc.JoinURL(bu, up).String()})
 		}
 		return files, scanner.Err()
 	}()
@@ -968,7 +964,7 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 	// Block rolie checks.
 	p.labelChecker.feedLabel = ""
 
-	return p.integrity(files, base, mask, p.badIndices.add)
+	return p.integrity(files, mask, p.badIndices.add)
 }
 
 // checkChanges fetches the "changes.csv" and calls the "checkTLS" method for HTTPs checks.
@@ -1035,8 +1031,13 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 			}
 			path := r[pathColumn]
 
+			pathURL, err := url.Parse(path)
+			if err != nil {
+				return nil, nil, err
+			}
+
 			times, files = append(times, t),
-				append(files, csaf.DirectoryAdvisoryFile{Path: path})
+				append(files, csaf.DirectoryAdvisoryFile{Path: misc.JoinURL(bu, pathURL).String()})
 			p.timesChanges[path] = t
 		}
 		return times, files, nil
@@ -1063,7 +1064,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 	// Block rolie checks.
 	p.labelChecker.feedLabel = ""
 
-	return p.integrity(files, base, mask, p.badChanges.add)
+	return p.integrity(files, mask, p.badChanges.add)
 }
 
 // empty checks if list of strings contains at least one none empty string.
@@ -1364,18 +1365,11 @@ func (p *processor) checkSecurityFolder(folder string) string {
 	}
 
 	// Try to load
-	up, err := url.Parse(u)
+	_, err = url.Parse(u)
 	if err != nil {
 		return fmt.Sprintf("CSAF URL '%s' invalid: %v", u, err)
 	}
 
-	base, err := url.Parse(folder)
-	if err != nil {
-		return err.Error()
-	}
-	base.Path = ""
-
-	u = misc.JoinURL(base, up).String()
 	p.checkTLS(u)
 	if res, err = client.Get(u); err != nil {
 		return fmt.Sprintf("Cannot fetch %s from security.txt: %v", u, err)
@@ -1523,12 +1517,6 @@ func (p *processor) checkPGPKeys(_ string) error {
 
 	client := p.httpClient()
 
-	base, err := url.Parse(p.pmdURL)
-	if err != nil {
-		return err
-	}
-	base.Path = ""
-
 	for i := range keys {
 		key := &keys[i]
 		if key.URL == nil {
@@ -1541,10 +1529,11 @@ func (p *processor) checkPGPKeys(_ string) error {
 			continue
 		}
 
-		u := misc.JoinURL(base, up).String()
+		// Todo: refactor all methods to directly accept *url.URL
+		u := up.String()
 		p.checkTLS(u)
 
-		res, err := client.Get(u)
+		res, err := client.Get(*key.URL)
 		if err != nil {
 			p.badPGPs.error("Fetching public OpenPGP key %s failed: %v.", u, err)
 			continue

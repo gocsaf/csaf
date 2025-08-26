@@ -12,7 +12,6 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	"github.com/gocsaf/csaf/v3/internal/misc"
 	"io"
 	"log/slog"
 	"net/http"
@@ -20,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -96,7 +96,7 @@ type AdvisoryFileProcessor struct {
 	client    util.Client
 	expr      *util.PathEval
 	doc       any
-	base      *url.URL
+	pmdURL    *url.URL
 }
 
 // NewAdvisoryFileProcessor constructs a filename extractor
@@ -105,13 +105,13 @@ func NewAdvisoryFileProcessor(
 	client util.Client,
 	expr *util.PathEval,
 	doc any,
-	base *url.URL,
+	pmdURL *url.URL,
 ) *AdvisoryFileProcessor {
 	return &AdvisoryFileProcessor{
 		client: client,
 		expr:   expr,
 		doc:    doc,
-		base:   base,
+		pmdURL: pmdURL,
 	}
 }
 
@@ -180,7 +180,7 @@ func (afp *AdvisoryFileProcessor) Process(
 
 		// Not found -> fall back to PMD url
 		if empty(dirURLs) {
-			baseURL, err := util.BaseURL(afp.base)
+			baseURL, err := util.BaseURL(afp.pmdURL)
 			if err != nil {
 				return err
 			}
@@ -262,8 +262,13 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 			continue
 		}
 
+		pathURL, err := url.Parse(path)
+		if err != nil {
+			return nil, err
+		}
+
 		files = append(files,
-			DirectoryAdvisoryFile{Path: base.JoinPath(path).String()})
+			DirectoryAdvisoryFile{Path: misc.JoinURL(base, pathURL).String()})
 	}
 	return files, nil
 }
@@ -277,12 +282,11 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		if feed.URL == nil {
 			continue
 		}
-		up, err := url.Parse(string(*feed.URL))
+		feedURL, err := url.Parse(string(*feed.URL))
 		if err != nil {
 			slog.Error("Invalid URL in feed", "feed", *feed.URL, "err", err)
 			continue
 		}
-		feedURL := misc.JoinURL(afp.base, up)
 		slog.Info("Got feed URL", "feed", feedURL)
 
 		fb, err := util.BaseURL(feedURL)
@@ -290,12 +294,6 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			slog.Error("Invalid feed base URL", "url", fb, "err", err)
 			continue
 		}
-		feedBaseURL, err := url.Parse(fb)
-		if err != nil {
-			slog.Error("Cannot parse feed base URL", "url", fb, "err", err)
-			continue
-		}
-		feedBaseURL.Path = ""
 
 		res, err := afp.client.Get(feedURL.String())
 		if err != nil {
@@ -327,7 +325,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 				slog.Error("Invalid URL", "url", u, "err", err)
 				return ""
 			}
-			return misc.JoinURL(feedBaseURL, p).String()
+			return p.String()
 		}
 
 		rfeed.Entries(func(entry *Entry) {

@@ -226,18 +226,16 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		}
 	}
 
-	base, err := url.Parse(lpmd.URL)
+	pmdURL, err := url.Parse(lpmd.URL)
 	if err != nil {
 		return fmt.Errorf("invalid URL '%s': %v", lpmd.URL, err)
 	}
-	base.Path = ""
 
 	expr := util.NewPathEval()
 
 	if err := d.loadOpenPGPKeys(
 		client,
 		lpmd.Document,
-		base,
 		expr,
 	); err != nil {
 		return err
@@ -247,7 +245,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		client,
 		expr,
 		lpmd.Document,
-		base)
+		pmdURL)
 
 	// Do we need time range based filtering?
 	if d.cfg.Range != nil {
@@ -312,7 +310,6 @@ allFiles:
 func (d *downloader) loadOpenPGPKeys(
 	client util.Client,
 	doc any,
-	base *url.URL,
 	expr *util.PathEval,
 ) error {
 	src, err := expr.Eval("$.public_openpgp_keys", doc)
@@ -337,7 +334,7 @@ func (d *downloader) loadOpenPGPKeys(
 		if key.URL == nil {
 			continue
 		}
-		up, err := url.Parse(*key.URL)
+		u, err := url.Parse(*key.URL)
 		if err != nil {
 			slog.Warn("Invalid URL",
 				"url", *key.URL,
@@ -345,9 +342,7 @@ func (d *downloader) loadOpenPGPKeys(
 			continue
 		}
 
-		u := base.JoinPath(up.Path).String()
-
-		res, err := client.Get(u)
+		res, err := client.Get(u.String())
 		if err != nil {
 			slog.Warn(
 				"Fetching public OpenPGP key failed",

@@ -67,17 +67,16 @@ func (w *worker) mirrorInternal() (*csaf.AggregatorCSAFProvider, error) {
 	// Collecting the categories per label.
 	w.categories = map[string]util.Set[string]{}
 
-	base, err := url.Parse(w.loc)
+	pmdURL, err := url.Parse(w.loc)
 	if err != nil {
 		return nil, err
 	}
-	base.Path = ""
 
 	afp := csaf.NewAdvisoryFileProcessor(
 		w.client,
 		w.expr,
 		w.metadataProvider,
-		base)
+		pmdURL)
 
 	afp.AgeAccept = w.provider.ageAccept(w.processor.cfg)
 
