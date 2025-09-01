@@ -248,7 +248,8 @@ In case you want to provide CSAF advisories from others
 that only qualify as CSAF publishers, see
 [how to use the `csaf_aggregator` as "CSAF proxy provider"](proxy-provider-for-aggregator.md).
 
-Some providers may limit the rate of requests that may be send to retrieve advisories.
-This may cause issues with the aggregator. In this case, the --rate option
-can be used to adjust the requests per second send by the each worker of the aggregator to an acceptable rate.
-(Which rate is deemed acceptable depends on the provider.)
+Some providers may limit the rate of requests that may be sent to retrieve advisories.
+This may cause issues with the aggregator. 
+In this case, the --rate option can be used to adjust the requests per second
+sent by each worker of the aggregator to an acceptable rate.
+(The rate that is considered acceptable depends on the provider.)

@@ -78,10 +78,12 @@ The option `timerange` allows to only check advisories from a given time
 interval. It can only be given once. See the
 [downloader documentation](csaf_downloader.md#timerange-option) for details.
 
-Some providers may limit the rate of requests that may be send to retrieve advisories.
-This may cause the checker to be unable to retrieve all advisories. In this case, the --rate option
-can be used to adjust the requests per second send by the checker to an acceptable rate.
-(Which rate is deemed acceptable depends on the provider.)
+Some providers may limit the rate of requests that may be sent to retrieve advisories.
+This may cause the checker to be unable to retrieve all advisories. In this case,
+the --rate option can be used to adjust the requests per second
+sent by the checker to an acceptable rate.
+(The rate that is considered acceptable depends on the provider.)
+
 
 You can ignore certain advisories while checking by specifying a list
 of regular expressions[^1] to match their URLs by using the `ignorepattern`
