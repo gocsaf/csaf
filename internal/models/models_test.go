@@ -81,7 +81,7 @@ func TestUnmarshalText(t *testing.T) {
 	byteSlice := []byte{'3', 'h'}
 	var emptySlice []byte
 	if testTimeRange.UnmarshalText(byteSlice) != nil {
-		t.Errorf(testTimeRange.UnmarshalText(byteSlice).Error())
+		t.Error(testTimeRange.UnmarshalText(byteSlice).Error())
 	}
 	if testTimeRange.UnmarshalText(emptySlice) == nil {
 		t.Errorf("Failure: UnmarshalText succeeded on invalid slice of bytes.")
@@ -104,10 +104,10 @@ func TestUnmarshalFlag(t *testing.T) {
 		time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
 		time.Date(2010, time.November, 10, 23, 0, 0, 0, time.UTC))
 	if err := testTimeRange.UnmarshalFlag("3h"); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	if err := testTimeRange.UnmarshalFlag("2006-01-02T15:04:05"); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	if err := testTimeRange.UnmarshalFlag("2006-01-02T15:04:05a"); err == nil {
 		t.Errorf("Failure: Extracted time from invalid string")
@@ -119,7 +119,7 @@ func TestUnmarshalFlag(t *testing.T) {
 		t.Errorf("Failure: Extracted time from invalid string")
 	}
 	if err := testTimeRange.UnmarshalFlag("2006-01-02T15:04:05, 2007-01-02T15:04:05"); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 }
 
