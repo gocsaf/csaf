@@ -18,6 +18,8 @@ import (
 // while not allowing trailing data
 func StrictJSONParse(jsonData io.Reader, target any) error {
 	decoder := json.NewDecoder(jsonData)
+	// Don't allow unknown fields
+	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(target); err != nil {
 		return fmt.Errorf("JSON decoding error: %w", err)
