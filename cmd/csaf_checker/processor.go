@@ -536,7 +536,7 @@ func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
 	if len(errors) > 0 {
 		p.badProviderMetadata.error("%s: Validating against JSON schema failed:", feed)
 		for _, msg := range errors {
-			p.badProviderMetadata.error(strings.ReplaceAll(msg, `%`, `%%`))
+			p.badProviderMetadata.error("%s", strings.ReplaceAll(msg, `%`, `%%`))
 		}
 	}
 
@@ -736,7 +736,7 @@ func (p *processor) integrity(
 
 		switch date, fault := p.extractTime(doc, `initial_release_date`, u); {
 		case fault != "":
-			p.badFolders.error(fault)
+			p.badFolders.error("%s", fault)
 		case folderYear == nil:
 			p.badFolders.error("No year folder found in %s", u)
 		case date.UTC().Year() != *folderYear:
@@ -744,7 +744,7 @@ func (p *processor) integrity(
 		}
 		current, fault := p.extractTime(doc, `current_release_date`, u)
 		if fault != "" {
-			p.badChanges.error(fault)
+			p.badChanges.error("%s", fault)
 		} else {
 			p.timesAdv[f.URL()] = current
 		}
@@ -814,7 +814,7 @@ func (p *processor) integrity(
 			msgType = InfoType
 		}
 		for _, fetchError := range hashFetchErrors {
-			p.badIntegrities.add(msgType, fetchError)
+			p.badIntegrities.add(msgType, "%s", fetchError)
 		}
 
 		// Check signature
@@ -1052,7 +1052,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 		if p.cfg.Range != nil {
 			filtered = " (maybe filtered out by time interval)"
 		}
-		p.badChanges.warn("no entries in changes.csv found" + filtered)
+		p.badChanges.warn("%s", "no entries in changes.csv found"+filtered)
 	}
 
 	if !sort.SliceIsSorted(times, func(i, j int) bool {
@@ -1300,8 +1300,8 @@ func (p *processor) checkProviderMetadata(domain string) bool {
 
 	for i := range lpmd.Messages {
 		p.badProviderMetadata.warn(
-			"Unexpected situation while loading provider-metadata.json: " +
-				lpmd.Messages[i].Message)
+			"Unexpected situation while loading provider-metadata.json: %s",
+			lpmd.Messages[i].Message)
 	}
 
 	if !lpmd.Valid() {
@@ -1401,25 +1401,25 @@ func (p *processor) checkDNS(domain string) {
 	res, err := client.Get(path)
 	if err != nil {
 		p.badDNSPath.add(ErrorType,
-			fmt.Sprintf("Fetching %s failed: %v", path, err))
+			"Fetching %s failed: %v", path, err)
 		return
 	}
 	if res.StatusCode != http.StatusOK {
-		p.badDNSPath.add(ErrorType, fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
-			path, res.StatusCode, res.Status))
+		p.badDNSPath.add(ErrorType, "Fetching %s failed. Status code %d (%s)",
+			path, res.StatusCode, res.Status)
 	}
 	hash := sha256.New()
 	defer res.Body.Close()
 	content, err := io.ReadAll(res.Body)
 	if err != nil {
 		p.badDNSPath.add(ErrorType,
-			fmt.Sprintf("Error while reading the response from %s", path))
+			"Error while reading the response from %s", path)
 	}
 	hash.Write(content)
 	if !bytes.Equal(hash.Sum(nil), p.pmd256) {
 		p.badDNSPath.add(ErrorType,
-			fmt.Sprintf("%s does not serve the same provider-metadata.json as previously found",
-				path))
+			"%s does not serve the same provider-metadata.json as previously found",
+			path)
 	}
 }
 
@@ -1433,12 +1433,12 @@ func (p *processor) checkWellknown(domain string) {
 	res, err := client.Get(path)
 	if err != nil {
 		p.badWellknownMetadata.add(ErrorType,
-			fmt.Sprintf("Fetching %s failed: %v", path, err))
+			"Fetching %s failed: %v", path, err)
 		return
 	}
 	if res.StatusCode != http.StatusOK {
-		p.badWellknownMetadata.add(ErrorType, fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
-			path, res.StatusCode, res.Status))
+		p.badWellknownMetadata.add(ErrorType, "Fetching %s failed. Status code %d (%s)",
+			path, res.StatusCode, res.Status)
 	}
 }
 
@@ -1475,13 +1475,13 @@ func (p *processor) checkWellknownSecurityDNS(domain string) error {
 	// but found in the legacy location, and inform about finding it there (2).
 	switch warnings {
 	case 0:
-		p.badSecurity.add(InfoType, sDMessage)
+		p.badSecurity.add(InfoType, "%s", sDMessage)
 	case 1:
-		p.badSecurity.add(ErrorType, sDMessage)
-		p.badSecurity.add(ErrorType, sLMessage)
+		p.badSecurity.add(ErrorType, "%s", sDMessage)
+		p.badSecurity.add(ErrorType, "%s", sLMessage)
 	case 2:
-		p.badSecurity.add(WarnType, sDMessage)
-		p.badSecurity.add(InfoType, sLMessage)
+		p.badSecurity.add(WarnType, "%s", sDMessage)
+		p.badSecurity.add(InfoType, "%s", sLMessage)
 	}
 
 	p.checkDNS(domain)
