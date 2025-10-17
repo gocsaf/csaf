@@ -20,7 +20,7 @@ func TestLoadCertificates(t *testing.T) {
 		passphrase     = "qwer"
 		missingCert    = "data/testclientcert_missing.crt"
 		missingTestkey = "data/testclientkey_missing.pem"
-		privateKey     = "data/privated.pem"
+		privateKey     = "data/private.pem"
 		privateCert    = "data/cert.crt"
 	)
 
