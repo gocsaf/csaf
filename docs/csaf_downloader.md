@@ -75,7 +75,7 @@ insecure            = false
 # client_cert       # not set by default
 # client_key        # not set by default
 # client_passphrase # not set by default
-ignoresigcheck      = false
+ignore_sigcheck     = false
 # rate              # set to unlimited
 worker              = 2
 # time_range        # not set by default
