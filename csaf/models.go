@@ -26,23 +26,23 @@ type TLPLabel string
 
 const (
 	// TLPLabelUnlabeled is the 'UNLABELED' policy.
-	TLPLabelUnlabeled = "UNLABELED"
+	TLPLabelUnlabeled TLPLabel = "UNLABELED"
 	// TLPLabelWhite is the 'WHITE' policy.
-	TLPLabelWhite = "WHITE"
+	TLPLabelWhite TLPLabel = "WHITE"
 	// TLPLabelGreen is the 'GREEN' policy.
-	TLPLabelGreen = "GREEN"
+	TLPLabelGreen TLPLabel = "GREEN"
 	// TLPLabelAmber is the 'AMBER' policy.
-	TLPLabelAmber = "AMBER"
+	TLPLabelAmber TLPLabel = "AMBER"
 	// TLPLabelRed is the 'RED' policy.
-	TLPLabelRed = "RED"
+	TLPLabelRed TLPLabel = "RED"
 )
 
 var tlpLabelPattern = alternativesUnmarshal(
-	TLPLabelUnlabeled,
-	TLPLabelWhite,
-	TLPLabelGreen,
-	TLPLabelAmber,
-	TLPLabelRed,
+	string(TLPLabelUnlabeled),
+	string(TLPLabelWhite),
+	string(TLPLabelGreen),
+	string(TLPLabelAmber),
+	string(TLPLabelRed),
 )
 
 // JSONURL is an URL to JSON document.
