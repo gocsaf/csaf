@@ -169,14 +169,22 @@ type Format struct {
 
 // Entry for ROLIE.
 type Entry struct {
-	ID        string    `json:"id"`
-	Titel     string    `json:"title"`
-	Link      []Link    `json:"link"`
-	Published TimeStamp `json:"published"`
-	Updated   TimeStamp `json:"updated"`
-	Summary   *Summary  `json:"summary,omitempty"`
-	Content   Content   `json:"content"`
-	Format    Format    `json:"format"`
+	Base        *string          `json:"base,omitempty"`
+	LanguageTag *string          `json:"lang,omitempty"`
+	Author      *json.RawMessage `json:"author,omitempty"`
+	Category    []ROLIECategory  `json:"category,omitempty"`
+	Content     Content          `json:"content"`
+	Contributor *json.RawMessage `json:"contributor,omitempty"`
+	ID          string           `json:"id"`
+	Link        []Link           `json:"link"`
+	Published   TimeStamp        `json:"published"`
+	Rights      *json.RawMessage `json:"rights,omitempty"`
+	Source      *json.RawMessage `json:"source,omitempty"`
+	Summary     *Summary         `json:"summary,omitempty"`
+	Titel       string           `json:"title"`
+	Updated     TimeStamp        `json:"updated"`
+	Format      Format           `json:"format"`
+	Property    *json.RawMessage `json:"property,omitempty"`
 }
 
 // FeedData is the content of the ROLIE feed.
