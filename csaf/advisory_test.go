@@ -14,11 +14,12 @@ func TestLoadAdvisory(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-	}{{
-		name:    "Valid documents",
-		args:    args{jsonDir: "csaf-documents/valid"},
-		wantErr: false,
-	},
+	}{
+		{
+			name:    "Valid documents",
+			args:    args{jsonDir: "csaf-documents/valid"},
+			wantErr: false,
+		},
 		{
 			name:    "Garbage trailing data",
 			args:    args{jsonDir: "csaf-documents/trailing-garbage-data"},
