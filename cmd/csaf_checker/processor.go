@@ -255,7 +255,10 @@ func (p *processor) run(domains []string) (*Report, error) {
 			// We need to fail the domain if the PMD cannot be parsed.
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Could not parse the Provider-Metadata.json of: %s", d)
-
+			// XXX: Why do we continue here?
+			// If we have no valid PMD we really cannot do something useful any more.
+		} else {
+			log.Printf("PMD used %q\n", p.pmdURL)
 		}
 		if err := p.checkDomain(d); err != nil {
 			p.badProviderMetadata.use()
