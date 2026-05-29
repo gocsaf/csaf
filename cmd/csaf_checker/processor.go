@@ -251,6 +251,8 @@ func (p *processor) run(domains []string) (*Report, error) {
 	for _, d := range domains {
 		p.reset()
 
+		var pmdURL *string
+
 		if !p.checkProviderMetadata(d) {
 			// We need to fail the domain if the PMD cannot be parsed.
 			p.badProviderMetadata.use()
@@ -259,12 +261,14 @@ func (p *processor) run(domains []string) (*Report, error) {
 			// If we have no valid PMD we really cannot do something useful any more.
 		} else {
 			log.Printf("PMD used %q\n", p.pmdURL)
+			pmdURL = &p.pmdURL
+
 		}
 		if err := p.checkDomain(d); err != nil {
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Failed to find valid provider-metadata.json for domain %s: %v. ", d, err)
 		}
-		domain := &Domain{Name: d}
+		domain := &Domain{Name: d, URL: pmdURL}
 
 		if err := p.fillMeta(domain); err != nil {
 			log.Printf("Filling meta data failed: %v\n", err)
