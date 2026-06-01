@@ -43,6 +43,7 @@ type config struct {
 	RemoteValidator        string            `long:"validator" description:"URL to validate documents remotely" value-name:"URL" toml:"validator"`
 	RemoteValidatorCache   string            `long:"validator_cache" description:"FILE to cache remote validations" value-name:"FILE" toml:"validator_cache"`
 	RemoteValidatorPresets []string          `long:"validator_preset" description:"One or more presets to validate remotely" toml:"validator_preset"`
+	PreFlight              bool              `long:"pre_flight" description:"Only check if valid provider-metadata.json can be found and loaded, skip advisory checks" toml:"pre_flight"`
 
 	Config string `short:"c" long:"config" description:"Path to config TOML file" value-name:"TOML-FILE" toml:"-"`
 

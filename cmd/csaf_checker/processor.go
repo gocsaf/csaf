@@ -256,6 +256,9 @@ func (p *processor) run(domains []string) (*Report, error) {
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Could not parse the Provider-Metadata.json of: %s", d)
 
+		} else if p.cfg.PreFlight {
+			log.Printf("Preflight check passed for domain %q: %s\n", d, p.pmdURL)
+			continue
 		}
 		if err := p.checkDomain(d); err != nil {
 			p.badProviderMetadata.use()
@@ -293,6 +296,9 @@ func (p *processor) run(domains []string) (*Report, error) {
 		domain.Passed = rules.eval(p)
 
 		report.Domains = append(report.Domains, domain)
+	}
+	if p.cfg.PreFlight {
+		return nil, nil
 	}
 
 	return &report, nil
