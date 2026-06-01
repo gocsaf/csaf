@@ -17,6 +17,7 @@ Application Options:
   -v, --verbose                         Verbose output
   -r, --rate=                           The average upper limit of https operations per second (defaults to unlimited)
   -t, --time_range=RANGE                RANGE of time from which advisories to download
+      --client_timeout=DURATION         DURATION for HTTP Client timeouts
   -i, --ignore_pattern=PATTERN          Do not download files if their URLs match any of the given PATTERNs
   -H, --header=                         One or more extra HTTP header fields
       --validator=URL                   URL to validate documents remotely
@@ -54,7 +55,8 @@ insecure            = false
 # client_passphrase # not set by default
 verbose             = false
 # rate              # not set by default
-# time_range         # not set by default
+# time_range        # not set by default
+# client_timeout    # not set by default
 # header            # not set by default
 # validator         # not set by default
 # validator_cache   # not set by default
@@ -77,6 +79,9 @@ The checker result is a success if no checks resulted in type 2, and a failure o
 The option `timerange` allows to only check advisories from a given time
 interval. It can only be given once. See the
 [downloader documentation](csaf_downloader.md#timerange-option) for details.
+
+The `client_timeout` allows to set a duration for HTTP client requests. If deadline is
+exceeded, the request fails with a timeout, preventing long unresponsive server wait time.
 
 Some providers may limit the rate of requests that may be sent to retrieve advisories.
 This may cause the checker to be unable to retrieve all advisories. In this case,
