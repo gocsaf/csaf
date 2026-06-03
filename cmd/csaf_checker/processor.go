@@ -257,11 +257,9 @@ func (p *processor) run(domains []string) (*Report, error) {
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Could not parse the Provider-Metadata.json of: %s", d)
 			// If we don't have a valid PMD there is no hope to do any further checking.
-			req := &Requirement{
-				Description: "Invalid provider metadata",
-			}
-			req.Append(p.badProviderMetadata)
-			domain.Requirements = append(domain.Requirements, req)
+			(&providerMetadataReport{
+				baseReporter{description: "Invalid provider metadata"},
+			}).report(p, domain)
 			report.Domains = append(report.Domains, domain)
 			continue
 		}
