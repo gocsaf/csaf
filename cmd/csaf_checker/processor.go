@@ -251,17 +251,25 @@ func (p *processor) run(domains []string) (*Report, error) {
 	for _, d := range domains {
 		p.reset()
 
+		domain := &Domain{Name: d}
 		if !p.checkProviderMetadata(d) {
 			// We need to fail the domain if the PMD cannot be parsed.
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Could not parse the Provider-Metadata.json of: %s", d)
-
+			// If we don't have a valid PMD there is no hope to do any further checking.
+			req := &Requirement{
+				Description: "Invalid provider metadata",
+			}
+			req.Append(p.badProviderMetadata)
+			domain.Requirements = append(domain.Requirements, req)
+			report.Domains = append(report.Domains, domain)
+			continue
 		}
+
 		if err := p.checkDomain(d); err != nil {
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Failed to find valid provider-metadata.json for domain %s: %v. ", d, err)
 		}
-		domain := &Domain{Name: d}
 
 		if err := p.fillMeta(domain); err != nil {
 			log.Printf("Filling meta data failed: %v\n", err)
