@@ -257,7 +257,7 @@ func (p *processor) run(domains []string) (*Report, error) {
 			p.badProviderMetadata.error("Could not parse the Provider-Metadata.json of: %s", d)
 
 		} else if p.cfg.PreFlight {
-			log.Printf("Preflight check passed for domain %q: %s\n", d, p.pmdURL)
+			log.Printf("Preflight check passed. Domain: %q, pmdURL: %s\n", d, p.pmdURL)
 			continue
 		}
 		if err := p.checkDomain(d); err != nil {

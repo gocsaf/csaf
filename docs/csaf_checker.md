@@ -35,7 +35,8 @@ If no user agent is specified with `--header=user-agent:custom-agent/1.0` then t
 
 If a _domain_ starts with `https://` it is instead considered a direct URL to the `provider-metadata.json` and checking proceeds from there.
 
-If pre-flight mode is selected with `--pre_flight` flag, no report will be generated.
+If pre-flight mode is selected with `--pre_flight` flag, only check for valid PMD without deeper advisory checks. On successful check, logs
+the pmdURL of checked domain. In pre-flight mode no report will be generated.
 
 If no config file is explictly given the follwing places are searched for a config file:
 
