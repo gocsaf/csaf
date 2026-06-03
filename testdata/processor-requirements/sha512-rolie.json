@@ -153,7 +153,7 @@
     "messages": [
       {
         "type": 0,
-        "text": "No sha256 hash file listed on ROLIE feed {.URL}}/white/avendor-advisory-0004.json"
+        "text": "No sha256 hash file listed on ROLIE feed {{.URL}}/white/avendor-advisory-0004.json"
       }
     ]
   },
