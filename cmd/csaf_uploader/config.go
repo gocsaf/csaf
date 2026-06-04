@@ -23,9 +23,10 @@ import (
 )
 
 const (
-	defaultURL    = "https://localhost/cgi-bin/csaf_provider.go"
-	defaultAction = "upload"
-	defaultTLP    = "csaf"
+	defaultURL       = "https://localhost/cgi-bin/csaf_provider.go"
+	defaultAction    = "upload"
+	defaultTLP       = "csaf"
+	defaultGPGBinary = "gpg"
 )
 
 // The supported flag config of the uploader command line
@@ -37,6 +38,10 @@ type config struct {
 	TLP            string `short:"t" long:"tlp" choice:"csaf" choice:"white" choice:"green" choice:"amber" choice:"red" description:"TLP of the feed" toml:"tlp"`
 	ExternalSigned bool   `short:"x" long:"external_signed" description:"CSAF files are signed externally. Assumes .asc files beside CSAF files." toml:"external_signed"`
 	NoSchemaCheck  bool   `short:"s" long:"no_schema_check" description:"Do not check files against CSAF JSON schema locally." toml:"no_schema_check"`
+
+	GPG       bool    `long:"gpg" description:"Sign CSAF files via the system gpg binary (delegates passphrase/PIN to gpg-agent)" toml:"gpg"`
+	GPGUser   *string `long:"gpg-user" description:"Signing key identity for gpg --local-user (fingerprint/email/keyid)" value-name:"IDENTITY" toml:"gpg_user"`
+	GPGBinary string  `long:"gpg-binary" description:"Path to the gpg executable" value-name:"GPG-BIN" toml:"gpg_binary"`
 
 	Key              *string `short:"k" long:"key" description:"OpenPGP key to sign the CSAF files" value-name:"KEY-FILE" toml:"key"`
 	Password         *string `short:"p" long:"password" description:"Authentication password for accessing the CSAF provider" value-name:"PASSWORD" toml:"password"`
@@ -55,7 +60,7 @@ type config struct {
 
 	clientCerts []tls.Certificate
 	cachedAuth  string
-	keyRing     *crypto.KeyRing
+	signer      signer
 }
 
 // iniPaths are the potential file locations of the the config file.
@@ -76,6 +81,7 @@ func parseArgsConfig() ([]string, *config, error) {
 			cfg.URL = defaultURL
 			cfg.Action = defaultAction
 			cfg.TLP = defaultTLP
+			cfg.GPGBinary = defaultGPGBinary
 		},
 		// Re-establish default values if not set.
 		EnsureDefaults: func(cfg *config) {
@@ -87,6 +93,9 @@ func parseArgsConfig() ([]string, *config, error) {
 			}
 			if cfg.TLP == "" {
 				cfg.TLP = defaultTLP
+			}
+			if cfg.GPGBinary == "" {
+				cfg.GPGBinary = defaultGPGBinary
 			}
 		},
 	}
@@ -141,25 +150,66 @@ func loadOpenPGPKey(filename string) (*crypto.Key, error) {
 	return crypto.NewKeyFromArmoredReader(f)
 }
 
-// prepareOpenPGPKey loads the configured OpenPGP key.
-func (cfg *config) prepareOpenPGPKey() error {
-	if cfg.Action != "upload" || cfg.Key == nil {
-		return nil
-	}
-	if cfg.ExternalSigned {
-		return errors.New("refused to sign external signed files")
-	}
-	key, err := loadOpenPGPKey(*cfg.Key)
+// loadKeyRing loads an OpenPGP key from a file and, if a passphrase is given,
+// unlocks it, returning a key ring ready for in-process signing. A nil
+// passphrase leaves the key as loaded: usable if the key is not protected, and
+// failing later at sign time if it is.
+func loadKeyRing(filename string, passphrase *string) (*crypto.KeyRing, error) {
+	key, err := loadOpenPGPKey(filename)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if cfg.Passphrase != nil {
-		if key, err = key.Unlock([]byte(*cfg.Passphrase)); err != nil {
-			return err
+	if passphrase != nil {
+		if key, err = key.Unlock([]byte(*passphrase)); err != nil {
+			return nil, err
 		}
 	}
-	cfg.keyRing, err = crypto.NewKeyRing(key)
-	return err
+	return crypto.NewKeyRing(key)
+}
+
+// prepareSigning validates the signing related flags and instantiates the
+// signer for the selected mode. The three signing modes (system gpg binary,
+// file key and external signed) are mutually exclusive. It is the single entry
+// point for signing setup: the no-sign and external-signed modes leave
+// cfg.signer nil.
+func (cfg *config) prepareSigning() error {
+	// The three signing modes are mutually exclusive, and neither in-process
+	// mode may be combined with externally signed files. These are validated
+	// regardless of action, before any signer is constructed.
+	if cfg.GPG && cfg.Key != nil {
+		return errors.New("--gpg and --key are mutually exclusive")
+	}
+	if cfg.GPG && cfg.ExternalSigned {
+		return errors.New("--gpg and --external_signed are mutually exclusive")
+	}
+	if cfg.Key != nil && cfg.ExternalSigned {
+		return errors.New("--key and --external_signed are mutually exclusive")
+	}
+	if !cfg.GPG && cfg.GPGUser != nil {
+		return errors.New("--gpg-user is only valid in combination with --gpg")
+	}
+
+	// A signer is only needed when uploading; other actions leave it nil.
+	if cfg.Action != "upload" {
+		return nil
+	}
+
+	switch {
+	case cfg.GPG:
+		localUser := ""
+		if cfg.GPGUser != nil {
+			localUser = *cfg.GPGUser
+		}
+		cfg.signer = &gpgSigner{binary: cfg.GPGBinary, localUser: localUser}
+
+	case cfg.Key != nil:
+		keyRing, err := loadKeyRing(*cfg.Key, cfg.Passphrase)
+		if err != nil {
+			return err
+		}
+		cfg.signer = &keyRingSigner{keyRing: keyRing}
+	}
+	return nil
 }
 
 // preparePassword pre-calculates the auth header.
@@ -180,7 +230,7 @@ func (cfg *config) prepare() error {
 	for _, prepare := range []func(*config) error{
 		(*config).prepareCertificates,
 		(*config).prepareInteractive,
-		(*config).prepareOpenPGPKey,
+		(*config).prepareSigning,
 		(*config).preparePassword,
 	} {
 		if err := prepare(cfg); err != nil {

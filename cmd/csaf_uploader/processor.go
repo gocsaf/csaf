@@ -10,6 +10,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -20,10 +21,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/ProtonMail/gopenpgp/v2/armor"
-	"github.com/ProtonMail/gopenpgp/v2/constants"
-	"github.com/ProtonMail/gopenpgp/v2/crypto"
 
 	"github.com/gocsaf/csaf/v3/csaf"
 	"github.com/gocsaf/csaf/v3/internal/misc"
@@ -107,7 +104,7 @@ func (p *processor) create() error {
 // uploadRequest creates the request for uploading a csaf document by passing the filename.
 // According to the flags values the multipart sections of the request are established.
 // It returns the created http request.
-func (p *processor) uploadRequest(filename string) (*http.Request, error) {
+func (p *processor) uploadRequest(ctx context.Context, filename string) (*http.Request, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -152,24 +149,23 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 		return nil, err
 	}
 
-	if p.cfg.keyRing == nil && p.cfg.Passphrase != nil {
+	s := p.cfg.signer
+
+	if s == nil && p.cfg.Passphrase != nil {
 		if err := writer.WriteField("passphrase", *p.cfg.Passphrase); err != nil {
 			return nil, err
 		}
 	}
 
-	if p.cfg.keyRing != nil {
-		sig, err := p.cfg.keyRing.SignDetached(crypto.NewPlainMessage(data))
+	if s != nil {
+		sig, err := s.sign(ctx, data)
 		if err != nil {
 			return nil, err
 		}
-		armored, err := armor.ArmorWithTypeAndCustomHeaders(
-			sig.Data, constants.PGPSignatureHeader, "", "")
-		if err != nil {
-			return nil, err
-		}
-		if err := writer.WriteField("signature", armored); err != nil {
-			return nil, err
+		if sig != "" {
+			if err := writer.WriteField("signature", sig); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -200,13 +196,13 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 
 // process attemps to upload a file to the server.
 // It prints the response messages.
-func (p *processor) process(filename string) error {
+func (p *processor) process(ctx context.Context, filename string) error {
 
 	if bn := filepath.Base(filename); !util.ConformingFileName(bn) {
 		return fmt.Errorf("%q is not a conforming file name", bn)
 	}
 
-	req, err := p.uploadRequest(filename)
+	req, err := p.uploadRequest(ctx, filename)
 	if err != nil {
 		return err
 	}
@@ -269,7 +265,9 @@ func (p *processor) run(args []string) error {
 	}
 
 	for _, arg := range args {
-		if err := p.process(arg); err != nil {
+		// The signing deadline is applied inside the gpg signer; the upload
+		// itself is not bounded by it, so a plain background context is fine.
+		if err := p.process(context.Background(), arg); err != nil {
 			return fmt.Errorf("processing %q failed: %v", arg, err)
 		}
 	}
