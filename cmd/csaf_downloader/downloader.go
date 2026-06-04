@@ -113,6 +113,9 @@ func logRedirect(req *http.Request, via []*http.Request) error {
 
 func (d *downloader) httpClient() util.Client {
 	hClient := http.Client{}
+	if d.cfg.ClientTimeout != nil {
+		hClient.Timeout = *d.cfg.ClientTimeout
+	}
 
 	if d.cfg.verbose() {
 		hClient.CheckRedirect = logRedirect

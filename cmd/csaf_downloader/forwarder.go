@@ -98,6 +98,9 @@ func (f *forwarder) httpClient() util.Client {
 	}
 
 	hClient := http.Client{}
+	if f.cfg.ClientTimeout != nil {
+		hClient.Timeout = *f.cfg.ClientTimeout
+	}
 
 	var tlsConfig tls.Config
 	if f.cfg.ForwardInsecure {

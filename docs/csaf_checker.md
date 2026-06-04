@@ -53,10 +53,10 @@ insecure            = false
 # client_cert       # not set by default
 # client_key        # not set by default
 # client_passphrase # not set by default
+# client_timeout    # not set by default
 verbose             = false
 # rate              # not set by default
 # time_range        # not set by default
-# client_timeout    # not set by default
 # header            # not set by default
 # validator         # not set by default
 # validator_cache   # not set by default
