@@ -22,9 +22,6 @@ import (
 // TimeRange is a time interval.
 type TimeRange [2]time.Time
 
-// ClientTimeout is a duration for http.Client timeouts
-type ClientTimeout time.Duration
-
 // NewTimeInterval creates a new time range.
 // The time values will be sorted.
 func NewTimeInterval(a, b time.Time) TimeRange {
@@ -170,21 +167,4 @@ func (tr TimeRange) Contains(t time.Time) bool {
 // Intersects returns true if the two time ranges intersects.
 func (tr TimeRange) Intersects(other TimeRange) bool {
 	return !(other[1].Before(tr[0]) || tr[1].Before(other[0]))
-}
-
-// UnmarshalText implements [encoding/text.TextUnmarshaler].
-func (ct *ClientTimeout) UnmarshalText(text []byte) error {
-	return ct.UnmarshalFlag(string(text))
-}
-
-// UnmarshalFlag implements [go-flags/Unmarshaler].
-func (ct *ClientTimeout) UnmarshalFlag(s string) error {
-	s = strings.TrimSpace(s)
-
-	d, err := time.ParseDuration(s)
-	if err != nil {
-		return err
-	}
-	*ct = ClientTimeout(d)
-	return nil
 }

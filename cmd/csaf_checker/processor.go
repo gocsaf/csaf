@@ -415,7 +415,7 @@ func (p *processor) checkRedirect(r *http.Request, via []*http.Request) error {
 func (p *processor) fullClient() util.Client {
 	hClient := http.Client{}
 	if p.cfg.ClientTimeout != nil {
-		hClient.Timeout = time.Duration(*p.cfg.ClientTimeout)
+		hClient.Timeout = *p.cfg.ClientTimeout
 	}
 
 	hClient.CheckRedirect = p.checkRedirect
@@ -461,7 +461,7 @@ func (p *processor) fullClient() util.Client {
 func (p *processor) basicClient() *http.Client {
 	hClient := http.Client{}
 	if p.cfg.ClientTimeout != nil {
-		hClient.Timeout = time.Duration(*p.cfg.ClientTimeout)
+		hClient.Timeout = *p.cfg.ClientTimeout
 	}
 	if p.cfg.Insecure {
 		tr := &http.Transport{
