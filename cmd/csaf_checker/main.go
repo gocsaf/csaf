@@ -12,6 +12,9 @@ package main
 import (
 	"log"
 
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/gocsaf/csaf/v3/internal/options"
 )
 
@@ -27,6 +30,9 @@ func run(cfg *config, domains []string) (*Report, error) {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	domains, cfg, err := parseArgsConfig()
 	options.ErrorCheck(err)
 	options.ErrorCheck(cfg.prepare())
