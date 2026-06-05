@@ -499,6 +499,7 @@ func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
 		p.badProviderMetadata.error("Cannot fetch feed %s: %v", feed, err)
 		return nil, errContinue
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		p.badProviderMetadata.warn("Fetching %s failed. Status code %d (%s)",
 			feed, res.StatusCode, res.Status)
@@ -506,7 +507,6 @@ func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
 	}
 
 	rfeed, rolieDoc, err := func() (*csaf.ROLIEFeed, any, error) {
-		defer res.Body.Close()
 		all, err := io.ReadAll(res.Body)
 		if err != nil {
 			return nil, nil, err
@@ -633,11 +633,12 @@ func (p *processor) integrity(
 
 	var data bytes.Buffer
 
-	for _, f := range files {
+	// checks an advisory and the dependent files like checksums and so on.
+	checkFile := func(f csaf.AdvisoryFile) error {
 		fp, err := url.Parse(f.URL())
 		if err != nil {
 			lg(ErrorType, "Bad URL %s: %v", f, err)
-			continue
+			return nil
 		}
 
 		u := fp.String()
@@ -647,11 +648,11 @@ func (p *processor) integrity(
 			if p.cfg.Verbose {
 				log.Printf("Ignoring %q\n", u)
 			}
-			continue
+			return nil
 		}
 
 		if p.markChecked(u, mask) {
-			continue
+			return nil
 		}
 		p.checkTLS(u)
 
@@ -670,12 +671,13 @@ func (p *processor) integrity(
 		res, err := client.Get(u)
 		if err != nil {
 			lg(ErrorType, "Fetching %s failed: %v.", u, err)
-			continue
+			return nil
 		}
+		defer res.Body.Close()
 		if res.StatusCode != http.StatusOK {
 			lg(ErrorType, "Fetching %s failed: Status code %d (%s)",
 				u, res.StatusCode, res.Status)
-			continue
+			return nil
 		}
 
 		// Error if we do not get JSON.
@@ -692,13 +694,10 @@ func (p *processor) integrity(
 
 		var doc any
 
-		if err := func() error {
-			defer res.Body.Close()
-			tee := io.TeeReader(res.Body, hasher)
-			return misc.StrictJSONParse(tee, &doc)
-		}(); err != nil {
+		tee := io.TeeReader(res.Body, hasher)
+		if err := misc.StrictJSONParse(tee, &doc); err != nil {
 			lg(ErrorType, "Reading %s failed: %v", u, err)
-			continue
+			return nil
 		}
 
 		p.invalidAdvisories.use()
@@ -707,7 +706,7 @@ func (p *processor) integrity(
 		errors, err := csaf.ValidateCSAF(doc)
 		if err != nil {
 			p.invalidAdvisories.error("Failed to validate %s: %v", u, err)
-			continue
+			return nil
 		}
 		if len(errors) > 0 {
 			p.invalidAdvisories.error("CSAF file %s has %d validation errors.", u, len(errors))
@@ -715,8 +714,7 @@ func (p *processor) integrity(
 
 		if err := util.IDMatchesFilename(p.expr, doc, filepath.Base(u)); err != nil {
 			p.badFilenames.error("%s: %v", u, err)
-			continue
-
+			return nil
 		}
 		// Validate against remote validator.
 		if p.validator != nil {
@@ -767,40 +765,41 @@ func (p *processor) integrity(
 		hashFetchErrors := []string{}
 
 		for _, x := range hashes {
-			hu, err := url.Parse(x.url())
-			if err != nil {
-				lg(ErrorType, "Bad URL %s: %v", x.url(), err)
-				continue
-			}
-			hashFile := hu.String()
+			checkHash := func() { // Ensure the http client connection get closed.
+				hu, err := url.Parse(x.url())
+				if err != nil {
+					lg(ErrorType, "Bad URL %s: %v", x.url(), err)
+					return
+				}
+				hashFile := hu.String()
 
-			p.checkTLS(hashFile)
-			if res, err = client.Get(hashFile); err != nil {
-				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: %v.", hashFile, err))
-				continue
-			}
-			if res.StatusCode != http.StatusOK {
-				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: Status code %d (%s)",
-					hashFile, res.StatusCode, res.Status))
-				continue
-			}
-			couldFetchHash = true
-			h, err := func() ([]byte, error) {
+				p.checkTLS(hashFile)
+				if res, err = client.Get(hashFile); err != nil {
+					hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: %v.", hashFile, err))
+					return
+				}
 				defer res.Body.Close()
-				return util.HashFromReader(res.Body)
-			}()
-			if err != nil {
-				p.badIntegrities.error("Reading %s failed: %v.", hashFile, err)
-				continue
+				if res.StatusCode != http.StatusOK {
+					hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: Status code %d (%s)",
+						hashFile, res.StatusCode, res.Status))
+					return
+				}
+				couldFetchHash = true
+				h, err := util.HashFromReader(res.Body)
+				if err != nil {
+					p.badIntegrities.error("Reading %s failed: %v.", hashFile, err)
+					return
+				}
+				if len(h) == 0 {
+					p.badIntegrities.error("No hash found in %s.", hashFile)
+					return
+				}
+				if !bytes.Equal(h, x.hash) {
+					p.badIntegrities.error("%s hash of %s does not match %s.",
+						x.ext, u, hashFile)
+				}
 			}
-			if len(h) == 0 {
-				p.badIntegrities.error("No hash found in %s.", hashFile)
-				continue
-			}
-			if !bytes.Equal(h, x.hash) {
-				p.badIntegrities.error("%s hash of %s does not match %s.",
-					x.ext, u, hashFile)
-			}
+			checkHash()
 		}
 
 		msgType := ErrorType
@@ -819,43 +818,52 @@ func (p *processor) integrity(
 		su, err := url.Parse(f.SignURL())
 		if err != nil {
 			lg(ErrorType, "Bad URL %s: %v", f.SignURL(), err)
-			continue
+			return nil
 		}
 		sigFile := su.String()
 		p.checkTLS(sigFile)
 
 		p.badSignatures.use()
 
-		if res, err = client.Get(sigFile); err != nil {
-			p.badSignatures.error("Fetching %s failed: %v.", sigFile, err)
-			continue
-		}
-		if res.StatusCode != http.StatusOK {
-			p.badSignatures.error("Fetching %s failed: status code %d (%s)",
-				sigFile, res.StatusCode, res.Status)
-			continue
-		}
-
-		sig, err := func() (*crypto.PGPSignature, error) {
+		checkSignature := func() {
+			if res, err = client.Get(sigFile); err != nil {
+				p.badSignatures.error("Fetching %s failed: %v.", sigFile, err)
+				return
+			}
 			defer res.Body.Close()
-			all, err := io.ReadAll(res.Body)
+			if res.StatusCode != http.StatusOK {
+				p.badSignatures.error("Fetching %s failed: status code %d (%s)",
+					sigFile, res.StatusCode, res.Status)
+				return
+			}
+			sig, err := func() (*crypto.PGPSignature, error) {
+				all, err := io.ReadAll(res.Body)
+				if err != nil {
+					return nil, err
+				}
+				return crypto.NewPGPSignatureFromArmored(string(all))
+			}()
 			if err != nil {
-				return nil, err
+				p.badSignatures.error("Loading signature from %s failed: %v.",
+					sigFile, err)
+				return
 			}
-			return crypto.NewPGPSignatureFromArmored(string(all))
-		}()
-		if err != nil {
-			p.badSignatures.error("Loading signature from %s failed: %v.",
-				sigFile, err)
-			continue
+			if p.keys != nil {
+				pm := crypto.NewPlainMessage(data.Bytes())
+				t := crypto.GetUnixTime()
+				if err := p.keys.VerifyDetached(pm, sig, t); err != nil {
+					p.badSignatures.error(
+						"Signature of %s could not be verified: %v.", u, err)
+				}
+			}
 		}
+		checkSignature()
+		return nil
+	}
 
-		if p.keys != nil {
-			pm := crypto.NewPlainMessage(data.Bytes())
-			t := crypto.GetUnixTime()
-			if err := p.keys.VerifyDetached(pm, sig, t); err != nil {
-				p.badSignatures.error("Signature of %s could not be verified: %v.", u, err)
-			}
+	for _, f := range files {
+		if err := checkFile(f); err != nil {
+			return err
 		}
 	}
 
