@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
 
@@ -702,6 +703,9 @@ func (p *processor) integrity(
 		}
 
 		p.invalidAdvisories.use()
+		if !utf8.Valid(data.Bytes()) {
+			p.invalidAdvisories.error("Invalid UTF-8 in: %s", u)
+		}
 
 		// Validate against JSON schema.
 		errors, err := csaf.ValidateCSAF(doc)

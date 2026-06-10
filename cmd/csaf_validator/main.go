@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"unicode/utf8"
 
 	"github.com/jessevdk/go-flags"
 
@@ -102,6 +103,18 @@ func run(opts *options, files []string) error {
 		if !util.ConformingFileName(filepath.Base(file)) {
 			fmt.Printf("%q is not a valid advisory name.\n", file)
 		}
+
+		// Check for invalid UTF-8 in file
+		b, err := os.ReadFile(file)
+		if err != nil {
+			log.Printf("error: reading %q failed: %v\n", file, err)
+			continue
+		}
+		if !utf8.Valid(b) {
+			log.Printf("file %s contains invalid UTF-8", file)
+			continue
+		}
+
 		doc, err := loadJSONFromFile(file)
 		if err != nil {
 			log.Printf("error: loading %q as JSON failed: %v\n", file, err)
