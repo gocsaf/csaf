@@ -110,16 +110,16 @@ func run(opts *options, files []string) error {
 			log.Printf("error: reading %q failed: %v\n", file, err)
 			continue
 		}
-		if !utf8.Valid(b) {
-			log.Printf("file %s contains invalid UTF-8", file)
-			continue
-		}
-
 		doc, err := loadJSONFromFile(file)
 		if err != nil {
 			log.Printf("error: loading %q as JSON failed: %v\n", file, err)
 			continue
 		}
+
+		if !utf8.Valid(b) {
+			log.Printf("file %s contains invalid UTF-8", file)
+		}
+
 		// Validate against Schema.
 		validationErrs, err := csaf.ValidateCSAF(doc)
 		if err != nil {
