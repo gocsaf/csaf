@@ -16,6 +16,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"unicode/utf8"
 
 	"github.com/jessevdk/go-flags"
@@ -189,13 +190,9 @@ func (mipl *messageInstancePathsList) add(rtr csaf.RemoteTestResult) {
 		m := &(*mipl)[i]
 		// Already have this message?
 		if m.message == rtr.Message {
-			for _, path := range m.paths {
-				// Avoid dupes.
-				if path == rtr.InstancePath {
-					return
-				}
+			if !slices.Contains(m.paths, rtr.InstancePath) {
+				m.paths = append(m.paths, rtr.InstancePath)
 			}
-			m.paths = append(m.paths, rtr.InstancePath)
 			return
 		}
 	}
