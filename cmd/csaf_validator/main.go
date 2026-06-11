@@ -10,7 +10,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -104,19 +106,14 @@ func run(opts *options, files []string) error {
 			fmt.Printf("%q is not a valid advisory name.\n", file)
 		}
 
-		// Check for invalid UTF-8 in file
-		b, err := os.ReadFile(file)
-		if err != nil {
-			log.Printf("error: reading %q failed: %v\n", file, err)
-			continue
-		}
-		doc, err := loadJSONFromFile(file)
+		doc, raw, err := loadJSONFromFile(file)
 		if err != nil {
 			log.Printf("error: loading %q as JSON failed: %v\n", file, err)
 			continue
 		}
 
-		if !utf8.Valid(b) {
+		// Check for invalid UTF-8 in file
+		if !utf8.Valid(raw) {
 			log.Printf("file %s contains invalid UTF-8", file)
 		}
 
@@ -307,15 +304,18 @@ func errCheck(err error) {
 }
 
 // loadJSONFromFile loads a JSON document from a file.
-func loadJSONFromFile(fname string) (any, error) {
+func loadJSONFromFile(fname string) (any, []byte, error) {
 	f, err := os.Open(fname)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer f.Close()
+	var data bytes.Buffer
 	var doc any
-	if err = misc.StrictJSONParse(f, &doc); err != nil {
-		return nil, err
+	tee := io.TeeReader(f, &data)
+	if err = misc.StrictJSONParse(tee, &doc); err != nil {
+		return nil, nil, err
 	}
-	return doc, err
+	raw := bytes.Clone(data.Bytes())
+	return doc, raw, err
 }
