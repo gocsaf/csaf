@@ -76,6 +76,8 @@ type processor struct {
 	badWhitePermissions    topicMessages
 	badAmberRedPermissions topicMessages
 
+	dirURLs []string
+
 	expr *util.PathEval
 }
 
@@ -212,6 +214,7 @@ func (p *processor) reset() {
 	p.pmd256 = nil
 	p.pmd = nil
 	p.keys = nil
+	p.dirURLs = nil
 	clear(p.alreadyChecked)
 	clear(p.noneTLS)
 	clear(p.timesAdv)
@@ -1065,16 +1068,6 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 	return p.integrity(files, mask, p.badChanges.add)
 }
 
-// empty checks if list of strings contains at least one none empty string.
-func empty(arr []string) bool {
-	for _, s := range arr {
-		if s != "" {
-			return false
-		}
-	}
-	return true
-}
-
 func (p *processor) checkCSAFs(_ string) error {
 	// Check for ROLIE
 	rolie, err := p.expr.Eval("$.distributions[*].rolie.feeds", p.pmd)
@@ -1115,14 +1108,23 @@ func (p *processor) checkCSAFs(_ string) error {
 		p.badProviderMetadata.warn("extracting directory URLs failed: %v.", err)
 	} else {
 		var ok bool
-		dirURLs, ok = util.AsStrings(directoryURLs)
-		if !ok {
+		if dirURLs, ok = util.AsStrings(directoryURLs); !ok {
 			p.badProviderMetadata.warn("directory URLs are not strings.")
+		} else {
+			// XXX: Remove the empty strings.
+			// util.AsStrings should do this but that would be an API change.
+			var stripped []string
+			for _, u := range dirURLs {
+				if u != "" {
+					stripped = append(stripped, u)
+				}
+			}
+			dirURLs, p.dirURLs = stripped, stripped
 		}
 	}
 
 	// Not found -> fall back to PMD url
-	if empty(dirURLs) {
+	if len(dirURLs) > 0 {
 		pmdURL, err := url.Parse(p.pmdURL)
 		if err != nil {
 			return err
@@ -1135,13 +1137,9 @@ func (p *processor) checkCSAFs(_ string) error {
 	}
 
 	for _, base := range dirURLs {
-		if base == "" {
-			continue
-		}
 		if err := p.checkIndex(base, indexMask); err != nil && err != errContinue {
 			return err
 		}
-
 		if err := p.checkChanges(base, changesMask); err != nil && err != errContinue {
 			return err
 		}
