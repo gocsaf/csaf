@@ -941,6 +941,7 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 		} else {
 			p.badIndices.error("Fetching index.txt failed: %v not found.", index)
 		}
+		res.Body.Close()
 		return errContinue
 	}
 	p.badIndices.info("Found %v", index)
@@ -1005,6 +1006,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 		} else {
 			p.badChanges.error("Fetching changes.csv failed: %v not found.", changes)
 		}
+		res.Body.Close()
 		return errContinue
 	}
 	p.badChanges.info("Found %v", changes)
@@ -1352,6 +1354,7 @@ func (p *processor) checkSecurityFolder(folder string) string {
 	}
 
 	if res.StatusCode != http.StatusOK {
+		res.Body.Close()
 		return fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
 			path, res.StatusCode, res.Status)
 	}
@@ -1383,6 +1386,7 @@ func (p *processor) checkSecurityFolder(folder string) string {
 		return fmt.Sprintf("Cannot fetch %s from security.txt: %v", u, err)
 	}
 	if res.StatusCode != http.StatusOK {
+		res.Body.Close()
 		return fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
 			u, res.StatusCode, res.Status)
 	}
