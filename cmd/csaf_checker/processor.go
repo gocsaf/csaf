@@ -1124,7 +1124,12 @@ func (p *processor) checkCSAFs(_ string) error {
 	}
 
 	// Not found -> fall back to PMD url
-	if len(dirURLs) > 0 {
+	if len(dirURLs) == 0 {
+		// XXX: Is this _really_ a good fallback?
+		// The assumption that we have a directory besides the PMD if we
+		// don't have an explicit list of directories should
+		// be checked against the standard.
+		// I guess this is not valid assumption.
 		pmdURL, err := url.Parse(p.pmdURL)
 		if err != nil {
 			return err
