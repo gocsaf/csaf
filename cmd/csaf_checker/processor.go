@@ -1444,6 +1444,7 @@ func (p *processor) checkWellknown(domain string) {
 			"Fetching %s failed: %v", path, err)
 		return
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		p.badWellknownMetadata.add(ErrorType, "Fetching %s failed. Status code %d (%s)",
 			path, res.StatusCode, res.Status)
@@ -1546,34 +1547,40 @@ func (p *processor) checkPGPKeys(_ string) error {
 			p.badPGPs.error("Fetching public OpenPGP key %s failed: %v.", u, err)
 			continue
 		}
-		if res.StatusCode != http.StatusOK {
-			p.badPGPs.error("Fetching public OpenPGP key %s status code: %d (%s)",
-				u, res.StatusCode, res.Status)
-			continue
-		}
-
-		ckey, err := func() (*crypto.Key, error) {
+		check := func() {
 			defer res.Body.Close()
-			return crypto.NewKeyFromArmoredReader(res.Body)
-		}()
-		if err != nil {
-			p.badPGPs.error("Reading public OpenPGP key %s failed: %v", u, err)
-			continue
-		}
-
-		if !strings.EqualFold(ckey.GetFingerprint(), string(key.Fingerprint)) {
-			p.badPGPs.error("Given Fingerprint (%q) of public OpenPGP key %q does not match remotely loaded (%q).", string(key.Fingerprint), u, ckey.GetFingerprint())
-			continue
-		}
-		if p.keys == nil {
-			if keyring, err := crypto.NewKeyRing(ckey); err != nil {
-				p.badPGPs.error("Creating store for public OpenPGP key %s failed: %v.", u, err)
-			} else {
-				p.keys = keyring
+			if res.StatusCode != http.StatusOK {
+				p.badPGPs.error("Fetching public OpenPGP key %s status code: %d (%s)",
+					u, res.StatusCode, res.Status)
+				return
 			}
-		} else {
-			p.keys.AddKey(ckey)
+			ckey, err := crypto.NewKeyFromArmoredReader(res.Body)
+			if err != nil {
+				p.badPGPs.error("Reading public OpenPGP key %s failed: %v", u, err)
+				return
+			}
+			if !strings.EqualFold(
+				ckey.GetFingerprint(),
+				string(key.Fingerprint),
+			) {
+				p.badPGPs.error(
+					"Given Fingerprint (%q) of public OpenPGP key %q "+
+						"does not match remotely loaded (%q).",
+					string(key.Fingerprint), u, ckey.GetFingerprint())
+				return
+			}
+			if p.keys == nil {
+				if keyring, err := crypto.NewKeyRing(ckey); err != nil {
+					p.badPGPs.error(
+						"Creating store for public OpenPGP key %s failed: %v.", u, err)
+				} else {
+					p.keys = keyring
+				}
+			} else {
+				p.keys.AddKey(ckey)
+			}
 		}
+		check()
 	}
 
 	if p.keys == nil {
