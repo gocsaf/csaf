@@ -1137,6 +1137,7 @@ func (p *processor) checkCSAFs(_ string) error {
 	}
 
 	for _, base := range dirURLs {
+		log.Printf("dirURL for directory based provider: %s\n", base)
 		if err := p.checkIndex(base, indexMask); err != nil && err != errContinue {
 			return err
 		}
