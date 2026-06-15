@@ -10,6 +10,7 @@ Application Options:
   -u, --url=URL                             URL of the CSAF provider (default: https://localhost/cgi-bin/csaf_provider.go)
   -t, --tlp=[csaf|white|green|amber|red]    TLP of the feed (default: csaf)
   -x, --external_signed                     CSAF files are signed externally. Assumes .asc files beside CSAF files.
+  -X, --signing_tool                        Tool to sign a file externally
   -s, --no_schema_check                     Do not check files against CSAF JSON schema locally.
   -k, --key=KEY-FILE                        OpenPGP key to sign the CSAF files
   -p, --password=PASSWORD                   Authentication password for accessing the CSAF provider
@@ -49,6 +50,12 @@ To upload an already signed document, use the `-x` option
 ./csaf_uploader -x -a upload -I -t white -u https://localhost/cgi-bin/csaf_provider.go  CSAF-document-1.json
 ```
 
+To use external tool for signing
+```bash
+./csaf_uploader --signing_tool signing_tool.sh white -u https://localhost/cgi-bin/csaf_provider.go  CSAF-document-1.json
+```
+Example script under csaf/docs/scripts/signing_tool.sh
+
 By default csaf_uploader will try to load a config file
 from the following places:
 
@@ -64,6 +71,7 @@ action                 = "upload"
 url                    = "https://localhost/cgi-bin/csaf_provider.go"
 tlp                    = "csaf"
 external_signed        = false
+signing_tool           = ""
 no_schema_check        = false
 # key                  = "/path/to/openpgp/key/file"       # not set by default
 # password             = "auth-key to access the provider" # not set by default
