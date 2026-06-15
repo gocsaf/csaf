@@ -18,6 +18,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -173,7 +174,17 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 		}
 	}
 
-	if p.cfg.ExternalSigned {
+	switch {
+	case p.cfg.SigningTool != "":
+		signature, err := p.signExternally(data)
+		if err != nil {
+			return nil, err
+		}
+		if err := writer.WriteField("signature", signature); err != nil {
+			return nil, err
+		}
+
+	case p.cfg.ExternalSigned:
 		signature, err := os.ReadFile(filename + ".asc")
 		if err != nil {
 			return nil, err
@@ -254,6 +265,32 @@ func (p *processor) process(filename string) error {
 	writeStrings("Errors:", result.Errors)
 
 	return uploadErr
+}
+
+func (p *processor) signExternally(data []byte) (string, error) {
+	if p.cfg.SigningTool == "" {
+		return "", errors.New("no signing tool specified")
+	}
+	var output bytes.Buffer
+	cmd := exec.Command(p.cfg.SigningTool)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = &output
+	input, err := cmd.StdinPipe()
+	if err != nil {
+		return "", fmt.Errorf("cannot get stdin from signing tool: %w", err)
+	}
+	errChan := make(chan error)
+	go func() {
+		_, err := input.Write(data)
+		errChan <- errors.Join(err, input.Close())
+	}()
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("running signing tool failed: %w", err)
+	}
+	if err := <-errChan; err != nil {
+		return "", fmt.Errorf("writing advisory to signing tool failed: %w", err)
+	}
+	return output.String(), nil
 }
 
 func (p *processor) run(args []string) error {

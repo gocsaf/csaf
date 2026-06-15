@@ -36,6 +36,7 @@ type config struct {
 	//lint:ignore SA5008 We are using choice many times: csaf, white, green, amber, red.
 	TLP            string `short:"t" long:"tlp" choice:"csaf" choice:"white" choice:"green" choice:"amber" choice:"red" description:"TLP of the feed" toml:"tlp"`
 	ExternalSigned bool   `short:"x" long:"external_signed" description:"CSAF files are signed externally. Assumes .asc files beside CSAF files." toml:"external_signed"`
+	SigningTool    string `short:"X" long:"signing_tool" description:"Tool to sign a file externally" toml:"signing_tool"`
 	NoSchemaCheck  bool   `short:"s" long:"no_schema_check" description:"Do not check files against CSAF JSON schema locally." toml:"no_schema_check"`
 
 	Key              *string `short:"k" long:"key" description:"OpenPGP key to sign the CSAF files" value-name:"KEY-FILE" toml:"key"`
