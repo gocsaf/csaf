@@ -62,6 +62,10 @@ Example script under `csaf/docs/scripts/signing_tool.sh`
 There is an optional timeout `signing_tool_timeout` which - if set to values greater 0 - stops the external call after the given duration.
 It defaults to 0. Valid durations are decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 
+Attention: This currently works only fully on Unix-like systems. Only on these platforms
+it is ensured that all sub processes created by the external signing tool are killed when the
+timeout is reached. On other platforms the timeout may have no effect.
+
 By default csaf_uploader will try to load a config file
 from the following places:
 

@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/armor"
 	"github.com/ProtonMail/gopenpgp/v2/constants"
@@ -283,6 +284,11 @@ func (p *processor) signExternally(data []byte) (string, error) {
 	cmd.Stdin = bytes.NewReader(data)
 	cmd.Stdout = &output
 	cmd.Stderr = os.Stderr
+	cmd.WaitDelay = 500 * time.Millisecond
+	// Create a process group to be killed.
+	if p.cfg.SigningToolTimeout > 0 {
+		prepareKillingProcessGroup(cmd)
+	}
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("running signing tool failed: %w", err)
 	}
