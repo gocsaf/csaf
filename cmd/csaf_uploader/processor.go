@@ -10,6 +10,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -271,24 +272,19 @@ func (p *processor) signExternally(data []byte) (string, error) {
 	if p.cfg.SigningTool == "" {
 		return "", errors.New("no signing tool specified")
 	}
-	var output bytes.Buffer
-	cmd := exec.Command(p.cfg.SigningTool)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = &output
-	input, err := cmd.StdinPipe()
-	if err != nil {
-		return "", fmt.Errorf("cannot get stdin from signing tool: %w", err)
+	ctx := context.Background()
+	if p.cfg.SigningToolTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, p.cfg.SigningToolTimeout)
+		defer cancel()
 	}
-	errChan := make(chan error)
-	go func() {
-		_, err := input.Write(data)
-		errChan <- errors.Join(err, input.Close())
-	}()
+	var output bytes.Buffer
+	cmd := exec.CommandContext(ctx, p.cfg.SigningTool)
+	cmd.Stdin = bytes.NewReader(data)
+	cmd.Stdout = &output
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("running signing tool failed: %w", err)
-	}
-	if err := <-errChan; err != nil {
-		return "", fmt.Errorf("writing advisory to signing tool failed: %w", err)
 	}
 	return output.String(), nil
 }

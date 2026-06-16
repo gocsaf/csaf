@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/crypto/bcrypt"
@@ -34,10 +35,11 @@ type config struct {
 	Action string `short:"a" long:"action" choice:"upload" choice:"create" description:"Action to perform" toml:"action"`
 	URL    string `short:"u" long:"url" description:"URL of the CSAF provider" value-name:"URL" toml:"url"`
 	//lint:ignore SA5008 We are using choice many times: csaf, white, green, amber, red.
-	TLP            string `short:"t" long:"tlp" choice:"csaf" choice:"white" choice:"green" choice:"amber" choice:"red" description:"TLP of the feed" toml:"tlp"`
-	ExternalSigned bool   `short:"x" long:"external_signed" description:"CSAF files are signed externally. Assumes .asc files beside CSAF files." toml:"external_signed"`
-	SigningTool    string `short:"X" long:"signing_tool" description:"Tool to sign a file externally" toml:"signing_tool"`
-	NoSchemaCheck  bool   `short:"s" long:"no_schema_check" description:"Do not check files against CSAF JSON schema locally." toml:"no_schema_check"`
+	TLP                string        `short:"t" long:"tlp" choice:"csaf" choice:"white" choice:"green" choice:"amber" choice:"red" description:"TLP of the feed" toml:"tlp"`
+	ExternalSigned     bool          `short:"x" long:"external_signed" description:"CSAF files are signed externally. Assumes .asc files beside CSAF files." toml:"external_signed"`
+	SigningTool        string        `short:"X" long:"signing_tool" description:"Tool to sign a file externally" toml:"signing_tool"`
+	SigningToolTimeout time.Duration `long:"signing_tool_timeout" description:"Timeout for the external signing tool" toml:"signing_tool_timeout"`
+	NoSchemaCheck      bool          `short:"s" long:"no_schema_check" description:"Do not check files against CSAF JSON schema locally." toml:"no_schema_check"`
 
 	Key              *string `short:"k" long:"key" description:"OpenPGP key to sign the CSAF files" value-name:"KEY-FILE" toml:"key"`
 	Password         *string `short:"p" long:"password" description:"Authentication password for accessing the CSAF provider" value-name:"PASSWORD" toml:"password"`
