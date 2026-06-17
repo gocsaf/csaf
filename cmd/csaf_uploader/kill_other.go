@@ -17,5 +17,5 @@ import (
 
 // prepareKillingProcessGroup is currently not implemented on other platforms than unix-likes.
 func prepareKillingProcessGroup(*exec.Cmd) {
-	log.Println("Warning: creating a process is not implemented on this platform")
+	log.Println("Warning: creating a process group is not implemented on this platform.")
 }
