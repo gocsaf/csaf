@@ -224,13 +224,17 @@ func (lc *LoggingClient) PostForm(url string, data url.Values) (*http.Response, 
 
 // Do implements the respective method of the [Client] interface.
 func (lc *LimitingClient) Do(req *http.Request) (*http.Response, error) {
-	lc.Limiter.Wait(context.Background())
+	if err := lc.Limiter.Wait(context.Background()); err != nil {
+		return nil, err
+	}
 	return lc.Client.Do(req)
 }
 
 // GetWithContext implements the respective method of the [ClientWithContext] interface.
 func (lc *LimitingClient) GetWithContext(ctx context.Context, url string) (*http.Response, error) {
-	lc.Limiter.Wait(ctx)
+	if err := lc.Limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
 	if cc, ok := lc.Client.(ClientWithContext); ok {
 		return cc.GetWithContext(ctx, url)
 	}
@@ -239,13 +243,17 @@ func (lc *LimitingClient) GetWithContext(ctx context.Context, url string) (*http
 
 // Get implements the respective method of the [Client] interface.
 func (lc *LimitingClient) Get(url string) (*http.Response, error) {
-	lc.Limiter.Wait(context.Background())
+	if err := lc.Limiter.Wait(context.Background()); err != nil {
+		return nil, err
+	}
 	return lc.Client.Get(url)
 }
 
 // HeadWithContext implements the respective method of the [ClientWithContext] interface.
 func (lc *LimitingClient) HeadWithContext(ctx context.Context, url string) (*http.Response, error) {
-	lc.Limiter.Wait(ctx)
+	if err := lc.Limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
 	if cc, ok := lc.Client.(ClientWithContext); ok {
 		return cc.HeadWithContext(ctx, url)
 	}
@@ -254,13 +262,17 @@ func (lc *LimitingClient) HeadWithContext(ctx context.Context, url string) (*htt
 
 // Head implements the respective method of the [Client] interface.
 func (lc *LimitingClient) Head(url string) (*http.Response, error) {
-	lc.Limiter.Wait(context.Background())
+	if err := lc.Limiter.Wait(context.Background()); err != nil {
+		return nil, err
+	}
 	return lc.Client.Head(url)
 }
 
 // PostWithContext implements the respective method of the [ClientWithContext] interface.
 func (lc *LimitingClient) PostWithContext(ctx context.Context, url, contentType string, body io.Reader) (*http.Response, error) {
-	lc.Limiter.Wait(ctx)
+	if err := lc.Limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
 	if cc, ok := lc.Client.(ClientWithContext); ok {
 		return cc.PostWithContext(ctx, url, contentType, body)
 	}
@@ -269,13 +281,17 @@ func (lc *LimitingClient) PostWithContext(ctx context.Context, url, contentType 
 
 // Post implements the respective method of the [Client] interface.
 func (lc *LimitingClient) Post(url, contentType string, body io.Reader) (*http.Response, error) {
-	lc.Limiter.Wait(context.Background())
+	if err := lc.Limiter.Wait(context.Background()); err != nil {
+		return nil, err
+	}
 	return lc.Client.Post(url, contentType, body)
 }
 
 // PostFormWithContext implements the respective method of the [ClientWithContext] interface.
 func (lc *LimitingClient) PostFormWithContext(ctx context.Context, url string, data url.Values) (*http.Response, error) {
-	lc.Limiter.Wait(ctx)
+	if err := lc.Limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
 	if cc, ok := lc.Client.(ClientWithContext); ok {
 		return cc.PostFormWithContext(ctx, url, data)
 	}
@@ -284,6 +300,8 @@ func (lc *LimitingClient) PostFormWithContext(ctx context.Context, url string, d
 
 // PostForm implements the respective method of the [Client] interface.
 func (lc *LimitingClient) PostForm(url string, data url.Values) (*http.Response, error) {
-	lc.Limiter.Wait(context.Background())
+	if err := lc.Limiter.Wait(context.Background()); err != nil {
+		return nil, err
+	}
 	return lc.Client.PostForm(url, data)
 }
