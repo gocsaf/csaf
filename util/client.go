@@ -156,7 +156,7 @@ func (lc *LoggingClient) log(method, url string) {
 	}
 }
 
-// Do implements the respective method of the Client interface.
+// Do implements the respective method of the [Client] interface.
 func (lc *LoggingClient) Do(req *http.Request) (*http.Response, error) {
 	lc.log("DO", req.URL.String())
 	return lc.Client.Do(req)
@@ -201,7 +201,7 @@ func (lc *LoggingClient) PostWithContext(ctx context.Context, url, contentType s
 	return lc.Client.Post(url, contentType, body)
 }
 
-// Post implements the respective method of the Client interface.
+// Post implements the respective method of the [Client] interface.
 func (lc *LoggingClient) Post(url, contentType string, body io.Reader) (*http.Response, error) {
 	lc.log("POST", url)
 	return lc.Client.Post(url, contentType, body)
@@ -216,37 +216,73 @@ func (lc *LoggingClient) PostFormWithContext(ctx context.Context, url string, da
 	return lc.Client.PostForm(url, data)
 }
 
-// PostForm implements the respective method of the Client interface.
+// PostForm implements the respective method of the [Client] interface.
 func (lc *LoggingClient) PostForm(url string, data url.Values) (*http.Response, error) {
 	lc.log("POST FORM", url)
 	return lc.Client.PostForm(url, data)
 }
 
-// Do implements the respective method of the Client interface.
+// Do implements the respective method of the [Client] interface.
 func (lc *LimitingClient) Do(req *http.Request) (*http.Response, error) {
 	lc.Limiter.Wait(context.Background())
 	return lc.Client.Do(req)
 }
 
-// Get implements the respective method of the Client interface.
+// GetWithContext implements the respective method of the [ClientWithContext] interface.
+func (lc *LimitingClient) GetWithContext(ctx context.Context, url string) (*http.Response, error) {
+	lc.Limiter.Wait(ctx)
+	if cc, ok := lc.Client.(ClientWithContext); ok {
+		return cc.GetWithContext(ctx, url)
+	}
+	return lc.Client.Get(url)
+}
+
+// Get implements the respective method of the [Client] interface.
 func (lc *LimitingClient) Get(url string) (*http.Response, error) {
 	lc.Limiter.Wait(context.Background())
 	return lc.Client.Get(url)
 }
 
-// Head implements the respective method of the Client interface.
+// HeadWithContext implements the respective method of the [ClientWithContext] interface.
+func (lc *LimitingClient) HeadWithContext(ctx context.Context, url string) (*http.Response, error) {
+	lc.Limiter.Wait(ctx)
+	if cc, ok := lc.Client.(ClientWithContext); ok {
+		return cc.HeadWithContext(ctx, url)
+	}
+	return lc.Client.Head(url)
+}
+
+// Head implements the respective method of the [Client] interface.
 func (lc *LimitingClient) Head(url string) (*http.Response, error) {
 	lc.Limiter.Wait(context.Background())
 	return lc.Client.Head(url)
 }
 
-// Post implements the respective method of the Client interface.
+// PostWithContext implements the respective method of the [ClientWithContext] interface.
+func (lc *LimitingClient) PostWithContext(ctx context.Context, url, contentType string, body io.Reader) (*http.Response, error) {
+	lc.Limiter.Wait(ctx)
+	if cc, ok := lc.Client.(ClientWithContext); ok {
+		return cc.PostWithContext(ctx, url, contentType, body)
+	}
+	return lc.Client.Post(url, contentType, body)
+}
+
+// Post implements the respective method of the [Client] interface.
 func (lc *LimitingClient) Post(url, contentType string, body io.Reader) (*http.Response, error) {
 	lc.Limiter.Wait(context.Background())
 	return lc.Client.Post(url, contentType, body)
 }
 
-// PostForm implements the respective method of the Client interface.
+// PostFormWithContext implements the respective method of the [ClientWithContext] interface.
+func (lc *LimitingClient) PostFormWithContext(ctx context.Context, url string, data url.Values) (*http.Response, error) {
+	lc.Limiter.Wait(ctx)
+	if cc, ok := lc.Client.(ClientWithContext); ok {
+		return cc.PostFormWithContext(ctx, url, data)
+	}
+	return lc.Client.PostForm(url, data)
+}
+
+// PostForm implements the respective method of the [Client] interface.
 func (lc *LimitingClient) PostForm(url string, data url.Values) (*http.Response, error) {
 	lc.Limiter.Wait(context.Background())
 	return lc.Client.PostForm(url, data)
