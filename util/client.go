@@ -97,12 +97,31 @@ func (hc *HeaderClient) Get(url string) (*http.Response, error) {
 	return hc.Do(req)
 }
 
+// HeadWithContext implements the respective method of the [ClientWithContext] interface.
+func (hc *HeaderClient) HeadWithContext(ctx context.Context, url string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return hc.Do(req)
+}
+
 // Head implements the respective method of the [Client] interface.
 func (hc *HeaderClient) Head(url string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodHead, url, nil)
 	if err != nil {
 		return nil, err
 	}
+	return hc.Do(req)
+}
+
+// PostWithContext implements the respective method of the [ClientWithContext] interface.
+func (hc *HeaderClient) PostWithContext(ctx context.Context, url, contentType string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
 	return hc.Do(req)
 }
 
@@ -114,6 +133,12 @@ func (hc *HeaderClient) Post(url, contentType string, body io.Reader) (*http.Res
 	}
 	req.Header.Set("Content-Type", contentType)
 	return hc.Do(req)
+}
+
+// PostFormWithContext implements the respective method of the [ClientWithContext] interface.
+func (hc *HeaderClient) PostFormWithContext(ctx context.Context, url string, data url.Values) (*http.Response, error) {
+	return hc.PostWithContext(
+		ctx, url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
 }
 
 // PostForm implements the respective method of the [Client] interface.
