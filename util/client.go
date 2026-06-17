@@ -28,6 +28,16 @@ type Client interface {
 	PostForm(url string, data url.Values) (*http.Response, error)
 }
 
+// ClientWithContext extents the Client interface to ease using it context aware.
+// Also for the sake of backwards compatibility.
+type ClientWithContext interface {
+	Client
+	GetWithContext(ctx context.Context, url string) (*http.Response, error)
+	HeadWithContext(ctx context.Context, url string) (*http.Response, error)
+	PostWithContext(ctx context.Context, url, contentType string, body io.Reader) (*http.Response, error)
+	PostFormWithContext(ctx context.Context, url string, data url.Values) (*http.Response, error)
+}
+
 // LoggingClient is a client that logs called URLs.
 type LoggingClient struct {
 	Client
@@ -67,6 +77,15 @@ func (hc *HeaderClient) Do(req *http.Request) (*http.Response, error) {
 		req.Header.Add("User-Agent", "csaf_distribution/"+SemVersion)
 	}
 	return hc.Client.Do(req)
+}
+
+// GetWithContext is the respective method of the [ClientWithContext] interface.
+func (hc *HeaderClient) GetWithContext(ctx context.Context, url string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return hc.Do(req)
 }
 
 // Get implements the respective method of the [Client] interface.
