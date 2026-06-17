@@ -111,7 +111,7 @@ func logRedirect(req *http.Request, via []*http.Request) error {
 	return nil
 }
 
-func (d *downloader) httpClient() util.Client {
+func (d *downloader) httpClient() util.ClientWithContext {
 	hClient := http.Client{}
 
 	if d.cfg.verbose() {
@@ -139,29 +139,31 @@ func (d *downloader) httpClient() util.Client {
 		client = *d.client
 	}
 
+	var cwc util.ClientWithContext
+
 	// Add extra headers.
-	client = &util.HeaderClient{
+	cwc = &util.HeaderClient{
 		Client: client,
 		Header: d.cfg.ExtraHeader,
 	}
 
 	// Add optional URL logging.
 	if d.cfg.verbose() {
-		client = &util.LoggingClient{
-			Client: client,
+		cwc = &util.LoggingClient{
+			Client: cwc,
 			Log:    httpLog("downloader"),
 		}
 	}
 
 	// Add optional rate limiting.
 	if d.cfg.Rate != nil {
-		client = &util.LimitingClient{
-			Client:  client,
+		cwc = &util.LimitingClient{
+			Client:  cwc,
 			Limiter: rate.NewLimiter(rate.Limit(*d.cfg.Rate), 1),
 		}
 	}
 
-	return client
+	return cwc
 }
 
 // httpLog does structured logging in a [util.LoggingClient].
@@ -234,6 +236,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 	expr := util.NewPathEval()
 
 	if err := d.loadOpenPGPKeys(
+		ctx,
 		client,
 		lpmd.Document,
 		expr,
@@ -308,7 +311,8 @@ allFiles:
 }
 
 func (d *downloader) loadOpenPGPKeys(
-	client util.Client,
+	ctx context.Context,
+	client util.ClientWithContext,
 	doc any,
 	expr *util.PathEval,
 ) error {
@@ -342,7 +346,7 @@ func (d *downloader) loadOpenPGPKeys(
 			continue
 		}
 
-		res, err := client.Get(u.String())
+		res, err := client.GetWithContext(ctx, u.String())
 		if err != nil {
 			slog.Warn(
 				"Fetching public OpenPGP key failed",
