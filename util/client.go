@@ -162,22 +162,58 @@ func (lc *LoggingClient) Do(req *http.Request) (*http.Response, error) {
 	return lc.Client.Do(req)
 }
 
-// Get implements the respective method of the Client interface.
+// GetWithContext implements the respective method of the [ClientWithContext] interface.
+func (lc *LoggingClient) GetWithContext(ctx context.Context, url string) (*http.Response, error) {
+	lc.log("GET", url)
+	if cc, ok := lc.Client.(ClientWithContext); ok {
+		return cc.GetWithContext(ctx, url)
+	}
+	return lc.Client.Get(url)
+}
+
+// Get implements the respective method of the [Client] interface.
 func (lc *LoggingClient) Get(url string) (*http.Response, error) {
 	lc.log("GET", url)
 	return lc.Client.Get(url)
 }
 
-// Head implements the respective method of the Client interface.
+// HeadWithContext implements the respective method of the [ClientWithContext] interface.
+func (lc *LoggingClient) HeadWithContext(ctx context.Context, url string) (*http.Response, error) {
+	lc.log("HEAD", url)
+	if cc, ok := lc.Client.(ClientWithContext); ok {
+		return cc.HeadWithContext(ctx, url)
+	}
+	return lc.Client.Head(url)
+}
+
+// Head implements the respective method of the [Client] interface.
 func (lc *LoggingClient) Head(url string) (*http.Response, error) {
 	lc.log("HEAD", url)
 	return lc.Client.Head(url)
+}
+
+// PostWithContext implements the respective method of the [ClientWithContext] interface.
+func (lc *LoggingClient) PostWithContext(ctx context.Context, url, contentType string, body io.Reader) (*http.Response, error) {
+	lc.log("POST", url)
+	if cc, ok := lc.Client.(ClientWithContext); ok {
+		return cc.PostWithContext(ctx, url, contentType, body)
+	}
+	return lc.Client.Post(url, contentType, body)
 }
 
 // Post implements the respective method of the Client interface.
 func (lc *LoggingClient) Post(url, contentType string, body io.Reader) (*http.Response, error) {
 	lc.log("POST", url)
 	return lc.Client.Post(url, contentType, body)
+}
+
+// PostFormWithContext implements the respective method of the [ClientWithContext] interface.
+func (lc *LoggingClient) PostFormWithContext(ctx context.Context, url string, data url.Values) (*http.Response, error) {
+	lc.log("POST FORM", url)
+	if cc, ok := lc.Client.(ClientWithContext); ok {
+		return cc.PostFormWithContext(ctx, url, data)
+	}
+	return lc.Client.PostForm(url, data)
 }
 
 // PostForm implements the respective method of the Client interface.
