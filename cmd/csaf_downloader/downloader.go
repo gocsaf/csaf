@@ -50,7 +50,7 @@ type downloader struct {
 	cfg       *config
 	client    *util.Client // Used for testing
 	keys      *crypto.KeyRing
-	validator csaf.RemoteValidator
+	validator csaf.RemoteValidatorWithContext
 	forwarder *forwarder
 	mkdirMu   sync.Mutex
 	statsMu   sync.Mutex
@@ -63,7 +63,7 @@ type downloader struct {
 const failedValidationDir = "failed_validation"
 
 func newDownloader(cfg *config) (*downloader, error) {
-	var validator csaf.RemoteValidator
+	var validator csaf.RemoteValidatorWithContext
 
 	if cfg.RemoteValidator != "" {
 		validatorOptions := csaf.RemoteValidatorOptions{
@@ -72,11 +72,11 @@ func newDownloader(cfg *config) (*downloader, error) {
 			Cache:   cfg.RemoteValidatorCache,
 		}
 		var err error
-		if validator, err = validatorOptions.Open(); err != nil {
+		if validator, err = validatorOptions.OpenWithContext(); err != nil {
 			return nil, fmt.Errorf(
 				"preparing remote validator failed: %w", err)
 		}
-		validator = csaf.SynchronizedRemoteValidator(validator)
+		validator = csaf.SynchronizedRemoteValidatorWithContext(validator)
 	}
 
 	return &downloader{
@@ -629,7 +629,7 @@ func (dc *downloadContext) downloadAdvisory(
 			return nil
 		}
 		//XXX: uses a http.Post internally, not util.Client, does it need ctx integration?
-		rvr, err := dc.d.validator.Validate(doc)
+		rvr, err := dc.d.validator.ValidateWithContext(ctx, doc)
 		if err != nil {
 			errorCh <- fmt.Errorf(
 				"calling remote validator on %q failed: %w",
