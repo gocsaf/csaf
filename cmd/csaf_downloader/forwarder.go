@@ -179,8 +179,6 @@ func (f *forwarder) buildRequest(
 		return nil, err
 	}
 
-	// XXX: or if ClientWithContext ?:
-	// req, err := f.client.PostWithContext(ctx, f.cfg.ForwardURL, body)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, f.cfg.ForwardURL, body)
 	if err != nil {
 		return nil, err

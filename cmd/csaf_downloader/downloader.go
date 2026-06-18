@@ -176,12 +176,11 @@ func httpLog(who string) func(string, string) {
 	}
 }
 
-func (d *downloader) enumerate(domain string) error {
+func (d *downloader) enumerate(ctx context.Context, domain string) error {
 	client := d.httpClient()
 
-	//XXX: Needs ctx integration here
 	loader := csaf.NewProviderMetadataLoader(client)
-	lpmd := loader.Enumerate(domain)
+	lpmd := loader.EnumerateWithContext(ctx, domain)
 
 	docs := []any{}
 
@@ -210,10 +209,9 @@ func (d *downloader) enumerate(domain string) error {
 func (d *downloader) download(ctx context.Context, domain string) error {
 	client := d.httpClient()
 
-	//XXX: missing ctx integration here
 	loader := csaf.NewProviderMetadataLoader(client)
 
-	lpmd := loader.Load(domain)
+	lpmd := loader.LoadWithContext(ctx, domain)
 
 	if !lpmd.Valid() {
 		for i := range lpmd.Messages {
@@ -260,7 +258,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		afp.AgeAccept = d.cfg.Range.Contains
 	}
 
-	return afp.Process(func(label csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+	return afp.ProcessWithContext(ctx, func(label csaf.TLPLabel, files []csaf.AdvisoryFile) error {
 		return d.downloadFiles(ctx, label, files)
 	})
 }
@@ -628,7 +626,6 @@ func (dc *downloadContext) downloadAdvisory(
 		if dc.d.validator == nil {
 			return nil
 		}
-		//XXX: uses a http.Post internally, not util.Client, does it need ctx integration?
 		rvr, err := dc.d.validator.ValidateWithContext(ctx, doc)
 		if err != nil {
 			errorCh <- fmt.Errorf(
@@ -665,7 +662,6 @@ func (dc *downloadContext) downloadAdvisory(
 
 	// Send to forwarder
 	if dc.d.forwarder != nil {
-		//XXX: needs ctx integration, I think, I'm on it
 		dc.d.forwarder.forward(
 			ctx,
 			filename, dc.data.String(),
@@ -880,11 +876,10 @@ func (d *downloader) run(ctx context.Context, domains []string) error {
 }
 
 // runEnumerate performs the enumeration of PMDs for all the given domains.
-// XXX: Need ctx integrationt too?
-func (d *downloader) runEnumerate(domains []string) error {
+func (d *downloader) runEnumerate(ctx context.Context, domains []string) error {
 	defer d.stats.log()
 	for _, domain := range domains {
-		if err := d.enumerate(domain); err != nil {
+		if err := d.enumerate(ctx, domain); err != nil {
 			return err
 		}
 	}
