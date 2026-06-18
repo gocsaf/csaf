@@ -10,6 +10,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"io"
 	"log/slog"
@@ -47,8 +48,10 @@ func (vs *validationStatus) update(status validationStatus) {
 // forwarder forwards downloaded advisories to a given
 // HTTP endpoint.
 type forwarder struct {
-	cfg    *config
-	cmds   chan func(*forwarder)
+	cfg  *config
+	cmds chan func(*forwarder)
+	//XXX: Why is this not a pointer like in the downloader?
+	//XXX: Should this be a [ClientWithContext] at this point?
 	client util.Client
 
 	failed    int
@@ -57,10 +60,8 @@ type forwarder struct {
 
 // newForwarder creates a new forwarder.
 func newForwarder(cfg *config) *forwarder {
-	queue := cfg.ForwardQueue
-	if queue < 1 {
-		queue = 1
-	}
+	//XXX: Codium suggested improvement
+	queue := max(cfg.ForwardQueue, 1)
 	return &forwarder{
 		cfg:  cfg,
 		cmds: make(chan func(*forwarder), queue),
@@ -92,11 +93,7 @@ func (f *forwarder) log() {
 
 // httpClient returns a cached HTTP client used for uploading
 // the advisories to the configured HTTP endpoint.
-func (f *forwarder) httpClient() util.Client {
-	if f.client != nil {
-		return f.client
-	}
-
+func (f *forwarder) httpClient() util.ClientWithContext {
 	hClient := http.Client{}
 
 	var tlsConfig tls.Config
@@ -111,22 +108,30 @@ func (f *forwarder) httpClient() util.Client {
 
 	client := util.Client(&hClient)
 
+	if f.client != nil {
+		client = f.client
+	}
+
+	var cwc util.ClientWithContext
+
 	// Add extra headers.
-	client = &util.HeaderClient{
+	cwc = &util.HeaderClient{
 		Client: client,
 		Header: f.cfg.ForwardHeader,
 	}
 
 	// Add optional URL logging.
 	if f.cfg.verbose() {
-		client = &util.LoggingClient{
-			Client: client,
+		cwc = &util.LoggingClient{
+			Client: cwc,
 			Log:    httpLog("forwarder"),
 		}
 	}
 
-	f.client = client
-	return f.client
+	//XXX: Why do we need to set this here?
+	//f.client = client
+	f.client = cwc
+	return cwc
 }
 
 // replaceExt replaces the extension of a given filename.
@@ -137,6 +142,7 @@ func replaceExt(fname, nExt string) string {
 
 // buildRequest creates an HTTP request suited to forward the given advisory.
 func (f *forwarder) buildRequest(
+	ctx context.Context,
 	filename, doc string,
 	status validationStatus,
 	sha256, sha512 string,
@@ -177,7 +183,9 @@ func (f *forwarder) buildRequest(
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, f.cfg.ForwardURL, body)
+	// XXX: or if ClientWithContext ?:
+	// req, err := f.client.PostWithContext(ctx, f.cfg.ForwardURL, body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, f.cfg.ForwardURL, body)
 	if err != nil {
 		return nil, err
 	}
@@ -239,13 +247,14 @@ func limitedString(r io.Reader, maxLength int) (string, error) {
 // checksums to the forwarder. This is async to the degree
 // till the configured queue size is filled.
 func (f *forwarder) forward(
+	ctx context.Context,
 	filename, doc string,
 	status validationStatus,
 	sha256, sha512 string,
 ) {
 	// Run this in the main loop of the forwarder.
 	f.cmds <- func(f *forwarder) {
-		req, err := f.buildRequest(filename, doc, status, sha256, sha512)
+		req, err := f.buildRequest(ctx, filename, doc, status, sha256, sha512)
 		if err != nil {
 			slog.Error("building forward Request failed",
 				"error", err)
