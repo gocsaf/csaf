@@ -179,6 +179,7 @@ func httpLog(who string) func(string, string) {
 func (d *downloader) enumerate(domain string) error {
 	client := d.httpClient()
 
+	//XXX: Needs ctx integration here
 	loader := csaf.NewProviderMetadataLoader(client)
 	lpmd := loader.Enumerate(domain)
 
@@ -209,6 +210,7 @@ func (d *downloader) enumerate(domain string) error {
 func (d *downloader) download(ctx context.Context, domain string) error {
 	client := d.httpClient()
 
+	//XXX: missing ctx integration here
 	loader := csaf.NewProviderMetadataLoader(client)
 
 	lpmd := loader.Load(domain)
@@ -244,6 +246,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		return err
 	}
 
+	//XXX: need ctx integration
 	afp := csaf.NewAdvisoryFileProcessor(
 		client,
 		expr,
@@ -421,7 +424,7 @@ func (d *downloader) logValidationIssues(url string, errors []string, err error)
 // downloadContext stores the common context of a downloader.
 type downloadContext struct {
 	d                  *downloader
-	client             util.Client
+	client             util.ClientWithContext
 	data               bytes.Buffer
 	lastDir            string
 	initialReleaseDate time.Time
@@ -443,6 +446,7 @@ func newDownloadContext(d *downloader, label csaf.TLPLabel) *downloadContext {
 }
 
 func (dc *downloadContext) downloadAdvisory(
+	ctx context.Context,
 	file csaf.AdvisoryFile,
 	errorCh chan<- error,
 ) error {
@@ -469,7 +473,7 @@ func (dc *downloadContext) downloadAdvisory(
 		return nil
 	}
 
-	resp, err := dc.client.Get(file.URL())
+	resp, err := dc.client.GetWithContext(ctx, file.URL())
 	if err != nil {
 		dc.stats.downloadFailed++
 		slog.Warn("Cannot GET",
@@ -530,7 +534,7 @@ func (dc *downloadContext) downloadAdvisory(
 		}
 	}
 
-	remoteSHA256, s256Data, remoteSHA512, s512Data = loadHashes(dc.client, hashToFetch)
+	remoteSHA256, s256Data, remoteSHA512, s512Data = loadHashes(ctx, dc.client, hashToFetch)
 	if remoteSHA512 != nil {
 		s512 = sha512.New()
 		writers = append(writers, s512)
@@ -583,7 +587,7 @@ func (dc *downloadContext) downloadAdvisory(
 			return nil
 		}
 		var sign *crypto.PGPSignature
-		sign, signData, err = loadSignature(dc.client, file.SignURL())
+		sign, signData, err = loadSignature(ctx, dc.client, file.SignURL())
 		if err != nil {
 			slog.Warn("Downloading signature failed",
 				"url", file.SignURL(),
@@ -624,6 +628,7 @@ func (dc *downloadContext) downloadAdvisory(
 		if dc.d.validator == nil {
 			return nil
 		}
+		//XXX: uses a http.Post internally, not util.Client, does it need ctx integration?
 		rvr, err := dc.d.validator.Validate(doc)
 		if err != nil {
 			errorCh <- fmt.Errorf(
@@ -660,7 +665,9 @@ func (dc *downloadContext) downloadAdvisory(
 
 	// Send to forwarder
 	if dc.d.forwarder != nil {
+		//XXX: needs ctx integration, I think, I'm on it
 		dc.d.forwarder.forward(
+			ctx,
 			filename, dc.data.String(),
 			valStatus,
 			string(s256Data),
@@ -758,7 +765,7 @@ func (d *downloader) downloadWorker(
 		case <-ctx.Done():
 			return
 		}
-		if err := dc.downloadAdvisory(file, errorCh); err != nil {
+		if err := dc.downloadAdvisory(ctx, file, errorCh); err != nil {
 			slog.Error("download terminated", "error", err)
 			return
 		}
@@ -777,8 +784,8 @@ func (d *downloader) checkSignature(data []byte, sign *crypto.PGPSignature) erro
 	return d.keys.VerifyDetached(pm, sign, t)
 }
 
-func loadSignature(client util.Client, p string) (*crypto.PGPSignature, []byte, error) {
-	resp, err := client.Get(p)
+func loadSignature(ctx context.Context, client util.ClientWithContext, p string) (*crypto.PGPSignature, []byte, error) {
+	resp, err := client.GetWithContext(ctx, p)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -798,7 +805,7 @@ func loadSignature(client util.Client, p string) (*crypto.PGPSignature, []byte, 
 	return sign, data, nil
 }
 
-func loadHashes(client util.Client, hashes []hashFetchInfo) ([]byte, []byte, []byte, []byte) {
+func loadHashes(ctx context.Context, client util.ClientWithContext, hashes []hashFetchInfo) ([]byte, []byte, []byte, []byte) {
 	var remoteSha256, remoteSha512, sha256Data, sha512Data []byte
 
 	// Load preferred hashes first
@@ -812,7 +819,7 @@ func loadHashes(client util.Client, hashes []hashFetchInfo) ([]byte, []byte, []b
 		return 1
 	})
 	for _, h := range hashes {
-		if remote, data, err := loadHash(client, h.url); err != nil {
+		if remote, data, err := loadHash(ctx, client, h.url); err != nil {
 			if h.warn {
 				slog.Warn("Cannot fetch hash",
 					"hash", h.hashType,
@@ -842,8 +849,8 @@ func loadHashes(client util.Client, hashes []hashFetchInfo) ([]byte, []byte, []b
 	return remoteSha256, sha256Data, remoteSha512, sha512Data
 }
 
-func loadHash(client util.Client, p string) ([]byte, []byte, error) {
-	resp, err := client.Get(p)
+func loadHash(ctx context.Context, client util.ClientWithContext, p string) ([]byte, []byte, error) {
+	resp, err := client.GetWithContext(ctx, p)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -873,6 +880,7 @@ func (d *downloader) run(ctx context.Context, domains []string) error {
 }
 
 // runEnumerate performs the enumeration of PMDs for all the given domains.
+// XXX: Need ctx integrationt too?
 func (d *downloader) runEnumerate(domains []string) error {
 	defer d.stats.log()
 	for _, domain := range domains {
