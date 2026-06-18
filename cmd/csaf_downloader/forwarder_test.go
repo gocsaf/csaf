@@ -340,7 +340,7 @@ func TestStoredFailed(t *testing.T) {
 }
 
 type fakeClient struct {
-	util.Client
+	util.ClientWithContext
 	state int
 }
 

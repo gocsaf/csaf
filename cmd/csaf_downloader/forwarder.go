@@ -48,11 +48,9 @@ func (vs *validationStatus) update(status validationStatus) {
 // forwarder forwards downloaded advisories to a given
 // HTTP endpoint.
 type forwarder struct {
-	cfg  *config
-	cmds chan func(*forwarder)
-	//XXX: Why is this not a pointer like in the downloader?
-	//XXX: Should this be a [ClientWithContext] at this point?
-	client util.Client
+	cfg    *config
+	cmds   chan func(*forwarder)
+	client util.ClientWithContext
 
 	failed    int
 	succeeded int
@@ -94,6 +92,10 @@ func (f *forwarder) log() {
 // httpClient returns a cached HTTP client used for uploading
 // the advisories to the configured HTTP endpoint.
 func (f *forwarder) httpClient() util.ClientWithContext {
+	if f.client != nil {
+		return f.client
+	}
+
 	hClient := http.Client{}
 
 	var tlsConfig tls.Config
@@ -107,10 +109,6 @@ func (f *forwarder) httpClient() util.ClientWithContext {
 	}
 
 	client := util.Client(&hClient)
-
-	if f.client != nil {
-		client = f.client
-	}
 
 	var cwc util.ClientWithContext
 
@@ -128,10 +126,8 @@ func (f *forwarder) httpClient() util.ClientWithContext {
 		}
 	}
 
-	//XXX: Why do we need to set this here?
-	//f.client = client
 	f.client = cwc
-	return cwc
+	return f.client
 }
 
 // replaceExt replaces the extension of a given filename.
