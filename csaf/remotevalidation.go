@@ -92,9 +92,22 @@ type RemoteValidator interface {
 	Close() error
 }
 
+// RemoteValidatorWithContext validates an advisory document remotely like [RemoteValidator]
+// but adds a method to do this context aware, too.
+type RemoteValidatorWithContext interface {
+	RemoteValidator
+	ValidateWithContext(ctx context.Context, doc any) (*RemoteValidationResult, error)
+}
+
 // SynchronizedRemoteValidator returns a serialized variant
 // of the given remote validator.
 func SynchronizedRemoteValidator(validator RemoteValidator) RemoteValidator {
+	return &syncedRemoteValidator{RemoteValidator: validator}
+}
+
+// SynchronizedRemoteValidatorWithContext returns a serialized variant
+// of the given remote validator.
+func SynchronizedRemoteValidatorWithContext(validator RemoteValidatorWithContext) RemoteValidatorWithContext {
 	return &syncedRemoteValidator{RemoteValidator: validator}
 }
 
@@ -115,6 +128,16 @@ type syncedRemoteValidator struct {
 func (srv *syncedRemoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 	srv.Lock()
 	defer srv.Unlock()
+	return srv.RemoteValidator.Validate(doc)
+}
+
+// ValidateWithContext implements the validation part of the RemoteValidator interface.
+func (srv *syncedRemoteValidator) ValidateWithContext(ctx context.Context, doc any) (*RemoteValidationResult, error) {
+	srv.Lock()
+	defer srv.Unlock()
+	if vwc, ok := srv.RemoteValidator.(RemoteValidatorWithContext); ok {
+		return vwc.ValidateWithContext(ctx, doc)
+	}
 	return srv.RemoteValidator.Validate(doc)
 }
 
@@ -214,8 +237,7 @@ func (bc boltCache) set(key, value []byte) error {
 	})
 }
 
-// Open opens a new remoteValidator.
-func (rvo *RemoteValidatorOptions) Open() (RemoteValidator, error) {
+func (rvo *RemoteValidatorOptions) open() (RemoteValidatorWithContext, error) {
 	cache, err := prepareCache(rvo.Cache)
 	if err != nil {
 		return nil, err
@@ -225,6 +247,16 @@ func (rvo *RemoteValidatorOptions) Open() (RemoteValidator, error) {
 		tests: prepareTests(rvo.Presets),
 		cache: cache,
 	}, nil
+}
+
+// Open opens a new remoteValidator.
+func (rvo *RemoteValidatorOptions) Open() (RemoteValidator, error) {
+	return rvo.open()
+}
+
+// OpenWithContext opens a new remoteValidator.
+func (rvo *RemoteValidatorOptions) OpenWithContext() (RemoteValidatorWithContext, error) {
+	return rvo.open()
 }
 
 // Close closes the remote validator.
