@@ -11,6 +11,7 @@ package csaf
 import (
 	"bytes"
 	"compress/zlib"
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -262,8 +263,34 @@ func deserialize(value []byte) (*RemoteValidationResult, error) {
 	return &rvr, nil
 }
 
+// Validate executes a remote validation of an advisory with a given context.
+func (v *remoteValidator) ValidateWithContext(ctx context.Context, doc any) (*RemoteValidationResult, error) {
+	return v.validate(doc, func(r io.Reader) (*http.Response, error) {
+		req, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			v.url,
+			r)
+		if err != nil {
+			return nil, fmt.Errorf("creating request failed: %w", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return http.DefaultClient.Do(req)
+	})
+}
+
 // Validate executes a remote validation of an advisory.
 func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
+	return v.validate(doc, func(r io.Reader) (*http.Response, error) {
+		return http.Post(v.url, "application/json", r)
+	})
+}
+
+// validate does the actual validation call.
+func (v *remoteValidator) validate(
+	doc any,
+	doPost func(io.Reader) (*http.Response, error),
+) (*RemoteValidationResult, error) {
 
 	var key []byte
 
@@ -292,14 +319,11 @@ func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 		return nil, err
 	}
 
-	resp, err := http.Post(
-		v.url,
-		"application/json",
-		bytes.NewReader(buf.Bytes()))
-
+	resp, err := doPost(bytes.NewReader(buf.Bytes()))
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
@@ -312,7 +336,6 @@ func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 	)
 
 	if err := func() error {
-		defer resp.Body.Close()
 		var in io.Reader
 		// If we are caching record the incoming data and compress it.
 		if key != nil {
