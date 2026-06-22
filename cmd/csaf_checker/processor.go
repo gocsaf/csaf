@@ -325,7 +325,7 @@ func (p *processor) fillMeta(domain *Domain) error {
 
 // domainChecks compiles a list of checks which should be performed
 // for a given domain.
-func (p *processor) domainChecks(ctx context.Context, domain string) []func(*processor, context.Context, string) error {
+func (p *processor) domainChecks(domain string) []func(*processor, context.Context, string) error {
 	// If we have a direct domain url we dont need to
 	// perform certain checks.
 	direct := strings.HasPrefix(domain, "https://")
@@ -366,7 +366,7 @@ func (p *processor) domainChecks(ctx context.Context, domain string) []func(*pro
 // checkDomain runs a set of domain specific checks on a given
 // domain.
 func (p *processor) checkDomain(ctx context.Context, domain string) error {
-	for _, check := range p.domainChecks(ctx, domain) {
+	for _, check := range p.domainChecks(domain) {
 		if err := check(p, ctx, domain); err != nil {
 			if err == errContinue {
 				continue
