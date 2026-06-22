@@ -38,6 +38,11 @@ type ClientWithContext interface {
 	PostFormWithContext(ctx context.Context, url string, data url.Values) (*http.Response, error)
 }
 
+// BasicClient is a client implementing the default [Client] and [ClientWithContext] interface methods
+type BasicClient struct {
+	Client
+}
+
 // LoggingClient is a client that logs called URLs.
 type LoggingClient struct {
 	Client
@@ -304,4 +309,61 @@ func (lc *LimitingClient) PostForm(url string, data url.Values) (*http.Response,
 		return nil, err
 	}
 	return lc.Client.PostForm(url, data)
+}
+
+// Do implements the respective method of the [Client] interface.
+func (bc *BasicClient) Do(req *http.Request) (*http.Response, error) {
+	return bc.Client.Do(req)
+}
+
+// GetWithContext implements the respective method of the [ClientWithContext] interface.
+func (bc *BasicClient) GetWithContext(ctx context.Context, url string) (*http.Response, error) {
+	if cc, ok := bc.Client.(ClientWithContext); ok {
+		return cc.GetWithContext(ctx, url)
+	}
+	return bc.Client.Get(url)
+}
+
+// Get implements the respective method of the [Client] interface.
+func (bc *BasicClient) Get(url string) (*http.Response, error) {
+	return bc.Client.Get(url)
+}
+
+// HeadWithContext implements the respective method of the [ClientWithContext] interface.
+func (bc *BasicClient) HeadWithContext(ctx context.Context, url string) (*http.Response, error) {
+	if cc, ok := bc.Client.(ClientWithContext); ok {
+		return cc.HeadWithContext(ctx, url)
+	}
+	return bc.Client.Head(url)
+}
+
+// Head implements the respective method of the [Client] interface.
+func (bc *BasicClient) Head(url string) (*http.Response, error) {
+	return bc.Client.Head(url)
+}
+
+// PostWithContext implements the respective method of the [ClientWithContext] interface.
+func (bc *BasicClient) PostWithContext(ctx context.Context, url, contentType string, body io.Reader) (*http.Response, error) {
+	if cc, ok := bc.Client.(ClientWithContext); ok {
+		return cc.PostWithContext(ctx, url, contentType, body)
+	}
+	return bc.Client.Post(url, contentType, body)
+}
+
+// Post implements the respective method of the [Client] interface.
+func (bc *BasicClient) Post(url, contentType string, body io.Reader) (*http.Response, error) {
+	return bc.Client.Post(url, contentType, body)
+}
+
+// PostFormWithContext implements the respective method of the [ClientWithContext] interface.
+func (bc *BasicClient) PostFormWithContext(ctx context.Context, url string, data url.Values) (*http.Response, error) {
+	if cc, ok := bc.Client.(ClientWithContext); ok {
+		return cc.PostFormWithContext(ctx, url, data)
+	}
+	return bc.Client.PostForm(url, data)
+}
+
+// PostForm implements the respective method of the [Client] interface.
+func (bc *BasicClient) PostForm(url string, data url.Values) (*http.Response, error) {
+	return bc.Client.PostForm(url, data)
 }
