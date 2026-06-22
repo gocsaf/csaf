@@ -467,9 +467,8 @@ func (p *processor) basicClient() util.ClientWithContext {
 		}
 	}
 	client := util.Client(&hClient)
-	return &util.HeaderClient{
+	return &util.BasicClient{
 		Client: client,
-		Header: nil,
 	}
 }
 
