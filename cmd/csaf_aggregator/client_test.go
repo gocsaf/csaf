@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -59,7 +60,8 @@ func Test_downloadJSON(t *testing.T) {
 			defer server.Close()
 			hClient := http.Client{}
 			client := util.Client(&hClient)
-			if gotErr := downloadJSON(client, server.URL, found); gotErr != test.wantErr {
+			cwc := util.ClientWithContext(&util.BasicClient{Client: client})
+			if gotErr := downloadJSON(context.Background(), cwc, server.URL, found); gotErr != test.wantErr {
 				t.Errorf("downloadJSON: Expected %q but got %q.", test.wantErr, gotErr)
 			}
 		})

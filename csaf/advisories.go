@@ -128,7 +128,7 @@ func empty(arr []string) bool {
 // Process is a wrapper for ProcessWithContext function and supplements
 // a required context.Background() as first parameter.
 func (afp *AdvisoryFileProcessor) Process(
-	fn func(TLPLabel, []AdvisoryFile) error,
+	fn func(context.Context, TLPLabel, []AdvisoryFile) error,
 ) error {
 	return afp.ProcessWithContext(context.Background(), fn)
 }
@@ -138,7 +138,7 @@ func (afp *AdvisoryFileProcessor) Process(
 // context.Context as first parameter.
 func (afp *AdvisoryFileProcessor) ProcessWithContext(
 	ctx context.Context,
-	fn func(TLPLabel, []AdvisoryFile) error,
+	fn func(context.Context, TLPLabel, []AdvisoryFile) error,
 ) error {
 	lg := afp.Log
 	if lg == nil {
@@ -208,7 +208,7 @@ func (afp *AdvisoryFileProcessor) ProcessWithContext(
 				return err
 			}
 			// XXX: Is treating as white okay? better look into the advisories?
-			if err := fn(TLPLabelWhite, files); err != nil {
+			if err := fn(ctx, TLPLabelWhite, files); err != nil {
 				return err
 			}
 		}
@@ -292,7 +292,7 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 func (afp *AdvisoryFileProcessor) processROLIE(
 	ctx context.Context,
 	labeledFeeds []Feed,
-	fn func(TLPLabel, []AdvisoryFile) error,
+	fn func(context.Context, TLPLabel, []AdvisoryFile) error,
 ) error {
 	for i := range labeledFeeds {
 		feed := &labeledFeeds[i]
@@ -405,7 +405,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			label = "unknown"
 		}
 
-		if err := fn(label, files); err != nil {
+		if err := fn(ctx, label, files); err != nil {
 			return err
 		}
 	}
