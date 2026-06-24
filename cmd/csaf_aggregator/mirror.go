@@ -81,7 +81,7 @@ func (w *worker) mirrorInternal(ctx context.Context) (*csaf.AggregatorCSAFProvid
 
 	afp.AgeAccept = w.provider.ageAccept(w.processor.cfg)
 
-	if err := afp.ProcessWithContext(ctx, w.mirrorFiles); err != nil {
+	if err := afp.ProcessWithContext(ctx, w.mirrorFiles(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -493,7 +493,13 @@ func (w *worker) extractCategories(label string, advisory any) error {
 	return nil
 }
 
-func (w *worker) mirrorFiles(ctx context.Context, tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+func (w *worker) mirrorFiles(ctx context.Context) func(csaf.TLPLabel, []csaf.AdvisoryFile) error {
+	return func(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+		return w.mirrorFilesWithContext(ctx, tlpLabel, files)
+	}
+}
+
+func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) error {
 	label := strings.ToLower(string(tlpLabel))
 
 	summaries := w.summaries[label]
