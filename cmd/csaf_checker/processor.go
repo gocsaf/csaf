@@ -243,7 +243,7 @@ func (p *processor) reset() {
 // It returns a pointer to the report and nil, otherwise an error.
 func (p *processor) run(domains []string) (*Report, error) {
 	report := Report{
-		Date:      &ReportTime{Time: time.Now().UTC()},
+		Date:      ReportTime{Time: time.Now().UTC()},
 		Version:   util.SemVersion,
 		TimeRange: p.cfg.Range,
 	}

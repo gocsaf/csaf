@@ -64,7 +64,7 @@ type ReportTime struct{ time.Time }
 type Report struct {
 	Domains   []*Domain         `json:"domains,omitempty"`
 	Version   string            `json:"version,omitempty"`
-	Date      *ReportTime       `json:"date,omitempty"`
+	Date      ReportTime        `json:"date,omitempty"`
 	TimeRange *models.TimeRange `json:"timerange,omitempty"`
 }
 
