@@ -131,10 +131,9 @@ func (rules *requirementRules) eval(p *processor) (bool, []CheckedRequirement) {
 	)
 	recurse = func(rules *requirementRules) bool {
 		if rules.satisfies != 0 {
-			idx := slices.IndexFunc(checkedRequirements, func(cr CheckedRequirement) bool {
+			if idx := slices.IndexFunc(checkedRequirements, func(cr CheckedRequirement) bool {
 				return cr.Num == rules.satisfies
-			})
-			if idx != -1 {
+			}); idx != -1 {
 				// We have already checked it.
 				return checkedRequirements[idx].Passed
 			}
