@@ -10,6 +10,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/gocsaf/csaf/v3/csaf"
@@ -119,15 +120,19 @@ func (rules *requirementRules) reporters(nums []int) []reporter {
 }
 
 // eval evalutes a set of rules given a given processor state.
-func (rules *requirementRules) eval(p *processor) bool {
+func (rules *requirementRules) eval(p *processor) (bool, []int) {
 	if rules == nil {
-		return false
+		return false, nil
 	}
-
-	var recurse func(*requirementRules) bool
-
+	var (
+		checkedRules []int
+		recurse      func(*requirementRules) bool
+	)
 	recurse = func(rules *requirementRules) bool {
 		if rules.satisfies != 0 {
+			if !slices.Contains(checkedRules, rules.satisfies) {
+				checkedRules = append(checkedRules, rules.satisfies)
+			}
 			return p.eval(rules.satisfies)
 		}
 		switch rules.cond {
@@ -139,18 +144,16 @@ func (rules *requirementRules) eval(p *processor) bool {
 			}
 			return true
 		case condOneOf:
-			for _, sub := range rules.subs {
-				if recurse(sub) {
-					return true
-				}
-			}
-			return false
+			return slices.ContainsFunc(rules.subs, func(sub *requirementRules) bool {
+				return recurse(sub)
+			})
 		default:
 			panic(fmt.Sprintf("unexpected cond %v in eval", rules.cond))
 		}
 	}
-
-	return recurse(rules)
+	passed := recurse(rules)
+	slices.Sort(checkedRules)
+	return passed, checkedRules
 }
 
 // eval evalutes the processing state for a given requirement.

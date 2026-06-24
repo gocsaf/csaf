@@ -54,6 +54,7 @@ type Domain struct {
 	Role         *csaf.MetadataRole `json:"role,omitempty"`
 	Requirements []*Requirement     `json:"requirements,omitempty"`
 	Passed       bool               `json:"passed"`
+	RulesChecked []int              `json:"checked_rules,omitempty"`
 }
 
 // ReportTime stores the time of the report.
