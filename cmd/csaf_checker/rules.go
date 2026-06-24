@@ -153,9 +153,7 @@ func (rules *requirementRules) eval(p *processor) (bool, []CheckedRequirement) {
 			}
 			return true
 		case condOneOf:
-			return slices.ContainsFunc(rules.subs, func(sub *requirementRules) bool {
-				return recurse(sub)
-			})
+			return slices.ContainsFunc(rules.subs, recurse)
 		default:
 			panic(fmt.Sprintf("unexpected cond %v in eval", rules.cond))
 		}
