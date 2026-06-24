@@ -6,13 +6,14 @@
   csaf_aggregator [OPTIONS]
 
 Application Options:
-  -t, --time_range=RANGE    RANGE of time from which advisories to download
-  -i, --interim             Perform an interim scan
-      --version             Display version of the binary
-  -c, --config=TOML-FILE    Path to config TOML file
+      --client_timeout=Duration    DURATION for HTTP Client timeouts
+  -t, --time_range=RANGE           RANGE of time from which advisories to download
+  -i, --interim                    Perform an interim scan
+      --version                    Display version of the binary
+  -c, --config=TOML-FILE           Path to config TOML file
 
 Help Options:
-  -h, --help                Show this help message
+  -h, --help                       Show this help message
 ```
 
 If no config file is explictly given the follwing places are searched for a config file:
@@ -108,6 +109,7 @@ ignore_pattern          // patterns of advisory URLs to be ignored (see checker 
 client_cert             // path to client certificate to access access-protected advisories
 client_key              // path to client key to access access-protected advisories
 client_passphrase       // optional client cert passphrase (limited, experimental, see downloader doc)
+client_timeout          // optional timeout for HTTP Client connections
 header                  // adds extra HTTP header fields to the client
 time_range              // Accepted time range of advisories to handle. See downloader docs for details.
 ```
@@ -145,6 +147,7 @@ ignore_pattern
 client_cert
 client_key
 client_passphrase
+client_timeout
 header
 ```
 
@@ -194,6 +197,7 @@ insecure = true
 #passphrase =
 #write_indices = false
 #time_range =
+#client_timeout =
 
 # specification requires at least two providers (default),
 # to override for testing, enable:
@@ -225,6 +229,7 @@ insecure = true
   write_indices = true
   client_cert = "./../devca1/testclient1.crt"
   client_key = "./../devca1/testclient1-key.pem"
+  client_timeout = "30s"
 #  client_passphrase = # Limited and experimental, see downloader doc.
 #  header =
 

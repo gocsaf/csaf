@@ -420,6 +420,9 @@ func (p *processor) checkRedirect(r *http.Request, via []*http.Request) error {
 // fullClient returns a fully configure HTTP client.
 func (p *processor) fullClient() util.Client {
 	hClient := http.Client{}
+	if p.cfg.ClientTimeout != nil {
+		hClient.Timeout = *p.cfg.ClientTimeout
+	}
 
 	hClient.CheckRedirect = p.checkRedirect
 
@@ -462,14 +465,19 @@ func (p *processor) fullClient() util.Client {
 
 // basicClient returns a http Client w/o certs and headers.
 func (p *processor) basicClient() *http.Client {
+	hClient := http.Client{}
+	if p.cfg.ClientTimeout != nil {
+		hClient.Timeout = *p.cfg.ClientTimeout
+	}
 	if p.cfg.Insecure {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			Proxy:           http.ProxyFromEnvironment,
 		}
-		return &http.Client{Transport: tr}
+		hClient.Transport = tr
+		return &hClient
 	}
-	return &http.Client{}
+	return &hClient
 }
 
 // httpClient returns a cached HTTP client to be used to

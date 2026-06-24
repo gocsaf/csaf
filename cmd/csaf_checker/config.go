@@ -12,6 +12,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gocsaf/csaf/v3/internal/certs"
 	"github.com/gocsaf/csaf/v3/internal/filter"
@@ -38,6 +39,7 @@ type config struct {
 	Verbose                bool              `long:"verbose" short:"v" description:"Verbose output" toml:"verbose"`
 	Rate                   *float64          `long:"rate" short:"r" description:"The average upper limit of https operations per second (defaults to unlimited)" toml:"rate"`
 	Range                  *models.TimeRange `long:"time_range" short:"t" description:"RANGE of time from which advisories to download" value-name:"RANGE" toml:"time_range"`
+	ClientTimeout          *time.Duration    `long:"client_timeout" description:"DURATION for HTTP Client timeouts" value-name:"DURATION" toml:"client_timeout"`
 	IgnorePattern          []string          `long:"ignore_pattern" short:"i" description:"Do not download files if their URLs match any of the given PATTERNs" value-name:"PATTERN" toml:"ignore_pattern"`
 	ExtraHeader            http.Header       `long:"header" short:"H" description:"One or more extra HTTP header fields" toml:"header"`
 	RemoteValidator        string            `long:"validator" description:"URL to validate documents remotely" value-name:"URL" toml:"validator"`
