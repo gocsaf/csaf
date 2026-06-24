@@ -47,14 +47,20 @@ type Requirement struct {
 	Messages    []Message `json:"messages,omitempty"`
 }
 
+// CheckedRequirement indicates if a requirement was fulfilled.
+type CheckedRequirement struct {
+	Num    int  `json:"num"`
+	Passed bool `json:"passed"`
+}
+
 // Domain are the results of a domain.
 type Domain struct {
-	Name         string             `json:"name"`
-	Publisher    *csaf.Publisher    `json:"publisher,omitempty"`
-	Role         *csaf.MetadataRole `json:"role,omitempty"`
-	Requirements []*Requirement     `json:"requirements,omitempty"`
-	Passed       bool               `json:"passed"`
-	RulesChecked []int              `json:"checked_rules,omitempty"`
+	Name                string               `json:"name"`
+	Publisher           *csaf.Publisher      `json:"publisher,omitempty"`
+	Role                *csaf.MetadataRole   `json:"role,omitempty"`
+	Requirements        []*Requirement       `json:"requirements,omitempty"`
+	Passed              bool                 `json:"passed"`
+	CheckedRequirements []CheckedRequirement `json:"checked_requirements,omitempty"`
 }
 
 // ReportTime stores the time of the report.

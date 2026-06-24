@@ -9,6 +9,7 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"sort"
@@ -120,20 +121,29 @@ func (rules *requirementRules) reporters(nums []int) []reporter {
 }
 
 // eval evalutes a set of rules given a given processor state.
-func (rules *requirementRules) eval(p *processor) (bool, []int) {
+func (rules *requirementRules) eval(p *processor) (bool, []CheckedRequirement) {
 	if rules == nil {
 		return false, nil
 	}
 	var (
-		checkedRules []int
-		recurse      func(*requirementRules) bool
+		checkedRequirements []CheckedRequirement
+		recurse             func(*requirementRules) bool
 	)
 	recurse = func(rules *requirementRules) bool {
 		if rules.satisfies != 0 {
-			if !slices.Contains(checkedRules, rules.satisfies) {
-				checkedRules = append(checkedRules, rules.satisfies)
+			idx := slices.IndexFunc(checkedRequirements, func(cr CheckedRequirement) bool {
+				return cr.Num == rules.satisfies
+			})
+			if idx != -1 {
+				// We have already checked it.
+				return checkedRequirements[idx].Passed
 			}
-			return p.eval(rules.satisfies)
+			passed := p.eval(rules.satisfies)
+			checkedRequirements = append(checkedRequirements, CheckedRequirement{
+				Num:    rules.satisfies,
+				Passed: passed,
+			})
+			return passed
 		}
 		switch rules.cond {
 		case condAll:
@@ -152,8 +162,10 @@ func (rules *requirementRules) eval(p *processor) (bool, []int) {
 		}
 	}
 	passed := recurse(rules)
-	slices.Sort(checkedRules)
-	return passed, checkedRules
+	slices.SortFunc(checkedRequirements, func(a, b CheckedRequirement) int {
+		return cmp.Compare(a.Num, b.Num)
+	})
+	return passed, checkedRequirements
 }
 
 // eval evalutes the processing state for a given requirement.

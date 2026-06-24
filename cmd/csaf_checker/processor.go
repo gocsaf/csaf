@@ -296,7 +296,7 @@ func (p *processor) run(domains []string) (*Report, error) {
 			r.report(p, domain)
 		}
 
-		domain.Passed, domain.RulesChecked = rules.eval(p)
+		domain.Passed, domain.CheckedRequirements = rules.eval(p)
 
 		report.Domains = append(report.Domains, domain)
 	}
