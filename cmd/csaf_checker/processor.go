@@ -262,6 +262,7 @@ func (p *processor) run(domains []string) (*Report, error) {
 			report.Domains = append(report.Domains, domain)
 			continue
 		}
+		domain.URL = &p.pmdURL
 		log.Printf("PMD used %q\n", p.pmdURL)
 
 		if err := p.checkDomain(d); err != nil {
