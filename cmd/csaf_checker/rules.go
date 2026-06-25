@@ -9,7 +9,6 @@
 package main
 
 import (
-	"cmp"
 	"fmt"
 	"slices"
 	"sort"
@@ -25,38 +24,66 @@ const (
 )
 
 type requirementRules struct {
-	cond      ruleCondition
-	satisfies int
-	subs      []*requirementRules
+	Condition   ruleCondition       `json:"condition"`
+	Requirement int                 `json:"requirement,omitempty"`
+	Includes    []*requirementRules `json:"includes,omitempty"`
+	Passed      *bool               `json:"passed,omitempty"`
+}
+
+func (rc ruleCondition) MarshalText() ([]byte, error) {
+	switch rc {
+	case condAll:
+		return []byte("all"), nil
+	case condOneOf:
+		return []byte("one"), nil
+	default:
+		return nil, fmt.Errorf("unknown condition %d", rc)
+	}
 }
 
 var (
 	publisherRules = &requirementRules{
-		cond: condAll,
-		subs: ruleAtoms(1, 2, 3, 4),
+		Condition: condAll,
+		Includes:  ruleAtoms(1, 2, 3, 4),
 	}
 
 	providerRules = &requirementRules{
-		cond: condAll,
-		subs: []*requirementRules{
+		Condition: condAll,
+		Includes: []*requirementRules{
 			publisherRules,
-			{cond: condAll, subs: ruleAtoms(5, 6, 7)},
-			{cond: condOneOf, subs: ruleAtoms(8, 9, 10)},
-			{cond: condOneOf, subs: []*requirementRules{
-				{cond: condAll, subs: ruleAtoms(11, 12, 13, 14)},
-				{cond: condAll, subs: ruleAtoms(15, 16, 17)},
+			{Condition: condAll, Includes: ruleAtoms(5, 6, 7)},
+			{Condition: condOneOf, Includes: ruleAtoms(8, 9, 10)},
+			{Condition: condOneOf, Includes: []*requirementRules{
+				{Condition: condAll, Includes: ruleAtoms(11, 12, 13, 14)},
+				{Condition: condAll, Includes: ruleAtoms(15, 16, 17)},
 			}},
 		},
 	}
 
 	trustedProviderRules = &requirementRules{
-		cond: condAll,
-		subs: []*requirementRules{
+		Condition: condAll,
+		Includes: []*requirementRules{
 			providerRules,
-			{cond: condAll, subs: ruleAtoms(18, 19, 20)},
+			{Condition: condAll, Includes: ruleAtoms(18, 19, 20)},
 		},
 	}
 )
+
+func (rules *requirementRules) clone() *requirementRules {
+	if rules == nil {
+		return nil
+	}
+	includes := make([]*requirementRules, 0, len(rules.Includes))
+	for _, include := range rules.Includes {
+		includes = append(includes, include.clone())
+	}
+	return &requirementRules{
+		Condition:   rules.Condition,
+		Requirement: rules.Requirement,
+		Includes:    includes,
+		Passed:      rules.Passed,
+	}
+}
 
 // roleRequirements returns the rules for the given role.
 func roleRequirements(role csaf.MetadataRole) *requirementRules {
@@ -78,8 +105,8 @@ func ruleAtoms(nums ...int) []*requirementRules {
 	rules := make([]*requirementRules, len(nums))
 	for i, num := range nums {
 		rules[i] = &requirementRules{
-			cond:      condAll,
-			satisfies: num,
+			Condition:   condAll,
+			Requirement: num,
 		}
 	}
 	return rules
@@ -94,17 +121,17 @@ func (rules *requirementRules) reporters(nums []int) []reporter {
 
 	var recurse func(*requirementRules)
 	recurse = func(rules *requirementRules) {
-		if rules.satisfies != 0 {
+		if rules.Requirement != 0 {
 			// There should not be any dupes.
 			for _, n := range nums {
-				if n == rules.satisfies {
+				if n == rules.Requirement {
 					goto doRecurse
 				}
 			}
-			nums = append(nums, rules.satisfies)
+			nums = append(nums, rules.Requirement)
 		}
 	doRecurse:
-		for _, sub := range rules.subs {
+		for _, sub := range rules.Includes {
 			recurse(sub)
 		}
 	}
@@ -120,49 +147,53 @@ func (rules *requirementRules) reporters(nums []int) []reporter {
 	return reps
 }
 
-// eval evalutes a set of rules given a given processor state.
-func (rules *requirementRules) eval(p *processor) (bool, []CheckedRequirement) {
-	if rules == nil {
-		return false, nil
-	}
-	var (
-		checkedRequirements []CheckedRequirement
-		recurse             func(*requirementRules) bool
-	)
+func (rules *requirementRules) passed() bool {
+	var recurse func(*requirementRules) bool
 	recurse = func(rules *requirementRules) bool {
-		if rules.satisfies != 0 {
-			if idx := slices.IndexFunc(checkedRequirements, func(cr CheckedRequirement) bool {
-				return cr.Num == rules.satisfies
-			}); idx != -1 {
-				// We have already checked it.
-				return checkedRequirements[idx].Passed
-			}
-			passed := p.eval(rules.satisfies)
-			checkedRequirements = append(checkedRequirements, CheckedRequirement{
-				Num:    rules.satisfies,
-				Passed: passed,
-			})
-			return passed
+		if rules.Requirement != 0 {
+			return rules.Passed != nil && *rules.Passed
 		}
-		switch rules.cond {
+		switch rules.Condition {
 		case condAll:
-			for _, sub := range rules.subs {
+			for _, sub := range rules.Includes {
 				if !recurse(sub) {
 					return false
 				}
 			}
 			return true
 		case condOneOf:
-			return slices.ContainsFunc(rules.subs, recurse)
+			return slices.ContainsFunc(rules.Includes, recurse)
 		default:
-			panic(fmt.Sprintf("unexpected cond %v in eval", rules.cond))
+			panic(fmt.Sprintf("unexpected cond %v in eval", rules.Condition))
 		}
 	}
-	passed := recurse(rules)
-	slices.SortFunc(checkedRequirements, func(a, b CheckedRequirement) int {
-		return cmp.Compare(a.Num, b.Num)
-	})
-	return passed, checkedRequirements
+	return recurse(rules)
+}
+
+// eval evalutes a set of rules given a given processor state.
+func (rules *requirementRules) eval(p *processor) *requirementRules {
+	if rules == nil {
+		return nil
+	}
+	evaluated := rules.clone()
+	cached := map[int]*bool{}
+	var recurse func(*requirementRules)
+	recurse = func(rules *requirementRules) {
+		if rules.Requirement != 0 {
+			passed := cached[rules.Requirement]
+			if passed == nil {
+				passedEval := p.eval(rules.Requirement)
+				passed = &passedEval
+				cached[rules.Requirement] = passed
+			}
+			rules.Passed = passed
+		}
+		for _, include := range rules.Includes {
+			recurse(include)
+		}
+	}
+	recurse(evaluated)
+	return evaluated
 }
 
 // eval evalutes the processing state for a given requirement.
