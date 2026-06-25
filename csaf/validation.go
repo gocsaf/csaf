@@ -71,7 +71,6 @@ var (
 type schemaLoader http.Client
 
 func (l *schemaLoader) loadHTTPURL(url string) (any, error) {
-	//XXX: should this be [ClientWithContext]?
 	client := (*http.Client)(l)
 	resp, err := client.Get(url)
 	if err != nil {

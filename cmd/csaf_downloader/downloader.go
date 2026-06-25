@@ -244,7 +244,6 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		return err
 	}
 
-	//XXX: need ctx integration
 	afp := csaf.NewAdvisoryFileProcessor(
 		client,
 		expr,
