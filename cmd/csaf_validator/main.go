@@ -10,9 +10,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
@@ -62,8 +64,13 @@ func main() {
 func run(opts *options, files []string) error {
 	exitCode := exitCodeAllValid
 
-	var validator csaf.RemoteValidator
+	var validator csaf.RemoteValidatorWithContext
 	eval := util.NewPathEval()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+	defer stop()
 
 	if opts.RemoteValidator != "" {
 		validatorOptions := csaf.RemoteValidatorOptions{
@@ -72,7 +79,7 @@ func run(opts *options, files []string) error {
 			Cache:   opts.RemoteValidatorCache,
 		}
 		var err error
-		if validator, err = validatorOptions.Open(); err != nil {
+		if validator, err = validatorOptions.OpenWithContext(); err != nil {
 			return fmt.Errorf(
 				"preparing remote validator failed: %w", err)
 		}
@@ -131,7 +138,7 @@ func run(opts *options, files []string) error {
 
 		// Validate against remote validator.
 		if validator != nil {
-			rvr, err := validator.Validate(doc)
+			rvr, err := validator.ValidateWithContext(ctx, doc)
 			if err != nil {
 				return fmt.Errorf("remote validation of %q failed: %w",
 					file, err)

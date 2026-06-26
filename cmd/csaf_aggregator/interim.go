@@ -10,6 +10,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/csv"
@@ -41,6 +42,7 @@ const statusExpr = `$.document.tracking.status`
 // interim advisories. It returns a slice of advisories
 // which are not finished, yet.
 func (w *worker) checkInterims(
+	ctx context.Context,
 	tx *lazyTransaction,
 	label string,
 	interims []interimsEntry,
@@ -64,7 +66,7 @@ func (w *worker) checkInterims(
 			return nil, err
 		}
 
-		res, err := w.client.Get(url)
+		res, err := w.client.GetWithContext(ctx, url)
 		if err != nil {
 			return nil, err
 		}
@@ -139,7 +141,7 @@ func (w *worker) checkInterims(
 		ascFile := nlocal + ".asc"
 
 		// Download the signature or sign it our self.
-		if err := w.downloadSignatureOrSign(sigURL, ascFile, bytes); err != nil {
+		if err := w.downloadSignatureOrSign(ctx, sigURL, ascFile, bytes); err != nil {
 			return nil, err
 		}
 
@@ -167,7 +169,7 @@ func (w *worker) setupProviderInterim(provider *provider) {
 	w.client = w.processor.cfg.httpClient(provider)
 }
 
-func (w *worker) interimWork(wg *sync.WaitGroup, jobs <-chan *interimJob) {
+func (w *worker) interimWork(ctx context.Context, wg *sync.WaitGroup, jobs <-chan *interimJob) {
 	defer wg.Done()
 	path := filepath.Join(w.processor.cfg.Web, ".well-known", "csaf-aggregator")
 
@@ -205,7 +207,7 @@ func (w *worker) interimWork(wg *sync.WaitGroup, jobs <-chan *interimJob) {
 				}
 
 				// Compare locals against remotes.
-				notFinalized, err := w.checkInterims(tx, label, interims)
+				notFinalized, err := w.checkInterims(ctx, tx, label, interims)
 				if err != nil {
 					return err
 				}
@@ -251,7 +253,7 @@ func joinErrors(errs []error) error {
 }
 
 // interim performs the short interim check/update.
-func (p *processor) interim() error {
+func (p *processor) interim(ctx context.Context) error {
 
 	if !p.cfg.runAsMirror() {
 		return errors.New("interim in lister mode does not work")
@@ -264,7 +266,7 @@ func (p *processor) interim() error {
 	for i := 1; i <= p.cfg.Workers; i++ {
 		wg.Add(1)
 		w := newWorker(i, p)
-		go w.interimWork(&wg, queue)
+		go w.interimWork(ctx, &wg, queue)
 	}
 
 	jobs := make([]interimJob, len(p.cfg.Providers))
