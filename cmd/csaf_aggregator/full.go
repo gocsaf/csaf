@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -30,7 +31,7 @@ type fullJob struct {
 }
 
 // setupProviderFull fetches the provider-metadata.json for a specific provider.
-func (w *worker) setupProviderFull(provider *provider) error {
+func (w *worker) setupProviderFull(ctx context.Context, provider *provider) error {
 	w.log.Info("Setting up provider",
 		"provider", slog.GroupValue(
 			slog.String("name", provider.Name),
@@ -43,7 +44,7 @@ func (w *worker) setupProviderFull(provider *provider) error {
 	w.client = w.processor.cfg.httpClient(provider)
 
 	// We need the provider metadata in all cases.
-	if err := w.locateProviderMetadata(provider.Domain); err != nil {
+	if err := w.locateProviderMetadata(ctx, provider.Domain); err != nil {
 		return err
 	}
 
@@ -62,36 +63,36 @@ func (w *worker) setupProviderFull(provider *provider) error {
 }
 
 // fullWorkFunc implements the actual work (mirror/list).
-type fullWorkFunc func(*worker) (*csaf.AggregatorCSAFProvider, error)
+type fullWorkFunc func(*worker, context.Context) (*csaf.AggregatorCSAFProvider, error)
 
 // fullWork handles the treatment of providers concurrently.
-func (w *worker) fullWork(wg *sync.WaitGroup, jobs <-chan *fullJob) {
+func (w *worker) fullWork(ctx context.Context, wg *sync.WaitGroup, jobs <-chan *fullJob) {
 	defer wg.Done()
 
 	for j := range jobs {
-		if err := w.setupProviderFull(j.provider); err != nil {
+		if err := w.setupProviderFull(ctx, j.provider); err != nil {
 			j.err = err
 			continue
 		}
-		j.aggregatorProvider, j.err = j.work(w)
+		j.aggregatorProvider, j.err = j.work(w, ctx)
 	}
 }
 
 // full performs the complete lister/download
-func (p *processor) full() error {
+func (p *processor) full(ctx context.Context) error {
 
 	if p.cfg.runAsMirror() {
 		p.log.Info("Running in aggregator mode")
 
 		// check if we need to setup a remote validator
 		if p.cfg.RemoteValidatorOptions != nil {
-			validator, err := p.cfg.RemoteValidatorOptions.Open()
+			validator, err := p.cfg.RemoteValidatorOptions.OpenWithContext()
 			if err != nil {
 				return err
 			}
 
 			// Not sure if we really need it to be serialized.
-			p.remoteValidator = csaf.SynchronizedRemoteValidator(validator)
+			p.remoteValidator = csaf.SynchronizedRemoteValidatorWithContext(validator)
 			defer func() {
 				p.remoteValidator.Close()
 				p.remoteValidator = nil
@@ -110,7 +111,7 @@ func (p *processor) full() error {
 		wg.Add(1)
 		w := newWorker(i, p)
 
-		go w.fullWork(&wg, queue)
+		go w.fullWork(ctx, &wg, queue)
 	}
 
 	jobs := make([]fullJob, len(p.cfg.Providers))

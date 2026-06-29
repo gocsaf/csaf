@@ -49,12 +49,13 @@ type Requirement struct {
 
 // Domain are the results of a domain.
 type Domain struct {
-	Name         string             `json:"name"`
-	Publisher    *csaf.Publisher    `json:"publisher,omitempty"`
-	Role         *csaf.MetadataRole `json:"role,omitempty"`
-	Requirements []*Requirement     `json:"requirements,omitempty"`
-	Passed       bool               `json:"passed"`
-	DirURLs      []string           `json:"dirurls,omitempty"`
+	Name           string             `json:"name"`
+	Publisher      *csaf.Publisher    `json:"publisher,omitempty"`
+	Role           *csaf.MetadataRole `json:"role,omitempty"`
+	Requirements   []*Requirement     `json:"requirements,omitempty"`
+	Passed         bool               `json:"passed"`
+	EvaluatedRules *requirementRules  `json:"evaluated_rules,omitempty"`
+	DirURLs        []string           `json:"dirurls,omitempty"`
 }
 
 // ReportTime stores the time of the report.
