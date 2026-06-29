@@ -10,7 +10,10 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os"
+	"os/signal"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -26,7 +29,13 @@ func run(cfg *config, domains []string) (*Report, error) {
 		return nil, err
 	}
 	defer p.close()
-	return p.run(domains)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+	defer stop()
+
+	return p.run(ctx, domains)
 }
 
 func main() {

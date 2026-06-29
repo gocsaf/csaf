@@ -10,6 +10,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
@@ -42,8 +43,8 @@ func (w *worker) mirrorAllowed() bool {
 		util.BoolMatcher(&b), false, w.metadataProvider) == nil && b
 }
 
-func (w *worker) mirror() (*csaf.AggregatorCSAFProvider, error) {
-	result, err := w.mirrorInternal()
+func (w *worker) mirror(ctx context.Context) (*csaf.AggregatorCSAFProvider, error) {
+	result, err := w.mirrorInternal(ctx)
 	if err != nil && w.dir != "" {
 		// If something goes wrong remove the debris.
 		if err := os.RemoveAll(w.dir); err != nil {
@@ -53,7 +54,7 @@ func (w *worker) mirror() (*csaf.AggregatorCSAFProvider, error) {
 	return result, err
 }
 
-func (w *worker) mirrorInternal() (*csaf.AggregatorCSAFProvider, error) {
+func (w *worker) mirrorInternal(ctx context.Context) (*csaf.AggregatorCSAFProvider, error) {
 
 	// Check if we are allowed to mirror this domain.
 	if !w.mirrorAllowed() {
@@ -80,7 +81,7 @@ func (w *worker) mirrorInternal() (*csaf.AggregatorCSAFProvider, error) {
 
 	afp.AgeAccept = w.provider.ageAccept(w.processor.cfg)
 
-	if err := afp.Process(w.mirrorFiles); err != nil {
+	if err := afp.ProcessWithContext(ctx, w.mirrorFiles(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +93,7 @@ func (w *worker) mirrorInternal() (*csaf.AggregatorCSAFProvider, error) {
 		return nil, err
 	}
 
-	if err := w.writeProviderMetadata(); err != nil {
+	if err := w.writeProviderMetadata(ctx); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +129,7 @@ func (w *worker) labelsFromSummaries() []csaf.TLPLabel {
 }
 
 // writeProviderMetadata writes a local provider metadata for a mirror.
-func (w *worker) writeProviderMetadata() error {
+func (w *worker) writeProviderMetadata(ctx context.Context) error {
 
 	fname := filepath.Join(w.dir, "provider-metadata.json")
 
@@ -177,7 +178,7 @@ func (w *worker) writeProviderMetadata() error {
 	}
 
 	// We are mirroring the remote public keys, too.
-	if err := w.mirrorPGPKeys(pm); err != nil {
+	if err := w.mirrorPGPKeys(ctx, pm); err != nil {
 		return err
 	}
 
@@ -189,7 +190,7 @@ func (w *worker) writeProviderMetadata() error {
 
 // mirrorPGPKeys creates a local openpgp folder and downloads the referenced
 // OpenPGP keys into it. The own key is also inserted.
-func (w *worker) mirrorPGPKeys(pm *csaf.ProviderMetadata) error {
+func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) error {
 	openPGPFolder := filepath.Join(w.dir, "openpgp")
 	if err := os.MkdirAll(openPGPFolder, 0755); err != nil {
 		return err
@@ -215,7 +216,7 @@ func (w *worker) mirrorPGPKeys(pm *csaf.ProviderMetadata) error {
 		}
 
 		// Fetch remote key.
-		res, err := w.client.Get(*pgpKey.URL)
+		res, err := w.client.GetWithContext(ctx, *pgpKey.URL)
 		if err != nil {
 			os.RemoveAll(openPGPFolder)
 			return err
@@ -392,8 +393,8 @@ func (w *worker) doMirrorTransaction() error {
 }
 
 // downloadSignature downloads an OpenPGP signature from a given url.
-func (w *worker) downloadSignature(path string) (string, error) {
-	res, err := w.client.Get(path)
+func (w *worker) downloadSignature(ctx context.Context, path string) (string, error) {
+	res, err := w.client.GetWithContext(ctx, path)
 	if err != nil {
 		return "", err
 	}
@@ -492,7 +493,13 @@ func (w *worker) extractCategories(label string, advisory any) error {
 	return nil
 }
 
-func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+func (w *worker) mirrorFiles(ctx context.Context) func(csaf.TLPLabel, []csaf.AdvisoryFile) error {
+	return func(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+		return w.mirrorFilesWithContext(ctx, tlpLabel, files)
+	}
+}
+
+func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) error {
 	label := strings.ToLower(string(tlpLabel))
 
 	summaries := w.summaries[label]
@@ -541,7 +548,7 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 			return misc.StrictJSONParse(tee, &advisory)
 		}
 
-		if err := downloadJSON(w.client, file.URL(), download); err != nil {
+		if err := downloadJSON(ctx, w.client, file.URL(), download); err != nil {
 			w.log.Error("Error while downloading JSON", "err", err)
 			continue
 		}
@@ -559,7 +566,7 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 
 		// Check against remote validator.
 		if rmv := w.processor.remoteValidator; rmv != nil {
-			rvr, err := rmv.Validate(advisory)
+			rvr, err := rmv.ValidateWithContext(ctx, advisory)
 			if err != nil {
 				w.log.Error("Calling remote validator failed", "err", err)
 				continue
@@ -614,7 +621,7 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 		// Try to fetch signature file.
 		sigURL := file.SignURL()
 		ascFile := fname + ".asc"
-		if err := w.downloadSignatureOrSign(sigURL, ascFile, data); err != nil {
+		if err := w.downloadSignatureOrSign(ctx, sigURL, ascFile, data); err != nil {
 			return err
 		}
 	}
@@ -625,8 +632,8 @@ func (w *worker) mirrorFiles(tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) 
 
 // downloadSignatureOrSign first tries to download a signature.
 // If this fails it creates a signature itself with the configured key.
-func (w *worker) downloadSignatureOrSign(url, fname string, data []byte) error {
-	sig, err := w.downloadSignature(url)
+func (w *worker) downloadSignatureOrSign(ctx context.Context, url, fname string, data []byte) error {
+	sig, err := w.downloadSignature(ctx, url)
 	if err != nil {
 		if err != errNotFound {
 			w.log.Error("Could not find signature URL", "url", url, "err", err)

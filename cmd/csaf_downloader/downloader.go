@@ -50,7 +50,7 @@ type downloader struct {
 	cfg       *config
 	client    *util.Client // Used for testing
 	keys      *crypto.KeyRing
-	validator csaf.RemoteValidator
+	validator csaf.RemoteValidatorWithContext
 	forwarder *forwarder
 	mkdirMu   sync.Mutex
 	statsMu   sync.Mutex
@@ -63,7 +63,7 @@ type downloader struct {
 const failedValidationDir = "failed_validation"
 
 func newDownloader(cfg *config) (*downloader, error) {
-	var validator csaf.RemoteValidator
+	var validator csaf.RemoteValidatorWithContext
 
 	if cfg.RemoteValidator != "" {
 		validatorOptions := csaf.RemoteValidatorOptions{
@@ -72,11 +72,11 @@ func newDownloader(cfg *config) (*downloader, error) {
 			Cache:   cfg.RemoteValidatorCache,
 		}
 		var err error
-		if validator, err = validatorOptions.Open(); err != nil {
+		if validator, err = validatorOptions.OpenWithContext(); err != nil {
 			return nil, fmt.Errorf(
 				"preparing remote validator failed: %w", err)
 		}
-		validator = csaf.SynchronizedRemoteValidator(validator)
+		validator = csaf.SynchronizedRemoteValidatorWithContext(validator)
 	}
 
 	return &downloader{
@@ -111,7 +111,7 @@ func logRedirect(req *http.Request, via []*http.Request) error {
 	return nil
 }
 
-func (d *downloader) httpClient() util.Client {
+func (d *downloader) httpClient() util.ClientWithContext {
 	hClient := http.Client{}
 
 	if d.cfg.verbose() {
@@ -139,29 +139,31 @@ func (d *downloader) httpClient() util.Client {
 		client = *d.client
 	}
 
+	var cwc util.ClientWithContext
+
 	// Add extra headers.
-	client = &util.HeaderClient{
+	cwc = &util.HeaderClient{
 		Client: client,
 		Header: d.cfg.ExtraHeader,
 	}
 
 	// Add optional URL logging.
 	if d.cfg.verbose() {
-		client = &util.LoggingClient{
-			Client: client,
+		cwc = &util.LoggingClient{
+			Client: cwc,
 			Log:    httpLog("downloader"),
 		}
 	}
 
 	// Add optional rate limiting.
 	if d.cfg.Rate != nil {
-		client = &util.LimitingClient{
-			Client:  client,
+		cwc = &util.LimitingClient{
+			Client:  cwc,
 			Limiter: rate.NewLimiter(rate.Limit(*d.cfg.Rate), 1),
 		}
 	}
 
-	return client
+	return cwc
 }
 
 // httpLog does structured logging in a [util.LoggingClient].
@@ -174,11 +176,11 @@ func httpLog(who string) func(string, string) {
 	}
 }
 
-func (d *downloader) enumerate(domain string) error {
+func (d *downloader) enumerate(ctx context.Context, domain string) error {
 	client := d.httpClient()
 
 	loader := csaf.NewProviderMetadataLoader(client)
-	lpmd := loader.Enumerate(domain)
+	lpmd := loader.EnumerateWithContext(ctx, domain)
 
 	docs := []any{}
 
@@ -209,7 +211,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 
 	loader := csaf.NewProviderMetadataLoader(client)
 
-	lpmd := loader.Load(domain)
+	lpmd := loader.LoadWithContext(ctx, domain)
 
 	if !lpmd.Valid() {
 		for i := range lpmd.Messages {
@@ -234,6 +236,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 	expr := util.NewPathEval()
 
 	if err := d.loadOpenPGPKeys(
+		ctx,
 		client,
 		lpmd.Document,
 		expr,
@@ -254,7 +257,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		afp.AgeAccept = d.cfg.Range.Contains
 	}
 
-	return afp.Process(func(label csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+	return afp.ProcessWithContext(ctx, func(label csaf.TLPLabel, files []csaf.AdvisoryFile) error {
 		return d.downloadFiles(ctx, label, files)
 	})
 }
@@ -308,7 +311,8 @@ allFiles:
 }
 
 func (d *downloader) loadOpenPGPKeys(
-	client util.Client,
+	ctx context.Context,
+	client util.ClientWithContext,
 	doc any,
 	expr *util.PathEval,
 ) error {
@@ -342,7 +346,7 @@ func (d *downloader) loadOpenPGPKeys(
 			continue
 		}
 
-		res, err := client.Get(u.String())
+		res, err := client.GetWithContext(ctx, u.String())
 		if err != nil {
 			slog.Warn(
 				"Fetching public OpenPGP key failed",
@@ -417,7 +421,7 @@ func (d *downloader) logValidationIssues(url string, errors []string, err error)
 // downloadContext stores the common context of a downloader.
 type downloadContext struct {
 	d                  *downloader
-	client             util.Client
+	client             util.ClientWithContext
 	data               bytes.Buffer
 	lastDir            string
 	initialReleaseDate time.Time
@@ -439,6 +443,7 @@ func newDownloadContext(d *downloader, label csaf.TLPLabel) *downloadContext {
 }
 
 func (dc *downloadContext) downloadAdvisory(
+	ctx context.Context,
 	file csaf.AdvisoryFile,
 	errorCh chan<- error,
 ) error {
@@ -465,7 +470,7 @@ func (dc *downloadContext) downloadAdvisory(
 		return nil
 	}
 
-	resp, err := dc.client.Get(file.URL())
+	resp, err := dc.client.GetWithContext(ctx, file.URL())
 	if err != nil {
 		dc.stats.downloadFailed++
 		slog.Warn("Cannot GET",
@@ -526,7 +531,7 @@ func (dc *downloadContext) downloadAdvisory(
 		}
 	}
 
-	remoteSHA256, s256Data, remoteSHA512, s512Data = loadHashes(dc.client, hashToFetch)
+	remoteSHA256, s256Data, remoteSHA512, s512Data = loadHashes(ctx, dc.client, hashToFetch)
 	if remoteSHA512 != nil {
 		s512 = sha512.New()
 		writers = append(writers, s512)
@@ -579,7 +584,7 @@ func (dc *downloadContext) downloadAdvisory(
 			return nil
 		}
 		var sign *crypto.PGPSignature
-		sign, signData, err = loadSignature(dc.client, file.SignURL())
+		sign, signData, err = loadSignature(ctx, dc.client, file.SignURL())
 		if err != nil {
 			slog.Warn("Downloading signature failed",
 				"url", file.SignURL(),
@@ -620,7 +625,7 @@ func (dc *downloadContext) downloadAdvisory(
 		if dc.d.validator == nil {
 			return nil
 		}
-		rvr, err := dc.d.validator.Validate(doc)
+		rvr, err := dc.d.validator.ValidateWithContext(ctx, doc)
 		if err != nil {
 			errorCh <- fmt.Errorf(
 				"calling remote validator on %q failed: %w",
@@ -657,6 +662,7 @@ func (dc *downloadContext) downloadAdvisory(
 	// Send to forwarder
 	if dc.d.forwarder != nil {
 		dc.d.forwarder.forward(
+			ctx,
 			filename, dc.data.String(),
 			valStatus,
 			string(s256Data),
@@ -754,7 +760,7 @@ func (d *downloader) downloadWorker(
 		case <-ctx.Done():
 			return
 		}
-		if err := dc.downloadAdvisory(file, errorCh); err != nil {
+		if err := dc.downloadAdvisory(ctx, file, errorCh); err != nil {
 			slog.Error("download terminated", "error", err)
 			return
 		}
@@ -773,8 +779,8 @@ func (d *downloader) checkSignature(data []byte, sign *crypto.PGPSignature) erro
 	return d.keys.VerifyDetached(pm, sign, t)
 }
 
-func loadSignature(client util.Client, p string) (*crypto.PGPSignature, []byte, error) {
-	resp, err := client.Get(p)
+func loadSignature(ctx context.Context, client util.ClientWithContext, p string) (*crypto.PGPSignature, []byte, error) {
+	resp, err := client.GetWithContext(ctx, p)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -794,7 +800,7 @@ func loadSignature(client util.Client, p string) (*crypto.PGPSignature, []byte, 
 	return sign, data, nil
 }
 
-func loadHashes(client util.Client, hashes []hashFetchInfo) ([]byte, []byte, []byte, []byte) {
+func loadHashes(ctx context.Context, client util.ClientWithContext, hashes []hashFetchInfo) ([]byte, []byte, []byte, []byte) {
 	var remoteSha256, remoteSha512, sha256Data, sha512Data []byte
 
 	// Load preferred hashes first
@@ -808,7 +814,7 @@ func loadHashes(client util.Client, hashes []hashFetchInfo) ([]byte, []byte, []b
 		return 1
 	})
 	for _, h := range hashes {
-		if remote, data, err := loadHash(client, h.url); err != nil {
+		if remote, data, err := loadHash(ctx, client, h.url); err != nil {
 			if h.warn {
 				slog.Warn("Cannot fetch hash",
 					"hash", h.hashType,
@@ -838,8 +844,8 @@ func loadHashes(client util.Client, hashes []hashFetchInfo) ([]byte, []byte, []b
 	return remoteSha256, sha256Data, remoteSha512, sha512Data
 }
 
-func loadHash(client util.Client, p string) ([]byte, []byte, error) {
-	resp, err := client.Get(p)
+func loadHash(ctx context.Context, client util.ClientWithContext, p string) ([]byte, []byte, error) {
+	resp, err := client.GetWithContext(ctx, p)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -869,10 +875,10 @@ func (d *downloader) run(ctx context.Context, domains []string) error {
 }
 
 // runEnumerate performs the enumeration of PMDs for all the given domains.
-func (d *downloader) runEnumerate(domains []string) error {
+func (d *downloader) runEnumerate(ctx context.Context, domains []string) error {
 	defer d.stats.log()
 	for _, domain := range domains {
-		if err := d.enumerate(domain); err != nil {
+		if err := d.enumerate(ctx, domain); err != nil {
 			return err
 		}
 	}
