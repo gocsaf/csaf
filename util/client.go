@@ -21,6 +21,7 @@ import (
 
 // Client is an interface to abstract http.Client.
 type Client interface {
+	CloseIdleConnections()
 	Do(req *http.Request) (*http.Response, error)
 	Get(url string) (*http.Response, error)
 	Head(url string) (*http.Response, error)
