@@ -251,7 +251,6 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 
 	for _, d := range domains {
 		p.reset()
-
 		domain := &Domain{Name: d}
 		if !p.checkProviderMetadata(ctx, d) {
 			// We need to fail the domain if the PMD cannot be parsed.
@@ -264,6 +263,9 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 			report.Domains = append(report.Domains, domain)
 			continue
 		}
+		domain.URL = &p.pmdURL
+		log.Printf("PMD used %q\n", p.pmdURL)
+
 		if err := p.checkDomain(ctx, d); err != nil {
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Failed to find valid provider-metadata.json for domain %s: %v. ", d, err)
