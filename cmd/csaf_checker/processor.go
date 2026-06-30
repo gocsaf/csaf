@@ -504,8 +504,27 @@ func (p *processor) usedAuthorizedClient() bool {
 	return p.cfg.protectedAccess()
 }
 
+// teeMux is muxes an io.Reader to two io.Readers.
+type teeMux struct {
+	*io.PipeWriter
+	r1 io.Reader
+	r2 *io.PipeReader
+}
+
+func newTeeMux(r io.Reader) *teeMux {
+	pr, pw := io.Pipe()
+	return &teeMux{
+		PipeWriter: pw,
+		r1:         io.TeeReader(r, pw),
+		r2:         pr,
+	}
+}
+
 // rolieFeedEntries loads the references to the advisory files for a given feed.
-func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.AdvisoryFile, error) {
+func (p *processor) rolieFeedEntries(
+	ctx context.Context,
+	feed string,
+) ([]csaf.AdvisoryFile, error) {
 	client := p.httpClient()
 	res, err := client.GetWithContext(ctx, feed)
 	p.badDirListings.use()
@@ -521,17 +540,24 @@ func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.A
 
 	rfeed, rolieDoc, err := func() (*csaf.ROLIEFeed, any, error) {
 		defer res.Body.Close()
-		all, err := io.ReadAll(res.Body)
-		if err != nil {
-			return nil, nil, err
-		}
-		rfeed, err := csaf.LoadROLIEFeed(bytes.NewReader(all))
-		if err != nil {
-			return nil, nil, fmt.Errorf("%s: %v", feed, err)
-		}
+		var (
+			rfeed *csaf.ROLIEFeed
+			errCh = make(chan error, 1)
+			tm    = newTeeMux(res.Body)
+		)
+		go func() {
+			var err error
+			rfeed, err = csaf.LoadROLIEFeed(tm.r2)
+			if _, drainErr := io.Copy(io.Discard, tm.r2); err == nil {
+				err = drainErr
+			}
+			errCh <- err
+		}()
 		var rolieDoc any
-		err = misc.StrictJSONParse(bytes.NewReader(all), &rolieDoc)
-		return rfeed, rolieDoc, err
+		rolieDocErr := misc.StrictJSONParse(tm.r1, &rolieDoc)
+		tm.CloseWithError(rolieDocErr)
+		rFeedErr := <-errCh
+		return rfeed, rolieDoc, errors.Join(rFeedErr, rolieDocErr)
 	}()
 	if err != nil {
 		p.badProviderMetadata.error("Loading ROLIE feed failed: %v.", err)
