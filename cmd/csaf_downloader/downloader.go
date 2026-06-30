@@ -30,6 +30,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/time/rate"
@@ -558,6 +559,11 @@ func (dc *downloadContext) downloadAdvisory(
 			"url", file.URL(),
 			"error", err)
 		return nil
+	}
+
+	if !utf8.Valid(dc.data.Bytes()) {
+		slog.Warn("Invalid UTF-8 in file",
+			"url", file.URL())
 	}
 
 	// Compare the checksums.
