@@ -504,7 +504,7 @@ func (p *processor) usedAuthorizedClient() bool {
 	return p.cfg.protectedAccess()
 }
 
-// teeMux is muxes an io.Reader to two io.Readers.
+// teeMux muxes an io.Reader to two io.Readers.
 type teeMux struct {
 	*io.PipeWriter
 	r1 io.Reader
