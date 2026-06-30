@@ -271,7 +271,7 @@ func httpLog(method, url string) {
 		"url", url)
 }
 
-func (c *config) httpClient(p *provider) util.Client {
+func (c *config) httpClient(p *provider) util.ClientWithContext {
 	hClient := http.Client{}
 
 	var tlsConfig tls.Config
@@ -295,35 +295,38 @@ func (c *config) httpClient(p *provider) util.Client {
 
 	client := util.Client(&hClient)
 
+	var cwc util.ClientWithContext
+
+	cwc = &util.BasicClient{Client: client}
 	// Add extra headers.
 	switch {
 	// Provider has precedence over global.
 	case len(p.ExtraHeader) > 0:
-		client = &util.HeaderClient{
-			Client: client,
+		cwc = &util.HeaderClient{
+			Client: cwc,
 			Header: p.ExtraHeader,
 		}
 	case len(c.ExtraHeader) > 0:
-		client = &util.HeaderClient{
-			Client: client,
+		cwc = &util.HeaderClient{
+			Client: cwc,
 			Header: c.ExtraHeader,
 		}
 	default:
-		client = &util.HeaderClient{
-			Client: client,
+		cwc = &util.HeaderClient{
+			Client: cwc,
 			Header: http.Header{},
 		}
 	}
 
 	if c.Verbose {
-		client = &util.LoggingClient{
-			Client: client,
+		cwc = &util.LoggingClient{
+			Client: cwc,
 			Log:    httpLog,
 		}
 	}
 
 	if p.Rate == nil && c.Rate == nil {
-		return client
+		return cwc
 	}
 
 	var r float64
@@ -334,7 +337,7 @@ func (c *config) httpClient(p *provider) util.Client {
 		r = *p.Rate
 	}
 	return &util.LimitingClient{
-		Client:  client,
+		Client:  cwc,
 		Limiter: rate.NewLimiter(rate.Limit(r), 1),
 	}
 }
