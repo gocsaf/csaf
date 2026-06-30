@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -122,14 +123,14 @@ func Test_listed(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			p.client = client
+			p.client = &util.BasicClient{Client: client}
 
 			badDirs := util.Set[string]{}
 			for dir := range test.badDirs {
 				badDirs.Add(serverURL + dir)
 			}
 
-			got, _ := pgs.listed(serverURL+test.path, p, badDirs)
+			got, _ := pgs.listed(context.Background(), serverURL+test.path, p, badDirs)
 			if got != test.want {
 				t.Errorf("%q: Expected %t but got %t.", test.name, test.want, got)
 			}
