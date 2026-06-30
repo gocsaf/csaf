@@ -10,6 +10,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"os"
@@ -95,9 +96,9 @@ func TestContentTypeReport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not init downloader: %v", err)
 	}
-	p.client = client
+	p.client = &util.BasicClient{Client: client}
 
-	report, err := p.run([]string{serverURL + "/provider-metadata.json"})
+	report, err := p.run(context.Background(), []string{serverURL + "/provider-metadata.json"})
 	if err != nil {
 		t.Errorf("Content-Type-Report: Expected no error, got: %v", err)
 	}
@@ -232,9 +233,9 @@ func TestShaMarking(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not init downloader: %v", err)
 			}
-			p.client = client
+			p.client = &util.BasicClient{Client: client}
 
-			report, err := p.run([]string{serverURL + "/provider-metadata.json"})
+			report, err := p.run(context.Background(), []string{serverURL + "/provider-metadata.json"})
 			if err != nil {
 				t.Errorf("SHA marking %v: Expected no error, got: %v", test.name, err)
 			}

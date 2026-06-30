@@ -3,20 +3,25 @@
 ### Usage
 
 ```
-csaf_uploader [OPTIONS]
+csaf_uploader [OPTIONS] advisories...
 
 Application Options:
   -a, --action=[upload|create]              Action to perform (default: upload)
-  -u, --url=URL                             URL of the CSAF provider (default: https://localhost/cgi-bin/csaf_provider.go)
+  -u, --url=URL                             URL of the CSAF provider (default:
+                                            https://localhost/cgi-bin/csaf_provider.go)
   -t, --tlp=[csaf|white|green|amber|red]    TLP of the feed (default: csaf)
-  -x, --external_signed                     CSAF files are signed externally. Assumes .asc files beside CSAF files.
+  -x, --external_signed                     CSAF files are signed externally. Assumes .asc files beside
+                                            CSAF files.
+  -X, --signing_tool=                       Tool to sign a file externally
+      --signing_tool_timeout=               Timeout for the external signing tool
   -s, --no_schema_check                     Do not check files against CSAF JSON schema locally.
   -k, --key=KEY-FILE                        OpenPGP key to sign the CSAF files
   -p, --password=PASSWORD                   Authentication password for accessing the CSAF provider
   -P, --passphrase=PASSPHRASE               Passphrase to unlock the OpenPGP key
       --client_cert=CERT-FILE.crt           TLS client certificate file (PEM encoded data)
       --client_key=KEY-FILE.pem             TLS client private key file (PEM encoded data)
-      --client_passphrase=PASSPHRASE        Optional passphrase for the client cert (limited, experimental, see downloader doc)
+      --client_passphrase=PASSPHRASE        Optional passphrase for the client cert (limited,
+                                            experimental, see downloader doc)
   -i, --password_interactive                Enter password interactively
   -I, --passphrase_interactive              Enter OpenPGP key passphrase interactively
       --insecure                            Do not check TLS certificates from provider
@@ -49,6 +54,18 @@ To upload an already signed document, use the `-x` option
 ./csaf_uploader -x -a upload -I -t white -u https://localhost/cgi-bin/csaf_provider.go  CSAF-document-1.json
 ```
 
+To use external tool for signing
+```bash
+./csaf_uploader --signing_tool signing_tool.sh white -u https://localhost/cgi-bin/csaf_provider.go  CSAF-document-1.json
+```
+Example script under `csaf/docs/scripts/signing_tool.sh`
+There is an optional timeout `signing_tool_timeout` which - if set to values greater 0 - stops the external call after the given duration.
+It defaults to 0. Valid durations are decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+
+Attention: This currently works only fully on Unix-like systems. Only on these platforms
+it is ensured that all sub processes created by the external signing tool are killed when the
+timeout is reached. On other platforms the timeout may have no effect.
+
 By default csaf_uploader will try to load a config file
 from the following places:
 
@@ -64,6 +81,7 @@ action                 = "upload"
 url                    = "https://localhost/cgi-bin/csaf_provider.go"
 tlp                    = "csaf"
 external_signed        = false
+signing_tool           = ""
 no_schema_check        = false
 # key                  = "/path/to/openpgp/key/file"       # not set by default
 # password             = "auth-key to access the provider" # not set by default

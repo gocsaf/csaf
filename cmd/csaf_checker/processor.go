@@ -11,6 +11,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/sha512"
 	"crypto/tls"
@@ -43,9 +44,9 @@ type topicMessages []Message
 
 type processor struct {
 	cfg          *config
-	validator    csaf.RemoteValidator
-	client       util.Client
-	unauthClient util.Client
+	validator    csaf.RemoteValidatorWithContext
+	client       util.ClientWithContext
+	unauthClient util.ClientWithContext
 
 	redirects      map[string][]string
 	noneTLS        util.Set[string]
@@ -168,7 +169,7 @@ func (m *topicMessages) hasErrors() bool {
 
 // newProcessor returns an initialized processor.
 func newProcessor(cfg *config) (*processor, error) {
-	var validator csaf.RemoteValidator
+	var validator csaf.RemoteValidatorWithContext
 
 	if cfg.RemoteValidator != "" {
 		validatorOptions := csaf.RemoteValidatorOptions{
@@ -177,7 +178,7 @@ func newProcessor(cfg *config) (*processor, error) {
 			Cache:   cfg.RemoteValidatorCache,
 		}
 		var err error
-		if validator, err = validatorOptions.Open(); err != nil {
+		if validator, err = validatorOptions.OpenWithContext(); err != nil {
 			return nil, fmt.Errorf(
 				"preparing remote validator failed: %w", err)
 		}
@@ -242,7 +243,7 @@ func (p *processor) reset() {
 // run calls checkDomain function for each domain in the given "domains" parameter.
 // Then it calls the report method on each report from the given "reporters" parameter for each domain.
 // It returns a pointer to the report and nil, otherwise an error.
-func (p *processor) run(domains []string) (*Report, error) {
+func (p *processor) run(ctx context.Context, domains []string) (*Report, error) {
 	report := Report{
 		Date:      ReportTime{Time: time.Now().UTC()},
 		Version:   util.SemVersion,
@@ -252,17 +253,22 @@ func (p *processor) run(domains []string) (*Report, error) {
 	for _, d := range domains {
 		p.reset()
 
-		if !p.checkProviderMetadata(d) {
+		domain := &Domain{Name: d}
+		if !p.checkProviderMetadata(ctx, d) {
 			// We need to fail the domain if the PMD cannot be parsed.
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Could not parse the Provider-Metadata.json of: %s", d)
-
+			// If we don't have a valid PMD there is no hope to do any further checking.
+			(&providerMetadataReport{
+				baseReporter{description: "Invalid provider metadata"},
+			}).report(p, domain)
+			report.Domains = append(report.Domains, domain)
+			continue
 		}
-		if err := p.checkDomain(d); err != nil {
+		if err := p.checkDomain(ctx, d); err != nil {
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Failed to find valid provider-metadata.json for domain %s: %v. ", d, err)
 		}
-		domain := &Domain{Name: d}
 
 		if err := p.fillMeta(domain); err != nil {
 			log.Printf("Filling meta data failed: %v\n", err)
@@ -291,7 +297,10 @@ func (p *processor) run(domains []string) (*Report, error) {
 			r.report(p, domain)
 		}
 
-		domain.Passed = rules.eval(p)
+		if evaluated := rules.eval(p); evaluated != nil {
+			domain.EvaluatedRules = evaluated
+			domain.Passed = evaluated.passed()
+		}
 
 		report.Domains = append(report.Domains, domain)
 	}
@@ -325,12 +334,12 @@ func (p *processor) fillMeta(domain *Domain) error {
 
 // domainChecks compiles a list of checks which should be performed
 // for a given domain.
-func (p *processor) domainChecks(domain string) []func(*processor, string) error {
+func (p *processor) domainChecks(domain string) []func(*processor, context.Context, string) error {
 	// If we have a direct domain url we dont need to
 	// perform certain checks.
 	direct := strings.HasPrefix(domain, "https://")
 
-	checks := []func(*processor, string) error{
+	checks := []func(*processor, context.Context, string) error{
 		(*processor).checkPGPKeys,
 	}
 
@@ -365,9 +374,9 @@ func (p *processor) domainChecks(domain string) []func(*processor, string) error
 
 // checkDomain runs a set of domain specific checks on a given
 // domain.
-func (p *processor) checkDomain(domain string) error {
+func (p *processor) checkDomain(ctx context.Context, domain string) error {
 	for _, check := range p.domainChecks(domain) {
-		if err := check(p, domain); err != nil {
+		if err := check(p, ctx, domain); err != nil {
 			if err == errContinue {
 				continue
 			}
@@ -413,7 +422,7 @@ func (p *processor) checkRedirect(r *http.Request, via []*http.Request) error {
 }
 
 // fullClient returns a fully configure HTTP client.
-func (p *processor) fullClient() util.Client {
+func (p *processor) fullClient() util.ClientWithContext {
 	hClient := http.Client{}
 
 	hClient.CheckRedirect = p.checkRedirect
@@ -434,42 +443,47 @@ func (p *processor) fullClient() util.Client {
 
 	client := util.Client(&hClient)
 
+	var cwc util.ClientWithContext
 	// Add extra headers.
-	client = &util.HeaderClient{
+	cwc = &util.HeaderClient{
 		Client: client,
 		Header: p.cfg.ExtraHeader,
 	}
 
 	// Add optional URL logging.
 	if p.cfg.Verbose {
-		client = &util.LoggingClient{Client: client}
+		cwc = &util.LoggingClient{Client: cwc}
 	}
 
 	// Add optional rate limiting.
 	if p.cfg.Rate != nil {
-		client = &util.LimitingClient{
-			Client:  client,
+		cwc = &util.LimitingClient{
+			Client:  cwc,
 			Limiter: rate.NewLimiter(rate.Limit(*p.cfg.Rate), 1),
 		}
 	}
-	return client
+	p.client = cwc
+	return p.client
 }
 
 // basicClient returns a http Client w/o certs and headers.
-func (p *processor) basicClient() *http.Client {
+func (p *processor) basicClient() util.ClientWithContext {
+	hClient := http.Client{}
 	if p.cfg.Insecure {
-		tr := &http.Transport{
+		hClient.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			Proxy:           http.ProxyFromEnvironment,
 		}
-		return &http.Client{Transport: tr}
 	}
-	return &http.Client{}
+	client := util.Client(&hClient)
+	return &util.BasicClient{
+		Client: client,
+	}
 }
 
 // httpClient returns a cached HTTP client to be used to
 // download remote ressources.
-func (p *processor) httpClient() util.Client {
+func (p *processor) httpClient() util.ClientWithContext {
 	if p.client == nil {
 		p.client = p.fullClient()
 	}
@@ -478,7 +492,7 @@ func (p *processor) httpClient() util.Client {
 
 // unauthorizedClient returns a cached HTTP client without
 // authentification.
-func (p *processor) unauthorizedClient() util.Client {
+func (p *processor) unauthorizedClient() util.ClientWithContext {
 	if p.unauthClient == nil {
 		p.unauthClient = p.basicClient()
 	}
@@ -492,9 +506,9 @@ func (p *processor) usedAuthorizedClient() bool {
 }
 
 // rolieFeedEntries loads the references to the advisory files for a given feed.
-func (p *processor) rolieFeedEntries(feed string) ([]csaf.AdvisoryFile, error) {
+func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.AdvisoryFile, error) {
 	client := p.httpClient()
-	res, err := client.Get(feed)
+	res, err := client.GetWithContext(ctx, feed)
 	p.badDirListings.use()
 	if err != nil {
 		p.badProviderMetadata.error("Cannot fetch feed %s: %v", feed, err)
@@ -626,6 +640,7 @@ var yearFromURL = regexp.MustCompile(`.*/(\d{4})/[^/]+$`)
 // integrity checks several csaf.AdvisoryFiles for formal
 // mistakes, from conforming filenames to invalid advisories.
 func (p *processor) integrity(
+	ctx context.Context,
 	files []csaf.AdvisoryFile,
 	mask whereType,
 	lg func(MessageType, string, ...any),
@@ -668,7 +683,7 @@ func (p *processor) integrity(
 			folderYear = &year
 		}
 
-		res, err := client.Get(u)
+		res, err := client.GetWithContext(ctx, u)
 		if err != nil {
 			lg(ErrorType, "Fetching %s failed: %v.", u, err)
 			continue
@@ -724,14 +739,14 @@ func (p *processor) integrity(
 		}
 		// Validate against remote validator.
 		if p.validator != nil {
-			if rvr, err := p.validator.Validate(doc); err != nil {
+			if rvr, err := p.validator.ValidateWithContext(ctx, doc); err != nil {
 				p.invalidAdvisories.error("Calling remote validator on %s failed: %v", u, err)
 			} else if !rvr.Valid {
 				p.invalidAdvisories.error("Remote validation of %s failed.", u)
 			}
 		}
 
-		p.labelChecker.check(p, doc, u)
+		p.labelChecker.check(ctx, p, doc, u)
 
 		// Check if file is in the right folder.
 		p.badFolders.use()
@@ -779,7 +794,7 @@ func (p *processor) integrity(
 			hashFile := hu.String()
 
 			p.checkTLS(hashFile)
-			if res, err = client.Get(hashFile); err != nil {
+			if res, err = client.GetWithContext(ctx, hashFile); err != nil {
 				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: %v.", hashFile, err))
 				continue
 			}
@@ -830,7 +845,7 @@ func (p *processor) integrity(
 
 		p.badSignatures.use()
 
-		if res, err = client.Get(sigFile); err != nil {
+		if res, err = client.GetWithContext(ctx, sigFile); err != nil {
 			p.badSignatures.error("Fetching %s failed: %v.", sigFile, err)
 			continue
 		}
@@ -908,7 +923,7 @@ func (p *processor) extractTime(doc any, value string, u any) (time.Time, string
 // checkIndex fetches the "index.txt" and calls "checkTLS" method for HTTPS checks.
 // It extracts the file names from the file and passes them to "integrity" function.
 // It returns error if fetching/reading the file(s) fails, otherwise nil.
-func (p *processor) checkIndex(base string, mask whereType) error {
+func (p *processor) checkIndex(ctx context.Context, base string, mask whereType) error {
 	client := p.httpClient()
 
 	bu, err := url.Parse(base)
@@ -922,7 +937,7 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 
 	p.badIndices.use()
 
-	res, err := client.Get(index)
+	res, err := client.GetWithContext(ctx, index)
 	if err != nil {
 		p.badIndices.error("Fetching %s failed: %v", index, err)
 		return errContinue
@@ -966,14 +981,14 @@ func (p *processor) checkIndex(base string, mask whereType) error {
 	// Block rolie checks.
 	p.labelChecker.feedLabel = ""
 
-	return p.integrity(files, mask, p.badIndices.add)
+	return p.integrity(ctx, files, mask, p.badIndices.add)
 }
 
 // checkChanges fetches the "changes.csv" and calls the "checkTLS" method for HTTPs checks.
 // It extracts the file content, tests the column number and the validity of the time format
 // of the fields' values and if they are sorted properly. Then it passes the files to the
 // "integrity" functions. It returns error if some test fails, otherwise nil.
-func (p *processor) checkChanges(base string, mask whereType) error {
+func (p *processor) checkChanges(ctx context.Context, base string, mask whereType) error {
 	bu, err := url.Parse(base)
 	if err != nil {
 		return err
@@ -983,7 +998,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 	p.checkTLS(changes)
 
 	client := p.httpClient()
-	res, err := client.Get(changes)
+	res, err := client.GetWithContext(ctx, changes)
 
 	p.badChanges.use()
 
@@ -1066,7 +1081,7 @@ func (p *processor) checkChanges(base string, mask whereType) error {
 	// Block rolie checks.
 	p.labelChecker.feedLabel = ""
 
-	return p.integrity(files, mask, p.badChanges.add)
+	return p.integrity(ctx, files, mask, p.badChanges.add)
 }
 
 // empty checks if list of strings contains at least one none empty string.
@@ -1079,7 +1094,7 @@ func empty(arr []string) bool {
 	return true
 }
 
-func (p *processor) checkCSAFs(_ string) error {
+func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 	// Check for ROLIE
 	rolie, err := p.expr.Eval("$.distributions[*].rolie.feeds", p.pmd)
 	if err != nil {
@@ -1093,13 +1108,13 @@ func (p *processor) checkCSAFs(_ string) error {
 		var feeds [][]csaf.Feed
 		if err := util.ReMarshalJSON(&feeds, rolie); err != nil {
 			p.badProviderMetadata.error("ROLIE feeds are not compatible: %v.", err)
-		} else if err := p.processROLIEFeeds(feeds); err != nil {
+		} else if err := p.processROLIEFeeds(ctx, feeds); err != nil {
 			if err != errContinue {
 				return err
 			}
 		}
 		// check for service category document
-		p.serviceCheck(feeds)
+		p.serviceCheck(ctx, feeds)
 	} else {
 		p.badROLIEFeed.use()
 		p.badROLIEFeed.error("ROLIE feed based distribution was not used.")
@@ -1142,11 +1157,11 @@ func (p *processor) checkCSAFs(_ string) error {
 		if base == "" {
 			continue
 		}
-		if err := p.checkIndex(base, indexMask); err != nil && err != errContinue {
+		if err := p.checkIndex(ctx, base, indexMask); err != nil && err != errContinue {
 			return err
 		}
 
-		if err := p.checkChanges(base, changesMask); err != nil && err != errContinue {
+		if err := p.checkChanges(ctx, base, changesMask); err != nil && err != errContinue {
 			return err
 		}
 	}
@@ -1158,7 +1173,7 @@ func (p *processor) checkCSAFs(_ string) error {
 	return nil
 }
 
-func (p *processor) checkMissing(string) error {
+func (p *processor) checkMissing(context.Context, string) error {
 	var maxMask whereType
 
 	for _, v := range p.alreadyChecked {
@@ -1211,7 +1226,7 @@ func (p *processor) checkMissing(string) error {
 
 // checkInvalid goes over all found adivisories URLs and checks
 // if file name conforms to standard.
-func (p *processor) checkInvalid(string) error {
+func (p *processor) checkInvalid(context.Context, string) error {
 	p.badDirListings.use()
 	var invalids []string
 
@@ -1232,7 +1247,7 @@ func (p *processor) checkInvalid(string) error {
 
 // checkListing goes over all found adivisories URLs and checks
 // if their parent directory is listable.
-func (p *processor) checkListing(string) error {
+func (p *processor) checkListing(ctx context.Context, _ string) error {
 	p.badDirListings.use()
 
 	pgs := pages{}
@@ -1246,7 +1261,7 @@ func (p *processor) checkListing(string) error {
 	}
 
 	for f := range p.alreadyChecked {
-		found, err := pgs.listed(f, p, badDirs)
+		found, err := pgs.listed(ctx, f, p, badDirs)
 		if err != nil && err != errContinue {
 			return err
 		}
@@ -1266,7 +1281,7 @@ func (p *processor) checkListing(string) error {
 
 // checkWhitePermissions checks if the TLP:WHITE advisories are
 // available with unprotected access.
-func (p *processor) checkWhitePermissions(string) error {
+func (p *processor) checkWhitePermissions(context.Context, string) error {
 	var ids []string
 	for id, open := range p.labelChecker.whiteAdvisories {
 		if !open {
@@ -1291,14 +1306,14 @@ func (p *processor) checkWhitePermissions(string) error {
 // decodes, and validates against the JSON schema.
 // According to the result, the respective error messages added to
 // badProviderMetadata.
-func (p *processor) checkProviderMetadata(domain string) bool {
+func (p *processor) checkProviderMetadata(ctx context.Context, domain string) bool {
 	p.badProviderMetadata.use()
 
 	client := p.httpClient()
 
 	loader := csaf.NewProviderMetadataLoader(client)
 
-	lpmd := loader.Load(domain)
+	lpmd := loader.LoadWithContext(ctx, domain)
 
 	for i := range lpmd.Messages {
 		p.badProviderMetadata.warn(
@@ -1321,12 +1336,12 @@ func (p *processor) checkProviderMetadata(domain string) bool {
 // It checks the existence of the CSAF field in the file content and tries to fetch
 // the value of this field. Returns an empty string if no error was encountered,
 // the errormessage otherwise.
-func (p *processor) checkSecurity(domain string, legacy bool) (int, string) {
+func (p *processor) checkSecurity(ctx context.Context, domain string, legacy bool) (int, string) {
 	folder := "https://" + domain + "/"
 	if !legacy {
 		folder = folder + ".well-known/"
 	}
-	msg := p.checkSecurityFolder(folder)
+	msg := p.checkSecurityFolder(ctx, folder)
 	if msg == "" {
 		if !legacy {
 			return 0, "Found valid security.txt within the well-known directory"
@@ -1337,10 +1352,10 @@ func (p *processor) checkSecurity(domain string, legacy bool) (int, string) {
 }
 
 // checkSecurityFolder checks the security.txt in a given folder.
-func (p *processor) checkSecurityFolder(folder string) string {
+func (p *processor) checkSecurityFolder(ctx context.Context, folder string) string {
 	client := p.httpClient()
 	path := folder + "security.txt"
-	res, err := client.Get(path)
+	res, err := client.GetWithContext(ctx, path)
 	if err != nil {
 		return fmt.Sprintf("Fetching %s failed: %v", path, err)
 	}
@@ -1373,7 +1388,7 @@ func (p *processor) checkSecurityFolder(folder string) string {
 	}
 
 	p.checkTLS(u)
-	if res, err = client.Get(u); err != nil {
+	if res, err = client.GetWithContext(ctx, u); err != nil {
 		return fmt.Sprintf("Cannot fetch %s from security.txt: %v", u, err)
 	}
 	if res.StatusCode != http.StatusOK {
@@ -1396,11 +1411,11 @@ func (p *processor) checkSecurityFolder(folder string) string {
 
 // checkDNS checks if the "csaf.data.security.domain.tld" DNS record is available
 // and serves the "provider-metadata.json".
-func (p *processor) checkDNS(domain string) {
+func (p *processor) checkDNS(ctx context.Context, domain string) {
 	p.badDNSPath.use()
 	client := p.httpClient()
 	path := "https://csaf.data.security." + domain
-	res, err := client.Get(path)
+	res, err := client.GetWithContext(ctx, path)
 	if err != nil {
 		p.badDNSPath.add(ErrorType,
 			"Fetching %s failed: %v", path, err)
@@ -1427,12 +1442,12 @@ func (p *processor) checkDNS(domain string) {
 
 // checkWellknown checks if the provider-metadata.json file is
 // available under the /.well-known/csaf/ directory.
-func (p *processor) checkWellknown(domain string) {
+func (p *processor) checkWellknown(ctx context.Context, domain string) {
 	p.badWellknownMetadata.use()
 	client := p.httpClient()
 	path := "https://" + domain + "/.well-known/csaf/provider-metadata.json"
 
-	res, err := client.Get(path)
+	res, err := client.GetWithContext(ctx, path)
 	if err != nil {
 		p.badWellknownMetadata.add(ErrorType,
 			"Fetching %s failed: %v", path, err)
@@ -1457,15 +1472,15 @@ func (p *processor) checkWellknown(domain string) {
 // Should this lookup fail, a warning is will be given and a lookup
 // for the legacy location will be made. If this fails as well, then an
 // error is given.
-func (p *processor) checkWellknownSecurityDNS(domain string) error {
-	p.checkWellknown(domain)
+func (p *processor) checkWellknownSecurityDNS(ctx context.Context, domain string) error {
+	p.checkWellknown(ctx, domain)
 	// Security check for well known (default) and legacy location
-	warnings, sDMessage := p.checkSecurity(domain, false)
+	warnings, sDMessage := p.checkSecurity(ctx, domain, false)
 	// if the security.txt under .well-known was not okay
 	// check for a security.txt within its legacy location
 	sLMessage := ""
 	if warnings == 1 {
-		warnings, sLMessage = p.checkSecurity(domain, true)
+		warnings, sLMessage = p.checkSecurity(ctx, domain, true)
 	}
 
 	p.badSecurity.use()
@@ -1486,7 +1501,7 @@ func (p *processor) checkWellknownSecurityDNS(domain string) error {
 		p.badSecurity.add(InfoType, "%s", sLMessage)
 	}
 
-	p.checkDNS(domain)
+	p.checkDNS(ctx, domain)
 
 	return nil
 }
@@ -1495,7 +1510,7 @@ func (p *processor) checkWellknownSecurityDNS(domain string) error {
 // the remote pubkeys and compares the fingerprints.
 // As a result of these checks respective error messages are passed
 // to badPGP methods. It returns nil if all checks are passed.
-func (p *processor) checkPGPKeys(_ string) error {
+func (p *processor) checkPGPKeys(ctx context.Context, _ string) error {
 	p.badPGPs.use()
 
 	src, err := p.expr.Eval("$.public_openpgp_keys", p.pmd)
@@ -1535,7 +1550,7 @@ func (p *processor) checkPGPKeys(_ string) error {
 		u := up.String()
 		p.checkTLS(u)
 
-		res, err := client.Get(*key.URL)
+		res, err := client.GetWithContext(ctx, *key.URL)
 		if err != nil {
 			p.badPGPs.error("Fetching public OpenPGP key %s failed: %v.", u, err)
 			continue

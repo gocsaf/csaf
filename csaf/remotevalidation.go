@@ -11,6 +11,7 @@ package csaf
 import (
 	"bytes"
 	"compress/zlib"
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -91,9 +92,22 @@ type RemoteValidator interface {
 	Close() error
 }
 
+// RemoteValidatorWithContext validates an advisory document remotely like [RemoteValidator]
+// but adds a method to do this context aware, too.
+type RemoteValidatorWithContext interface {
+	RemoteValidator
+	ValidateWithContext(ctx context.Context, doc any) (*RemoteValidationResult, error)
+}
+
 // SynchronizedRemoteValidator returns a serialized variant
 // of the given remote validator.
 func SynchronizedRemoteValidator(validator RemoteValidator) RemoteValidator {
+	return &syncedRemoteValidator{RemoteValidator: validator}
+}
+
+// SynchronizedRemoteValidatorWithContext returns a serialized variant
+// of the given remote validator.
+func SynchronizedRemoteValidatorWithContext(validator RemoteValidatorWithContext) RemoteValidatorWithContext {
 	return &syncedRemoteValidator{RemoteValidator: validator}
 }
 
@@ -114,6 +128,16 @@ type syncedRemoteValidator struct {
 func (srv *syncedRemoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 	srv.Lock()
 	defer srv.Unlock()
+	return srv.RemoteValidator.Validate(doc)
+}
+
+// ValidateWithContext implements the validation part of the RemoteValidator interface.
+func (srv *syncedRemoteValidator) ValidateWithContext(ctx context.Context, doc any) (*RemoteValidationResult, error) {
+	srv.Lock()
+	defer srv.Unlock()
+	if vwc, ok := srv.RemoteValidator.(RemoteValidatorWithContext); ok {
+		return vwc.ValidateWithContext(ctx, doc)
+	}
 	return srv.RemoteValidator.Validate(doc)
 }
 
@@ -213,8 +237,7 @@ func (bc boltCache) set(key, value []byte) error {
 	})
 }
 
-// Open opens a new remoteValidator.
-func (rvo *RemoteValidatorOptions) Open() (RemoteValidator, error) {
+func (rvo *RemoteValidatorOptions) open() (RemoteValidatorWithContext, error) {
 	cache, err := prepareCache(rvo.Cache)
 	if err != nil {
 		return nil, err
@@ -224,6 +247,16 @@ func (rvo *RemoteValidatorOptions) Open() (RemoteValidator, error) {
 		tests: prepareTests(rvo.Presets),
 		cache: cache,
 	}, nil
+}
+
+// Open opens a new remoteValidator.
+func (rvo *RemoteValidatorOptions) Open() (RemoteValidator, error) {
+	return rvo.open()
+}
+
+// OpenWithContext opens a new remoteValidator.
+func (rvo *RemoteValidatorOptions) OpenWithContext() (RemoteValidatorWithContext, error) {
+	return rvo.open()
 }
 
 // Close closes the remote validator.
@@ -262,8 +295,34 @@ func deserialize(value []byte) (*RemoteValidationResult, error) {
 	return &rvr, nil
 }
 
+// Validate executes a remote validation of an advisory with a given context.
+func (v *remoteValidator) ValidateWithContext(ctx context.Context, doc any) (*RemoteValidationResult, error) {
+	return v.validate(doc, func(r io.Reader) (*http.Response, error) {
+		req, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			v.url,
+			r)
+		if err != nil {
+			return nil, fmt.Errorf("creating request failed: %w", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return http.DefaultClient.Do(req)
+	})
+}
+
 // Validate executes a remote validation of an advisory.
 func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
+	return v.validate(doc, func(r io.Reader) (*http.Response, error) {
+		return http.Post(v.url, "application/json", r)
+	})
+}
+
+// validate does the actual validation call.
+func (v *remoteValidator) validate(
+	doc any,
+	doPost func(io.Reader) (*http.Response, error),
+) (*RemoteValidationResult, error) {
 
 	var key []byte
 
@@ -292,14 +351,11 @@ func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 		return nil, err
 	}
 
-	resp, err := http.Post(
-		v.url,
-		"application/json",
-		bytes.NewReader(buf.Bytes()))
-
+	resp, err := doPost(bytes.NewReader(buf.Bytes()))
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
@@ -311,20 +367,14 @@ func (v *remoteValidator) Validate(doc any) (*RemoteValidationResult, error) {
 		rvr  RemoteValidationResult
 	)
 
-	if err := func() error {
-		defer resp.Body.Close()
-		var in io.Reader
-		// If we are caching record the incoming data and compress it.
-		if key != nil {
-			buf.Reset() // reuse the out buffer.
-			zout = zlib.NewWriter(&buf)
-			in = io.TeeReader(resp.Body, zout)
-		} else {
-			// no cache -> process directly.
-			in = resp.Body
-		}
-		return misc.StrictJSONParse(in, &rvr)
-	}(); err != nil {
+	in := io.Reader(resp.Body)
+	// If we are caching record the incoming data and compress it.
+	if key != nil {
+		buf.Reset() // reuse the out buffer.
+		zout = zlib.NewWriter(&buf)
+		in = io.TeeReader(in, zout)
+	}
+	if err := misc.StrictJSONParse(in, &rvr); err != nil {
 		return nil, err
 	}
 
