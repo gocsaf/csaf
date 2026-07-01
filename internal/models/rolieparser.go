@@ -19,7 +19,7 @@ import (
 )
 
 // StreamingROLIEParser is a specialized ROLIE parser
-// to only extracr relevant fields in a streaming manner.
+// to only extrac some fields in a streaming manner.
 type StreamingROLIEParser struct {
 	currentLink csaf.Link
 	Updated     time.Time
