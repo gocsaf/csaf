@@ -505,7 +505,7 @@ func (p *processor) usedAuthorizedClient() bool {
 	return p.cfg.protectedAccess()
 }
 
-// teeMux muxes an io.Reader to two io.Readers.
+// teeMux muxes an io.Reader into two io.Readers.
 type teeMux struct {
 	*io.PipeWriter
 	r1 io.Reader
@@ -518,6 +518,76 @@ func newTeeMux(r io.Reader) *teeMux {
 		PipeWriter: pw,
 		r1:         io.TeeReader(r, pw),
 		r2:         pr,
+	}
+}
+
+func (p *processor) extractAdvisoryFilesFromROLIE(
+	feed string,
+	files *[]csaf.AdvisoryFile,
+	hasEntries *bool,
+) func(srp *models.StreamingROLIEParser) {
+	return func(sr *models.StreamingROLIEParser) {
+		// Detect if this handler was called.
+		*hasEntries = true
+		// Filter if we have date checking.
+		if accept := p.cfg.Range; accept != nil {
+			if !sr.Updated.IsZero() && !accept.Contains(sr.Updated) {
+				return
+			}
+		}
+		// Extract the data from the links.
+		var url, sha256, sha512, sign string
+		for _, link := range sr.Links {
+			lower := strings.ToLower(link.HRef)
+			switch link.Rel {
+			case "self":
+				if !strings.HasSuffix(lower, ".json") {
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "self" has unexpected file extension.`,
+						link.HRef, feed)
+				}
+				url = link.HRef
+			case "signature":
+				if !strings.HasSuffix(lower, ".asc") {
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "signature" has unexpected file extension.`,
+						link.HRef, feed)
+				}
+				sign = link.HRef
+			case "hash":
+				switch {
+				case strings.HasSuffix(lower, "sha256"):
+					sha256 = link.HRef
+				case strings.HasSuffix(lower, "sha512"):
+					sha512 = link.HRef
+				default:
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "hash" has unsupported file extension.`,
+						link.HRef, feed)
+				}
+			}
+		}
+		if url == "" {
+			p.badProviderMetadata.warn(
+				`ROLIE feed %s contains entry link with no "self" URL.`, feed)
+			return
+		}
+		switch {
+		case sha256 == "" && sha512 != "":
+			p.badROLIEFeed.info("%s has no sha256 hash file listed", url)
+		case sha256 != "" && sha512 == "":
+			p.badROLIEFeed.info("%s has no sha512 hash file listed", url)
+		case sha256 == "" && sha512 == "":
+			p.badROLIEFeed.error("No hash listed on ROLIE feed %s", url)
+		case sign == "":
+			p.badROLIEFeed.error("No signature listed on ROLIE feed %s", url)
+		}
+		*files = append(*files, csaf.PlainAdvisoryFile{
+			Path:   url,
+			SHA256: sha256,
+			SHA512: sha512,
+			Sign:   sign,
+		})
 	}
 }
 
@@ -538,105 +608,37 @@ func (p *processor) rolieFeedEntries(
 			feed, res.StatusCode, res.Status)
 		return nil, errContinue
 	}
-
 	var (
-		files      []csaf.AdvisoryFile
-		numEntries int
+		files      []csaf.AdvisoryFile // List of files to check.
+		hasEntries bool                // Where there any entries in the ROLIE feed?
+		rolieDoc   any                 // Document used for schema checking.
 	)
-	srp := models.StreamingROLIEParser{
-		HandleEntry: func(sr *models.StreamingROLIEParser) {
-			// count entries for no-entries check
-			numEntries++
-			// Filter if we have date checking.
-			if accept := p.cfg.Range; accept != nil {
-				if t := time.Time(sr.Updated); !t.IsZero() && !accept.Contains(t) {
-					return
-				}
-			}
-
-			var url, sha256, sha512, sign string
-			for i := range sr.Links {
-				link := sr.Links[i]
-				lower := strings.ToLower(link.HRef)
-				switch link.Rel {
-				case "self":
-					if !strings.HasSuffix(lower, ".json") {
-						p.badProviderMetadata.warn(
-							`ROLIE feed entry link %s in %s with "rel": "self" has unexpected file extension.`,
-							link.HRef, feed)
-					}
-					url = link.HRef
-				case "signature":
-					if !strings.HasSuffix(lower, ".asc") {
-						p.badProviderMetadata.warn(
-							`ROLIE feed entry link %s in %s with "rel": "signature" has unexpected file extension.`,
-							link.HRef, feed)
-					}
-					sign = link.HRef
-				case "hash":
-					switch {
-					case strings.HasSuffix(lower, "sha256"):
-						sha256 = link.HRef
-					case strings.HasSuffix(lower, "sha512"):
-						sha512 = link.HRef
-					default:
-						p.badProviderMetadata.warn(
-							`ROLIE feed entry link %s in %s with "rel": "hash" has unsupported file extension.`,
-							link.HRef, feed)
-					}
-				}
-			}
-
-			if url == "" {
-				p.badProviderMetadata.warn(
-					`ROLIE feed %s contains entry link with no "self" URL.`, feed)
-				return
-			}
-
-			var file csaf.AdvisoryFile
-
-			switch {
-			case sha256 == "" && sha512 != "":
-				p.badROLIEFeed.info("%s has no sha256 hash file listed", url)
-			case sha256 != "" && sha512 == "":
-				p.badROLIEFeed.info("%s has no sha512 hash file listed", url)
-			case sha256 == "" && sha512 == "":
-				p.badROLIEFeed.error("No hash listed on ROLIE feed %s", url)
-			case sign == "":
-				p.badROLIEFeed.error("No signature listed on ROLIE feed %s", url)
-			}
-			file = csaf.PlainAdvisoryFile{Path: url, SHA256: sha256, SHA512: sha512, Sign: sign}
-
-			files = append(files, file)
-		},
-	}
-
-	rolieDoc, err := func() (any, error) {
+	if err := func() error {
 		defer res.Body.Close()
 		var (
 			errCh = make(chan error, 1)
-			tm    = newTeeMux(res.Body)
+			tm    = newTeeMux(res.Body) // Muxing here because we need the stream twice.
 		)
 		go func() {
-			var err error
-			err = srp.Parse(tm.r2)
+			srp := models.StreamingROLIEParser{
+				HandleEntry: p.extractAdvisoryFilesFromROLIE(
+					feed, &files, &hasEntries),
+			}
+			err := srp.Parse(tm.r2)
 			if _, drainErr := io.Copy(io.Discard, tm.r2); err == nil {
 				err = drainErr
 			}
 			errCh <- err
 		}()
-		var rolieDoc any
 		rolieDocErr := misc.StrictJSONParse(tm.r1, &rolieDoc)
 		tm.CloseWithError(rolieDocErr)
 		srpErr := <-errCh
-		return rolieDoc, errors.Join(srpErr, rolieDocErr)
-	}()
-	if err != nil {
+		return errors.Join(srpErr, rolieDocErr)
+	}(); err != nil {
 		p.badProviderMetadata.error("Loading ROLIE feed failed: %v.", err)
 		return nil, errContinue
 	}
-
-	if numEntries == 0 {
+	if !hasEntries {
 		p.badROLIEFeed.warn("No entries in %s", feed)
 	}
 	errors, err := csaf.ValidateROLIE(rolieDoc)
@@ -649,7 +651,6 @@ func (p *processor) rolieFeedEntries(
 			p.badProviderMetadata.error("%s", strings.ReplaceAll(msg, `%`, `%%`))
 		}
 	}
-
 	return files, nil
 }
 
