@@ -19,7 +19,7 @@ import (
 )
 
 // StreamingROLIEParser is a specialized ROLIE parser
-// to only extrac some fields in a streaming manner.
+// to only extract some fields in a streaming manner.
 type StreamingROLIEParser struct {
 	currentLink csaf.Link
 	Updated     time.Time
@@ -231,8 +231,8 @@ func (srp *StreamingROLIEParser) initial(t json.Token) (tokenFn, error) {
 	return srp.top, nil
 }
 
-// Parse parses a ROLIE feed from a [io.Reader].
-// Found entries are Reported to the given handler.
+// Parse parses a ROLIE feed from an [io.Reader].
+// Found entries are reported to the given handler.
 func (srp *StreamingROLIEParser) Parse(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	for state := srp.initial; state != nil; {
