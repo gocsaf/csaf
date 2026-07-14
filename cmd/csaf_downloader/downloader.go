@@ -257,7 +257,18 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		afp.AgeAccept = d.cfg.Range.Contains
 	}
 
+	const maxFiles = 1000
+	var downloaded int
+
 	return afp.ProcessWithContext(ctx, func(label csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+		if downloaded >= maxFiles {
+			return nil
+		}
+		remaining := maxFiles - downloaded
+		if len(files) > remaining {
+			files = files[:remaining]
+		}
+		downloaded += len(files)
 		return d.downloadFiles(ctx, label, files)
 	})
 }
