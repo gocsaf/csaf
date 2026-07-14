@@ -239,12 +239,12 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 		return nil, err
 	}
 
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetching %s failed. Status code %d (%s)",
 			changesURL, resp.StatusCode, resp.Status)
 	}
 
-	defer resp.Body.Close()
 	var files []AdvisoryFile
 	c := csv.NewReader(resp.Body)
 	const (
@@ -325,6 +325,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		if res.StatusCode != http.StatusOK {
 			slog.Error("Fetching failed",
 				"url", feedURL, "status_code", res.StatusCode, "status", res.Status)
+			res.Body.Close()
 			continue
 		}
 		rfeed, err := func() (*ROLIEFeed, error) {

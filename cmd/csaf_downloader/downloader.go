@@ -257,7 +257,18 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		afp.AgeAccept = d.cfg.Range.Contains
 	}
 
+	const maxFiles = 1000
+	var downloaded int
+
 	return afp.ProcessWithContext(ctx, func(label csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+		if downloaded >= maxFiles {
+			return nil
+		}
+		remaining := maxFiles - downloaded
+		if len(files) > remaining {
+			files = files[:remaining]
+		}
+		downloaded += len(files)
 		return d.downloadFiles(ctx, label, files)
 	})
 }
@@ -360,6 +371,7 @@ func (d *downloader) loadOpenPGPKeys(
 				"url", u,
 				"status_code", res.StatusCode,
 				"status", res.Status)
+			res.Body.Close()
 			continue
 		}
 
@@ -422,7 +434,6 @@ func (d *downloader) logValidationIssues(url string, errors []string, err error)
 type downloadContext struct {
 	d                  *downloader
 	client             util.ClientWithContext
-	data               bytes.Buffer
 	lastDir            string
 	initialReleaseDate time.Time
 	dateExtract        func(any) error
@@ -541,9 +552,11 @@ func (dc *downloadContext) downloadAdvisory(
 		writers = append(writers, s256)
 	}
 
-	// Remember the data as we need to store it to file later.
-	dc.data.Reset()
-	writers = append(writers, &dc.data)
+	// Remember the data as we need to store it to file later. Keep the
+	// buffer local to this advisory so workers do not retain the largest
+	// advisory backing array for the rest of a long-running download.
+	var data bytes.Buffer
+	writers = append(writers, &data)
 
 	// Download the advisory and hash it.
 	hasher := io.MultiWriter(writers...)
@@ -591,7 +604,7 @@ func (dc *downloadContext) downloadAdvisory(
 				"error", err)
 		}
 		if sign != nil {
-			if err := dc.d.checkSignature(dc.data.Bytes(), sign); err != nil {
+			if err := dc.d.checkSignature(data.Bytes(), sign); err != nil {
 				if !dc.d.cfg.IgnoreSignatureCheck {
 					dc.stats.signatureFailed++
 					return fmt.Errorf("cannot verify signature for %s: %v", file.URL(), err)
@@ -663,7 +676,7 @@ func (dc *downloadContext) downloadAdvisory(
 	if dc.d.forwarder != nil {
 		dc.d.forwarder.forward(
 			ctx,
-			filename, dc.data.String(),
+			filename, data.String(),
 			valStatus,
 			string(s256Data),
 			string(s512Data))
@@ -717,7 +730,7 @@ func (dc *downloadContext) downloadAdvisory(
 		p string
 		d []byte
 	}{
-		{path, dc.data.Bytes()},
+		{path, data.Bytes()},
 		{path + ".sha256", s256Data},
 		{path + ".sha512", s512Data},
 		{path + ".asc", signData},

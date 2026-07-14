@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"runtime/trace"
 
 	"github.com/gocsaf/csaf/v3/internal/options"
 )
@@ -49,6 +50,10 @@ func run(cfg *config, domains []string) error {
 }
 
 func main() {
+	tf, err := os.Create("trace_downloader_mem_fix.out")
+	options.ErrorCheck(err)
+	options.ErrorCheck(trace.Start(tf))
+	defer trace.Stop()
 
 	domains, cfg, err := parseArgsConfig()
 	options.ErrorCheck(err)
