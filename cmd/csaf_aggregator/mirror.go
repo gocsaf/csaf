@@ -224,6 +224,7 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 
 		if res.StatusCode != http.StatusOK {
 			os.RemoveAll(openPGPFolder)
+			res.Body.Close()
 			return fmt.Errorf("cannot fetch PGP key %s: %s (%d)",
 				*pgpKey.URL, res.Status, res.StatusCode)
 		}
@@ -399,6 +400,7 @@ func (w *worker) downloadSignature(ctx context.Context, path string) (string, er
 		return "", err
 	}
 	if res.StatusCode != http.StatusOK {
+		res.Body.Close()
 		return "", errNotFound
 	}
 	data, err := func() ([]byte, error) {
