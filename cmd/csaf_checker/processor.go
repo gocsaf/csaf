@@ -1401,12 +1401,11 @@ func (p *processor) checkSecurityFolder(ctx context.Context, folder string) stri
 	if res, err = client.GetWithContext(ctx, u); err != nil {
 		return fmt.Sprintf("Cannot fetch %s from security.txt: %v", u, err)
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		res.Body.Close()
 		return fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
 			u, res.StatusCode, res.Status)
 	}
-	defer res.Body.Close()
 	// Compare checksums to already read provider-metadata.json.
 	h := sha256.New()
 	if _, err := io.Copy(h, res.Body); err != nil {
