@@ -283,8 +283,7 @@ func (d *downloader) downloadFiles(
 		}
 	}()
 
-	n := min(d.cfg.Worker, 1)
-
+	n := max(d.cfg.Worker, 1)
 	pool := misc.NewBufferPool(n)
 
 	for range n {
