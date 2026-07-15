@@ -16,7 +16,6 @@ import (
 	"os/signal"
 
 	"net/http"
-	_ "net/http/pprof"
 
 	"github.com/gocsaf/csaf/v3/internal/options"
 )
