@@ -684,8 +684,6 @@ func (p *processor) integrity(
 			folderYear = &year
 		}
 
-		client.CloseIdleConnections()
-
 		res, err := client.GetWithContext(ctx, u)
 		if err != nil {
 			lg(ErrorType, "Fetching %s failed: %v.", u, err)
