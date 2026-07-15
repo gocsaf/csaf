@@ -48,36 +48,34 @@ func (w *worker) checkInterims(
 	interims []interimsEntry,
 ) ([]interimsEntry, error) {
 
-	var data bytes.Buffer
-
 	labelPath := filepath.Join(tx.Src(), label)
 
 	// advisories which are not interim any longer.
 	var notFinalized []interimsEntry
 
-	for _, interim := range interims {
-
+	processIterim := func(interim interimsEntry) error {
 		local := filepath.Join(labelPath, interim.path())
 		url := interim.url()
 
 		// Load local SHA256 of the advisory
 		localHash, err := util.HashFromFile(local + ".sha256")
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		res, err := w.client.GetWithContext(ctx, url)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if res.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("fetching %s failed: Status code %d (%s)",
+			return fmt.Errorf("fetching %s failed: Status code %d (%s)",
 				url, res.StatusCode, res.Status)
 		}
 
 		s256 := sha256.New()
-		data.Reset()
-		hasher := io.MultiWriter(s256, &data)
+		data := w.pool.Get()
+		defer w.pool.Put(data)
+		hasher := io.MultiWriter(s256, data)
 
 		var doc any
 		if err := func() error {
@@ -85,7 +83,7 @@ func (w *worker) checkInterims(
 			tee := io.TeeReader(res.Body, hasher)
 			return misc.StrictJSONParse(tee, &doc)
 		}(); err != nil {
-			return nil, err
+			return err
 		}
 
 		remoteHash := s256.Sum(nil)
@@ -93,12 +91,12 @@ func (w *worker) checkInterims(
 		// If the hashes are equal then we can ignore this advisory.
 		if bytes.Equal(localHash, remoteHash) {
 			notFinalized = append(notFinalized, interim)
-			continue
+			return nil
 		}
 
 		errors, err := csaf.ValidateCSAF(doc)
 		if err != nil {
-			return nil, fmt.Errorf("failed to validate %s: %v", url, err)
+			return fmt.Errorf("failed to validate %s: %v", url, err)
 		}
 
 		// XXX: Should we return an error here?
@@ -111,7 +109,7 @@ func (w *worker) checkInterims(
 		// This will start the transaction if not already started.
 		dst, err := tx.Dst()
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		// Overwrite in the cloned folder.
@@ -120,7 +118,7 @@ func (w *worker) checkInterims(
 		bytes := data.Bytes()
 
 		if err := os.WriteFile(nlocal, bytes, 0644); err != nil {
-			return nil, err
+			return err
 		}
 
 		name := filepath.Base(nlocal)
@@ -128,12 +126,12 @@ func (w *worker) checkInterims(
 		if err := util.WriteHashToFile(
 			nlocal+".sha512", name, sha512.New(), bytes,
 		); err != nil {
-			return nil, err
+			return err
 		}
 		if err := util.WriteHashSumToFile(
 			nlocal+".sha256", name, remoteHash,
 		); err != nil {
-			return nil, err
+			return err
 		}
 
 		// Download the signature
@@ -142,16 +140,23 @@ func (w *worker) checkInterims(
 
 		// Download the signature or sign it our self.
 		if err := w.downloadSignatureOrSign(ctx, sigURL, ascFile, bytes); err != nil {
-			return nil, err
+			return err
 		}
 
 		// Check if we can remove this advisory as it is not interim any more.
 		var status string
 		if err := w.expr.Extract(statusExpr, util.StringMatcher(&status), true, doc); err != nil {
-			return nil, err
+			return err
 		}
 		if status == "interim" {
 			notFinalized = append(notFinalized, interim)
+		}
+		return nil
+	}
+
+	for _, interim := range interims {
+		if err := processIterim(interim); err != nil {
+			return nil, err
 		}
 	}
 
@@ -262,10 +267,12 @@ func (p *processor) interim(ctx context.Context) error {
 	queue := make(chan *interimJob)
 	var wg sync.WaitGroup
 
+	pool := misc.NewBufferPool(p.cfg.Workers)
+
 	p.log.Info("Starting workers...", "num", p.cfg.Workers)
 	for i := 1; i <= p.cfg.Workers; i++ {
 		wg.Add(1)
-		w := newWorker(i, p)
+		w := newWorker(i, p, pool)
 		go w.interimWork(ctx, &wg, queue)
 	}
 
