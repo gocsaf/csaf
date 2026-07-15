@@ -513,14 +513,15 @@ func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.A
 		p.badProviderMetadata.error("Cannot fetch feed %s: %v", feed, err)
 		return nil, errContinue
 	}
-	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		p.badProviderMetadata.warn("Fetching %s failed. Status code %d (%s)",
 			feed, res.StatusCode, res.Status)
+		res.Body.Close()
 		return nil, errContinue
 	}
 
 	rfeed, rolieDoc, err := func() (*csaf.ROLIEFeed, any, error) {
+		defer res.Body.Close()
 		all, err := io.ReadAll(res.Body)
 		if err != nil {
 			return nil, nil, err
@@ -791,7 +792,8 @@ func (p *processor) integrity(
 				hashFile := hu.String()
 
 				p.checkTLS(hashFile)
-				if res, err = client.GetWithContext(ctx, hashFile); err != nil {
+				res, err := client.GetWithContext(ctx, hashFile)
+				if err != nil {
 					hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: %v.", hashFile, err))
 					return
 				}
@@ -843,7 +845,8 @@ func (p *processor) integrity(
 		p.badSignatures.use()
 
 		checkSignature := func() {
-			if res, err = client.GetWithContext(ctx, sigFile); err != nil {
+			res, err := client.GetWithContext(ctx, sigFile)
+			if err != nil {
 				p.badSignatures.error("Fetching %s failed: %v.", sigFile, err)
 				return
 			}
