@@ -283,12 +283,9 @@ func (d *downloader) downloadFiles(
 		}
 	}()
 
-	var n int
-	if n = d.cfg.Worker; n < 1 {
-		n = 1
-	}
+	n := min(d.cfg.Worker, 1)
 
-	pool := newDownloaderPool(n)
+	pool := misc.NewBufferPool(n)
 
 	for range n {
 		wg.Add(1)
@@ -420,43 +417,12 @@ func (d *downloader) logValidationIssues(url string, errors []string, err error)
 	}
 }
 
-// downloaderPool is a leaky buffer to avoid memory allocations.
-type downloaderPool chan (*bytes.Buffer)
-
-func newDownloaderPool(items int) downloaderPool {
-	return make(downloaderPool, items)
-}
-
-const (
-	minBufSize = 1 * 1024 * 1024
-	maxBufSize = 4 * 1024 * 1024
-)
-
-func (dp downloaderPool) get() *bytes.Buffer {
-	select {
-	case buf := <-dp:
-		return buf
-	default:
-		return bytes.NewBuffer(make([]byte, 0, minBufSize))
-	}
-}
-
-func (dp downloaderPool) put(buf *bytes.Buffer) {
-	if buf.Cap() < maxBufSize { // Throw away if too large.
-		buf.Reset()
-		select {
-		case dp <- buf:
-		default:
-		}
-	}
-}
-
 // downloadContext stores the common context of a downloader.
 type downloadContext struct {
 	d      *downloader
 	client util.ClientWithContext
 	//data               bytes.Buffer
-	pool               downloaderPool
+	pool               misc.BufferPool
 	lastDir            string
 	initialReleaseDate time.Time
 	dateExtract        func(any) error
@@ -468,7 +434,7 @@ type downloadContext struct {
 func newDownloadContext(
 	d *downloader,
 	label csaf.TLPLabel,
-	pool downloaderPool,
+	pool misc.BufferPool,
 ) *downloadContext {
 	dc := &downloadContext{
 		d:      d,
@@ -581,8 +547,8 @@ func (dc *downloadContext) downloadAdvisory(
 	}
 
 	// Remember the data as we need to store it to file later.
-	data := dc.pool.get()
-	defer dc.pool.put(data)
+	data := dc.pool.Get()
+	defer dc.pool.Put(data)
 	writers = append(writers, data)
 
 	// Download the advisory and hash it.
@@ -781,7 +747,7 @@ func (d *downloader) downloadWorker(
 	label csaf.TLPLabel,
 	files <-chan csaf.AdvisoryFile,
 	errorCh chan<- error,
-	pool downloaderPool,
+	pool misc.BufferPool,
 ) {
 	defer wg.Done()
 

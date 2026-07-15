@@ -636,11 +636,6 @@ func makeAbsolute(base *url.URL) func(*url.URL) *url.URL {
 
 var yearFromURL = regexp.MustCompile(`.*/(\d{4})/[^/]+$`)
 
-const (
-	minBufSize = 1 * 1024 * 1024
-	maxBufSize = 4 * 1024 * 1024
-)
-
 // integrity checks several csaf.AdvisoryFiles for formal
 // mistakes, from conforming filenames to invalid advisories.
 func (p *processor) integrity(
@@ -651,7 +646,7 @@ func (p *processor) integrity(
 ) error {
 	client := p.httpClient()
 
-	data := bytes.NewBuffer(make([]byte, 0, minBufSize))
+	data := bytes.NewBuffer(make([]byte, 0, misc.MinBufSize))
 
 	for _, f := range files {
 		fp, err := url.Parse(f.URL())
@@ -708,8 +703,8 @@ func (p *processor) integrity(
 		s256 := sha256.New()
 		s512 := sha512.New()
 
-		if data.Cap() >= maxBufSize { // Throw away if buffer gets too big.
-			data = bytes.NewBuffer(make([]byte, 0, minBufSize))
+		if data.Cap() > misc.MaxBufSize { // Throw away if buffer gets too big.
+			data = bytes.NewBuffer(make([]byte, 0, misc.MinBufSize))
 		} else {
 			data.Reset()
 		}
