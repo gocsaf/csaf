@@ -274,6 +274,7 @@ func (pmdl *ProviderMetadataLoader) loadFromSecurity(ctx context.Context, domain
 			pmdl.messages.Add(
 				HTTPFailed,
 				fmt.Sprintf("Fetching %q failed: %s (%d)", path, res.Status, res.StatusCode))
+			res.Body.Close()
 			continue
 		}
 
@@ -335,6 +336,7 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string
 			fmt.Sprintf("fetching %q failed: %v", path, err))
 		return &result
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		result.Messages.Add(
 			HTTPFailed,
@@ -343,8 +345,6 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string
 	}
 
 	// TODO: Check for application/json and log it.
-
-	defer res.Body.Close()
 
 	// Calculate checksum for later comparison.
 	hash := sha256.New()

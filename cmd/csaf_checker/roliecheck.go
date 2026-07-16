@@ -120,10 +120,13 @@ func (lc *labelChecker) checkPermissions(
 			if err != nil {
 				p.badAmberRedPermissions.error(
 					"Unexpected Error %v when trying to fetch: %s", err, url)
-			} else if res.StatusCode == http.StatusOK {
-				p.badAmberRedPermissions.error(
-					"Advisory %s of TLP level %v is not properly access protected.",
-					url, label)
+			} else {
+				if res.StatusCode == http.StatusOK {
+					p.badAmberRedPermissions.error(
+						"Advisory %s of TLP level %v is not properly access protected.",
+						url, label)
+				}
+				res.Body.Close()
 			}
 		}
 
@@ -157,6 +160,7 @@ func (lc *labelChecker) checkPermissions(
 						p.badWhitePermissions.warn(
 							"Advisory %s of TLP level WHITE is access-protected.", url)
 					}
+					resp.Body.Close()
 				}
 			}
 		}
@@ -392,6 +396,7 @@ func (p *processor) categoryCheck(ctx context.Context, folderURL string, label c
 	if res.StatusCode != http.StatusOK {
 		p.badROLIECategory.warn("Fetching %s failed. Status code %d (%s)",
 			urlrc, res.StatusCode, res.Status)
+		res.Body.Close()
 		return errContinue
 	}
 	rolieCategory, err := func() (*csaf.ROLIECategoryDocument, error) {
@@ -438,6 +443,7 @@ func (p *processor) serviceCheck(ctx context.Context, feeds [][]csaf.Feed) error
 	if res.StatusCode != http.StatusOK {
 		p.badROLIEService.warn("Fetching %s failed. Status code %d (%s)",
 			urls, res.StatusCode, res.Status)
+		res.Body.Close()
 		return errContinue
 	}
 

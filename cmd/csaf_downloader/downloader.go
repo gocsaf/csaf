@@ -358,6 +358,7 @@ func (d *downloader) loadOpenPGPKeys(
 				"url", u,
 				"status_code", res.StatusCode,
 				"status", res.Status)
+			res.Body.Close()
 			continue
 		}
 

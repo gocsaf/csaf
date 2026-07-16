@@ -68,6 +68,7 @@ func (w *worker) checkInterims(
 			return err
 		}
 		if res.StatusCode != http.StatusOK {
+			res.Body.Close()
 			return fmt.Errorf("fetching %s failed: Status code %d (%s)",
 				url, res.StatusCode, res.Status)
 		}
