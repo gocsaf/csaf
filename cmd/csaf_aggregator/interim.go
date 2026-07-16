@@ -73,17 +73,17 @@ func (w *worker) checkInterims(
 				url, res.StatusCode, res.Status)
 		}
 
-		s256 := sha256.New()
-		data := w.pool.Get()
+		var (
+			s256   = sha256.New()
+			data   = w.pool.Get()
+			hasher = io.MultiWriter(s256, data)
+			tee    = io.TeeReader(res.Body, hasher)
+			doc    any
+		)
 		defer w.pool.Put(data)
-		hasher := io.MultiWriter(s256, data)
-
-		var doc any
-		if err := func() error {
-			defer res.Body.Close()
-			tee := io.TeeReader(res.Body, hasher)
-			return misc.StrictJSONParse(tee, &doc)
-		}(); err != nil {
+		err = misc.StrictJSONParse(tee, &doc)
+		res.Body.Close()
+		if err != nil {
 			return err
 		}
 
