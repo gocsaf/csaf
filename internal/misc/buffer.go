@@ -37,7 +37,8 @@ func (bp BufferPool) Get() *bytes.Buffer {
 
 // Put stores a buffer into the pool.
 func (bp BufferPool) Put(buf *bytes.Buffer) {
-	if buf == nil || buf.Cap() > MaxBufSize { // Throw away if too large.
+	// Throw away if too large.
+	if buf != nil && buf.Cap() <= MaxBufSize {
 		buf.Reset()
 		select {
 		case bp <- buf:
