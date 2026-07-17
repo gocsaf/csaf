@@ -647,7 +647,7 @@ func (p *processor) integrity(
 ) error {
 	client := p.httpClient()
 
-	var data bytes.Buffer
+	data := bytes.NewBuffer(make([]byte, 0, misc.MinBufSize))
 
 	// checks an advisory and the dependent files like checksums and so on.
 	checkFile := func(f csaf.AdvisoryFile) error {
@@ -705,8 +705,13 @@ func (p *processor) integrity(
 
 		s256 := sha256.New()
 		s512 := sha512.New()
-		data.Reset()
-		hasher := io.MultiWriter(s256, s512, &data)
+
+		if data.Cap() > misc.MaxBufSize { // Throw away if buffer gets too big.
+			data = bytes.NewBuffer(make([]byte, 0, misc.MinBufSize))
+		} else {
+			data.Reset()
+		}
+		hasher := io.MultiWriter(s256, s512, data)
 
 		var doc any
 

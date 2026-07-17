@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -107,9 +108,11 @@ func (p *processor) full(ctx context.Context) error {
 
 	p.log.Info("Starting workers...", "num", p.cfg.Workers)
 
+	pool := misc.NewBufferPool(p.cfg.Workers)
+
 	for i := 1; i <= p.cfg.Workers; i++ {
 		wg.Add(1)
-		w := newWorker(i, p)
+		w := newWorker(i, p, pool)
 
 		go w.fullWork(ctx, &wg, queue)
 	}
