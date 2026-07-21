@@ -80,6 +80,7 @@ func (w *worker) mirrorInternal(ctx context.Context) (*csaf.AggregatorCSAFProvid
 		pmdURL)
 
 	afp.AgeAccept = w.provider.ageAccept(w.processor.cfg)
+	afp.ExperimentalStreamingROLIEParser = w.processor.cfg.ExperimentalStreamingROLIEParser
 
 	if err := afp.ProcessWithContext(ctx, w.mirrorFiles(ctx)); err != nil {
 		return nil, err

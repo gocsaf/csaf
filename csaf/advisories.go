@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v3/internal/models"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -91,12 +92,13 @@ func (daf DirectoryAdvisoryFile) LogValue() slog.Value {
 // AdvisoryFileProcessor implements the extraction of
 // advisory file names from a given provider metadata.
 type AdvisoryFileProcessor struct {
-	AgeAccept func(time.Time) bool
-	Log       func(loglevel slog.Level, format string, args ...any)
-	client    util.Client
-	expr      *util.PathEval
-	doc       any
-	pmdURL    *url.URL
+	AgeAccept                        func(time.Time) bool
+	Log                              func(loglevel slog.Level, format string, args ...any)
+	client                           util.Client
+	expr                             *util.PathEval
+	doc                              any
+	pmdURL                           *url.URL
+	ExperimentalStreamingROLIEParser bool
 }
 
 // NewAdvisoryFileProcessor constructs a filename extractor
@@ -325,55 +327,122 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		if res.StatusCode != http.StatusOK {
 			slog.Error("Fetching failed",
 				"url", feedURL, "status_code", res.StatusCode, "status", res.Status)
+			res.Body.Close()
 			continue
 		}
-		rfeed, err := func() (*ROLIEFeed, error) {
-			defer res.Body.Close()
-			return LoadROLIEFeed(res.Body)
-		}()
-		if err != nil {
-			slog.Error("Loading ROLIE feed failed", "err", err)
-			continue
-		}
-
 		var files []AdvisoryFile
-
-		resolve := func(u string) string {
-			if u == "" {
-				return ""
-			}
-			p, err := url.Parse(u)
+		if afp.ExperimentalStreamingROLIEParser {
+			err := afp.processROLIEStream(&files, res)
 			if err != nil {
-				slog.Error("Invalid URL", "url", u, "err", err)
-				return ""
+				slog.Error("Streaming ROLIE feed failed", "err", err)
+				continue
 			}
-			return p.String()
+		} else {
+			err := afp.processROLIELegacy(&files, res)
+			if err != nil {
+				slog.Error("Loading ROLIE feed failed", "err", err)
+				continue
+			}
 		}
 
-		rfeed.Entries(func(entry *Entry) {
+		var label TLPLabel
+		if feed.TLPLabel != nil {
+			label = *feed.TLPLabel
+		} else {
+			label = "unknown"
+		}
+
+		if err := fn(label, files); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (afp *AdvisoryFileProcessor) processROLIELegacy(files *[]AdvisoryFile, res *http.Response) error {
+	rfeed, err := func() (*ROLIEFeed, error) {
+		defer res.Body.Close()
+		return LoadROLIEFeed(res.Body)
+	}()
+	if err != nil {
+		return err
+	}
+	rfeed.Entries(func(entry *Entry) {
+		// Filter if we have date checking.
+		if afp.AgeAccept != nil {
+			if t := time.Time(entry.Updated); !t.IsZero() && !afp.AgeAccept(t) {
+				return
+			}
+		}
+
+		var self, sha256, sha512, sign string
+
+		for i := range entry.Link {
+			link := &entry.Link[i]
+			lower := strings.ToLower(link.HRef)
+			switch link.Rel {
+			case "self":
+				self = afp.resolveURL(link.HRef)
+			case "signature":
+				sign = afp.resolveURL(link.HRef)
+			case "hash":
+				switch {
+				case strings.HasSuffix(lower, ".sha256"):
+					sha256 = afp.resolveURL(link.HRef)
+				case strings.HasSuffix(lower, ".sha512"):
+					sha512 = afp.resolveURL(link.HRef)
+				}
+			}
+		}
+
+		if self == "" {
+			return
+		}
+
+		var file AdvisoryFile
+
+		switch {
+		case sha256 == "" && sha512 == "":
+			slog.Error("No hash listed on ROLIE feed", "file", self)
+			return
+		case sign == "":
+			slog.Error("No signature listed on ROLIE feed", "file", self)
+			return
+		default:
+			file = PlainAdvisoryFile{self, sha256, sha512, sign}
+		}
+
+		*files = append(*files, file)
+	})
+	return nil
+}
+
+func (afp *AdvisoryFileProcessor) processROLIEStream(files *[]AdvisoryFile, res *http.Response) error {
+	srp := models.StreamingROLIEParser{
+		HandleEntry: func(sr *models.StreamingROLIEParser) {
 			// Filter if we have date checking.
 			if afp.AgeAccept != nil {
-				if t := time.Time(entry.Updated); !t.IsZero() && !afp.AgeAccept(t) {
+				if t := time.Time(sr.Updated); !t.IsZero() && !afp.AgeAccept(t) {
 					return
 				}
 			}
 
 			var self, sha256, sha512, sign string
 
-			for i := range entry.Link {
-				link := &entry.Link[i]
+			for i := range sr.Links {
+				link := sr.Links[i]
 				lower := strings.ToLower(link.HRef)
 				switch link.Rel {
 				case "self":
-					self = resolve(link.HRef)
+					self = afp.resolveURL(link.HRef)
 				case "signature":
-					sign = resolve(link.HRef)
+					sign = afp.resolveURL(link.HRef)
 				case "hash":
 					switch {
 					case strings.HasSuffix(lower, ".sha256"):
-						sha256 = resolve(link.HRef)
+						sha256 = afp.resolveURL(link.HRef)
 					case strings.HasSuffix(lower, ".sha512"):
-						sha512 = resolve(link.HRef)
+						sha512 = afp.resolveURL(link.HRef)
 					}
 				}
 			}
@@ -395,19 +464,26 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 				file = PlainAdvisoryFile{self, sha256, sha512, sign}
 			}
 
-			files = append(files, file)
-		})
-
-		var label TLPLabel
-		if feed.TLPLabel != nil {
-			label = *feed.TLPLabel
-		} else {
-			label = "unknown"
-		}
-
-		if err := fn(label, files); err != nil {
-			return err
-		}
+			*files = append(*files, file)
+		},
 	}
+	defer res.Body.Close()
+	err := srp.Parse(res.Body)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (afp *AdvisoryFileProcessor) resolveURL(u string) string {
+	if u == "" {
+		return ""
+	}
+	p, err := url.Parse(u)
+	if err != nil {
+		slog.Error("Invalid URL", "url", u, "err", err)
+		return ""
+	}
+	return p.String()
 }
