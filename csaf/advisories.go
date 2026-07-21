@@ -92,13 +92,13 @@ func (daf DirectoryAdvisoryFile) LogValue() slog.Value {
 // AdvisoryFileProcessor implements the extraction of
 // advisory file names from a given provider metadata.
 type AdvisoryFileProcessor struct {
-	AgeAccept                        func(time.Time) bool
-	Log                              func(loglevel slog.Level, format string, args ...any)
-	client                           util.Client
-	expr                             *util.PathEval
-	doc                              any
-	pmdURL                           *url.URL
-	ExperimentalStreamingROLIEParser bool
+	AgeAccept            func(time.Time) bool
+	Log                  func(loglevel slog.Level, format string, args ...any)
+	client               util.Client
+	expr                 *util.PathEval
+	doc                  any
+	pmdURL               *url.URL
+	StreamingROLIEParser bool
 }
 
 // NewAdvisoryFileProcessor constructs a filename extractor
@@ -331,7 +331,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			continue
 		}
 		var files []AdvisoryFile
-		if afp.ExperimentalStreamingROLIEParser {
+		if afp.StreamingROLIEParser {
 			err := afp.processROLIEStream(&files, res)
 			if err != nil {
 				slog.Error("Streaming ROLIE feed failed", "err", err)

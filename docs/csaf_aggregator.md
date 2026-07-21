@@ -104,6 +104,7 @@ lock_file               // path to lockfile, to stop other instances if one is n
 interim_years           // limiting the years for which interim documents are searched (default 0)
 verbose                 // print more diagnostic output, e.g. https requests (default false)
 allow_single_provider   // debugging option (default false)
+streaming_rolie_parser  // enables use of the experimental streaming ROLIE parser (default false)
 ignore_pattern          // patterns of advisory URLs to be ignored (see checker doc for details)
 client_cert             // path to client certificate to access access-protected advisories
 client_key              // path to client key to access access-protected advisories
@@ -198,6 +199,8 @@ insecure = true
 # specification requires at least two providers (default),
 # to override for testing, enable:
 # allow_single_provider = true
+# to use the experimental streaming ROLIE parser, enable:
+# streaming_rolie_parser = true
 
 [aggregator]
   # Set if this instance shall be a mirror (aka `aggregator`) or a `lister`.
