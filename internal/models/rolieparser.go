@@ -14,16 +14,20 @@ import (
 	"fmt"
 	"io"
 	"time"
-
-	"github.com/gocsaf/csaf/v3/csaf"
 )
+
+// Link models a link tag in a ROLIE entry.
+type Link struct {
+	Rel  string `json:"rel"`
+	HRef string `json:"href"`
+}
 
 // StreamingROLIEParser is a specialized ROLIE parser
 // to only extract some fields in a streaming manner.
 type StreamingROLIEParser struct {
-	currentLink csaf.Link
+	currentLink Link
 	Updated     time.Time
-	Links       []csaf.Link
+	Links       []Link
 	// HandleEntry is called if an entry if completed.
 	HandleEntry func(*StreamingROLIEParser)
 }
