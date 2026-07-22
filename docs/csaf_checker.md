@@ -23,6 +23,7 @@ Application Options:
       --validator_cache=FILE            FILE to cache remote validations
       --validator_preset=               One or more presets to validate remotely (default: [mandatory])
   -c, --config=TOML-FILE                Path to config TOML file
+      --streaming_rolie_parser          If flag is set, uses the experimental streaming ROLIE parser
 
 Help Options:
   -h, --help                            Show this help message
@@ -46,19 +47,20 @@ with `~` expanding to `$HOME` on unixoid systems and `%HOMEPATH` on Windows syst
 Supported options in config files:
 
 ```
-output              = ""
-format              = "json"
-insecure            = false
-# client_cert       # not set by default
-# client_key        # not set by default
-# client_passphrase # not set by default
-verbose             = false
-# rate              # not set by default
-# time_range         # not set by default
-# header            # not set by default
-# validator         # not set by default
-# validator_cache   # not set by default
-validator_preset    = ["mandatory"]
+output                 = ""
+format                 = "json"
+insecure               = false
+# client_cert          # not set by default
+# client_key           # not set by default
+# client_passphrase    # not set by default
+verbose                = false
+# rate                 # not set by default
+# time_range            # not set by default
+# header               # not set by default
+# validator            # not set by default
+# validator_cache      # not set by default
+validator_preset       = ["mandatory"]
+streaming_rolie_parser = false
 ```
 
 Usage example:
