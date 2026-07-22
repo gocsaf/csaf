@@ -285,14 +285,12 @@ func (d *downloader) downloadFiles(
 		}
 	}()
 
-	var n int
-	if n = d.cfg.Worker; n < 1 {
-		n = 1
-	}
+	n := max(d.cfg.Worker, 1)
+	pool := misc.NewBufferPool(n)
 
-	for i := 0; i < n; i++ {
+	for range n {
 		wg.Add(1)
-		go d.downloadWorker(ctx, &wg, label, advisoryCh, errorCh)
+		go d.downloadWorker(ctx, &wg, label, advisoryCh, errorCh, pool)
 	}
 
 allFiles:
@@ -362,6 +360,7 @@ func (d *downloader) loadOpenPGPKeys(
 				"url", u,
 				"status_code", res.StatusCode,
 				"status", res.Status)
+			res.Body.Close()
 			continue
 		}
 
@@ -422,9 +421,10 @@ func (d *downloader) logValidationIssues(url string, errors []string, err error)
 
 // downloadContext stores the common context of a downloader.
 type downloadContext struct {
-	d                  *downloader
-	client             util.ClientWithContext
-	data               bytes.Buffer
+	d      *downloader
+	client util.ClientWithContext
+	//data               bytes.Buffer
+	pool               misc.BufferPool
 	lastDir            string
 	initialReleaseDate time.Time
 	dateExtract        func(any) error
@@ -433,10 +433,15 @@ type downloadContext struct {
 	expr               *util.PathEval
 }
 
-func newDownloadContext(d *downloader, label csaf.TLPLabel) *downloadContext {
+func newDownloadContext(
+	d *downloader,
+	label csaf.TLPLabel,
+	pool misc.BufferPool,
+) *downloadContext {
 	dc := &downloadContext{
 		d:      d,
 		client: d.httpClient(),
+		pool:   pool,
 		lower:  strings.ToLower(string(label)),
 		expr:   util.NewPathEval(),
 	}
@@ -544,8 +549,9 @@ func (dc *downloadContext) downloadAdvisory(
 	}
 
 	// Remember the data as we need to store it to file later.
-	dc.data.Reset()
-	writers = append(writers, &dc.data)
+	data := dc.pool.Get()
+	defer dc.pool.Put(data)
+	writers = append(writers, data)
 
 	// Download the advisory and hash it.
 	hasher := io.MultiWriter(writers...)
@@ -593,7 +599,7 @@ func (dc *downloadContext) downloadAdvisory(
 				"error", err)
 		}
 		if sign != nil {
-			if err := dc.d.checkSignature(dc.data.Bytes(), sign); err != nil {
+			if err := dc.d.checkSignature(data.Bytes(), sign); err != nil {
 				if !dc.d.cfg.IgnoreSignatureCheck {
 					dc.stats.signatureFailed++
 					return fmt.Errorf("cannot verify signature for %s: %v", file.URL(), err)
@@ -665,7 +671,7 @@ func (dc *downloadContext) downloadAdvisory(
 	if dc.d.forwarder != nil {
 		dc.d.forwarder.forward(
 			ctx,
-			filename, dc.data.String(),
+			filename, data.String(),
 			valStatus,
 			string(s256Data),
 			string(s512Data))
@@ -719,7 +725,7 @@ func (dc *downloadContext) downloadAdvisory(
 		p string
 		d []byte
 	}{
-		{path, dc.data.Bytes()},
+		{path, data.Bytes()},
 		{path + ".sha256", s256Data},
 		{path + ".sha512", s512Data},
 		{path + ".asc", signData},
@@ -743,10 +749,11 @@ func (d *downloader) downloadWorker(
 	label csaf.TLPLabel,
 	files <-chan csaf.AdvisoryFile,
 	errorCh chan<- error,
+	pool misc.BufferPool,
 ) {
 	defer wg.Done()
 
-	dc := newDownloadContext(d, label)
+	dc := newDownloadContext(d, label, pool)
 
 	// Add collected stats back to total.
 	defer d.addStats(&dc.stats)

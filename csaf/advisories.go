@@ -241,12 +241,12 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 		return nil, err
 	}
 
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetching %s failed. Status code %d (%s)",
 			changesURL, resp.StatusCode, resp.Status)
 	}
 
-	defer resp.Body.Close()
 	var files []AdvisoryFile
 	c := csv.NewReader(resp.Body)
 	const (
