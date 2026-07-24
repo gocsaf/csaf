@@ -10,10 +10,16 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"slices"
+	"unicode/utf8"
 
 	"github.com/jessevdk/go-flags"
 
@@ -62,8 +68,13 @@ func main() {
 func run(opts *options, files []string) error {
 	exitCode := exitCodeAllValid
 
-	var validator csaf.RemoteValidator
+	var validator csaf.RemoteValidatorWithContext
 	eval := util.NewPathEval()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+	defer stop()
 
 	if opts.RemoteValidator != "" {
 		validatorOptions := csaf.RemoteValidatorOptions{
@@ -72,7 +83,7 @@ func run(opts *options, files []string) error {
 			Cache:   opts.RemoteValidatorCache,
 		}
 		var err error
-		if validator, err = validatorOptions.Open(); err != nil {
+		if validator, err = validatorOptions.OpenWithContext(); err != nil {
 			return fmt.Errorf(
 				"preparing remote validator failed: %w", err)
 		}
@@ -102,11 +113,18 @@ func run(opts *options, files []string) error {
 		if !util.ConformingFileName(filepath.Base(file)) {
 			fmt.Printf("%q is not a valid advisory name.\n", file)
 		}
-		doc, err := loadJSONFromFile(file)
+
+		doc, raw, err := loadJSONFromFile(file)
 		if err != nil {
 			log.Printf("error: loading %q as JSON failed: %v\n", file, err)
 			continue
 		}
+
+		// Check for invalid UTF-8 in file
+		if !utf8.Valid(raw) {
+			log.Printf("file %s contains invalid UTF-8", file)
+		}
+
 		// Validate against Schema.
 		validationErrs, err := csaf.ValidateCSAF(doc)
 		if err != nil {
@@ -131,7 +149,7 @@ func run(opts *options, files []string) error {
 
 		// Validate against remote validator.
 		if validator != nil {
-			rvr, err := validator.Validate(doc)
+			rvr, err := validator.ValidateWithContext(ctx, doc)
 			if err != nil {
 				return fmt.Errorf("remote validation of %q failed: %w",
 					file, err)
@@ -179,13 +197,9 @@ func (mipl *messageInstancePathsList) add(rtr csaf.RemoteTestResult) {
 		m := &(*mipl)[i]
 		// Already have this message?
 		if m.message == rtr.Message {
-			for _, path := range m.paths {
-				// Avoid dupes.
-				if path == rtr.InstancePath {
-					return
-				}
+			if !slices.Contains(m.paths, rtr.InstancePath) {
+				m.paths = append(m.paths, rtr.InstancePath)
 			}
-			m.paths = append(m.paths, rtr.InstancePath)
 			return
 		}
 	}
@@ -294,15 +308,18 @@ func errCheck(err error) {
 }
 
 // loadJSONFromFile loads a JSON document from a file.
-func loadJSONFromFile(fname string) (any, error) {
+func loadJSONFromFile(fname string) (any, []byte, error) {
 	f, err := os.Open(fname)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer f.Close()
+	var data bytes.Buffer
 	var doc any
-	if err = misc.StrictJSONParse(f, &doc); err != nil {
-		return nil, err
+	tee := io.TeeReader(f, &data)
+	if err = misc.StrictJSONParse(tee, &doc); err != nil {
+		return nil, nil, err
 	}
-	return doc, err
+	raw := bytes.Clone(data.Bytes())
+	return doc, raw, err
 }
