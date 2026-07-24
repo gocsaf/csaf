@@ -332,17 +332,13 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		}
 		var files []AdvisoryFile
 		if afp.StreamingROLIEParser {
-			err := afp.processROLIEStream(&files, res)
-			if err != nil {
+			if err := afp.processROLIEStream(&files, res); err != nil {
 				slog.Error("Streaming ROLIE feed failed", "err", err)
 				continue
 			}
-		} else {
-			err := afp.processROLIELegacy(&files, res)
-			if err != nil {
-				slog.Error("Loading ROLIE feed failed", "err", err)
-				continue
-			}
+		} else if err := afp.processROLIELegacy(&files, res); err != nil {
+			slog.Error("Loading ROLIE feed failed", "err", err)
+			continue
 		}
 
 		var label TLPLabel
@@ -399,8 +395,6 @@ func (afp *AdvisoryFileProcessor) processROLIELegacy(files *[]AdvisoryFile, res 
 			return
 		}
 
-		var file AdvisoryFile
-
 		switch {
 		case sha256 == "" && sha512 == "":
 			slog.Error("No hash listed on ROLIE feed", "file", self)
@@ -409,15 +403,14 @@ func (afp *AdvisoryFileProcessor) processROLIELegacy(files *[]AdvisoryFile, res 
 			slog.Error("No signature listed on ROLIE feed", "file", self)
 			return
 		default:
-			file = PlainAdvisoryFile{self, sha256, sha512, sign}
+			*files = append(*files, PlainAdvisoryFile{self, sha256, sha512, sign})
 		}
-
-		*files = append(*files, file)
 	})
 	return nil
 }
 
 func (afp *AdvisoryFileProcessor) processROLIEStream(files *[]AdvisoryFile, res *http.Response) error {
+	defer res.Body.Close()
 	srp := models.StreamingROLIEParser{
 		HandleEntry: func(sr *models.StreamingROLIEParser) {
 			// Filter if we have date checking.
@@ -467,13 +460,7 @@ func (afp *AdvisoryFileProcessor) processROLIEStream(files *[]AdvisoryFile, res 
 			*files = append(*files, file)
 		},
 	}
-	defer res.Body.Close()
-	err := srp.Parse(res.Body)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return srp.Parse(res.Body)
 }
 
 func (afp *AdvisoryFileProcessor) resolveURL(u string) string {
