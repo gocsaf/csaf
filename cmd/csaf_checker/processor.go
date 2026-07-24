@@ -31,6 +31,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v3/internal/models"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/time/rate"
@@ -505,22 +506,145 @@ func (p *processor) usedAuthorizedClient() bool {
 	return p.cfg.protectedAccess()
 }
 
-// rolieFeedEntries loads the references to the advisory files for a given feed.
-func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.AdvisoryFile, error) {
-	client := p.httpClient()
-	res, err := client.GetWithContext(ctx, feed)
-	p.badDirListings.use()
-	if err != nil {
-		p.badProviderMetadata.error("Cannot fetch feed %s: %v", feed, err)
-		return nil, errContinue
-	}
-	if res.StatusCode != http.StatusOK {
-		p.badProviderMetadata.warn("Fetching %s failed. Status code %d (%s)",
-			feed, res.StatusCode, res.Status)
-		res.Body.Close()
-		return nil, errContinue
-	}
+// teeMux muxes an io.Reader into two io.Readers.
+type teeMux struct {
+	*io.PipeWriter
+	r1 io.Reader
+	r2 *io.PipeReader
+}
 
+func newTeeMux(r io.Reader) *teeMux {
+	pr, pw := io.Pipe()
+	return &teeMux{
+		PipeWriter: pw,
+		r1:         io.TeeReader(r, pw),
+		r2:         pr,
+	}
+}
+
+func (p *processor) dumpValidationErrors(feed string, errors []string) {
+	if len(errors) == 0 {
+		return
+	}
+	p.badProviderMetadata.error("%s: Validating against JSON schema failed:", feed)
+	for _, msg := range errors {
+		p.badProviderMetadata.error("%s", strings.ReplaceAll(msg, `%`, `%%`))
+	}
+}
+
+func (p *processor) extractAdvisoryFilesFromROLIE(
+	feed string,
+	files *[]csaf.AdvisoryFile,
+	hasEntries *bool,
+) func(srp *models.StreamingROLIEParser) {
+	return func(sr *models.StreamingROLIEParser) {
+		// Detect if this handler was called.
+		*hasEntries = true
+		// Filter if we have date checking.
+		if accept := p.cfg.Range; accept != nil {
+			if !sr.Updated.IsZero() && !accept.Contains(sr.Updated) {
+				return
+			}
+		}
+		// Extract the data from the links.
+		var url, sha256, sha512, sign string
+		for _, link := range sr.Links {
+			lower := strings.ToLower(link.HRef)
+			switch link.Rel {
+			case "self":
+				if !strings.HasSuffix(lower, ".json") {
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "self" has unexpected file extension.`,
+						link.HRef, feed)
+				}
+				url = link.HRef
+			case "signature":
+				if !strings.HasSuffix(lower, ".asc") {
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "signature" has unexpected file extension.`,
+						link.HRef, feed)
+				}
+				sign = link.HRef
+			case "hash":
+				switch {
+				case strings.HasSuffix(lower, "sha256"):
+					sha256 = link.HRef
+				case strings.HasSuffix(lower, "sha512"):
+					sha512 = link.HRef
+				default:
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "hash" has unsupported file extension.`,
+						link.HRef, feed)
+				}
+			}
+		}
+		if url == "" {
+			p.badProviderMetadata.warn(
+				`ROLIE feed %s contains entry link with no "self" URL.`, feed)
+			return
+		}
+		switch {
+		case sha256 == "" && sha512 != "":
+			p.badROLIEFeed.info("%s has no sha256 hash file listed", url)
+		case sha256 != "" && sha512 == "":
+			p.badROLIEFeed.info("%s has no sha512 hash file listed", url)
+		case sha256 == "" && sha512 == "":
+			p.badROLIEFeed.error("No hash listed on ROLIE feed %s", url)
+		case sign == "":
+			p.badROLIEFeed.error("No signature listed on ROLIE feed %s", url)
+		}
+		*files = append(*files, csaf.PlainAdvisoryFile{
+			Path:   url,
+			SHA256: sha256,
+			SHA512: sha512,
+			Sign:   sign,
+		})
+	}
+}
+
+func (p *processor) extractWithStreamingParser(feed string, res *http.Response) ([]csaf.AdvisoryFile, error) {
+	var (
+		files      []csaf.AdvisoryFile // List of files to check.
+		hasEntries bool                // Where there any entries in the ROLIE feed?
+		rolieDoc   any                 // Document used for schema checking.
+	)
+	if err := func() error {
+		defer res.Body.Close()
+		var (
+			errCh = make(chan error, 1)
+			tm    = newTeeMux(res.Body) // Muxing here because we need the stream twice.
+		)
+		go func() {
+			srp := models.StreamingROLIEParser{
+				HandleEntry: p.extractAdvisoryFilesFromROLIE(
+					feed, &files, &hasEntries),
+			}
+			err := srp.Parse(tm.r2)
+			if _, drainErr := io.Copy(io.Discard, tm.r2); err == nil {
+				err = drainErr
+			}
+			errCh <- err
+		}()
+		rolieDocErr := misc.StrictJSONParse(tm.r1, &rolieDoc)
+		tm.CloseWithError(rolieDocErr)
+		srpErr := <-errCh
+		return errors.Join(srpErr, rolieDocErr)
+	}(); err != nil {
+		p.badProviderMetadata.error("Loading ROLIE feed failed: %v.", err)
+		return nil, errContinue
+	}
+	if !hasEntries {
+		p.badROLIEFeed.warn("No entries in %s", feed)
+	}
+	errors, err := csaf.ValidateROLIE(rolieDoc)
+	if err != nil {
+		return nil, err
+	}
+	p.dumpValidationErrors(feed, errors)
+	return files, nil
+}
+
+func (p *processor) extractWithModel(feed string, res *http.Response) ([]csaf.AdvisoryFile, error) {
 	rfeed, rolieDoc, err := func() (*csaf.ROLIEFeed, any, error) {
 		defer res.Body.Close()
 		all, err := io.ReadAll(res.Body)
@@ -547,12 +671,7 @@ func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.A
 	if err != nil {
 		return nil, err
 	}
-	if len(errors) > 0 {
-		p.badProviderMetadata.error("%s: Validating against JSON schema failed:", feed)
-		for _, msg := range errors {
-			p.badProviderMetadata.error("%s", strings.ReplaceAll(msg, `%`, `%%`))
-		}
-	}
+	p.dumpValidationErrors(feed, errors)
 
 	// Extract the CSAF files from feed.
 	var files []csaf.AdvisoryFile
@@ -622,6 +741,30 @@ func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.A
 	})
 
 	return files, nil
+}
+
+// rolieFeedEntries loads the references to the advisory files for a given feed.
+func (p *processor) rolieFeedEntries(
+	ctx context.Context,
+	feed string,
+) ([]csaf.AdvisoryFile, error) {
+	client := p.httpClient()
+	res, err := client.GetWithContext(ctx, feed)
+	p.badDirListings.use()
+	if err != nil {
+		p.badProviderMetadata.error("Cannot fetch feed %s: %v", feed, err)
+		return nil, errContinue
+	}
+	if res.StatusCode != http.StatusOK {
+		p.badProviderMetadata.warn("Fetching %s failed. Status code %d (%s)",
+			feed, res.StatusCode, res.Status)
+		res.Body.Close()
+		return nil, errContinue
+	}
+	if p.cfg.StreamingROLIEParser {
+		return p.extractWithStreamingParser(feed, res)
+	}
+	return p.extractWithModel(feed, res)
 }
 
 // makeAbsolute returns a function that checks if a given

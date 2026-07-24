@@ -77,16 +77,17 @@ type config struct {
 	Web     string `toml:"web"`
 	Domain  string `toml:"domain"`
 	// Rate gives the average upper limit of https operations per second.
-	Rate                *float64            `toml:"rate"`
-	Insecure            *bool               `toml:"insecure"`
-	Categories          *[]string           `toml:"categories"`
-	WriteIndices        bool                `toml:"write_indices"`
-	Aggregator          csaf.AggregatorInfo `toml:"aggregator"`
-	Providers           []*provider         `toml:"providers"`
-	OpenPGPPrivateKey   string              `toml:"openpgp_private_key"`
-	OpenPGPPublicKey    string              `toml:"openpgp_public_key"`
-	Passphrase          *string             `toml:"passphrase"`
-	AllowSingleProvider bool                `toml:"allow_single_provider"`
+	Rate                 *float64            `toml:"rate"`
+	Insecure             *bool               `toml:"insecure"`
+	Categories           *[]string           `toml:"categories"`
+	WriteIndices         bool                `toml:"write_indices"`
+	Aggregator           csaf.AggregatorInfo `toml:"aggregator"`
+	Providers            []*provider         `toml:"providers"`
+	OpenPGPPrivateKey    string              `toml:"openpgp_private_key"`
+	OpenPGPPublicKey     string              `toml:"openpgp_public_key"`
+	Passphrase           *string             `toml:"passphrase"`
+	AllowSingleProvider  bool                `toml:"allow_single_provider"`
+	StreamingROLIEParser bool                `long:"streaming_rolie_parser" description:"Use the streaming ROLIE feed parser (experimental)" toml:"streaming_rolie_parser"`
 
 	ClientCert       *string `toml:"client_cert"`
 	ClientKey        *string `toml:"client_key"`

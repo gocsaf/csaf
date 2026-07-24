@@ -82,6 +82,7 @@ func (w *worker) mirrorInternal(
 		pmdURL)
 
 	afp.AgeAccept = w.provider.ageAccept(w.processor.cfg)
+	afp.StreamingROLIEParser = w.processor.cfg.StreamingROLIEParser
 
 	if err := afp.ProcessWithContext(ctx, w.mirrorFiles(ctx)); err != nil {
 		return nil, err

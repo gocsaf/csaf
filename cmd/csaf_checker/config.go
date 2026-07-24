@@ -46,8 +46,9 @@ type config struct {
 
 	Config string `short:"c" long:"config" description:"Path to config TOML file" value-name:"TOML-FILE" toml:"-"`
 
-	clientCerts   []tls.Certificate
-	ignorePattern filter.PatternMatcher
+	clientCerts          []tls.Certificate
+	ignorePattern        filter.PatternMatcher
+	StreamingROLIEParser bool `long:"streaming_rolie_parser" description:"Use the streaming ROLIE feed parser (experimental)" toml:"streaming_rolie_parser"`
 }
 
 // configPaths are the potential file locations of the config file.
