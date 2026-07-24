@@ -265,6 +265,9 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 			}).report(p, domain)
 			report.Domains = append(report.Domains, domain)
 			continue
+		} else if p.cfg.PreFlight {
+			log.Printf("Preflight check passed. Domain: %q, pmdURL: %s\n", d, p.pmdURL)
+			continue
 		}
 		if err := p.checkDomain(ctx, d); err != nil {
 			p.badProviderMetadata.use()
@@ -304,6 +307,9 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 		}
 
 		report.Domains = append(report.Domains, domain)
+	}
+	if p.cfg.PreFlight {
+		return nil, nil
 	}
 
 	return &report, nil
