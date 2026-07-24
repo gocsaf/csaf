@@ -24,6 +24,7 @@ Application Options:
       --validator_preset=               One or more presets to validate remotely (default: [mandatory])
       --pre_flight                      Only check if valid provider-metadata.json can be found and loaded, skip advisory checks
   -c, --config=TOML-FILE                Path to config TOML file
+      --streaming_rolie_parser          If flag is set, uses the experimental streaming ROLIE parser
 
 Help Options:
   -h, --help                            Show this help message
@@ -50,20 +51,21 @@ with `~` expanding to `$HOME` on unixoid systems and `%HOMEPATH` on Windows syst
 Supported options in config files:
 
 ```
-output              = ""
-format              = "json"
-insecure            = false
-# client_cert       # not set by default
-# client_key        # not set by default
-# client_passphrase # not set by default
-verbose             = false
-# rate              # not set by default
-# time_range         # not set by default
-# header            # not set by default
-# validator         # not set by default
-# validator_cache   # not set by default
-validator_preset    = ["mandatory"]
-pre_flight          = false
+output                 = ""
+format                 = "json"
+insecure               = false
+# client_cert          # not set by default
+# client_key           # not set by default
+# client_passphrase    # not set by default
+verbose                = false
+# rate                 # not set by default
+# time_range            # not set by default
+# header               # not set by default
+# validator            # not set by default
+# validator_cache      # not set by default
+validator_preset       = ["mandatory"]
+pre_flight             = false
+streaming_rolie_parser = false
 ```
 
 Usage example:
