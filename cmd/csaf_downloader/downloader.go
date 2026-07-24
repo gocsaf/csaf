@@ -570,7 +570,7 @@ func (dc *downloadContext) downloadAdvisory(
 		return nil
 	}
 
-	if !utf8.Valid(dc.data.Bytes()) {
+	if !utf8.Valid(data.Bytes()) {
 		slog.Warn("Invalid UTF-8 in file",
 			"url", file.URL())
 	}
