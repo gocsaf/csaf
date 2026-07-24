@@ -114,6 +114,7 @@ func (w *worker) locateProviderMetadata(ctx context.Context, domain string) erro
 
 	w.metadataProvider = lpmd.Document
 	w.loc = lpmd.URL
+	w.log.Info("PMD used", "PMD", w.loc)
 
 	return nil
 }

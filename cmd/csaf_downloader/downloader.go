@@ -233,6 +233,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 	if err != nil {
 		return fmt.Errorf("invalid URL '%s': %v", lpmd.URL, err)
 	}
+	slog.Info("PMD used", "PMD", pmdURL.String())
 
 	expr := util.NewPathEval()
 
