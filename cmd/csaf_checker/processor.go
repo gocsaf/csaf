@@ -1529,10 +1529,13 @@ func (p *processor) checkSecurityFolder(ctx context.Context, folder string) stri
 
 	u, err := func() (string, error) {
 		defer res.Body.Close()
-		lines, err := csaf.ExtractProviderURL(res.Body, false)
+		lines, err := csaf.ExtractProviderURL(res.Body, true)
 		var u string
 		if len(lines) > 0 {
 			u = lines[0]
+			for _, unused := range lines[1:] {
+				log.Printf("WARN: Unused PMD in security.txt: %s\n", unused)
+			}
 		}
 		return u, err
 	}()
