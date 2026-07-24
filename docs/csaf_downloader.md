@@ -14,6 +14,7 @@ Application Options:
       --client_cert=CERT-FILE                    TLS client certificate file (PEM encoded data)
       --client_key=KEY-FILE                      TLS client private key file (PEM encoded data)
       --client_passphrase=PASSPHRASE             Optional passphrase for the client cert (limited, experimental, see doc)
+      --client_timeout=DURATION                  Optional timeout for HTTP Client connections
       --version                                  Display version of the binary
   -n, --no_store                                 Do not store files
   -r, --rate=                                    The average upper limit of https operations per second (defaults to unlimited)
@@ -76,6 +77,7 @@ insecure               = false
 # client_cert          # not set by default
 # client_key           # not set by default
 # client_passphrase    # not set by default
+# client_timeout       # not set by default
 ignore_sigcheck        = false
 # rate                 # set to unlimited
 worker                 = 2

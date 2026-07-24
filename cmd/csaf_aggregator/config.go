@@ -89,9 +89,10 @@ type config struct {
 	AllowSingleProvider  bool                `toml:"allow_single_provider"`
 	StreamingROLIEParser bool                `long:"streaming_rolie_parser" description:"Use the streaming ROLIE feed parser (experimental)" toml:"streaming_rolie_parser"`
 
-	ClientCert       *string `toml:"client_cert"`
-	ClientKey        *string `toml:"client_key"`
-	ClientPassphrase *string `toml:"client_passphrase"`
+	ClientCert       *string        `toml:"client_cert"`
+	ClientKey        *string        `toml:"client_key"`
+	ClientPassphrase *string        `toml:"client_passphrase"`
+	ClientTimeout    *time.Duration `long:"client_timeout" description:"DURATION for HTTP Client timeouts" value-name:"DURATION" toml:"client_timeout"`
 
 	Range *models.TimeRange `long:"time_range" short:"t" description:"RANGE of time from which advisories to download" value-name:"RANGE" toml:"time_range"`
 
@@ -274,6 +275,9 @@ func httpLog(method, url string) {
 
 func (c *config) httpClient(p *provider) util.ClientWithContext {
 	hClient := http.Client{}
+	if c.ClientTimeout != nil {
+		hClient.Timeout = *c.ClientTimeout
+	}
 
 	var tlsConfig tls.Config
 	if p.Insecure != nil && *p.Insecure || c.Insecure != nil && *c.Insecure {
