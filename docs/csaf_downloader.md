@@ -36,6 +36,7 @@ Application Options:
       --log_level=LEVEL[debug|info|warn|error]   LEVEL of logging details (default: info)
   -c, --config=TOML-FILE                         Path to config TOML file
       --preferred_hash=HASH[sha256|sha512]       HASH to prefer
+      --streaming_rolie_parser                   If flag is set, uses the experimental streaming ROLIE parser
 
 Help Options:
   -h, --help                                     Show this help message
@@ -71,27 +72,28 @@ with `~` expanding to `$HOME` on unixoid systems and `%HOMEPATH` on Windows syst
 Supported options in config files:
 
 ```
-# directory         # not set by default
-insecure            = false
-# client_cert       # not set by default
-# client_key        # not set by default
-# client_passphrase # not set by default
-# client_timeout    # not set by default
-ignore_sigcheck     = false
-# rate              # set to unlimited
-worker              = 2
-# time_range        # not set by default
-# folder            # not set by default
-# ignore_pattern    # not set by default
-# header            # not set by default
-# validator         # not set by default
-# validator_cache   # not set by default
-validator_preset    = ["mandatory"]
-validation_mode     = "strict"
-# forward_url       # not set by default
-# forward_header    # not set by default
-forward_queue       = 5
-forward_insecure    = false
+# directory            # not set by default
+insecure               = false
+# client_cert          # not set by default
+# client_key           # not set by default
+# client_passphrase    # not set by default
+# client_timeout       # not set by default
+ignore_sigcheck        = false
+# rate                 # set to unlimited
+worker                 = 2
+# time_range           # not set by default
+# folder               # not set by default
+# ignore_pattern       # not set by default
+# header               # not set by default
+# validator            # not set by default
+# validator_cache      # not set by default
+validator_preset       = ["mandatory"]
+validation_mode        = "strict"
+# forward_url          # not set by default
+# forward_header       # not set by default
+forward_queue          = 5
+forward_insecure       = false
+streaming_rolie_parser = false
 ```
 
 If the `folder` option is given all the advisories are stored in a subfolder

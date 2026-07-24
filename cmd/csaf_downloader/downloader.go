@@ -261,6 +261,8 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 		afp.AgeAccept = d.cfg.Range.Contains
 	}
 
+	afp.StreamingROLIEParser = d.cfg.StreamingROLIEParser
+
 	return afp.ProcessWithContext(ctx, func(label csaf.TLPLabel, files []csaf.AdvisoryFile) error {
 		return d.downloadFiles(ctx, label, files)
 	})

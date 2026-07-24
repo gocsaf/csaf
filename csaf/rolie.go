@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v3/internal/models"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -140,10 +141,7 @@ func (rcd *ROLIECategoryDocument) WriteTo(w io.Writer) (int64, error) {
 }
 
 // Link for ROLIE.
-type Link struct {
-	Rel  string `json:"rel"`
-	HRef string `json:"href"`
-}
+type Link = models.Link
 
 // ROLIECategory for ROLIE.
 type ROLIECategory struct {

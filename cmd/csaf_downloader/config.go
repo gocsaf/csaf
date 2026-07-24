@@ -64,6 +64,7 @@ type config struct {
 	Folder               string            `long:"folder" short:"f" description:"Download into a given subFOLDER" value-name:"FOLDER" toml:"folder"`
 	IgnorePattern        []string          `long:"ignore_pattern" short:"i" description:"Do not download files if their URLs match any of the given PATTERNs" value-name:"PATTERN" toml:"ignore_pattern"`
 	ExtraHeader          http.Header       `long:"header" short:"H" description:"One or more extra HTTP header fields" toml:"header"`
+	StreamingROLIEParser bool              `long:"streaming_rolie_parser" description:"Use the streaming ROLIE feed parser (experimental)" toml:"streaming_rolie_parser"`
 
 	EnumeratePMDOnly bool `long:"enumerate_pmd_only" description:"If this flag is set to true, the downloader will only enumerate valid provider metadata files, but not download documents" toml:"enumerate_pmd_only"`
 
