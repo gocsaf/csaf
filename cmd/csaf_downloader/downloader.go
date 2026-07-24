@@ -233,6 +233,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 	if err != nil {
 		return fmt.Errorf("invalid URL '%s': %v", lpmd.URL, err)
 	}
+	slog.Info("PMD used", "PMD", pmdURL.String())
 
 	expr := util.NewPathEval()
 
@@ -422,9 +423,8 @@ func (d *downloader) logValidationIssues(url string, errors []string, err error)
 
 // downloadContext stores the common context of a downloader.
 type downloadContext struct {
-	d      *downloader
-	client util.ClientWithContext
-	//data               bytes.Buffer
+	d                  *downloader
+	client             util.ClientWithContext
 	pool               misc.BufferPool
 	lastDir            string
 	initialReleaseDate time.Time

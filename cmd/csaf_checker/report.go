@@ -50,6 +50,7 @@ type Requirement struct {
 // Domain are the results of a domain.
 type Domain struct {
 	Name           string             `json:"name"`
+	URL            *string            `json:"url,omitempty"`
 	Publisher      *csaf.Publisher    `json:"publisher,omitempty"`
 	Role           *csaf.MetadataRole `json:"role,omitempty"`
 	Requirements   []*Requirement     `json:"requirements,omitempty"`
