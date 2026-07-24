@@ -727,9 +727,9 @@ func (p *processor) extractWithModel(feed string, res *http.Response) ([]csaf.Ad
 
 		switch {
 		case sha256 == "" && sha512 != "":
-			p.badROLIEFeed.info("%s has no sha256 hash file listed", url)
+			p.badROLIEFeed.info("No sha256 hash file listed on ROLIE feed %s", url)
 		case sha256 != "" && sha512 == "":
-			p.badROLIEFeed.info("%s has no sha512 hash file listed", url)
+			p.badROLIEFeed.info("No sha512 hash file listed on ROLIE feed %s", url)
 		case sha256 == "" && sha512 == "":
 			p.badROLIEFeed.error("No hash listed on ROLIE feed %s", url)
 		case sign == "":
