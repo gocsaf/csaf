@@ -10,6 +10,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"io"
 	"log/slog"
@@ -49,7 +50,7 @@ func (vs *validationStatus) update(status validationStatus) {
 type forwarder struct {
 	cfg    *config
 	cmds   chan func(*forwarder)
-	client util.Client
+	client util.ClientWithContext
 
 	failed    int
 	succeeded int
@@ -92,7 +93,7 @@ func (f *forwarder) log() {
 
 // httpClient returns a cached HTTP client used for uploading
 // the advisories to the configured HTTP endpoint.
-func (f *forwarder) httpClient() util.Client {
+func (f *forwarder) httpClient() util.ClientWithContext {
 	if f.client != nil {
 		return f.client
 	}
@@ -114,21 +115,23 @@ func (f *forwarder) httpClient() util.Client {
 
 	client := util.Client(&hClient)
 
+	var cwc util.ClientWithContext
+
 	// Add extra headers.
-	client = &util.HeaderClient{
+	cwc = &util.HeaderClient{
 		Client: client,
 		Header: f.cfg.ForwardHeader,
 	}
 
 	// Add optional URL logging.
 	if f.cfg.verbose() {
-		client = &util.LoggingClient{
-			Client: client,
+		cwc = &util.LoggingClient{
+			Client: cwc,
 			Log:    httpLog("forwarder"),
 		}
 	}
 
-	f.client = client
+	f.client = cwc
 	return f.client
 }
 
@@ -140,6 +143,7 @@ func replaceExt(fname, nExt string) string {
 
 // buildRequest creates an HTTP request suited to forward the given advisory.
 func (f *forwarder) buildRequest(
+	ctx context.Context,
 	filename, doc string,
 	status validationStatus,
 	sha256, sha512 string,
@@ -180,7 +184,7 @@ func (f *forwarder) buildRequest(
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, f.cfg.ForwardURL, body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, f.cfg.ForwardURL, body)
 	if err != nil {
 		return nil, err
 	}
@@ -242,13 +246,14 @@ func limitedString(r io.Reader, maxLength int) (string, error) {
 // checksums to the forwarder. This is async to the degree
 // till the configured queue size is filled.
 func (f *forwarder) forward(
+	ctx context.Context,
 	filename, doc string,
 	status validationStatus,
 	sha256, sha512 string,
 ) {
 	// Run this in the main loop of the forwarder.
 	f.cmds <- func(f *forwarder) {
-		req, err := f.buildRequest(filename, doc, status, sha256, sha512)
+		req, err := f.buildRequest(ctx, filename, doc, status, sha256, sha512)
 		if err != nil {
 			slog.Error("building forward Request failed",
 				"error", err)

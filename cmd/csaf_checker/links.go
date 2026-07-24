@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
@@ -29,6 +30,7 @@ type (
 )
 
 func (pgs pages) listed(
+	ctx context.Context,
 	path string,
 	pro *processor,
 	badDirs util.Set[string],
@@ -63,7 +65,7 @@ func (pgs pages) listed(
 	// load page
 	client := pro.httpClient()
 	pro.checkTLS(base)
-	res, err := client.Get(base)
+	res, err := client.GetWithContext(ctx, base)
 
 	pro.badDirListings.use()
 
@@ -76,6 +78,7 @@ func (pgs pages) listed(
 		pro.badDirListings.error("Fetching %s failed. Status code %d (%s)",
 			base, res.StatusCode, res.Status)
 		badDirs.Add(base)
+		res.Body.Close()
 		return false, errContinue
 	}
 

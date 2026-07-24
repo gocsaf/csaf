@@ -125,15 +125,25 @@ func empty(arr []string) bool {
 	return true
 }
 
-// Process extracts the advisory filenames and passes them with
-// the corresponding label to fn.
+// Process is a wrapper for ProcessWithContext function and supplements
+// a required context.Background() as first parameter.
 func (afp *AdvisoryFileProcessor) Process(
+	fn func(TLPLabel, []AdvisoryFile) error,
+) error {
+	return afp.ProcessWithContext(context.Background(), fn)
+}
+
+// ProcessWithContext extracts the advisory filenames and passes them with
+// the corresponding label to fn. This function is context aware and takes
+// context.Context as first parameter.
+func (afp *AdvisoryFileProcessor) ProcessWithContext(
+	ctx context.Context,
 	fn func(TLPLabel, []AdvisoryFile) error,
 ) error {
 	lg := afp.Log
 	if lg == nil {
 		lg = func(loglevel slog.Level, format string, args ...any) {
-			slog.Log(context.Background(), loglevel, "AdvisoryFileProcessor.Process: "+format, args...)
+			slog.Log(ctx, loglevel, "AdvisoryFileProcessor.Process: "+format, args...)
 		}
 	}
 
@@ -156,7 +166,7 @@ func (afp *AdvisoryFileProcessor) Process(
 		lg(slog.LevelInfo, "Found ROLIE feed(s)", "length", len(feeds))
 
 		for _, feed := range feeds {
-			if err := afp.processROLIE(feed, fn); err != nil {
+			if err := afp.processROLIE(ctx, feed, fn); err != nil {
 				return err
 			}
 		}
@@ -193,7 +203,7 @@ func (afp *AdvisoryFileProcessor) Process(
 			}
 
 			// Use changes.csv to be able to filter by age.
-			files, err := afp.loadChanges(base, lg)
+			files, err := afp.loadChanges(ctx, base, lg)
 			if err != nil {
 				return err
 			}
@@ -209,6 +219,7 @@ func (afp *AdvisoryFileProcessor) Process(
 // loadChanges loads baseURL/changes.csv and returns a list of files
 // prefixed by baseURL/.
 func (afp *AdvisoryFileProcessor) loadChanges(
+	ctx context.Context,
 	baseURL string,
 	lg func(slog.Level, string, ...any),
 ) ([]AdvisoryFile, error) {
@@ -218,17 +229,22 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 	}
 	changesURL := base.JoinPath("changes.csv").String()
 
-	resp, err := afp.client.Get(changesURL)
+	var resp *http.Response
+	if cwc, ok := afp.client.(util.ClientWithContext); ok {
+		resp, err = cwc.GetWithContext(ctx, changesURL)
+	} else {
+		resp, err = afp.client.Get(changesURL)
+	}
 	if err != nil {
 		return nil, err
 	}
 
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetching %s failed. Status code %d (%s)",
 			changesURL, resp.StatusCode, resp.Status)
 	}
 
-	defer resp.Body.Close()
 	var files []AdvisoryFile
 	c := csv.NewReader(resp.Body)
 	const (
@@ -274,6 +290,7 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 }
 
 func (afp *AdvisoryFileProcessor) processROLIE(
+	ctx context.Context,
 	labeledFeeds []Feed,
 	fn func(TLPLabel, []AdvisoryFile) error,
 ) error {
@@ -295,7 +312,12 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			continue
 		}
 
-		res, err := afp.client.Get(feedURL.String())
+		var res *http.Response
+		if cwc, ok := afp.client.(util.ClientWithContext); ok {
+			res, err = cwc.GetWithContext(ctx, feedURL.String())
+		} else {
+			res, err = afp.client.Get(feedURL.String())
+		}
 		if err != nil {
 			slog.Error("Cannot get feed", "err", err)
 			continue
@@ -303,6 +325,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		if res.StatusCode != http.StatusOK {
 			slog.Error("Fetching failed",
 				"url", feedURL, "status_code", res.StatusCode, "status", res.Status)
+			res.Body.Close()
 			continue
 		}
 		rfeed, err := func() (*ROLIEFeed, error) {

@@ -10,6 +10,7 @@ package csaf
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -109,23 +110,30 @@ func NewProviderMetadataLoader(client util.Client) *ProviderMetadataLoader {
 	}
 }
 
-// Enumerate lists all PMD files that can be found under the given domain.
+// Enumerate is a wrapper for the EnumerateWithContext function, supplementing
+// a required context.Background() as first parameter.
+func (pmdl *ProviderMetadataLoader) Enumerate(domain string) []*LoadedProviderMetadata {
+	return pmdl.EnumerateWithContext(context.Background(), domain)
+}
+
+// EnumerateWithContext lists all PMD files that can be found under the given domain.
+// This function is context aware and takes a context.Context as first parameter.
 // As specified in CSAF 2.0, it looks for PMDs using the well-known URL and
 // the security.txt, and if no PMDs have been found, it also checks the DNS-URL.
-func (pmdl *ProviderMetadataLoader) Enumerate(domain string) []*LoadedProviderMetadata {
+func (pmdl *ProviderMetadataLoader) EnumerateWithContext(ctx context.Context, domain string) []*LoadedProviderMetadata {
 
 	// Our array of PMDs to be found
 	var resPMDs []*LoadedProviderMetadata
 
 	// Check direct path
 	if strings.HasPrefix(domain, "https://") {
-		return []*LoadedProviderMetadata{pmdl.loadFromURL(domain)}
+		return []*LoadedProviderMetadata{pmdl.loadFromURL(ctx, domain)}
 	}
 
 	// First try the well-known path.
 	wellknownURL := "https://" + domain + "/.well-known/csaf/provider-metadata.json"
 
-	wellknownResult := pmdl.loadFromURL(wellknownURL)
+	wellknownResult := pmdl.loadFromURL(ctx, wellknownURL)
 
 	// Validate the candidate and add to the result array
 	if wellknownResult.Valid() {
@@ -134,7 +142,7 @@ func (pmdl *ProviderMetadataLoader) Enumerate(domain string) []*LoadedProviderMe
 	}
 
 	// Next load the PMDs from security.txt
-	secResults := pmdl.loadFromSecurity(domain)
+	secResults := pmdl.loadFromSecurity(ctx, domain)
 	slog.Info("Found provider metadata results in security.txt", "num", len(secResults))
 
 	for _, result := range secResults {
@@ -148,23 +156,30 @@ func (pmdl *ProviderMetadataLoader) Enumerate(domain string) []*LoadedProviderMe
 		return resPMDs
 	}
 	dnsURL := "https://csaf.data.security." + domain
-	return []*LoadedProviderMetadata{pmdl.loadFromURL(dnsURL)}
+	return []*LoadedProviderMetadata{pmdl.loadFromURL(ctx, dnsURL)}
 }
 
-// Load loads one valid provider metadata for a given path.
+// Load is a wrapper for LoadWithContext, supplementing a
+// required context.Background() as first parameter to the LoadWithContext call
+func (pmdl *ProviderMetadataLoader) Load(domain string) *LoadedProviderMetadata {
+	return pmdl.LoadWithContext(context.Background(), domain)
+}
+
+// LoadWithContext loads one valid provider metadata for a given path.
+// This function is context aware and takes a context.Context as first parameter.
 // If the domain starts with `https://` it only attempts to load
 // the data from that URL.
-func (pmdl *ProviderMetadataLoader) Load(domain string) *LoadedProviderMetadata {
+func (pmdl *ProviderMetadataLoader) LoadWithContext(ctx context.Context, domain string) *LoadedProviderMetadata {
 
 	// Check direct path
 	if strings.HasPrefix(domain, "https://") {
-		return pmdl.loadFromURL(domain)
+		return pmdl.loadFromURL(ctx, domain)
 	}
 
 	// First try the well-known path.
 	wellknownURL := "https://" + domain + "/.well-known/csaf/provider-metadata.json"
 
-	wellknownResult := pmdl.loadFromURL(wellknownURL)
+	wellknownResult := pmdl.loadFromURL(ctx, wellknownURL)
 
 	// Valid provider metadata under well-known.
 	var wellknownGood *LoadedProviderMetadata
@@ -177,7 +192,7 @@ func (pmdl *ProviderMetadataLoader) Load(domain string) *LoadedProviderMetadata 
 	}
 
 	// Next load the PMDs from security.txt
-	secGoods := pmdl.loadFromSecurity(domain)
+	secGoods := pmdl.loadFromSecurity(ctx, domain)
 
 	// Mention extra CSAF entries in security.txt.
 	ignoreExtras := func() {
@@ -226,21 +241,29 @@ func (pmdl *ProviderMetadataLoader) Load(domain string) *LoadedProviderMetadata 
 
 	// Last resort: fall back to DNS.
 	dnsURL := "https://csaf.data.security." + domain
-	dnsURLResult := pmdl.loadFromURL(dnsURL)
+	dnsURLResult := pmdl.loadFromURL(ctx, dnsURL)
 	pmdl.messages.AppendUnique(dnsURLResult.Messages) // keep order of messages consistent (i.e. last occurred message is last element)
 	dnsURLResult.Messages = pmdl.messages
 	return dnsURLResult
 }
 
 // loadFromSecurity loads the PMDs mentioned in the security.txt. Only valid PMDs are returned.
-func (pmdl *ProviderMetadataLoader) loadFromSecurity(domain string) []*LoadedProviderMetadata {
+func (pmdl *ProviderMetadataLoader) loadFromSecurity(ctx context.Context, domain string) []*LoadedProviderMetadata {
 
 	// If .well-known fails try legacy location.
 	for _, path := range []string{
 		"https://" + domain + "/.well-known/security.txt",
 		"https://" + domain + "/security.txt",
 	} {
-		res, err := pmdl.client.Get(path)
+		var (
+			res *http.Response
+			err error
+		)
+		if cwc, ok := pmdl.client.(util.ClientWithContext); ok {
+			res, err = cwc.GetWithContext(ctx, path)
+		} else {
+			res, err = pmdl.client.Get(path)
+		}
 		if err != nil {
 			pmdl.messages.Add(
 				HTTPFailed,
@@ -251,6 +274,7 @@ func (pmdl *ProviderMetadataLoader) loadFromSecurity(domain string) []*LoadedPro
 			pmdl.messages.Add(
 				HTTPFailed,
 				fmt.Sprintf("Fetching %q failed: %s (%d)", path, res.Status, res.StatusCode))
+			res.Body.Close()
 			continue
 		}
 
@@ -272,7 +296,7 @@ func (pmdl *ProviderMetadataLoader) loadFromSecurity(domain string) []*LoadedPro
 		// Load the URLs
 	nextURL:
 		for _, url := range urls {
-			lpmd := pmdl.loadFromURL(url)
+			lpmd := pmdl.loadFromURL(ctx, url)
 			// If loading failed note it down.
 			if !lpmd.Valid() {
 				pmdl.messages.AppendUnique(lpmd.Messages)
@@ -293,17 +317,26 @@ func (pmdl *ProviderMetadataLoader) loadFromSecurity(domain string) []*LoadedPro
 }
 
 // loadFromURL loads a provider metadata from a given URL.
-func (pmdl *ProviderMetadataLoader) loadFromURL(path string) *LoadedProviderMetadata {
+func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string) *LoadedProviderMetadata {
 
 	result := LoadedProviderMetadata{URL: path}
 
-	res, err := pmdl.client.Get(path)
+	var (
+		res *http.Response
+		err error
+	)
+	if cwc, ok := pmdl.client.(util.ClientWithContext); ok {
+		res, err = cwc.GetWithContext(ctx, path)
+	} else {
+		res, err = pmdl.client.Get(path)
+	}
 	if err != nil {
 		result.Messages.Add(
 			HTTPFailed,
 			fmt.Sprintf("fetching %q failed: %v", path, err))
 		return &result
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		result.Messages.Add(
 			HTTPFailed,
@@ -312,8 +345,6 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(path string) *LoadedProviderMeta
 	}
 
 	// TODO: Check for application/json and log it.
-
-	defer res.Body.Close()
 
 	// Calculate checksum for later comparison.
 	hash := sha256.New()
