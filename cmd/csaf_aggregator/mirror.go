@@ -54,7 +54,9 @@ func (w *worker) mirror(ctx context.Context) (*csaf.AggregatorCSAFProvider, erro
 	return result, err
 }
 
-func (w *worker) mirrorInternal(ctx context.Context) (*csaf.AggregatorCSAFProvider, error) {
+func (w *worker) mirrorInternal(
+	ctx context.Context,
+) (*csaf.AggregatorCSAFProvider, error) {
 
 	// Check if we are allowed to mirror this domain.
 	if !w.mirrorAllowed() {
@@ -224,6 +226,7 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 
 		if res.StatusCode != http.StatusOK {
 			os.RemoveAll(openPGPFolder)
+			res.Body.Close()
 			return fmt.Errorf("cannot fetch PGP key %s: %s (%d)",
 				*pgpKey.URL, res.Status, res.StatusCode)
 		}
@@ -399,6 +402,7 @@ func (w *worker) downloadSignature(ctx context.Context, path string) (string, er
 		return "", err
 	}
 	if res.StatusCode != http.StatusOK {
+		res.Body.Close()
 		return "", errNotFound
 	}
 	data, err := func() ([]byte, error) {
@@ -499,7 +503,11 @@ func (w *worker) mirrorFiles(ctx context.Context) func(csaf.TLPLabel, []csaf.Adv
 	}
 }
 
-func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLabel, files []csaf.AdvisoryFile) error {
+func (w *worker) mirrorFilesWithContext(
+	ctx context.Context,
+	tlpLabel csaf.TLPLabel,
+	files []csaf.AdvisoryFile,
+) error {
 	label := strings.ToLower(string(tlpLabel))
 
 	summaries := w.summaries[label]
@@ -509,16 +517,14 @@ func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLa
 		return err
 	}
 
-	var content bytes.Buffer
-
 	yearDirs := make(map[int]string)
 
-	for _, file := range files {
+	mirrorFile := func(file csaf.AdvisoryFile) error {
 
 		u, err := url.Parse(file.URL())
 		if err != nil {
 			w.log.Error("Could not parse advisory file URL", "err", err)
-			continue
+			return nil
 		}
 
 		// Should we ignore this advisory?
@@ -526,22 +532,23 @@ func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLa
 			if w.processor.cfg.Verbose {
 				w.log.Info("Ignoring advisory", slog.Group("provider", "name", w.provider.Name), "file", file)
 			}
-			continue
+			return nil
 		}
 
 		// Ignore not conforming filenames.
 		filename := filepath.Base(u.Path)
 		if !util.ConformingFileName(filename) {
 			w.log.Warn("Ignoring advisory because of non-conforming filename", "filename", filename)
-			continue
+			return nil
 		}
 
 		var advisory any
 
 		s256 := sha256.New()
 		s512 := sha512.New()
-		content.Reset()
-		hasher := io.MultiWriter(s256, s512, &content)
+		content := w.pool.Get()
+		defer w.pool.Put(content)
+		hasher := io.MultiWriter(s256, s512, content)
 
 		download := func(r io.Reader) error {
 			tee := io.TeeReader(r, hasher)
@@ -550,18 +557,18 @@ func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLa
 
 		if err := downloadJSON(ctx, w.client, file.URL(), download); err != nil {
 			w.log.Error("Error while downloading JSON", "err", err)
-			continue
+			return nil
 		}
 
 		// Check against CSAF schema.
 		errors, err := csaf.ValidateCSAF(advisory)
 		if err != nil {
 			w.log.Error("Error while validating CSAF schema", "err", err)
-			continue
+			return nil
 		}
 		if len(errors) > 0 {
 			w.log.Error("CSAF file has validation errors", "num.errors", len(errors), "file", file)
-			continue
+			return nil
 		}
 
 		// Check against remote validator.
@@ -569,18 +576,18 @@ func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLa
 			rvr, err := rmv.ValidateWithContext(ctx, advisory)
 			if err != nil {
 				w.log.Error("Calling remote validator failed", "err", err)
-				continue
+				return nil
 			}
 			if !rvr.Valid {
 				w.log.Error("CSAF file does not validate remotely", "file", file.URL())
-				continue
+				return nil
 			}
 		}
 
 		sum, err := csaf.NewAdvisorySummary(w.expr, advisory)
 		if err != nil {
 			w.log.Error("Error while creating new advisory", "file", file, "err", err)
-			continue
+			return nil
 		}
 
 		if util.CleanFileName(sum.ID) != filename {
@@ -589,7 +596,7 @@ func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLa
 
 		if err := w.extractCategories(label, advisory); err != nil {
 			w.log.Error("Could not extract categories", "file", file, "err", err)
-			continue
+			return nil
 		}
 
 		summaries = append(summaries, summary{
@@ -621,7 +628,11 @@ func (w *worker) mirrorFilesWithContext(ctx context.Context, tlpLabel csaf.TLPLa
 		// Try to fetch signature file.
 		sigURL := file.SignURL()
 		ascFile := fname + ".asc"
-		if err := w.downloadSignatureOrSign(ctx, sigURL, ascFile, data); err != nil {
+		return w.downloadSignatureOrSign(ctx, sigURL, ascFile, data)
+	}
+
+	for _, file := range files {
+		if err := mirrorFile(file); err != nil {
 			return err
 		}
 	}
