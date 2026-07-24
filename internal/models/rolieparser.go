@@ -253,21 +253,3 @@ func (srp *StreamingROLIEParser) Parse(r io.Reader) error {
 	}
 	return nil
 }
-
-/*
-func main() {
-	handler := func(rp *StreamingROLIEParser) {
-		fmt.Printf("entry:\n\tupdated: %s\n", rp.Updated)
-		fmt.Printf("\tlinks:\n")
-		for _, l := range rp.Links {
-			fmt.Printf("\t\trel: %q href: %q\n", l.Rel, l.HRef)
-		}
-	}
-	srp := StreamingROLIEParser{
-		EntryHandler: handler,
-	}
-	if err := srp.Parse(os.Stdin); err != nil {
-		log.Fatalf("error: %v\n", err)
-	}
-}
-*/
