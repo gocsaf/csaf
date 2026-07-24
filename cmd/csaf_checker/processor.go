@@ -1367,10 +1367,8 @@ func (p *processor) checkSecurityFolder(ctx context.Context, folder string) stri
 		var u string
 		if len(lines) > 0 {
 			u = lines[0]
-			if len(lines) > 1 {
-				for _, line := range lines[1:] {
-					log.Printf("WARN: Unused PMD in security.txt: %s\n", line)
-				}
+			for _, unused := range lines[1:] {
+				log.Printf("WARN: Unused PMD in security.txt: %s\n", unused)
 			}
 		}
 		return u, err
