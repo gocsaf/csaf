@@ -26,11 +26,11 @@ and others.
 
 
 > [!NOTE]
-> ### Development for major version 4 for CSAF 2.1 starts
+> ### Development for CSAF 2.1 starts → new major version 4
 > [develop-4](https://github.com/gocsaf/csaf/tree/develop-4) is the branch
-where the code for CSAF 2.1 lands.
+where we put the new code for CSAF 2.1.
 >
-> Do you agree with our
+> What do you think of our
 > [rough plan](https://github.com/gocsaf/csaf/blob/develop-4/docs/planning-for-csaf-2.1.md)?
 
 
