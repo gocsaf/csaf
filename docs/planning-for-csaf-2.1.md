@@ -3,16 +3,16 @@
 The new version of the CSAF standard is likely to come in fall this year (2026).
 We expect a new Committee Specification Draft within the next weeks.
 The
-[current draft](https://github.com/oasis-tcs/csaf/blob/master/csaf_2.1/prose/share/csaf-v2.1-draft.md) is considered stable enough in the distribution
-part that we will start implementing it.
+[current draft](https://github.com/oasis-tcs/csaf/blob/master/csaf_2.1/prose/share/csaf-v2.1-draft.md) is partly stable enough
+so that we will start implementing it.
 
 **This is our plan.
 We appreciate your feedback in issues or email
 to [@bernhardreiter](https://github.com/bernhardreiter).**
 
-As of September 2026-09-04 the distribution part of CSAF 2.1 is considered
-stable enough, so we are going to start with it. An early thing is that we need
-a datamodel in Go to hold the CSAF file contents.
+As of September 2026-09-04 the distribution part of CSAF 2.1 is close
+to final, thus this is where we are going to start.
+And early on we need a datamodel in Go to hold the CSAF file contents.
 
 Our time frame is to have working pre-release versions
 before the CSAF Community days in mid November.
