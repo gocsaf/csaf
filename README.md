@@ -12,11 +12,27 @@
 
 # csaf
 
-Implements a [CSAF](https://oasis-open.github.io/csaf-documentation/)
-([specification v2.0](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
+Tools and Go library for [CSAF](csaf.io).
+
+Implements a CSAF [v2.0](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
 and its [errata](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html))
-trusted provider, checker, aggregator and downloader.
+**trusted provider**, checker, aggregator and **downloader**.
 Includes an uploader command line tool for the trusted provider.
+
+Powers
+[ISDuBA](https://github.com/ISDuBA/ISDuBA),
+[Online CSAF Provider Check](https://check.provider.csaf.dev/)
+and others.
+
+## Development for major version 4 for CSAF 2.1 starts
+
+> [!NOTE]
+>[develop-4](https://github.com/gocsaf/csaf/tree/develop-4) is the branch
+where the code for CSAF 2.1 lands.
+>
+> Do you agree with our
+> (plan)[https://github.com/gocsaf/csaf/blob/develop-4/docs/planning-for-csaf-2.1.md]?
+
 
 ## Tools for users
 ### [csaf_downloader](docs/csaf_downloader.md)
