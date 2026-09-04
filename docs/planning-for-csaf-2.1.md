@@ -11,30 +11,30 @@ We appreciate your feedback in issues or email
 to [@bernhardreiter](https://github.com/bernhardreiter).**
 
 As of September 2026-09-04 the distribution part of CSAF 2.1 is considered
-stable enough, so we start with it. An early thing is that we need
+stable enough, so we are going to start with it. An early thing is that we need
 a datamodel in Go to hold the CSAF file contents.
 
-Our timeframe is to have working pre-release versions
+Our time frame is to have working pre-release versions
 before the CSAF Community days in mid November.
 
-## new major version 4
+## New major version 4
 
 Adding CSAF 2.1 is a major enhancement of capabilities, so we plan
 to do a major release on it. It also gives us the chance to correct
-a few things and break the API while doing so. So we hope to do experimental
-pre-release versions soon (in the weeks to come).
+a few things and break the API while doing so.
+We hope to do experimental pre-release versions soon (in the weeks to come).
 
-Version 4 will first made to handle CSAF 2.1 documents
-and very likely to handle 2.0 as well.
+Version 4 will handle CSAF 2.1 documents and its very likely 
+it will handle 2.0 ones as well.
 
-## keep version 3 around
+## Keep version 3 around
 
 As the library and tools from the repo are central to a number of CSAF
 implementations, we will keep the stable 3 version around and maintain
 it for now. At least as long as the new major version is not ready
 to replae it for handling CSAF 2.0 documents.
 
-## clever downloading has to wait for major 5
+## Improved downloading has to wait for major 5
 
 ISDuBA uses this library in several regards, and builds a runtime
 downloader on top, that can effectively track changes over many
@@ -48,10 +48,11 @@ we put extracting the ISDuBA online tracking code on the backburner.
 It is likely to happen for the next major release.
 
 ## Approach
-### generate go datamodel from schema
+
+### generate Go data model from JSON schema
 
 The new schema for CSAF 2.1 documents has grown in complexity.
-We will explore generating the go code that will hold that has datastructure.
+We will explore generating the Go code that will hold that has data structure.
 Existing JSON schema libraries should be able to do this.
 If this works out, the 2.0 datamodel for the new major version 4 can
 be generated like this as well.
