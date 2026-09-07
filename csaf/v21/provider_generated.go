@@ -44,7 +44,7 @@ type Provider struct {
 	MirrorOnCSAFAggregators bool `json:"mirror_on_CSAF_aggregators"`
 
 	// Contains a list of OpenPGP keys used to sign CSAF documents.
-	PublicOpenpgpKeys []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty,omitzero"`
+	PGPKeys []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty,omitzero"`
 
 	// Provides information about the publisher of the CSAF documents in this
 	// repository.
@@ -171,7 +171,7 @@ type PublisherTContact struct {
 	PublicOpenpgpKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero"`
 }
 
-type RoleT string
+type RoleT = ProviderRole
 
 const RoleTCSAFProvider RoleT = "csaf_provider"
 const RoleTCSAFPublisher RoleT = "csaf_publisher"

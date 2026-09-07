@@ -23,7 +23,10 @@ type AcknowledgmentsT []struct {
 }
 
 // Contains branch elements as children of the current element.
-type BranchesT []struct {
+type BranchesT []Branch
+
+// Branch is one node in the product tree.
+type Branch struct {
 	// Branches corresponds to the JSON schema field "branches".
 	Branches *BranchesT `json:"branches,omitempty,omitzero"`
 
@@ -192,27 +195,9 @@ const CSAFDocumentDistributionTLPLabelGREEN CSAFDocumentDistributionTLPLabel = "
 const CSAFDocumentDistributionTLPLabelRED CSAFDocumentDistributionTLPLabel = "RED"
 
 // Provides information about the publisher of the document.
-type CSAFDocumentPublisher struct {
-	// Provides information about the category of publisher releasing the document.
-	Category CSAFDocumentPublisherCategory `json:"category"`
+type CSAFDocumentPublisher = PublisherT
 
-	// Contains information on how to contact the publisher.
-	Contact *CSAFDocumentPublisherContact `json:"contact,omitempty,omitzero"`
-
-	// Provides information about the authority of the issuing party to release the
-	// document, in particular, the party's constituency and responsibilities or other
-	// obligations.
-	IssuingAuthority *string `json:"issuing_authority,omitempty,omitzero"`
-
-	// Contains the name of the issuing party.
-	Name string `json:"name"`
-
-	// Contains a URL which is under control of the issuing party and can be used as a
-	// globally unique identifier for that issuing party.
-	Namespace string `json:"namespace"`
-}
-
-type CSAFDocumentPublisherCategory string
+type CSAFDocumentPublisherCategory = PublisherTCategory
 
 const CSAFDocumentPublisherCategoryCoordinator CSAFDocumentPublisherCategory = "coordinator"
 const CSAFDocumentPublisherCategoryDiscoverer CSAFDocumentPublisherCategory = "discoverer"
@@ -223,18 +208,7 @@ const CSAFDocumentPublisherCategoryUser CSAFDocumentPublisherCategory = "user"
 const CSAFDocumentPublisherCategoryVendor CSAFDocumentPublisherCategory = "vendor"
 
 // Contains information on how to contact the publisher.
-type CSAFDocumentPublisherContact struct {
-	// Contains details regarding ways to reach the publisher, e.g. through web sites,
-	// phone numbers, and postal mail addresses.
-	Details *string `json:"details,omitempty,omitzero"`
-
-	// Contains the email address that can be used to reach the issuing party.
-	Email *string `json:"email,omitempty,omitzero"`
-
-	// Contains a URL pointing to a public OpenPGP key valid for the email of issuing
-	// party provided in the sibling property `email`.
-	PublicOpenpgpKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero"`
-}
+type CSAFDocumentPublisherContact = PublisherTContact
 
 // Is a container designated to hold all management attributes necessary to track a
 // CSAF document as a whole.

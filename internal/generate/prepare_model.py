@@ -4,6 +4,7 @@
 
 """Apply narrow, fail-fast repairs to go-jsonschema model output."""
 
+import re
 import sys
 from pathlib import Path
 
@@ -57,6 +58,66 @@ def prepare_model(path: Path) -> tuple[dict[str, int], int]:
     return replacement_counts, date_time_replacements
 
 
+def replace_once(source: str, old: str, new: str) -> str:
+    if source.count(old) != 1:
+        msg = f"expected exactly one occurrence of {old!r}"
+        raise ValueError(msg)
+    return source.replace(old, new)
+
+
+def type_definition(source: str, name: str) -> str:
+    match = re.search(r"^type " + re.escape(name) + r" (?:struct \{.*?^\}|string)$", source, re.MULTILINE | re.DOTALL)
+    if match is None:
+        msg = f"missing generated type {name}"
+        raise ValueError(msg)
+    return match.group()
+
+
+def prepare_public_api(models: dict[str, str]) -> dict[str, str]:
+    """Keep equivalent generated types identical and preserve public field names."""
+    models = models.copy()
+    csaf = models["csaf_generated.go"]
+    provider = models["provider_generated.go"]
+    for old, shared in (
+        ("CSAFDocumentPublisher", "PublisherT"),
+        ("CSAFDocumentPublisherCategory", "PublisherTCategory"),
+        ("CSAFDocumentPublisherContact", "PublisherTContact"),
+    ):
+        definition = type_definition(csaf, old)
+        if definition.replace("CSAFDocumentPublisher", "PublisherT") != type_definition(provider, shared):
+            msg = f"generated publisher types diverged: {old}, {shared}"
+            raise ValueError(msg)
+        csaf = replace_once(csaf, definition, f"type {old} = {shared}")
+    for old, shared in (("CSAFDocumentPublisherCategory", "PublisherTCategory"), ("RoleT", "ProviderRole")):
+        left = csaf if old.startswith("CSAF") else provider
+
+        def values(text: str, name: str) -> list[str]:
+            return re.findall(r"^const \w+ " + name + r' = ("[^"\n]+")$', text, re.MULTILINE)
+
+        if not values(left, old) or values(left, old) != values(provider, shared):
+            msg = f"generated enum values diverged: {old}, {shared}"
+            raise ValueError(msg)
+    provider = replace_once(provider, "type RoleT string", "type RoleT = ProviderRole")
+    csaf = replace_once(
+        csaf,
+        "type BranchesT []struct {",
+        "type BranchesT []Branch\n\n// Branch is one node in the product tree.\ntype Branch struct {",
+    )
+    provider = replace_once(
+        provider,
+        '\tPublicOpenpgpKeys []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty,omitzero"`',
+        '\tPGPKeys []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty,omitzero"`',
+    )
+    models["aggregator_generated.go"] = replace_once(
+        models["aggregator_generated.go"],
+        '\tAggregatorVersion AggregatorAggregatorVersion `json:"aggregator_version"`',
+        '\tVersion AggregatorAggregatorVersion `json:"aggregator_version"`',
+    )
+    models["csaf_generated.go"] = csaf
+    models["provider_generated.go"] = provider
+    return models
+
+
 def prepare_models(paths: list[Path]) -> None:
     replacement_counts = dict.fromkeys(REPLACEMENTS, 0)
     date_time_replacements = 0
@@ -73,6 +134,9 @@ def prepare_models(paths: list[Path]) -> None:
     if date_time_replacements == 0:
         msg = "generated models contain no date-time fields"
         raise ValueError(msg)
+    models = prepare_public_api({path.name: path.read_text(encoding="utf-8") for path in paths})
+    for path in paths:
+        path.write_text(models[path.name], encoding="utf-8")
 
 
 def main(arguments: list[str]) -> int:

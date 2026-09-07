@@ -67,3 +67,97 @@ const (
 	SchemaURI = v21.SchemaURI
 	Version   = string(v21.CSAFDocumentCSAFVersionA21)
 )
+
+// Branch is a node in a product tree.
+type Branch = v21.Branch
+
+// Branches contains product tree nodes.
+type Branches = v21.BranchesT
+
+// BranchCategory describes a branch's role in the product tree.
+type BranchCategory = v21.BranchesTElemCategory
+
+// Document contains advisory metadata.
+type Document = v21.CSAFDocument
+
+// Vulnerability describes a vulnerability in an advisory.
+type Vulnerability = v21.CSAFVulnerabilitiesElem
+
+// Feed declares a ROLIE feed in provider metadata.
+type Feed = v21.ProviderDistributionsElemRolieFeedsElem
+
+// Distribution describes a provider distribution mechanism.
+type Distribution = v21.ProviderDistributionsElem
+
+// ROLIE contains feed, service and category declarations.
+type ROLIE = v21.ProviderDistributionsElemRolie
+
+// JSONURL identifies a JSON document.
+type JSONURL = v21.JsonURLT
+
+// AggregatorCategory identifies an aggregator or lister.
+type AggregatorCategory = v21.AggregatorAggregatorCategory
+
+// Publisher describes an advisory or metadata publisher.
+type Publisher = v21.PublisherT
+
+// DocumentPublisher describes an advisory publisher.
+type DocumentPublisher = Publisher
+
+// PublisherContact contains publisher contact information.
+type PublisherContact = v21.PublisherTContact
+
+// Category identifies a publisher category.
+type Category = v21.PublisherTCategory
+
+// MetadataRole identifies an issuing party's role.
+type MetadataRole = v21.ProviderRole
+
+// MetadataVersion identifies the provider metadata format.
+type MetadataVersion = v21.ProviderMetadataVersion
+
+// PGPKey describes a public OpenPGP key.
+type PGPKey = v21.ProviderPublicOpenpgpKeysElem
+
+// Fingerprint contains an OpenPGP key fingerprint.
+type Fingerprint = string
+
+const (
+	AggregatorAggregator        = v21.AggregatorAggregatorCategoryAggregator
+	AggregatorLister            = v21.AggregatorAggregatorCategoryLister
+	MetadataRoleProvider        = v21.ProviderRoleCSAFProvider
+	MetadataRolePublisher       = v21.ProviderRoleCSAFPublisher
+	MetadataRoleTrustedProvider = v21.ProviderRoleCSAFTrustedProvider
+	MetadataVersion21           = v21.ProviderMetadataVersionA21
+	CSAFCategoryCoordinator     = v21.PublisherTCategoryCoordinator
+	CSAFCategoryDiscoverer      = v21.PublisherTCategoryDiscoverer
+	CSAFCategoryMultiplier      = v21.PublisherTCategoryMultiplier
+	CSAFCategoryOther           = v21.PublisherTCategoryOther
+	CSAFCategoryTranslator      = v21.PublisherTCategoryTranslator
+	CSAFCategoryUser            = v21.PublisherTCategoryUser
+	CSAFCategoryVendor          = v21.PublisherTCategoryVendor
+)
+
+const CSAFBranchCategoryArchitecture = v21.BranchesTElemCategoryArchitecture
+
+const CSAFBranchCategoryHostName = v21.BranchesTElemCategoryHostName
+
+const CSAFBranchCategoryLanguage = v21.BranchesTElemCategoryLanguage
+
+const CSAFBranchCategoryPatchLevel = v21.BranchesTElemCategoryPatchLevel
+
+const CSAFBranchCategoryPlatform = v21.BranchesTElemCategoryPlatform
+
+const CSAFBranchCategoryProductFamily = v21.BranchesTElemCategoryProductFamily
+
+const CSAFBranchCategoryProductName = v21.BranchesTElemCategoryProductName
+
+const CSAFBranchCategoryProductVersion = v21.BranchesTElemCategoryProductVersion
+
+const CSAFBranchCategoryProductVersionRange = v21.BranchesTElemCategoryProductVersionRange
+
+const CSAFBranchCategoryServicePack = v21.BranchesTElemCategoryServicePack
+
+const CSAFBranchCategorySpecification = v21.BranchesTElemCategorySpecification
+
+const CSAFBranchCategoryVendor = v21.BranchesTElemCategoryVendor

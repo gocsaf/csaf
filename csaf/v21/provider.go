@@ -23,15 +23,15 @@ func (provider *Provider) SetLastUpdated(value time.Time) {
 
 // SetPGP adds or updates a public OpenPGP key by fingerprint.
 func (provider *Provider) SetPGP(fingerprint, url string) {
-	for i := range provider.PublicOpenpgpKeys {
-		key := &provider.PublicOpenpgpKeys[i]
+	for i := range provider.PGPKeys {
+		key := &provider.PGPKeys[i]
 		if strings.EqualFold(key.Fingerprint, fingerprint) {
 			key.URL = URLT(url)
 			return
 		}
 	}
-	provider.PublicOpenpgpKeys = append(
-		provider.PublicOpenpgpKeys,
+	provider.PGPKeys = append(
+		provider.PGPKeys,
 		ProviderPublicOpenpgpKeysElem{
 			Fingerprint: fingerprint,
 			URL:         URLT(url),
@@ -139,22 +139,20 @@ func LoadProviderMetadata(reader io.Reader) (*Provider, error) {
 	return &provider, nil
 }
 
-// EqualsCSAFPublisher reports whether provider metadata publisher information
-// matches a CSAF document publisher.
-func (publisher PublisherT) EqualsCSAFPublisher(other *CSAFDocumentPublisher) bool {
-	if other == nil {
-		return false
+// Equals reports componentwise equality, including nil publishers.
+func (publisher *PublisherT) Equals(other *PublisherT) bool {
+	if publisher == nil || other == nil {
+		return publisher == other
 	}
-	return string(publisher.Category) == string(other.Category) &&
-		publisher.Name == other.Name &&
-		publisher.Namespace == other.Namespace &&
+	return publisher.Category == other.Category &&
+		publisher.Name == other.Name && publisher.Namespace == other.Namespace &&
 		publisherContactsEqual(publisher.Contact, other.Contact) &&
 		optionalStringsEqual(publisher.IssuingAuthority, other.IssuingAuthority)
 }
 
 func publisherContactsEqual(
 	left *PublisherTContact,
-	right *CSAFDocumentPublisherContact,
+	right *PublisherTContact,
 ) bool {
 	if left == nil || right == nil {
 		return left == nil && right == nil
@@ -169,26 +167,4 @@ func optionalStringsEqual(left, right *string) bool {
 		return left == nil && right == nil
 	}
 	return *left == *right
-}
-
-// PublisherFromCSAF converts a CSAF document publisher to provider metadata.
-func PublisherFromCSAF(publisher *CSAFDocumentPublisher) PublisherT {
-	if publisher == nil {
-		return PublisherT{}
-	}
-	var contact *PublisherTContact
-	if publisher.Contact != nil {
-		contact = &PublisherTContact{
-			Details:             publisher.Contact.Details,
-			Email:               publisher.Contact.Email,
-			PublicOpenpgpKeyURL: publisher.Contact.PublicOpenpgpKeyURL,
-		}
-	}
-	return PublisherT{
-		Category:         PublisherTCategory(publisher.Category),
-		Contact:          contact,
-		IssuingAuthority: publisher.IssuingAuthority,
-		Name:             publisher.Name,
-		Namespace:        publisher.Namespace,
-	}
 }

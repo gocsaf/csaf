@@ -43,12 +43,6 @@ func LoadProviderMetadata(reader io.Reader) (*ProviderMetadata, error) {
 	return v21.LoadProviderMetadata(reader)
 }
 
-// ProviderPublisherFromAdvisory converts an advisory publisher into provider
-// metadata publisher information.
-func ProviderPublisherFromAdvisory(publisher *AdvisoryPublisher) ProviderPublisher {
-	return v21.PublisherFromCSAF(publisher)
-}
-
 func providerTLPLabels(labels []TLPLabel) []v21.TLPLabelT {
 	converted := make([]v21.TLPLabelT, len(labels))
 	for i, label := range labels {

@@ -17,7 +17,7 @@ type Aggregator struct {
 
 	// Gives the version of the CSAF aggregator specification which the document was
 	// generated for.
-	AggregatorVersion AggregatorAggregatorVersion `json:"aggregator_version"`
+	Version AggregatorAggregatorVersion `json:"aggregator_version"`
 
 	// Contains the URL for this document.
 	CanonicalURL AggregatorURLT `json:"canonical_url"`

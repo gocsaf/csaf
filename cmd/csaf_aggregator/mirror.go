@@ -173,7 +173,7 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 	if err := w.expr.Match([]util.PathEvalMatcher{
 		{Expr: `$.publisher`, Action: util.ReMarshalMatcher(&pm.Publisher)},
 		{Expr: `$.last_updated`, Action: util.TimeMatcher(&lastUpdate, time.RFC3339)},
-		{Expr: `$.public_openpgp_keys`, Action: util.ReMarshalMatcher(&pm.PublicOpenpgpKeys)},
+		{Expr: `$.public_openpgp_keys`, Action: util.ReMarshalMatcher(&pm.PGPKeys)},
 	}, w.metadataProvider); err != nil {
 		// only log the errors
 		w.log.Error("Extracting data from original provider failed", "err", err)
@@ -208,8 +208,8 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 		return keyURL.JoinPath("openpgp", fingerprint+".asc").String()
 	}
 
-	for i := range pm.PublicOpenpgpKeys {
-		pgpKey := &pm.PublicOpenpgpKeys[i]
+	for i := range pm.PGPKeys {
+		pgpKey := &pm.PGPKeys[i]
 		if pgpKey.URL == "" {
 			w.log.Warn("Ignoring PGP key without URL", "fingerprint", pgpKey.Fingerprint)
 			continue

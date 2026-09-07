@@ -186,13 +186,13 @@ func (p *processor) full(ctx context.Context) error {
 	lastUpdated := csaf.NewDateTime(time.Now().UTC())
 
 	agg := csaf.Aggregator{
-		Schema:            csaf.AggregatorSchema21,
-		Aggregator:        p.cfg.Aggregator,
-		AggregatorVersion: version,
-		CanonicalURL:      canonicalURL,
-		CSAFProviders:     providers,
-		CSAFPublishers:    publishers,
-		LastUpdated:       lastUpdated,
+		Schema:         csaf.AggregatorSchema21,
+		Aggregator:     p.cfg.Aggregator,
+		Version:        version,
+		CanonicalURL:   canonicalURL,
+		CSAFProviders:  providers,
+		CSAFPublishers: publishers,
+		LastUpdated:    lastUpdated,
 	}
 
 	web := filepath.Join(p.cfg.Web, ".well-known", "csaf-aggregator")
