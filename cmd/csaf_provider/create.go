@@ -367,5 +367,8 @@ func createProviderMetadata(c *config, wellknownCSAF string) error {
 	fingerprint := strings.ToUpper(key.GetFingerprint())
 	pm.SetPGP(fingerprint, c.openPGPPublicURL(fingerprint))
 
+	// TODO: Set each CSAF 2.1 ROLIE feed declaration's last_updated from the
+	// corresponding local feed.updated instead of the metadata constructor time.
+	// CSAF 2.1 CSD02 section 7.1.7
 	return util.WriteToFile(path, pm)
 }

@@ -185,6 +185,9 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 	}
 
 	pm.SetLastUpdated(lastUpdate)
+	// TODO: Set each CSAF 2.1 ROLIE feed declaration's last_updated from the
+	// corresponding locally generated feed.updated instead of the metadata constructor time.
+	// CSAF 2.1 CSD02 section 7.1.7
 
 	return util.WriteToFile(fname, pm)
 }
