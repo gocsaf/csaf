@@ -9,6 +9,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -71,6 +72,7 @@ func (c *controller) extendROLIE(
 	newCSAF string,
 	t tlp,
 	ex *csaf.AdvisorySummary,
+	pmd *csaf.ProviderMetadata,
 ) error {
 	// Load the feed
 	ts := string(t)
@@ -115,7 +117,8 @@ func (c *controller) extendROLIE(
 		}
 	}
 
-	rolie.Feed.Updated = csaf.TimeStamp(time.Now().UTC())
+	updated := time.Now().UTC().Truncate(time.Second)
+	rolie.Feed.Updated = csaf.TimeStamp(updated)
 
 	year := strconv.Itoa(ex.InitialReleaseDate.Year())
 
@@ -154,7 +157,22 @@ func (c *controller) extendROLIE(
 	// Sort by descending updated order.
 	rolie.SortEntriesByUpdated()
 
-	// Store the feed
+	// Update every declaration for this feed URL, preserving other feeds.
+	found := false
+	for i := range pmd.Distributions {
+		if r := pmd.Distributions[i].Rolie; r != nil {
+			for j := range r.Feeds {
+				if r.Feeds[j].URL == feedURL {
+					r.Feeds[j].LastUpdated = csaf.NewDateTime(updated)
+					found = true
+				}
+			}
+		}
+	}
+	if !found {
+		return fmt.Errorf("feed %s is not declared in provider metadata", feedURL)
+	}
+	pmd.SetLastUpdated(updated)
 	return util.WriteToFile(feed, rolie)
 }
 

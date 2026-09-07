@@ -244,7 +244,7 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		func(folder string, pmd *csaf.ProviderMetadata) error {
 
 			// extend the ROLIE feed.
-			if err := c.extendROLIE(folder, newCSAF, t, ex); err != nil {
+			if err := c.extendROLIE(folder, newCSAF, t, ex, pmd); err != nil {
 				return err
 			}
 
@@ -301,7 +301,9 @@ func (c *controller) upload(r *http.Request) (any, error) {
 			}
 
 			fingerprint := strings.ToUpper(key.GetFingerprint())
-			pmd.SetPGP(fingerprint, c.cfg.openPGPPublicURL(fingerprint))
+			if c.cfg.DynamicProviderMetaData {
+				pmd.SetPGP(fingerprint, c.cfg.openPGPPublicURL(fingerprint))
+			}
 
 			return nil
 		},

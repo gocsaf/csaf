@@ -68,31 +68,29 @@ func doTransaction(
 		return err
 	}
 
-	// Write back provider metadata if its dynamic.
-	if cfg.DynamicProviderMetaData {
-		newMetaName, newMetaFile, err := util.MakeUniqFile(metadata)
-		if err != nil {
-			os.RemoveAll(newDir)
-			return err
-		}
+	// Persist CSAF 2.1 feed timestamps even with static publisher configuration.
+	newMetaName, newMetaFile, err := util.MakeUniqFile(metadata)
+	if err != nil {
+		os.RemoveAll(newDir)
+		return err
+	}
 
-		if _, err := pmd.WriteTo(newMetaFile); err != nil {
-			newMetaFile.Close()
-			os.Remove(newMetaName)
-			os.RemoveAll(newDir)
-			return err
-		}
+	if _, err := pmd.WriteTo(newMetaFile); err != nil {
+		newMetaFile.Close()
+		os.Remove(newMetaName)
+		os.RemoveAll(newDir)
+		return err
+	}
 
-		if err := newMetaFile.Close(); err != nil {
-			os.Remove(newMetaName)
-			os.RemoveAll(newDir)
-			return err
-		}
+	if err := newMetaFile.Close(); err != nil {
+		os.Remove(newMetaName)
+		os.RemoveAll(newDir)
+		return err
+	}
 
-		if err := os.Rename(newMetaName, metadata); err != nil {
-			os.RemoveAll(newDir)
-			return err
-		}
+	if err := os.Rename(newMetaName, metadata); err != nil {
+		os.RemoveAll(newDir)
+		return err
 	}
 
 	// Switch directories.
