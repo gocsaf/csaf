@@ -16,6 +16,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
@@ -86,14 +87,10 @@ func (pmlm *ProviderMetadataLoadMessages) Add(
 
 // AppendUnique appends unique messages from a second list.
 func (pmlm *ProviderMetadataLoadMessages) AppendUnique(other ProviderMetadataLoadMessages) {
-next:
 	for _, o := range other {
-		for _, m := range *pmlm {
-			if m == o {
-				continue next
-			}
+		if !slices.Contains(*pmlm, o) {
+			*pmlm = append(*pmlm, o)
 		}
-		*pmlm = append(*pmlm, o)
 	}
 }
 
@@ -294,7 +291,6 @@ func (pmdl *ProviderMetadataLoader) loadFromSecurity(ctx context.Context, domain
 		var loaded []*LoadedProviderMetadata
 
 		// Load the URLs
-	nextURL:
 		for _, url := range urls {
 			lpmd := pmdl.loadFromURL(ctx, url)
 			// If loading failed note it down.
@@ -303,12 +299,9 @@ func (pmdl *ProviderMetadataLoader) loadFromSecurity(ctx context.Context, domain
 				continue
 			}
 			// Check for duplicates
-			for _, l := range loaded {
-				if l == lpmd {
-					continue nextURL
-				}
+			if !slices.Contains(loaded, lpmd) {
+				loaded = append(loaded, lpmd)
 			}
-			loaded = append(loaded, lpmd)
 		}
 
 		return loaded

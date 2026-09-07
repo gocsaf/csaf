@@ -13,7 +13,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/gocsaf/csaf/v3/csaf"
@@ -476,12 +476,12 @@ func (p *processor) serviceCheck(ctx context.Context, feeds [][]csaf.Feed) error
 
 	// Check if ROLIE Service Document contains exactly all ROLIE feeds
 	if m1 := sfeeds.Difference(ffeeds).Keys(); len(m1) != 0 {
-		sort.Strings(m1)
+		slices.Sort(m1)
 		p.badROLIEService.error(
 			"The ROLIE service document %s contains nonexistent feed entries: %v", urls, m1)
 	}
 	if m2 := ffeeds.Difference(sfeeds).Keys(); len(m2) != 0 {
-		sort.Strings(m2)
+		slices.Sort(m2)
 		p.badROLIEService.error(
 			"The ROLIE service document %s is missing feed entries: %v", urls, m2)
 	}

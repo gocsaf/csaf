@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -383,10 +384,8 @@ func patternUnmarshal(pattern string) func([]byte) (string, error) {
 func alternativesUnmarshal(alternatives ...string) func([]byte) (string, error) {
 	return func(data []byte) (string, error) {
 		s := string(data)
-		for _, alt := range alternatives {
-			if alt == s {
-				return s, nil
-			}
+		if slices.Contains(alternatives, s) {
+			return s, nil
 		}
 		return "", fmt.Errorf("%s not in [%s]", s, strings.Join(alternatives, "|"))
 	}

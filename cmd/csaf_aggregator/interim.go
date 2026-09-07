@@ -53,7 +53,7 @@ func (w *worker) checkInterims(
 	// advisories which are not interim any longer.
 	var notFinalized []interimsEntry
 
-	processIterim := func(interim interimsEntry) error {
+	processInterim := func(interim interimsEntry) error {
 		local := filepath.Join(labelPath, interim.path())
 		url := interim.url()
 
@@ -156,7 +156,7 @@ func (w *worker) checkInterims(
 	}
 
 	for _, interim := range interims {
-		if err := processIterim(interim); err != nil {
+		if err := processInterim(interim); err != nil {
 			return nil, err
 		}
 	}

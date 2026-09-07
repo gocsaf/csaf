@@ -175,7 +175,7 @@ func mkUniq(prefix string, create func(string) error) (string, error) {
 	if os.IsExist(err) {
 		rnd := rand.New(rand.NewSource(now.Unix()))
 
-		for i := 0; i < 10000; i++ {
+		for range 10000 {
 			nname := name + "-" + strconv.FormatUint(uint64(rnd.Uint32()&0xff_ffff), 16)
 			err := create(nname)
 			if err == nil {

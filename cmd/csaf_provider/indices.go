@@ -15,7 +15,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/gocsaf/csaf/v3/util"
@@ -57,7 +57,7 @@ func updateIndex(dir, fname string) error {
 	if err != nil {
 		return err
 	}
-	sort.Strings(lines)
+	slices.Sort(lines)
 	out := bufio.NewWriter(f)
 	for _, line := range lines {
 		fmt.Fprintln(out, line)
@@ -135,8 +135,8 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 		return nil
 	}
 	// Sort descending
-	sort.Slice(chs, func(i, j int) bool {
-		return chs[j].time.Before(chs[i].time)
+	slices.SortFunc(chs, func(a, b change) int {
+		return b.time.Compare(a.time)
 	})
 	// Create new to break hard link.
 	o, err := os.Create(changes)

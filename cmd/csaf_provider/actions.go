@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -128,10 +129,8 @@ func (c *controller) handleSignature(
 
 func (c *controller) tlpParam(r *http.Request) (tlp, error) {
 	t := tlp(strings.ToLower(r.FormValue("tlp")))
-	for _, x := range c.cfg.TLPs {
-		if x == t {
-			return t, nil
-		}
+	if slices.Contains(c.cfg.TLPs, t) {
+		return t, nil
 	}
 	return "", fmt.Errorf("unsupported TLP type '%s'", t)
 }

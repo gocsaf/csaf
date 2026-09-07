@@ -17,6 +17,7 @@ import (
 	"html/template"
 	"io"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/gocsaf/csaf/v3/csaf"
@@ -77,12 +78,9 @@ func (rt ReportTime) MarshalText() ([]byte, error) {
 
 // HasErrors tells if this requirement has errors.
 func (r *Requirement) HasErrors() bool {
-	for i := range r.Messages {
-		if r.Messages[i].Type == ErrorType {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(r.Messages, func(m Message) bool {
+		return m.Type == ErrorType
+	})
 }
 
 // Append appends messages to requirement.

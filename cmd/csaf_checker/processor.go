@@ -24,7 +24,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -1247,8 +1247,8 @@ func (p *processor) checkChanges(ctx context.Context, base string, mask whereTyp
 		p.badChanges.warn("%s", "no entries in changes.csv found"+filtered)
 	}
 
-	if !sort.SliceIsSorted(times, func(i, j int) bool {
-		return times[j].Before(times[i])
+	if !slices.IsSortedFunc(times, func(a, b time.Time) int {
+		return b.Compare(a)
 	}) {
 		p.badChanges.error("%s is not sorted in descending order", changes)
 	}
@@ -1259,14 +1259,11 @@ func (p *processor) checkChanges(ctx context.Context, base string, mask whereTyp
 	return p.integrity(ctx, files, mask, p.badChanges.add)
 }
 
-// empty checks if list of strings contains at least one none empty string.
+// empty checks if list of strings contains only empty strings.
 func empty(arr []string) bool {
-	for _, s := range arr {
-		if s != "" {
-			return false
-		}
-	}
-	return true
+	return !slices.ContainsFunc(arr, func(a string) bool {
+		return a != ""
+	})
 }
 
 func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
@@ -1362,7 +1359,7 @@ func (p *processor) checkMissing(context.Context, string) error {
 			files = append(files, f)
 		}
 	}
-	sort.Strings(files)
+	slices.Sort(files)
 	for _, f := range files {
 		v := p.alreadyChecked[f]
 		var where []string
@@ -1412,7 +1409,7 @@ func (p *processor) checkInvalid(context.Context, string) error {
 	}
 
 	if len(invalids) > 0 {
-		sort.Strings(invalids)
+		slices.Sort(invalids)
 		p.badDirListings.error("advisories with invalid file names: %s",
 			strings.Join(invalids, ", "))
 	}
@@ -1446,7 +1443,7 @@ func (p *processor) checkListing(ctx context.Context, _ string) error {
 	}
 
 	if len(unlisted) > 0 {
-		sort.Strings(unlisted)
+		slices.Sort(unlisted)
 		p.badDirListings.error("Not listed advisories: %s",
 			strings.Join(unlisted, ", "))
 	}
@@ -1468,7 +1465,7 @@ func (p *processor) checkWhitePermissions(context.Context, string) error {
 		return nil
 	}
 
-	sort.Strings(ids)
+	slices.Sort(ids)
 
 	p.badWhitePermissions.error(
 		"TLP:WHITE advisories with ids %s are only available access-protected.",

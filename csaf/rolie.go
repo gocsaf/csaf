@@ -9,10 +9,10 @@
 package csaf
 
 import (
+	"cmp"
 	"encoding/json"
 	"io"
 	"slices"
-	"sort"
 	"time"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
@@ -115,8 +115,8 @@ func (rcd *ROLIECategoryDocument) Merge(categories ...string) bool {
 	}
 
 	// Re-establish order.
-	sort.Slice(rcd.Categories.Category, func(i, j int) bool {
-		return rcd.Categories.Category[i].Term < rcd.Categories.Category[j].Term
+	slices.SortFunc(rcd.Categories.Category, func(a, b ROLIECategory) int {
+		return cmp.Compare(a.Term, b.Term)
 	})
 
 	return true
@@ -245,9 +245,8 @@ func (rf *ROLIEFeed) Entries(fn func(*Entry)) {
 // SortEntriesByUpdated sorts all the entries in the feed
 // by their update times.
 func (rf *ROLIEFeed) SortEntriesByUpdated() {
-	entries := rf.Feed.Entry
-	sort.Slice(entries, func(i, j int) bool {
-		return time.Time(entries[j].Updated).Before(time.Time(entries[i].Updated))
+	slices.SortFunc(rf.Feed.Entry, func(a, b *Entry) int {
+		return time.Time(b.Updated).Compare(time.Time(a.Updated))
 	})
 }
 

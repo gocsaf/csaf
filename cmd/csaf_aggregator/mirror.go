@@ -17,11 +17,12 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -127,7 +128,7 @@ func (w *worker) labelsFromSummaries() []csaf.TLPLabel {
 	for label := range w.summaries {
 		labels = append(labels, csaf.TLPLabel(strings.ToUpper(label)))
 	}
-	sort.Slice(labels, func(i, j int) bool { return labels[i] < labels[j] })
+	slices.Sort(labels)
 	return labels
 }
 
@@ -146,12 +147,7 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 
 	// Fill in directory URLs if needed.
 	if w.provider.writeIndices(w.processor.cfg) {
-		labels := make([]string, 0, len(w.summaries))
-		for label := range w.summaries {
-			labels = append(labels, label)
-		}
-		sort.Strings(labels)
-		for _, label := range labels {
+		for _, label := range slices.Sorted(maps.Keys(w.summaries)) {
 			pm.AddDirectoryDistribution(prefixURL.JoinPath(label).String())
 		}
 	}
@@ -204,7 +200,7 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 		return err
 	}
 	localKeyURL := func(fingerprint string) string {
-		return keyURL.JoinPath("openpgp", (fingerprint + ".asc")).String()
+		return keyURL.JoinPath("openpgp", fingerprint+".asc").String()
 	}
 
 	for i := range pm.PGPKeys {

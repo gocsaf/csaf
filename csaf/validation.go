@@ -10,12 +10,13 @@ package csaf
 
 import (
 	"bytes"
+	"cmp"
 	"crypto/tls"
 	_ "embed" // Used for embedding.
 	"errors"
 	"fmt"
 	"net/http"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -154,19 +155,19 @@ func (cs *compiledSchema) validate(doc any) ([]string, error) {
 
 	errs := basic.Errors
 
-	sort.Slice(errs, func(i, j int) bool {
-		pi := errs[i].InstanceLocation
-		pj := errs[j].InstanceLocation
+	slices.SortFunc(errs, func(a, b jsonschema.OutputUnit) int {
+		pi := a.InstanceLocation
+		pj := b.InstanceLocation
 		if strings.HasPrefix(pj, pi) {
-			return true
+			return -1
 		}
 		if strings.HasPrefix(pi, pj) {
-			return false
+			return +1
 		}
-		if pi != pj {
-			return pi < pj
+		if d := cmp.Compare(pi, pj); d != 0 {
+			return d
 		}
-		return errs[i].Error.String() < errs[j].Error.String()
+		return cmp.Compare(a.Error.String(), b.Error.String())
 	})
 
 	res := make([]string, 0, len(errs))
