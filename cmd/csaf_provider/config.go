@@ -85,17 +85,18 @@ func (pmdc *providerMetadataConfig) apply(pmd *csaf.ProviderMetadata) {
 type tlp string
 
 const (
-	tlpCSAF  tlp = "csaf"
-	tlpWhite tlp = "white"
-	tlpGreen tlp = "green"
-	tlpAmber tlp = "amber"
-	tlpRed   tlp = "red"
+	tlpCSAF        tlp = "csaf"
+	tlpClear       tlp = "clear"
+	tlpGreen       tlp = "green"
+	tlpAmber       tlp = "amber"
+	tlpAmberStrict tlp = "amber+strict"
+	tlpRed         tlp = "red"
 )
 
 // valid returns true if the checked tlp matches one of the defined tlps.
 func (t tlp) valid() bool {
 	switch t {
-	case tlpCSAF, tlpWhite, tlpGreen, tlpAmber, tlpRed:
+	case tlpCSAF, tlpClear, tlpGreen, tlpAmber, tlpAmberStrict, tlpRed:
 		return true
 	default:
 		return false
@@ -273,7 +274,7 @@ func loadConfig() (*config, error) {
 	}
 
 	if cfg.TLPs == nil {
-		cfg.TLPs = []tlp{tlpCSAF, tlpWhite, tlpGreen, tlpAmber, tlpRed}
+		cfg.TLPs = []tlp{tlpCSAF, tlpClear, tlpGreen, tlpAmber, tlpAmberStrict, tlpRed}
 	}
 
 	if cfg.ProviderMetaData == nil {
