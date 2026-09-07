@@ -1,0 +1,4848 @@
+{
+  "schemas": {
+    "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json": {
+      "$defs": {
+        "acknowledgments_t": {
+          "description": "Contains a list of acknowledgment elements.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Acknowledges contributions by describing those that contributed.",
+            "minProperties": 1,
+            "properties": {
+              "names": {
+                "description": "Contains the names of contributors being recognized.",
+                "items": {
+                  "description": "Contains the name of a single contributor being recognized.",
+                  "examples": [
+                    "Albert Einstein",
+                    "Johann Sebastian Bach"
+                  ],
+                  "minLength": 1,
+                  "title": "Name of the contributor",
+                  "type": "string"
+                },
+                "minItems": 1,
+                "title": "List of acknowledged names",
+                "type": "array"
+              },
+              "organization": {
+                "description": "Contains the name of a contributing organization being recognized.",
+                "examples": [
+                  "CISA",
+                  "Google Project Zero",
+                  "Talos"
+                ],
+                "minLength": 1,
+                "title": "Contributing organization",
+                "type": "string"
+              },
+              "summary": {
+                "description": "SHOULD represent any contextual details the document producers wish to make known about the acknowledgment or acknowledged parties.",
+                "examples": [
+                  "First analysis of Coordinated Multi-Stream Attack (CMSA)"
+                ],
+                "minLength": 1,
+                "title": "Summary of the acknowledgment",
+                "type": "string"
+              },
+              "urls": {
+                "description": "Specifies a list of URLs or location of the reference to be acknowledged.",
+                "items": {
+                  "description": "Contains the URL or location of the reference to be acknowledged.",
+                  "format": "uri",
+                  "title": "URL of acknowledgment",
+                  "type": "string"
+                },
+                "minItems": 1,
+                "title": "List of URLs",
+                "type": "array"
+              }
+            },
+            "title": "Acknowledgment",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "List of acknowledgments",
+          "type": "array"
+        },
+        "branches_t": {
+          "description": "Contains branch elements as children of the current element.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Is a part of the hierarchical structure of the product tree.",
+            "maxProperties": 3,
+            "minProperties": 3,
+            "properties": {
+              "branches": {
+                "$ref": "#/$defs/branches_t"
+              },
+              "category": {
+                "description": "Describes the characteristics of the labeled branch.",
+                "enum": [
+                  "architecture",
+                  "host_name",
+                  "language",
+                  "patch_level",
+                  "platform",
+                  "product_family",
+                  "product_name",
+                  "product_version",
+                  "product_version_range",
+                  "service_pack",
+                  "specification",
+                  "vendor"
+                ],
+                "title": "Category of the branch",
+                "type": "string"
+              },
+              "name": {
+                "description": "Contains the canonical descriptor or 'friendly name' of the branch.",
+                "examples": [
+                  "10",
+                  "365",
+                  "Microsoft",
+                  "Office",
+                  "PCS 7",
+                  "SIMATIC",
+                  "Siemens",
+                  "Windows"
+                ],
+                "minLength": 1,
+                "title": "Name of the branch",
+                "type": "string"
+              },
+              "product": {
+                "$ref": "#/$defs/full_product_name_t"
+              }
+            },
+            "required": [
+              "category",
+              "name"
+            ],
+            "title": "Branch",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "List of branches",
+          "type": "array"
+        },
+        "extensions_t": {
+          "description": "Contains a list of extension elements for the current context.",
+          "items": {
+            "$ref": "extension-content.json"
+          },
+          "minItems": 1,
+          "title": "List of extensions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "full_product_name_t": {
+          "additionalProperties": false,
+          "description": "Specifies information about the product and assigns the product_id.",
+          "properties": {
+            "name": {
+              "description": "The value should be the product’s full canonical name, including version number and other attributes, as it would be used in a human-friendly document.",
+              "examples": [
+                "Cisco AnyConnect Secure Mobility Client 2.3.185",
+                "Microsoft Host Integration Server 2006 Service Pack 1"
+              ],
+              "minLength": 1,
+              "title": "Textual description of the product",
+              "type": "string"
+            },
+            "product_id": {
+              "$ref": "#/$defs/product_id_t"
+            },
+            "product_identification_helper": {
+              "additionalProperties": false,
+              "description": "Provides at least one method which aids in identifying the product in an asset database.",
+              "minProperties": 1,
+              "properties": {
+                "cpe": {
+                  "description": "The Common Platform Enumeration (CPE) attribute refers to a method for naming platforms external to this specification.",
+                  "minLength": 5,
+                  "pattern": "^((cpe:2\\.3:[aho\\*\\-](:(((\\?*|\\*?)([a-zA-Z0-9\\-\\._]|(\\\\[\\\\\\*\\?!\"#\\$%&'\\(\\)\\+,\\/:;<=>@\\[\\]\\^`\\{\\|\\}~]))+(\\?*|\\*?))|[\\*\\-])){5}(:(([a-zA-Z]{2,3}(-([a-zA-Z]{2}|[0-9]{3}))?)|[\\*\\-]))(:(((\\?*|\\*?)([a-zA-Z0-9\\-\\._]|(\\\\[\\\\\\*\\?!\"#\\$%&'\\(\\)\\+,\\/:;<=>@\\[\\]\\^`\\{\\|\\}~]))+(\\?*|\\*?))|[\\*\\-])){4})|([c][pP][eE]:\\/[AHOaho]?(:[A-Za-z0-9\\._\\-~%]*){0,6}))$",
+                  "title": "Common Platform Enumeration representation",
+                  "type": "string"
+                },
+                "hashes": {
+                  "description": "Contains a list of cryptographic hashes usable to identify files.",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "Contains all information to identify a file based on its cryptographic hash values.",
+                    "properties": {
+                      "file_hashes": {
+                        "description": "Contains a list of cryptographic hashes for this file.",
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Contains one hash value and algorithm of the file to be identified.",
+                          "properties": {
+                            "algorithm": {
+                              "default": "sha256",
+                              "description": "Contains the name of the cryptographic hash algorithm used to calculate the value.",
+                              "examples": [
+                                "blake2b512",
+                                "sha256",
+                                "sha3-512",
+                                "sha384",
+                                "sha512"
+                              ],
+                              "minLength": 1,
+                              "pattern": "^[0-9a-z][0-9a-z-]*$",
+                              "title": "Algorithm of the cryptographic hash",
+                              "type": "string"
+                            },
+                            "value": {
+                              "description": "Contains the cryptographic hash value in lowercase hexadecimal representation.",
+                              "examples": [
+                                "37df33cb7464da5c7f077f4d56a32bc84987ec1d85b234537c1c1a4d4fc8d09dc29e2e762cb5203677bf849a2855a0283710f1f5fe1d6ce8d5ac85c645d0fcb3",
+                                "4775203615d9534a8bfca96a93dc8b461a489f69124a130d786b42204f3341cc",
+                                "9ea4c8200113d49d26505da0e02e2f49055dc078d1ad7a419b32e291c7afebbb84badfbd46dec42883bea0b2a1fa697c"
+                              ],
+                              "minLength": 32,
+                              "pattern": "^[0-9a-f]{32,}$",
+                              "title": "Value of the cryptographic hash",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "algorithm",
+                            "value"
+                          ],
+                          "title": "File hash",
+                          "type": "object"
+                        },
+                        "minItems": 1,
+                        "title": "List of file hashes",
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "filename": {
+                        "description": "Contains the name of the file which is identified by the hash values.",
+                        "examples": [
+                          "WINWORD.EXE",
+                          "msotadddin.dll",
+                          "sudoers.so"
+                        ],
+                        "minLength": 1,
+                        "title": "Filename",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "file_hashes",
+                      "filename"
+                    ],
+                    "title": "Cryptographic hashes",
+                    "type": "object"
+                  },
+                  "minItems": 1,
+                  "title": "List of hashes",
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "model_numbers": {
+                  "description": "Contains a list of model numbers.",
+                  "items": {
+                    "description": "Contains a model number of the component to identify - possibly with placeholders.",
+                    "minLength": 1,
+                    "title": "Model number",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "title": "List of models",
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "purls": {
+                  "description": "Contains a list of Package-URLs (PURL).",
+                  "items": {
+                    "description": "The Package-URL (PURL) attribute refers to a method for reliably identifying and locating software packages external to this specification.",
+                    "format": "uri",
+                    "minLength": 7,
+                    "pattern": "^pkg:[a-z][a-z0-9\\.\\-]*\\/.+",
+                    "title": "Package-URL representation",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "title": "List of PURLs",
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "sbom_urls": {
+                  "description": "Contains a list of URLs where SBOMs for this product can be retrieved.",
+                  "items": {
+                    "description": "Contains a URL of one SBOM for this product.",
+                    "format": "uri",
+                    "title": "SBOM URL",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "title": "List of SBOM URLs",
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "serial_numbers": {
+                  "description": "Contains a list of serial numbers.",
+                  "items": {
+                    "description": "Contains a serial number of the component to identify - possibly with placeholders.",
+                    "minLength": 1,
+                    "title": "Serial number",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "title": "List of serial numbers",
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "skus": {
+                  "description": "Contains a list of stock keeping units.",
+                  "items": {
+                    "description": "Contains a stock keeping unit (SKU) which is used in the ordering process to identify the component - possibly with placeholders.",
+                    "minLength": 1,
+                    "title": "Stock keeping unit",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "title": "List of stock keeping units",
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "x_generic_uris": {
+                  "description": "Contains a list of identifiers which are either vendor-specific or derived from a standard not yet supported.",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "Provides a generic extension point for any identifier which is either vendor-specific or derived from a standard not yet supported.",
+                    "properties": {
+                      "namespace": {
+                        "description": "Refers to a URL which provides the name and knowledge about the specification used or is the namespace in which these values are valid.",
+                        "format": "uri",
+                        "title": "Namespace of the generic URI",
+                        "type": "string"
+                      },
+                      "uri": {
+                        "description": "Contains the identifier itself.",
+                        "format": "uri",
+                        "title": "URI",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "namespace",
+                      "uri"
+                    ],
+                    "title": "Generic URI",
+                    "type": "object"
+                  },
+                  "minItems": 1,
+                  "title": "List of generic URIs",
+                  "type": "array",
+                  "uniqueItems": true
+                }
+              },
+              "title": "Helper to identify the product",
+              "type": "object"
+            },
+            "x_extensions": {
+              "$ref": "#/$defs/extensions_t",
+              "description": "Contains a list of extensions valid at the full product name element level of the CSAF document and associated with this full product name element.",
+              "title": "Product-level Extensions"
+            }
+          },
+          "required": [
+            "name",
+            "product_id"
+          ],
+          "title": "Full product name",
+          "type": "object"
+        },
+        "lang_t": {
+          "description": "Identifies a language, corresponding to IETF BCP 47 / RFC 5646. See IETF language registry: https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry",
+          "examples": [
+            "de",
+            "en",
+            "fr",
+            "frc",
+            "jp"
+          ],
+          "pattern": "^(([A-Za-z]{2,3}(-[A-Za-z]{3}(-[A-Za-z]{3}){0,2})?|[A-Za-z]{4,8})(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(-[A-WY-Za-wy-z0-9](-[A-Za-z0-9]{2,8})+)*(-[Xx](-[A-Za-z0-9]{1,8})+)?|[Xx](-[A-Za-z0-9]{1,8})+|[Ii]-[Dd][Ee][Ff][Aa][Uu][Ll][Tt]|[Ii]-[Mm][Ii][Nn][Gg][Oo])$",
+          "title": "Language type",
+          "type": "string"
+        },
+        "notes_t": {
+          "description": "Contains notes which are specific to the current context.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Is a place to put all manner of text blobs related to the current context.",
+            "properties": {
+              "audience": {
+                "description": "Indicates who is intended to read it.",
+                "examples": [
+                  "all",
+                  "executives",
+                  "operational management and system administrators",
+                  "safety engineers"
+                ],
+                "minLength": 1,
+                "title": "Audience of note",
+                "type": "string"
+              },
+              "category": {
+                "description": "Contains the information of what kind of note this is.",
+                "enum": [
+                  "description",
+                  "details",
+                  "faq",
+                  "general",
+                  "legal_disclaimer",
+                  "other",
+                  "summary"
+                ],
+                "title": "Note category",
+                "type": "string"
+              },
+              "group_ids": {
+                "$ref": "#/$defs/product_groups_t"
+              },
+              "product_ids": {
+                "$ref": "#/$defs/products_t"
+              },
+              "text": {
+                "description": "Holds the content of the note. Content varies depending on type.",
+                "minLength": 1,
+                "title": "Note content",
+                "type": "string"
+              },
+              "title": {
+                "description": "Provides a concise description of what is contained in the text of the note.",
+                "examples": [
+                  "Details",
+                  "Executive summary",
+                  "Technical summary",
+                  "Impact on safety systems"
+                ],
+                "minLength": 1,
+                "title": "Title of note",
+                "type": "string"
+              }
+            },
+            "required": [
+              "category",
+              "text"
+            ],
+            "title": "Note",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "List of notes",
+          "type": "array"
+        },
+        "product_group_id_t": {
+          "description": "Token required to identify a group of products so that it can be referred to from other parts in the document. There is no predefined or required format for the product_group_id as long as it uniquely identifies a group in the context of the current document.",
+          "examples": [
+            "CSAFGID-0001",
+            "CSAFGID-0002",
+            "CSAFGID-0020"
+          ],
+          "minLength": 1,
+          "title": "Reference token for product group instance",
+          "type": "string"
+        },
+        "product_groups_t": {
+          "description": "Specifies a list of product_group_ids to give context to the parent item.",
+          "items": {
+            "$ref": "#/$defs/product_group_id_t"
+          },
+          "minItems": 1,
+          "title": "List of product_group_ids",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "product_id_t": {
+          "description": "Token required to identify a full_product_name so that it can be referred to from other parts in the document. There is no predefined or required format for the product_id as long as it uniquely identifies a product in the context of the current document.",
+          "examples": [
+            "CSAFPID-0004",
+            "CSAFPID-0008"
+          ],
+          "minLength": 1,
+          "title": "Reference token for product instance",
+          "type": "string"
+        },
+        "products_t": {
+          "description": "Specifies a list of product_ids to give context to the parent item.",
+          "items": {
+            "$ref": "#/$defs/product_id_t"
+          },
+          "minItems": 1,
+          "title": "List of product_ids",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "references_t": {
+          "description": "Holds a list of references.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Holds any reference to conferences, papers, advisories, and other resources that are related and considered related to either a surrounding part of or the entire document and to be of value to the document consumer.",
+            "properties": {
+              "category": {
+                "default": "external",
+                "description": "Indicates whether the reference points to the same document or vulnerability in focus (depending on scope) or to an external resource.",
+                "enum": [
+                  "external",
+                  "self"
+                ],
+                "title": "Category of reference",
+                "type": "string"
+              },
+              "summary": {
+                "description": "Indicates what this reference refers to.",
+                "minLength": 1,
+                "title": "Summary of the reference",
+                "type": "string"
+              },
+              "url": {
+                "description": "Provides the URL for the reference.",
+                "format": "uri",
+                "title": "URL of reference",
+                "type": "string"
+              }
+            },
+            "required": [
+              "summary",
+              "url"
+            ],
+            "title": "Reference",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "List of references",
+          "type": "array"
+        },
+        "subpath_t": {
+          "additionalProperties": false,
+          "description": "Contains the next node along the current path and its relationship to the previous node.",
+          "properties": {
+            "category": {
+              "description": "Defines the category of relationship between the previous item and the referenced next product.",
+              "enum": [
+                "default_component_of",
+                "external_component_of",
+                "installed_on",
+                "installed_with",
+                "optional_component_of"
+              ],
+              "title": "Relationship category",
+              "type": "string"
+            },
+            "next_product_reference": {
+              "$ref": "#/$defs/product_id_t",
+              "description": "Holds a Product ID that refers to the Full Product Name element, which is referenced as the second element of the relationship.",
+              "title": "Next product reference"
+            }
+          },
+          "required": [
+            "category",
+            "next_product_reference"
+          ],
+          "title": "Subpath",
+          "type": "object"
+        },
+        "version_t": {
+          "description": "Specifies a version string to denote clearly the evolution of the content of the document. Format must be either integer or semantic versioning.",
+          "examples": [
+            "1",
+            "4",
+            "0.9.0",
+            "1.4.3",
+            "2.40.0+21AF26D3"
+          ],
+          "pattern": "^(0|[1-9][0-9]*)$|^((0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json",
+      "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+      "additionalProperties": false,
+      "description": "Representation of security advisory information as a JSON document.",
+      "properties": {
+        "$schema": {
+          "description": "Contains the URL of the CSAF JSON schema which the document promises to be valid for.",
+          "enum": [
+            "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
+          ],
+          "format": "uri",
+          "title": "JSON schema",
+          "type": "string"
+        },
+        "document": {
+          "additionalProperties": false,
+          "description": "Captures the meta-data about this document describing a particular set of security advisories.",
+          "properties": {
+            "acknowledgments": {
+              "$ref": "#/$defs/acknowledgments_t",
+              "description": "Contains a list of acknowledgment elements associated with the whole document.",
+              "title": "Document acknowledgments"
+            },
+            "aggregate_severity": {
+              "additionalProperties": false,
+              "description": "Is a vehicle that is provided by the document producer to convey the urgency and criticality with which the one or more vulnerabilities reported should be addressed. It is a document-level metric and applied to the document as a whole — not any specific vulnerability. The range of values in this field is defined according to the document producer's policies and procedures.",
+              "properties": {
+                "namespace": {
+                  "description": "Points to the namespace so referenced.",
+                  "format": "uri",
+                  "title": "Namespace of aggregate severity",
+                  "type": "string"
+                },
+                "text": {
+                  "description": "Provides a severity which is independent of - and in addition to - any other standard metric for determining the impact or severity of a given vulnerability (such as CVSS).",
+                  "examples": [
+                    "Critical",
+                    "Important",
+                    "Moderate"
+                  ],
+                  "minLength": 1,
+                  "title": "Text of aggregate severity",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "text"
+              ],
+              "title": "Aggregate severity",
+              "type": "object"
+            },
+            "category": {
+              "description": "Defines a short canonical name, chosen by the document producer, which will inform the end user as to the category of document.",
+              "examples": [
+                "csaf_base",
+                "csaf_security_advisory",
+                "csaf_vex",
+                "Example Company Security Notice"
+              ],
+              "minLength": 1,
+              "pattern": "^[^\\s\\-_\\.](.*[^\\s\\-_\\.])?$",
+              "title": "Document category",
+              "type": "string"
+            },
+            "csaf_version": {
+              "description": "Gives the version of the CSAF specification which the document was generated for.",
+              "enum": [
+                "2.1"
+              ],
+              "title": "CSAF version",
+              "type": "string"
+            },
+            "distribution": {
+              "additionalProperties": false,
+              "description": "Describe any constraints on how this document might be shared.",
+              "properties": {
+                "sharing_group": {
+                  "additionalProperties": false,
+                  "description": "Contains information about the group this document is intended to be shared with.",
+                  "properties": {
+                    "id": {
+                      "description": "Provides the unique ID for the sharing group.",
+                      "format": "uuid",
+                      "pattern": "^(([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12})|([0]{8}-([0]{4}-){3}[0]{12})|([f]{8}-([f]{4}-){3}[f]{12}))$",
+                      "title": "Sharing Group ID",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "Contains a human-readable name for the sharing group.",
+                      "examples": [
+                        "Customer A",
+                        "ISAC members",
+                        "NIS2 regulated important entities in Germany, sector water",
+                        "Pre-Sharing group for advisory discussion",
+                        "Users of Product A",
+                        "US Federal Civilian Authorities"
+                      ],
+                      "minLength": 1,
+                      "title": "Sharing Group Name",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "title": "Sharing Group",
+                  "type": "object"
+                },
+                "text": {
+                  "description": "Provides a textual description of additional constraints.",
+                  "examples": [
+                    "Copyright 2021, Example Company, All Rights Reserved.",
+                    "Distribute freely.",
+                    "Share only on a need-to-know-basis only."
+                  ],
+                  "minLength": 1,
+                  "title": "Textual description",
+                  "type": "string"
+                },
+                "tlp": {
+                  "additionalProperties": false,
+                  "description": "Provides details about the TLP classification of the document.",
+                  "properties": {
+                    "label": {
+                      "default": "CLEAR",
+                      "description": "Provides the TLP label of the document.",
+                      "enum": [
+                        "AMBER",
+                        "AMBER+STRICT",
+                        "CLEAR",
+                        "GREEN",
+                        "RED"
+                      ],
+                      "title": "Label of TLP",
+                      "type": "string"
+                    },
+                    "url": {
+                      "default": "https://www.first.org/tlp/",
+                      "description": "Provides a URL where to find the textual description of the TLP version which is used in this document. Default is the URL to the definition by FIRST.",
+                      "examples": [
+                        "https://www.us-cert.gov/tlp",
+                        "https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Kritis/Merkblatt_TLP.pdf"
+                      ],
+                      "format": "uri",
+                      "title": "URL of TLP version",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "label"
+                  ],
+                  "title": "Traffic Light Protocol (TLP)",
+                  "type": "object"
+                }
+              },
+              "required": [
+                "tlp"
+              ],
+              "title": "Rules for document sharing",
+              "type": "object"
+            },
+            "lang": {
+              "$ref": "#/$defs/lang_t",
+              "description": "Identifies the language used by this document, corresponding to IETF BCP 47 / RFC 5646.",
+              "title": "Document language"
+            },
+            "license_expression": {
+              "description": "Contains the SPDX license expression for the CSAF document.",
+              "examples": [
+                "CC-BY-4.0",
+                "LicenseRef-www.example.org-Example-CSAF-License-3.0+",
+                "LicenseRef-scancode-public-domain",
+                "MIT OR any-OSI"
+              ],
+              "minLength": 1,
+              "title": "License expression",
+              "type": "string"
+            },
+            "notes": {
+              "$ref": "#/$defs/notes_t",
+              "description": "Holds notes associated with the whole document.",
+              "title": "Document notes"
+            },
+            "publisher": {
+              "additionalProperties": false,
+              "description": "Provides information about the publisher of the document.",
+              "properties": {
+                "category": {
+                  "description": "Provides information about the category of publisher releasing the document.",
+                  "enum": [
+                    "coordinator",
+                    "discoverer",
+                    "multiplier",
+                    "other",
+                    "translator",
+                    "user",
+                    "vendor"
+                  ],
+                  "title": "Category of publisher",
+                  "type": "string"
+                },
+                "contact": {
+                  "additionalProperties": false,
+                  "dependentRequired": {
+                    "public_openpgp_key_url": [
+                      "email"
+                    ]
+                  },
+                  "description": "Contains information on how to contact the publisher.",
+                  "minProperties": 1,
+                  "properties": {
+                    "details": {
+                      "description": "Contains details regarding ways to reach the publisher, e.g. through web sites, phone numbers, and postal mail addresses.",
+                      "examples": [
+                        "Example Company can be reached at tel:+493023125232, or via our website at https://www.example.com/contact."
+                      ],
+                      "minLength": 1,
+                      "title": "Contact Details",
+                      "type": "string"
+                    },
+                    "email": {
+                      "description": "Contains the email address that can be used to reach the issuing party.",
+                      "examples": [
+                        "productcert@example.net",
+                        "psirt@example.com",
+                        "reporter@securityresearcher.example",
+                        "vulnerability@coordinator.example"
+                      ],
+                      "format": "email",
+                      "minLength": 6,
+                      "title": "Email",
+                      "type": "string"
+                    },
+                    "public_openpgp_key_url": {
+                      "description": "Contains a URL pointing to a public OpenPGP key valid for the email of issuing party provided in the sibling property `email`.",
+                      "examples": [
+                        "https://coordinator.example/.well-known/openpgpkey/hu/nxdcs8npc6mn3xyfpcbiqhcu9s357r5m?l=vulnerability",
+                        "https://example.net/.well-known/openpgpkey/hu/euwmpyfh4rzf8ymbqhjjhrirgib4dyfs?l=productcert",
+                        "https://openpgpkey.securityresearcher.example/.well-known/openpgpkey/securityresearcher.example/hu/enudbakzkbdym3ymwjy9pcxztka75f73?l=reporter",
+                        "https://psirt.example.com/security/openpgp/latest"
+                      ],
+                      "format": "uri",
+                      "minLength": 11,
+                      "pattern": "^https:\\/\\/",
+                      "title": "Public OpenPGP Key URL",
+                      "type": "string"
+                    }
+                  },
+                  "title": "Contact",
+                  "type": "object"
+                },
+                "issuing_authority": {
+                  "description": "Provides information about the authority of the issuing party to release the document, in particular, the party's constituency and responsibilities or other obligations.",
+                  "minLength": 1,
+                  "title": "Issuing authority",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "Contains the name of the issuing party.",
+                  "examples": [
+                    "BSI",
+                    "Cisco PSIRT",
+                    "Siemens ProductCERT"
+                  ],
+                  "minLength": 1,
+                  "title": "Name of publisher",
+                  "type": "string"
+                },
+                "namespace": {
+                  "description": "Contains a URL which is under control of the issuing party and can be used as a globally unique identifier for that issuing party.",
+                  "examples": [
+                    "https://csaf.io",
+                    "https://www.example.com"
+                  ],
+                  "format": "uri",
+                  "title": "Namespace of publisher",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "category",
+                "name",
+                "namespace"
+              ],
+              "title": "Publisher",
+              "type": "object"
+            },
+            "references": {
+              "$ref": "#/$defs/references_t",
+              "description": "Holds a list of references associated with the whole document.",
+              "title": "Document references"
+            },
+            "source_lang": {
+              "$ref": "#/$defs/lang_t",
+              "description": "If this copy of the document is a translation then the value of this property describes from which language this document was translated.",
+              "title": "Source language"
+            },
+            "title": {
+              "description": "This SHOULD be a canonical name for the document, and sufficiently unique to distinguish it from similar documents.",
+              "examples": [
+                "Cisco IPv6 Crafted Packet Denial of Service Vulnerability",
+                "Example Company Cross-Site-Scripting Vulnerability in Example Generator"
+              ],
+              "minLength": 1,
+              "title": "Title of this document",
+              "type": "string"
+            },
+            "tracking": {
+              "additionalProperties": false,
+              "description": "Is a container designated to hold all management attributes necessary to track a CSAF document as a whole.",
+              "properties": {
+                "aliases": {
+                  "description": "Contains a list of alternate names for the same document.",
+                  "items": {
+                    "description": "Specifies a non-empty string that represents a distinct optional alternative ID used to refer to the document.",
+                    "examples": [
+                      "CVE-2019-12345"
+                    ],
+                    "minLength": 1,
+                    "title": "Alternate name",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "title": "Aliases",
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "current_release_date": {
+                  "description": "The date when the current revision of this document was released",
+                  "format": "date-time",
+                  "title": "Current release date",
+                  "type": "string"
+                },
+                "generator": {
+                  "additionalProperties": false,
+                  "description": "Is a container to hold all elements related to the generation of the document. These items will reference when the document was actually created, including the date it was generated and the entity that generated it.",
+                  "properties": {
+                    "date": {
+                      "description": "This SHOULD be the current date that the document was generated. Because documents are often generated internally by a document producer and exist for a nonzero amount of time before being released, this field MAY be different from the Initial Release Date and Current Release Date.",
+                      "format": "date-time",
+                      "title": "Date of document generation",
+                      "type": "string"
+                    },
+                    "engine": {
+                      "additionalProperties": false,
+                      "description": "Contains information about the engine that generated the CSAF document.",
+                      "properties": {
+                        "name": {
+                          "description": "Represents the name of the engine that generated the CSAF document.",
+                          "examples": [
+                            "Red Hat rhsa-to-cvrf",
+                            "Secvisogram",
+                            "TVCE"
+                          ],
+                          "minLength": 1,
+                          "title": "Engine name",
+                          "type": "string"
+                        },
+                        "version": {
+                          "description": "Contains the version of the engine that generated the CSAF document.",
+                          "examples": [
+                            "0.6.0",
+                            "1.0.0-beta+exp.sha.a1c44f85",
+                            "2"
+                          ],
+                          "minLength": 1,
+                          "title": "Engine version",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ],
+                      "title": "Engine of document generation",
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "engine"
+                  ],
+                  "title": "Document generator",
+                  "type": "object"
+                },
+                "id": {
+                  "description": "The ID is a simple label that provides for a wide range of numbering values, types, and schemes. Its value SHOULD be assigned and maintained by the original document issuing authority.",
+                  "examples": [
+                    "Example Company - 2019-YH3234",
+                    "RHBA-2019:0024",
+                    "cisco-sa-20190513-secureboot"
+                  ],
+                  "minLength": 1,
+                  "pattern": "^[\\S](.*[\\S])?$",
+                  "title": "Unique identifier for the document",
+                  "type": "string"
+                },
+                "initial_release_date": {
+                  "description": "The date when this document was first released to the specified target group.",
+                  "format": "date-time",
+                  "title": "Initial release date",
+                  "type": "string"
+                },
+                "revision_history": {
+                  "description": "Holds one revision item for each version of the CSAF document, including the initial one.",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "Contains all the information elements required to track the evolution of a CSAF document.",
+                    "properties": {
+                      "date": {
+                        "description": "The date of the revision entry",
+                        "format": "date-time",
+                        "title": "Date of the revision",
+                        "type": "string"
+                      },
+                      "legacy_version": {
+                        "description": "Contains the version string used in an existing document with the same content.",
+                        "minLength": 1,
+                        "title": "Legacy version of the revision",
+                        "type": "string"
+                      },
+                      "number": {
+                        "$ref": "#/$defs/version_t"
+                      },
+                      "summary": {
+                        "description": "Holds a single non-empty string representing a short description of the changes.",
+                        "examples": [
+                          "Initial version."
+                        ],
+                        "minLength": 1,
+                        "title": "Summary of the revision",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "date",
+                      "number",
+                      "summary"
+                    ],
+                    "title": "Revision",
+                    "type": "object"
+                  },
+                  "minItems": 1,
+                  "title": "Revision history",
+                  "type": "array"
+                },
+                "status": {
+                  "description": "Defines the draft status of the document.",
+                  "enum": [
+                    "draft",
+                    "final",
+                    "interim"
+                  ],
+                  "title": "Document status",
+                  "type": "string"
+                },
+                "version": {
+                  "$ref": "#/$defs/version_t"
+                }
+              },
+              "required": [
+                "current_release_date",
+                "id",
+                "initial_release_date",
+                "revision_history",
+                "status",
+                "version"
+              ],
+              "title": "Tracking",
+              "type": "object"
+            },
+            "x_extensions": {
+              "$ref": "#/$defs/extensions_t",
+              "description": "Contains a list of extensions valid at the document property level of the CSAF document and associated with this document metadata.",
+              "title": "Document-level Extensions"
+            }
+          },
+          "required": [
+            "category",
+            "csaf_version",
+            "distribution",
+            "publisher",
+            "title",
+            "tracking"
+          ],
+          "title": "Document level meta-data",
+          "type": "object"
+        },
+        "product_tree": {
+          "additionalProperties": false,
+          "description": "Is a container for all fully qualified product names that can be referenced elsewhere in the document.",
+          "minProperties": 1,
+          "properties": {
+            "branches": {
+              "$ref": "#/$defs/branches_t"
+            },
+            "full_product_names": {
+              "description": "Contains a list of full product names.",
+              "items": {
+                "$ref": "#/$defs/full_product_name_t"
+              },
+              "minItems": 1,
+              "title": "List of full product names",
+              "type": "array"
+            },
+            "product_groups": {
+              "description": "Contains a list of product groups.",
+              "items": {
+                "additionalProperties": false,
+                "description": "Defines a new logical group of products that can then be referred to in other parts of the document to address a group of products with a single identifier.",
+                "properties": {
+                  "group_id": {
+                    "$ref": "#/$defs/product_group_id_t"
+                  },
+                  "product_ids": {
+                    "description": "Lists the product_ids of those products which known as one group in the document.",
+                    "items": {
+                      "$ref": "#/$defs/product_id_t"
+                    },
+                    "minItems": 2,
+                    "title": "List of Product IDs",
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "summary": {
+                    "description": "Gives a short, optional description of the group.",
+                    "examples": [
+                      "Products supporting Modbus.",
+                      "The x64 versions of the operating system."
+                    ],
+                    "minLength": 1,
+                    "title": "Summary of the product group",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "group_id",
+                  "product_ids"
+                ],
+                "title": "Product group",
+                "type": "object"
+              },
+              "minItems": 1,
+              "title": "List of product groups",
+              "type": "array"
+            },
+            "product_paths": {
+              "description": "Contains a list of product paths.",
+              "items": {
+                "additionalProperties": false,
+                "description": "Establishes a path along existing full_product_name_t elements, allowing the document producer to define a path of multiple products that form a new full_product_name entry.",
+                "properties": {
+                  "beginning_product_reference": {
+                    "$ref": "#/$defs/product_id_t",
+                    "description": "Holds a Product ID that refers to the Full Product Name element, which is the beginning node of the product path.",
+                    "title": "Beginning product reference"
+                  },
+                  "full_product_name": {
+                    "$ref": "#/$defs/full_product_name_t"
+                  },
+                  "subpaths": {
+                    "description": "Contains an ordered list of product subpaths, each one relating to the path defined by all previous elements up to the beginning node of the product path.",
+                    "items": {
+                      "$ref": "#/$defs/subpath_t"
+                    },
+                    "minItems": 1,
+                    "title": "List of product subpaths",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "beginning_product_reference",
+                  "full_product_name",
+                  "subpaths"
+                ],
+                "title": "Product path",
+                "type": "object"
+              },
+              "minItems": 1,
+              "title": "List of product paths",
+              "type": "array"
+            }
+          },
+          "title": "Product tree",
+          "type": "object"
+        },
+        "vulnerabilities": {
+          "description": "Represents a list of all relevant vulnerability information items.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Is a container for the aggregation of all fields that are related to a single vulnerability in the document.",
+            "minProperties": 1,
+            "properties": {
+              "acknowledgments": {
+                "$ref": "#/$defs/acknowledgments_t",
+                "description": "Contains a list of acknowledgment elements associated with this vulnerability item.",
+                "title": "Vulnerability acknowledgments"
+              },
+              "cve": {
+                "description": "Holds the MITRE standard Common Vulnerabilities and Exposures (CVE) tracking number for the vulnerability.",
+                "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$",
+                "title": "CVE",
+                "type": "string"
+              },
+              "cwes": {
+                "description": "Contains a list of CWEs.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Holds the MITRE standard Common Weakness Enumeration (CWE) for the weakness associated.",
+                  "properties": {
+                    "id": {
+                      "description": "Holds the ID for the weakness associated.",
+                      "examples": [
+                        "CWE-22",
+                        "CWE-352",
+                        "CWE-79"
+                      ],
+                      "pattern": "^CWE-[1-9]\\d{0,5}$",
+                      "title": "Weakness ID",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "Holds the full name of the weakness as given in the CWE specification.",
+                      "examples": [
+                        "Cross-Site Request Forgery (CSRF)",
+                        "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+                        "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+                      ],
+                      "minLength": 1,
+                      "pattern": "^[^\\s\\-_\\.](.*[^\\s\\-_\\.])?$",
+                      "title": "Weakness name",
+                      "type": "string"
+                    },
+                    "version": {
+                      "description": "Holds the version string of the CWE specification this weakness was extracted from.",
+                      "examples": [
+                        "1.0",
+                        "3.4.1",
+                        "4.0",
+                        "4.11",
+                        "4.12"
+                      ],
+                      "pattern": "^[1-9]\\d*\\.([0-9]|([1-9]\\d+))(\\.\\d+)?$",
+                      "title": "CWE version",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "version"
+                  ],
+                  "title": "CWE",
+                  "type": "object"
+                },
+                "minItems": 1,
+                "title": "List of CWEs",
+                "type": "array",
+                "uniqueItems": true
+              },
+              "disclosure_date": {
+                "description": "Holds the date and time the vulnerability was originally disclosed to the public.",
+                "format": "date-time",
+                "title": "Disclosure date",
+                "type": "string"
+              },
+              "discovery_date": {
+                "description": "Holds the date and time the vulnerability was originally discovered.",
+                "format": "date-time",
+                "title": "Discovery date",
+                "type": "string"
+              },
+              "first_known_exploitation_dates": {
+                "description": "Contains a list of dates of first known exploitations.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Contains information on when this vulnerability was first known to be exploited in the wild in the products specified.",
+                  "minProperties": 3,
+                  "properties": {
+                    "date": {
+                      "description": "Contains the date when the information was last updated.",
+                      "format": "date-time",
+                      "title": "Date of the information",
+                      "type": "string"
+                    },
+                    "exploitation_date": {
+                      "description": "Contains the date when the exploitation happened.",
+                      "format": "date-time",
+                      "title": "Date of the exploitation",
+                      "type": "string"
+                    },
+                    "group_ids": {
+                      "$ref": "#/$defs/product_groups_t"
+                    },
+                    "product_ids": {
+                      "$ref": "#/$defs/products_t"
+                    }
+                  },
+                  "required": [
+                    "date",
+                    "exploitation_date"
+                  ],
+                  "title": "First known exploitation date",
+                  "type": "object"
+                },
+                "minItems": 1,
+                "title": "List of first known exploitation dates",
+                "type": "array",
+                "uniqueItems": true
+              },
+              "flags": {
+                "description": "Contains a list of machine readable flags.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Contains product specific information in regard to this vulnerability as a single machine readable flag.",
+                  "properties": {
+                    "date": {
+                      "description": "Contains the date when assessment was done or the flag was assigned.",
+                      "format": "date-time",
+                      "title": "Date of the flag",
+                      "type": "string"
+                    },
+                    "group_ids": {
+                      "$ref": "#/$defs/product_groups_t"
+                    },
+                    "label": {
+                      "description": "Specifies the machine readable label.",
+                      "enum": [
+                        "component_not_present",
+                        "inline_mitigations_already_exist",
+                        "vulnerable_code_cannot_be_controlled_by_adversary",
+                        "vulnerable_code_not_in_execute_path",
+                        "vulnerable_code_not_present"
+                      ],
+                      "title": "Label of the flag",
+                      "type": "string"
+                    },
+                    "product_ids": {
+                      "$ref": "#/$defs/products_t"
+                    }
+                  },
+                  "required": [
+                    "label"
+                  ],
+                  "title": "Flag",
+                  "type": "object"
+                },
+                "minItems": 1,
+                "title": "List of flags",
+                "type": "array",
+                "uniqueItems": true
+              },
+              "ids": {
+                "description": "Represents a list of unique labels or tracking IDs for the vulnerability (if such information exists).",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Contains a single unique label or tracking ID for the vulnerability.",
+                  "properties": {
+                    "group_ids": {
+                      "$ref": "#/$defs/product_groups_t"
+                    },
+                    "product_ids": {
+                      "$ref": "#/$defs/products_t"
+                    },
+                    "system_name": {
+                      "description": "Indicates the name of the vulnerability tracking or numbering system.",
+                      "examples": [
+                        "Cisco Bug ID",
+                        "GitHub Issue",
+                        "https://github.com/oasis-tcs/csaf"
+                      ],
+                      "minLength": 1,
+                      "title": "System name",
+                      "type": "string"
+                    },
+                    "text": {
+                      "description": "Is unique label or tracking ID for the vulnerability (if such information exists).",
+                      "examples": [
+                        "CSCso66472",
+                        "oasis-tcs/csaf#210",
+                        "#1217"
+                      ],
+                      "minLength": 1,
+                      "title": "Text",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "system_name",
+                    "text"
+                  ],
+                  "title": "ID",
+                  "type": "object"
+                },
+                "minItems": 1,
+                "title": "List of IDs",
+                "type": "array",
+                "uniqueItems": true
+              },
+              "involvements": {
+                "description": "Contains a list of involvements.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Is a container, that allows the document producers to comment on the level of involvement (or engagement) of themselves or third parties in the vulnerability identification, scoping, and remediation process.",
+                  "properties": {
+                    "contact": {
+                      "description": "Contains the contact information of the party that was used in this state.",
+                      "minLength": 1,
+                      "title": "Party contact information",
+                      "type": "string"
+                    },
+                    "date": {
+                      "description": "Holds the date and time of the involvement entry.",
+                      "format": "date-time",
+                      "title": "Date of involvement",
+                      "type": "string"
+                    },
+                    "group_ids": {
+                      "$ref": "#/$defs/product_groups_t"
+                    },
+                    "party": {
+                      "description": "Defines the category of the involved party.",
+                      "enum": [
+                        "coordinator",
+                        "discoverer",
+                        "other",
+                        "user",
+                        "vendor"
+                      ],
+                      "title": "Party category",
+                      "type": "string"
+                    },
+                    "product_ids": {
+                      "$ref": "#/$defs/products_t"
+                    },
+                    "status": {
+                      "description": "Defines contact status of the involved party.",
+                      "enum": [
+                        "completed",
+                        "contact_attempted",
+                        "disputed",
+                        "in_progress",
+                        "not_contacted",
+                        "open"
+                      ],
+                      "title": "Party status",
+                      "type": "string"
+                    },
+                    "summary": {
+                      "description": "Contains additional context regarding what is going on.",
+                      "minLength": 1,
+                      "title": "Summary of the involvement",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "party",
+                    "status"
+                  ],
+                  "title": "Involvement",
+                  "type": "object"
+                },
+                "minItems": 1,
+                "title": "List of involvements",
+                "type": "array",
+                "uniqueItems": true
+              },
+              "metrics": {
+                "description": "Contains metric objects for the current vulnerability.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Contains all metadata about the metric including products it applies to and the source and the content itself.",
+                  "properties": {
+                    "content": {
+                      "additionalProperties": false,
+                      "description": "Specifies information about (at least one) metric or score for the given products regarding the current vulnerability.",
+                      "minProperties": 1,
+                      "properties": {
+                        "cvss_v2": {
+                          "$ref": "https://www.first.org/cvss/cvss-v2.0.json",
+                          "title": "CVSS v2"
+                        },
+                        "cvss_v3": {
+                          "oneOf": [
+                            {
+                              "$ref": "https://www.first.org/cvss/cvss-v3.0.json"
+                            },
+                            {
+                              "$ref": "https://www.first.org/cvss/cvss-v3.1.json"
+                            }
+                          ],
+                          "title": "CVSS v3"
+                        },
+                        "cvss_v4": {
+                          "$ref": "https://www.first.org/cvss/cvss-v4.0.json",
+                          "title": "CVSS v4"
+                        },
+                        "epss": {
+                          "additionalProperties": false,
+                          "description": "Contains the EPSS data.",
+                          "properties": {
+                            "percentile": {
+                              "description": "Contains the rank ordering of probabilities from highest to lowest.",
+                              "pattern": "^(([0]\\.([0-9])+)|([1]\\.[0]+))$",
+                              "title": "Percentile",
+                              "type": "string"
+                            },
+                            "probability": {
+                              "description": "Contains the likelihood that any exploitation activity for this Vulnerability is being observed in the 30 days following the given timestamp.",
+                              "pattern": "^(([0]\\.([0-9])+)|([1]\\.[0]+))$",
+                              "title": "Probability",
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "description": "Holds the date and time the EPSS value was recorded.",
+                              "format": "date-time",
+                              "title": "EPSS timestamp",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "percentile",
+                            "probability",
+                            "timestamp"
+                          ],
+                          "title": "EPSS",
+                          "type": "object"
+                        },
+                        "qualitative_severity_rating": {
+                          "description": "Contains an assessment of the severity of the vulnerability regarding the products on a qualitative scale.",
+                          "enum": [
+                            "critical",
+                            "high",
+                            "low",
+                            "medium",
+                            "none"
+                          ],
+                          "title": "Qualitative Severity Rating",
+                          "type": "string"
+                        },
+                        "ssvc_v2": {
+                          "$ref": "https://certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.json",
+                          "title": "SSVC v2"
+                        },
+                        "x_extensions": {
+                          "$ref": "#/$defs/extensions_t",
+                          "description": "Contains a list of extensions valid at the metrics-content-level of the CSAF document and associated with this metric element.",
+                          "title": "Metrics-content-level Extensions"
+                        }
+                      },
+                      "title": "Content",
+                      "type": "object"
+                    },
+                    "products": {
+                      "$ref": "#/$defs/products_t"
+                    },
+                    "source": {
+                      "description": "Contains the URL of the source that originally determined the metric.",
+                      "format": "uri",
+                      "title": "Source",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "content",
+                    "products"
+                  ],
+                  "title": "metric",
+                  "type": "object"
+                },
+                "minItems": 1,
+                "title": "List of metrics",
+                "type": "array",
+                "uniqueItems": true
+              },
+              "notes": {
+                "$ref": "#/$defs/notes_t",
+                "description": "Holds notes associated with this vulnerability item.",
+                "title": "Vulnerability notes"
+              },
+              "product_status": {
+                "additionalProperties": false,
+                "description": "Contains different lists of product_ids which provide details on the status of the referenced product related to the current vulnerability. ",
+                "minProperties": 1,
+                "properties": {
+                  "first_affected": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "These are the first versions of the releases known to be affected by the vulnerability.",
+                    "title": "First affected"
+                  },
+                  "first_fixed": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "These versions contain the first fix for the vulnerability but may not be the recommended fixed versions.",
+                    "title": "First fixed"
+                  },
+                  "fixed": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "These versions contain a fix for the vulnerability but may not be the recommended fixed versions.",
+                    "title": "Fixed"
+                  },
+                  "known_affected": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "These versions are known to be affected by the vulnerability.",
+                    "title": "Known affected"
+                  },
+                  "known_not_affected": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "These versions are known not to be affected by the vulnerability.",
+                    "title": "Known not affected"
+                  },
+                  "last_affected": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "These are the last versions in a release train known to be affected by the vulnerability. Subsequently released versions would contain a fix for the vulnerability.",
+                    "title": "Last affected"
+                  },
+                  "recommended": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "These versions have a fix for the vulnerability and are the vendor-recommended versions for fixing the vulnerability.",
+                    "title": "Recommended"
+                  },
+                  "under_investigation": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "It is not known yet whether these versions are or are not affected by the vulnerability. However, it is still under investigation - the result will be provided in a later release of the document.",
+                    "title": "Under investigation"
+                  },
+                  "unknown": {
+                    "$ref": "#/$defs/products_t",
+                    "description": "It is not known whether these versions are or are not affected by the vulnerability. There is also no investigation and therefore the status might never be determined.",
+                    "title": "Unknown"
+                  }
+                },
+                "title": "Product status",
+                "type": "object"
+              },
+              "references": {
+                "$ref": "#/$defs/references_t",
+                "description": "Holds a list of references associated with this vulnerability item.",
+                "title": "Vulnerability references"
+              },
+              "remediations": {
+                "description": "Contains a list of remediations.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Specifies details on how to handle (and presumably, fix) a vulnerability.",
+                  "properties": {
+                    "category": {
+                      "description": "Specifies the category which this remediation belongs to.",
+                      "enum": [
+                        "fix_planned",
+                        "mitigation",
+                        "no_fix_planned",
+                        "none_available",
+                        "optional_patch",
+                        "vendor_fix",
+                        "workaround"
+                      ],
+                      "title": "Category of the remediation",
+                      "type": "string"
+                    },
+                    "date": {
+                      "description": "Contains the date from which the remediation is available.",
+                      "format": "date-time",
+                      "title": "Date of the remediation",
+                      "type": "string"
+                    },
+                    "details": {
+                      "description": "Contains a thorough human-readable discussion of the remediation.",
+                      "minLength": 1,
+                      "title": "Details of the remediation",
+                      "type": "string"
+                    },
+                    "entitlements": {
+                      "description": "Contains a list of entitlements.",
+                      "items": {
+                        "description": "Contains any possible vendor-defined constraints for obtaining fixed software or hardware that fully resolves the vulnerability.",
+                        "minLength": 1,
+                        "title": "Entitlement of the remediation",
+                        "type": "string"
+                      },
+                      "minItems": 1,
+                      "title": "List of entitlements",
+                      "type": "array"
+                    },
+                    "group_ids": {
+                      "$ref": "#/$defs/product_groups_t"
+                    },
+                    "product_ids": {
+                      "$ref": "#/$defs/products_t"
+                    },
+                    "restart_required": {
+                      "additionalProperties": false,
+                      "description": "Provides information on the category of restart required by this remediation to become effective.",
+                      "properties": {
+                        "category": {
+                          "description": "Specifies what category of restart is required by this remediation to become effective.",
+                          "enum": [
+                            "connected",
+                            "dependencies",
+                            "machine",
+                            "none",
+                            "parent",
+                            "service",
+                            "system",
+                            "vulnerable_component",
+                            "zone"
+                          ],
+                          "title": "Category of restart",
+                          "type": "string"
+                        },
+                        "details": {
+                          "description": "Provides additional information for the restart. This can include details on procedures, scope or impact.",
+                          "minLength": 1,
+                          "title": "Additional restart information",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "category"
+                      ],
+                      "title": "Restart required by remediation",
+                      "type": "object"
+                    },
+                    "url": {
+                      "description": "Contains the URL where to obtain the remediation.",
+                      "format": "uri",
+                      "title": "URL to the remediation",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "category",
+                    "details"
+                  ],
+                  "title": "Remediation",
+                  "type": "object"
+                },
+                "minItems": 1,
+                "title": "List of remediations",
+                "type": "array"
+              },
+              "threats": {
+                "description": "Contains information about a vulnerability that can change with time.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Contains the vulnerability kinetic information. This information can change as the vulnerability ages and new information becomes available.",
+                  "properties": {
+                    "category": {
+                      "description": "Categorizes the threat according to the rules of the specification.",
+                      "enum": [
+                        "exploit_status",
+                        "impact",
+                        "target_set"
+                      ],
+                      "title": "Category of the threat",
+                      "type": "string"
+                    },
+                    "date": {
+                      "description": "Contains the date when the assessment was done or the threat appeared.",
+                      "format": "date-time",
+                      "title": "Date of the threat",
+                      "type": "string"
+                    },
+                    "details": {
+                      "description": "Represents a thorough human-readable discussion of the threat.",
+                      "minLength": 1,
+                      "title": "Details of the threat",
+                      "type": "string"
+                    },
+                    "group_ids": {
+                      "$ref": "#/$defs/product_groups_t"
+                    },
+                    "product_ids": {
+                      "$ref": "#/$defs/products_t"
+                    }
+                  },
+                  "required": [
+                    "category",
+                    "details"
+                  ],
+                  "title": "Threat",
+                  "type": "object"
+                },
+                "minItems": 1,
+                "title": "List of threats",
+                "type": "array"
+              },
+              "title": {
+                "description": "Gives the document producer the ability to apply a canonical name or title to the vulnerability.",
+                "minLength": 1,
+                "title": "Title",
+                "type": "string"
+              },
+              "x_extensions": {
+                "$ref": "#/$defs/extensions_t",
+                "description": "Contains a list of extensions valid at the vulnerability item level of the CSAF document and associated with this vulnerability element.",
+                "title": "Vulnerability-level Extensions"
+              }
+            },
+            "title": "Vulnerability",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "Vulnerabilities",
+          "type": "array"
+        },
+        "x_extensions": {
+          "$ref": "#/$defs/extensions_t",
+          "description": "Contains a list of extensions valid at the root-level of the CSAF document and associated with this CSAF document.",
+          "title": "Root-level Extensions"
+        }
+      },
+      "required": [
+        "$schema",
+        "document"
+      ],
+      "title": "Common Security Advisory Framework",
+      "type": "object"
+    },
+    "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json": {
+      "$defs": {
+        "canonical_url_t": {
+          "$ref": "#/$defs/provider_url_t",
+          "description": "Contains the URL for this document.",
+          "title": "Canonical URL"
+        },
+        "json_url_t": {
+          "description": "Contains a URL of a JSON file.",
+          "format": "uri",
+          "pattern": "\\.json$",
+          "title": "JSON URL type",
+          "type": "string"
+        },
+        "provider_url_t": {
+          "description": "Contains a URL of a provider-metadata.json.",
+          "format": "uri",
+          "pattern": "\\/provider-metadata\\.json$",
+          "title": "Provider URL type",
+          "type": "string"
+        },
+        "publisher_t": {
+          "additionalProperties": false,
+          "description": "Provides information about the publisher of the document.",
+          "properties": {
+            "category": {
+              "description": "Provides information about the category of publisher releasing the document.",
+              "enum": [
+                "coordinator",
+                "discoverer",
+                "multiplier",
+                "other",
+                "translator",
+                "user",
+                "vendor"
+              ],
+              "title": "Category of publisher",
+              "type": "string"
+            },
+            "contact": {
+              "additionalProperties": false,
+              "dependentRequired": {
+                "public_openpgp_key_url": [
+                  "email"
+                ]
+              },
+              "description": "Contains information on how to contact the publisher.",
+              "minProperties": 1,
+              "properties": {
+                "details": {
+                  "description": "Contains details regarding ways to reach the publisher, e.g. through web sites, phone numbers, and postal mail addresses.",
+                  "examples": [
+                    "Example Company can be reached at tel:+493023125232, or via our website at https://www.example.com/contact."
+                  ],
+                  "minLength": 1,
+                  "title": "Contact Details",
+                  "type": "string"
+                },
+                "email": {
+                  "description": "Contains the email address that can be used to reach the issuing party.",
+                  "examples": [
+                    "productcert@example.net",
+                    "psirt@example.com",
+                    "reporter@securityresearcher.example",
+                    "vulnerability@coordinator.example"
+                  ],
+                  "format": "email",
+                  "minLength": 6,
+                  "title": "Email",
+                  "type": "string"
+                },
+                "public_openpgp_key_url": {
+                  "description": "Contains a URL pointing to a public OpenPGP key valid for the email of issuing party provided in the sibling property `email`.",
+                  "examples": [
+                    "https://coordinator.example/.well-known/openpgpkey/hu/nxdcs8npc6mn3xyfpcbiqhcu9s357r5m?l=vulnerability",
+                    "https://example.net/.well-known/openpgpkey/hu/euwmpyfh4rzf8ymbqhjjhrirgib4dyfs?l=productcert",
+                    "https://openpgpkey.securityresearcher.example/.well-known/openpgpkey/securityresearcher.example/hu/enudbakzkbdym3ymwjy9pcxztka75f73?l=reporter",
+                    "https://psirt.example.com/security/openpgp/latest"
+                  ],
+                  "format": "uri",
+                  "minLength": 11,
+                  "pattern": "^https:\\/\\/",
+                  "title": "Public OpenPGP Key URL",
+                  "type": "string"
+                }
+              },
+              "title": "Contact",
+              "type": "object"
+            },
+            "issuing_authority": {
+              "description": "Provides information about the authority of the issuing party to release the document, in particular, the party's constituency and responsibilities or other obligations.",
+              "minLength": 1,
+              "title": "Issuing authority",
+              "type": "string"
+            },
+            "name": {
+              "description": "Contains the name of the issuing party.",
+              "examples": [
+                "BSI",
+                "Cisco PSIRT",
+                "Siemens ProductCERT"
+              ],
+              "minLength": 1,
+              "title": "Name of publisher",
+              "type": "string"
+            },
+            "namespace": {
+              "description": "Contains a URL which is under control of the issuing party and can be used as a globally unique identifier for that issuing party.",
+              "examples": [
+                "https://csaf.io",
+                "https://www.example.com"
+              ],
+              "format": "uri",
+              "title": "Namespace of publisher",
+              "type": "string"
+            }
+          },
+          "required": [
+            "category",
+            "name",
+            "namespace"
+          ],
+          "title": "Publisher",
+          "type": "object"
+        },
+        "role_t": {
+          "default": "csaf_provider",
+          "description": "Contains the role of the issuing party according to section 7 in the CSAF standard.",
+          "enum": [
+            "csaf_publisher",
+            "csaf_provider",
+            "csaf_trusted_provider"
+          ],
+          "title": "Role of the issuing party",
+          "type": "string"
+        },
+        "tlp_label_t": {
+          "default": "CLEAR",
+          "description": "Provides the TLP label of the document.",
+          "enum": [
+            "AMBER",
+            "AMBER+STRICT",
+            "CLEAR",
+            "GREEN",
+            "RED"
+          ],
+          "title": "Label of TLP",
+          "type": "string"
+        },
+        "url_t": {
+          "description": "Contains a URL.",
+          "format": "uri",
+          "title": "Generic URL type",
+          "type": "string"
+        }
+      },
+      "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json",
+      "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+      "additionalProperties": false,
+      "description": "Representation of metadata information of a CSAF provider as a JSON document.",
+      "properties": {
+        "$schema": {
+          "description": "Contains the URL of the provider-metadata.json JSON schema which the document promises to be valid for.",
+          "enum": [
+            "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json"
+          ],
+          "format": "uri",
+          "title": "JSON schema",
+          "type": "string"
+        },
+        "canonical_url": {
+          "$ref": "#/$defs/provider_url_t",
+          "description": "Contains the URL for this document.",
+          "title": "Canonical URL"
+        },
+        "distributions": {
+          "description": "Contains a list of used distribution mechanisms.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Contains the information of a used distribution mechanism.",
+            "minProperties": 1,
+            "properties": {
+              "directory": {
+                "additionalProperties": false,
+                "description": "Contains all information for directory-based distribution.",
+                "properties": {
+                  "tlp_label": {
+                    "$ref": "#/$defs/tlp_label_t",
+                    "description": "Provides the TLP label for the directory.",
+                    "title": "TLP label"
+                  },
+                  "url": {
+                    "$ref": "#/$defs/url_t",
+                    "description": "Contains the base url for the directory-based distribution.",
+                    "title": "Directory URL"
+                  }
+                },
+                "required": [
+                  "tlp_label",
+                  "url"
+                ],
+                "title": "Directory",
+                "type": "object"
+              },
+              "rolie": {
+                "additionalProperties": false,
+                "description": "Contains all information for ROLIE distribution.",
+                "properties": {
+                  "categories": {
+                    "description": "Contains a list of URLs which contain ROLIE category documents.",
+                    "items": {
+                      "$ref": "#/$defs/json_url_t",
+                      "description": "Contains a URL of a ROLIE category document.",
+                      "title": "ROLIE category document URL"
+                    },
+                    "minItems": 1,
+                    "title": "List of ROLIE category document URLs",
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "feeds": {
+                    "description": "Contains a list of information about ROLIE feeds.",
+                    "items": {
+                      "additionalProperties": false,
+                      "description": "Contains information about the ROLIE feed.",
+                      "properties": {
+                        "last_updated": {
+                          "description": "Holds the date and time when the feed was last updated.",
+                          "format": "date-time",
+                          "title": "Last updated",
+                          "type": "string"
+                        },
+                        "summary": {
+                          "description": "Contains a summary of the feed.",
+                          "examples": [
+                            "All TLP:CLEAR advisories of Example Company."
+                          ],
+                          "title": "Summary of the feed",
+                          "type": "string"
+                        },
+                        "tlp_label": {
+                          "$ref": "#/$defs/tlp_label_t",
+                          "description": "Provides the TLP label for the feed.",
+                          "title": "TLP label"
+                        },
+                        "url": {
+                          "$ref": "#/$defs/json_url_t",
+                          "description": "Contains the URL of the feed.",
+                          "title": "URL of the feed"
+                        }
+                      },
+                      "required": [
+                        "last_updated",
+                        "tlp_label",
+                        "url"
+                      ],
+                      "title": "ROLIE feed",
+                      "type": "object"
+                    },
+                    "minItems": 1,
+                    "title": "List of ROLIE feeds",
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "services": {
+                    "description": "Contains a list of URLs which contain ROLIE service documents.",
+                    "items": {
+                      "$ref": "#/$defs/json_url_t",
+                      "description": "Contains a URL of a ROLIE service document.",
+                      "title": "ROLIE service document URL"
+                    },
+                    "minItems": 1,
+                    "title": "List of ROLIE service document URLs",
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "feeds"
+                ],
+                "title": "ROLIE",
+                "type": "object"
+              }
+            },
+            "title": "Distribution",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "List of Distribution",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "last_updated": {
+          "description": "Holds the date and time when the document was last updated.",
+          "format": "date-time",
+          "title": "Last updated",
+          "type": "string"
+        },
+        "list_on_CSAF_aggregators": {
+          "default": true,
+          "description": "Decides whether this file should be linked in the list of a CSAF aggregator.",
+          "title": "List on CSAF aggregators",
+          "type": "boolean"
+        },
+        "maintained_from": {
+          "description": "Holds the date and time from when the distributions within this CSAF provider are in a maintained state.",
+          "format": "date-time",
+          "title": "Maintained from",
+          "type": "string"
+        },
+        "maintained_until": {
+          "description": "Holds the date and time until when the distributions within this CSAF provider are in a maintained state.",
+          "format": "date-time",
+          "title": "Maintained until",
+          "type": "string"
+        },
+        "metadata_version": {
+          "description": "Gives the version of the CSAF provider metadata specification which the document was generated for.",
+          "enum": [
+            "2.1"
+          ],
+          "title": "CSAF provider metadata version",
+          "type": "string"
+        },
+        "mirror_on_CSAF_aggregators": {
+          "default": true,
+          "description": "Decides whether the CSAF documents can be mirrored and provided by a CSAF aggregator.",
+          "title": "Mirror on CSAF aggregators",
+          "type": "boolean"
+        },
+        "public_openpgp_keys": {
+          "description": "Contains a list of OpenPGP keys used to sign CSAF documents.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Contains all information about an OpenPGP key used to sign CSAF documents.",
+            "properties": {
+              "fingerprint": {
+                "description": "Contains the fingerprint of the OpenPGP key.",
+                "minLength": 40,
+                "pattern": "^[0-9a-fA-F]{40,}$",
+                "title": "Fingerprint of the key",
+                "type": "string"
+              },
+              "url": {
+                "$ref": "#/$defs/url_t",
+                "description": "Contains the URL where the key can be retrieved.",
+                "title": "URL of the key"
+              }
+            },
+            "required": [
+              "fingerprint",
+              "url"
+            ],
+            "title": "PGP keys",
+            "type": "object"
+          },
+          "title": "List of public OpenPGP keys",
+          "type": "array"
+        },
+        "publisher": {
+          "$ref": "#/$defs/publisher_t",
+          "description": "Provides information about the publisher of the CSAF documents in this repository.",
+          "title": "Publisher"
+        },
+        "role": {
+          "default": "csaf_provider",
+          "description": "Contains the role of the issuing party according to section 7 in the CSAF standard.",
+          "enum": [
+            "csaf_publisher",
+            "csaf_provider",
+            "csaf_trusted_provider"
+          ],
+          "title": "Role of the issuing party",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$schema",
+        "canonical_url",
+        "last_updated",
+        "list_on_CSAF_aggregators",
+        "mirror_on_CSAF_aggregators",
+        "metadata_version",
+        "publisher",
+        "role"
+      ],
+      "title": "CSAF provider metadata",
+      "type": "object"
+    },
+    "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json": {
+      "$defs": {
+        "aggregator_url_t": {
+          "description": "Contains a URL.",
+          "format": "uri",
+          "pattern": "\\/aggregator\\.json$",
+          "title": "Aggregator URL type",
+          "type": "string"
+        },
+        "metadata_t": {
+          "additionalProperties": false,
+          "description": "Contains the metadata of a single CSAF issuing party.",
+          "properties": {
+            "last_updated": {
+              "description": "Holds the date and time when this entry was last updated.",
+              "format": "date-time",
+              "title": "Last updated",
+              "type": "string"
+            },
+            "publisher": {
+              "$ref": "provider.json#/$defs/publisher_t",
+              "description": "Provides information about the issuing party for this entry.",
+              "title": "Publisher"
+            },
+            "role": {
+              "$ref": "provider.json#/$defs/role_t",
+              "description": "Contains the role of the issuing party according to section 7 in the CSAF standard.",
+              "title": "Role of the issuing party"
+            },
+            "url": {
+              "$ref": "provider.json#/$defs/canonical_url_t",
+              "description": "Contains the URL of the provider-metadata.json for that entry.",
+              "title": "URL of the metadata"
+            }
+          },
+          "required": [
+            "last_updated",
+            "publisher",
+            "role",
+            "url"
+          ],
+          "title": "CSAF issuing party metadata.",
+          "type": "object"
+        },
+        "mirrors_t": {
+          "description": "Contains a list of URLs or mirrors for this issuing party.",
+          "items": {
+            "$ref": "provider.json#/$defs/provider_url_t",
+            "description": "Contains the base URL of the mirror for this issuing party.",
+            "title": "Mirror"
+          },
+          "minItems": 1,
+          "title": "List of mirrors",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json",
+      "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+      "additionalProperties": false,
+      "description": "Representation of information where to find CSAF providers as a JSON document.",
+      "properties": {
+        "$schema": {
+          "description": "Contains the URL of the Aggregator JSON schema which the document promises to be valid for.",
+          "enum": [
+            "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json"
+          ],
+          "format": "uri",
+          "title": "JSON schema",
+          "type": "string"
+        },
+        "aggregator": {
+          "additionalProperties": false,
+          "description": "Provides information about the aggregator.",
+          "properties": {
+            "category": {
+              "description": "Provides information about the category of aggregator.",
+              "enum": [
+                "aggregator",
+                "lister"
+              ],
+              "title": "Category of aggregator",
+              "type": "string"
+            },
+            "contact_details": {
+              "description": "Information on how to contact the aggregator, possibly including details such as web sites, email addresses, phone numbers, and postal mail addresses.",
+              "examples": [
+                "Aggregator can be reached at contact_us@aggregator.example.com, or via our website at https://www.example.com/security/csaf/aggregator/contact."
+              ],
+              "minLength": 1,
+              "title": "Contact details",
+              "type": "string"
+            },
+            "issuing_authority": {
+              "description": "Provides information about the authority of the aggregator to release the list, in particular, the party's constituency and responsibilities or other obligations.",
+              "minLength": 1,
+              "title": "Issuing authority",
+              "type": "string"
+            },
+            "name": {
+              "description": "Contains the name of the aggregator.",
+              "examples": [
+                "BSI",
+                "CISA",
+                "CSAF TC"
+              ],
+              "minLength": 1,
+              "title": "Name of aggregator",
+              "type": "string"
+            },
+            "namespace": {
+              "description": "Contains a URL which is under control of the aggregator and can be used as a globally unique identifier for that aggregator.",
+              "examples": [
+                "https://www.example.com",
+                "https://csaf.io"
+              ],
+              "format": "uri",
+              "title": "Namespace of aggregator",
+              "type": "string"
+            }
+          },
+          "required": [
+            "category",
+            "name",
+            "namespace"
+          ],
+          "title": "Aggregator",
+          "type": "object"
+        },
+        "aggregator_version": {
+          "description": "Gives the version of the CSAF aggregator specification which the document was generated for.",
+          "enum": [
+            "2.1"
+          ],
+          "title": "CSAF aggregator version",
+          "type": "string"
+        },
+        "canonical_url": {
+          "$ref": "#/$defs/aggregator_url_t",
+          "description": "Contains the URL for this document.",
+          "title": "Canonical URL"
+        },
+        "csaf_providers": {
+          "description": "Contains a list with information from CSAF providers.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Contains information from a CSAF provider.",
+            "properties": {
+              "metadata": {
+                "$ref": "#/$defs/metadata_t",
+                "description": "Contains the metadata of a single CSAF provider.",
+                "title": "CSAF provider metadata."
+              },
+              "mirrors": {
+                "$ref": "#/$defs/mirrors_t",
+                "description": "Contains a list of URLs or mirrors for this CSAF provider.",
+                "title": "List of mirrors"
+              }
+            },
+            "required": [
+              "metadata"
+            ],
+            "title": "CSAF provider entry",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "List of CSAF providers",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "csaf_publishers": {
+          "description": "Contains a list with information from CSAF publishers.",
+          "items": {
+            "additionalProperties": false,
+            "description": "Contains information from a CSAF publisher.",
+            "properties": {
+              "metadata": {
+                "$ref": "#/$defs/metadata_t",
+                "description": "Contains the metadata of a single CSAF publisher extracted from one of its CSAF documents.",
+                "title": "CSAF publisher metadata."
+              },
+              "mirrors": {
+                "$ref": "#/$defs/mirrors_t",
+                "description": "Contains a list of URLs or mirrors for this CSAF publisher.",
+                "title": "List of mirrors"
+              },
+              "update_interval": {
+                "description": "Contains information about how often the CSAF publisher is checked for new CSAF documents.",
+                "examples": [
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "on best effort",
+                  "on notification by CSAF publisher"
+                ],
+                "minLength": 1,
+                "title": "Update interval",
+                "type": "string"
+              }
+            },
+            "required": [
+              "metadata",
+              "mirrors",
+              "update_interval"
+            ],
+            "title": "CSAF publisher entry",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "List of CSAF publishers",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "last_updated": {
+          "description": "Holds the date and time when the document was last updated.",
+          "format": "date-time",
+          "title": "Last updated",
+          "type": "string"
+        },
+        "maintained_from": {
+          "description": "Holds the date and time from when this CSAF aggregator file is in a maintained state.",
+          "format": "date-time",
+          "title": "Maintained from",
+          "type": "string"
+        },
+        "maintained_until": {
+          "description": "Holds the date and time until when this CSAF aggregator file is in a maintained state.",
+          "format": "date-time",
+          "title": "Maintained until",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$schema",
+        "aggregator",
+        "aggregator_version",
+        "canonical_url",
+        "csaf_providers",
+        "last_updated"
+      ],
+      "title": "CSAF aggregator",
+      "type": "object"
+    },
+    "urn:gocsaf:schema:csaf:2.1:rolie-feed": {
+      "$defs": {
+        "json_link_t": {
+          "description": "Contains the URL of the JSON file.",
+          "format": "uri",
+          "pattern": "^https://.+\\.json$",
+          "title": "JSON Link",
+          "type": "string"
+        },
+        "link_t": {
+          "description": "Contains a list of links related to the current context.",
+          "items": {
+            "description": "Specifies a single link.",
+            "properties": {
+              "href": {
+                "description": "Contains the URL of the link.",
+                "format": "uri",
+                "title": "Hyper reference",
+                "type": "string"
+              },
+              "rel": {
+                "description": "Contains the relationship value of the link.",
+                "minLength": 1,
+                "title": "Relationship",
+                "type": "string"
+              }
+            },
+            "required": [
+              "rel",
+              "href"
+            ],
+            "title": "Link",
+            "type": "object"
+          },
+          "minItems": 1,
+          "prefixItems": [
+            {
+              "description": "Specifies the JSON link.",
+              "properties": {
+                "href": {
+                  "$ref": "#/$defs/json_link_t",
+                  "description": "Contains the URL of the JSON file.",
+                  "title": "Hyper reference"
+                },
+                "rel": {
+                  "description": "Contains the relationship value of the link.",
+                  "enum": [
+                    "self"
+                  ],
+                  "title": "Relationship",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "rel",
+                "href"
+              ],
+              "title": "Link",
+              "type": "object"
+            }
+          ],
+          "title": "List of Links",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "$id": "urn:gocsaf:schema:csaf:2.1:rolie-feed",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "description": "Representation of CSAF ROLIE feed as a JSON document.",
+      "properties": {
+        "feed": {
+          "description": "Contains all information of the feed.",
+          "properties": {
+            "category": {
+              "description": "Contains a list of categories related to this feed.",
+              "items": {
+                "description": "Specifies a single category.",
+                "properties": {
+                  "scheme": {
+                    "description": "Contains the URI of the scheme to use.",
+                    "format": "uri",
+                    "title": "Scheme",
+                    "type": "string"
+                  },
+                  "term": {
+                    "description": "Contains the term that is valid in the context of the scheme.",
+                    "minLength": 1,
+                    "title": "Term",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "scheme",
+                  "term"
+                ],
+                "title": "Category",
+                "type": "object"
+              },
+              "minItems": 1,
+              "prefixItems": [
+                {
+                  "description": "Contains the required ROLIE category value.",
+                  "properties": {
+                    "scheme": {
+                      "description": "Contains the URI of the scheme to use.",
+                      "enum": [
+                        "urn:ietf:params:rolie:category:information-type"
+                      ],
+                      "title": "Scheme",
+                      "type": "string"
+                    },
+                    "term": {
+                      "description": "Contains the term that is valid in the context of the scheme.",
+                      "enum": [
+                        "csaf"
+                      ],
+                      "title": "Term",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "scheme",
+                    "term"
+                  ],
+                  "title": "CSAF ROLIE category",
+                  "type": "object"
+                }
+              ],
+              "title": "List of Categories",
+              "type": "array",
+              "uniqueItems": true
+            },
+            "entry": {
+              "description": "Contains a list of feed entries.",
+              "items": {
+                "description": "Contains all information for a single feed entry.",
+                "properties": {
+                  "content": {
+                    "description": "Contains information about the content.",
+                    "properties": {
+                      "src": {
+                        "$ref": "#/$defs/json_link_t",
+                        "description": "Contains a link to the source code of the file",
+                        "title": "Source Code"
+                      },
+                      "type": {
+                        "description": "Contains the MIME type of the content.",
+                        "enum": [
+                          "application/json"
+                        ],
+                        "title": "MIME type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "src"
+                    ],
+                    "title": "Content of the entry",
+                    "type": "object"
+                  },
+                  "format": {
+                    "description": "Contains information about the format of the entry.",
+                    "properties": {
+                      "schema": {
+                        "description": "Contains the schema the CSAF document is valid against.",
+                        "enum": [
+                          "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
+                        ],
+                        "title": "Schema of the entry",
+                        "type": "string"
+                      },
+                      "version": {
+                        "description": "Contains the CSAF version the document was written in.",
+                        "enum": [
+                          "2.1"
+                        ],
+                        "title": "CSAF Version",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "schema",
+                      "version"
+                    ],
+                    "title": "Format",
+                    "type": "object"
+                  },
+                  "id": {
+                    "description": "Contains the document tracking ID of the CSAF document.",
+                    "minLength": 1,
+                    "pattern": "^[\\S](.*[\\S])?$",
+                    "title": "ID",
+                    "type": "string"
+                  },
+                  "link": {
+                    "$ref": "#/$defs/link_t",
+                    "description": "Contains a list of links related to this entry.",
+                    "title": "List of Links"
+                  },
+                  "published": {
+                    "description": "Contains the date and time this entry was initially added to the feed.",
+                    "format": "date-time",
+                    "title": "Published",
+                    "type": "string"
+                  },
+                  "summary": {
+                    "description": "Contains the summary of the CSAF document.",
+                    "properties": {
+                      "content": {
+                        "description": "Contains the actual text of the summary.",
+                        "minLength": 1,
+                        "title": "Content",
+                        "type": "string"
+                      }
+                    },
+                    "title": "Summary",
+                    "type": "object"
+                  },
+                  "title": {
+                    "description": "Contains the document title of the CSAF document.",
+                    "minLength": 1,
+                    "title": "Title",
+                    "type": "string"
+                  },
+                  "updated": {
+                    "description": "Contains the date and time this entry was the last time updated in the feed.",
+                    "format": "date-time",
+                    "title": "Updated",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "link",
+                  "published",
+                  "updated",
+                  "content",
+                  "format"
+                ],
+                "title": "Entry",
+                "type": "object"
+              },
+              "title": "List of Entries",
+              "type": "array",
+              "uniqueItems": true
+            },
+            "id": {
+              "description": "Contains a unique identifier for this ROLIE feed.",
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9+\\-_\\.]+$",
+              "title": "ID",
+              "type": "string"
+            },
+            "link": {
+              "$ref": "#/$defs/link_t",
+              "description": "Contains a list of links related to this feed.",
+              "title": "List of Links"
+            },
+            "title": {
+              "description": "Contains the title for this ROLIE feed.",
+              "minLength": 1,
+              "title": "Feed title",
+              "type": "string"
+            },
+            "updated": {
+              "description": "Contains the date and time this feed was updated the last time.",
+              "format": "date-time",
+              "title": "Updated",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "title",
+            "link",
+            "category",
+            "updated",
+            "entry"
+          ],
+          "title": "CSAF ROLIE feed",
+          "type": "object"
+        }
+      },
+      "required": [
+        "feed"
+      ],
+      "title": "ROLIE Feed auxiliary Schema",
+      "type": "object"
+    },
+    "https://www.first.org/cvss/cvss-v2.0.json?20170531": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "definitions": {
+        "accessComplexityType": {
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW"
+          ],
+          "type": "string"
+        },
+        "accessVectorType": {
+          "enum": [
+            "NETWORK",
+            "ADJACENT_NETWORK",
+            "LOCAL"
+          ],
+          "type": "string"
+        },
+        "authenticationType": {
+          "enum": [
+            "MULTIPLE",
+            "SINGLE",
+            "NONE"
+          ],
+          "type": "string"
+        },
+        "ciaRequirementType": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "ciaType": {
+          "enum": [
+            "NONE",
+            "PARTIAL",
+            "COMPLETE"
+          ],
+          "type": "string"
+        },
+        "collateralDamagePotentialType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "LOW_MEDIUM",
+            "MEDIUM_HIGH",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "exploitabilityType": {
+          "enum": [
+            "UNPROVEN",
+            "PROOF_OF_CONCEPT",
+            "FUNCTIONAL",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "remediationLevelType": {
+          "enum": [
+            "OFFICIAL_FIX",
+            "TEMPORARY_FIX",
+            "WORKAROUND",
+            "UNAVAILABLE",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "reportConfidenceType": {
+          "enum": [
+            "UNCONFIRMED",
+            "UNCORROBORATED",
+            "CONFIRMED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "scoreType": {
+          "maximum": 10,
+          "minimum": 0,
+          "type": "number"
+        },
+        "targetDistributionType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        }
+      },
+      "id": "https://www.first.org/cvss/cvss-v2.0.json?20170531",
+      "license": [
+        "Copyright (c) 2017, FIRST.ORG, INC.",
+        "All rights reserved.",
+        "",
+        "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the ",
+        "following conditions are met:",
+        "1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following ",
+        "   disclaimer.",
+        "2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the ",
+        "   following disclaimer in the documentation and/or other materials provided with the distribution.",
+        "3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote ",
+        "   products derived from this software without specific prior written permission.",
+        "",
+        "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, ",
+        "INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE ",
+        "DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, ",
+        "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR ",
+        "SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, ",
+        "WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE ",
+        "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+      ],
+      "properties": {
+        "accessComplexity": {
+          "$ref": "#/definitions/accessComplexityType"
+        },
+        "accessVector": {
+          "$ref": "#/definitions/accessVectorType"
+        },
+        "authentication": {
+          "$ref": "#/definitions/authenticationType"
+        },
+        "availabilityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "availabilityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "baseScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "collateralDamagePotential": {
+          "$ref": "#/definitions/collateralDamagePotentialType"
+        },
+        "confidentialityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "confidentialityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "environmentalScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "exploitability": {
+          "$ref": "#/definitions/exploitabilityType"
+        },
+        "integrityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "integrityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "remediationLevel": {
+          "$ref": "#/definitions/remediationLevelType"
+        },
+        "reportConfidence": {
+          "$ref": "#/definitions/reportConfidenceType"
+        },
+        "targetDistribution": {
+          "$ref": "#/definitions/targetDistributionType"
+        },
+        "temporalScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "vectorString": {
+          "pattern": "^((AV:[NAL]|AC:[LMH]|Au:[MSN]|[CIA]:[NPC]|E:(U|POC|F|H|ND)|RL:(OF|TF|W|U|ND)|RC:(UC|UR|C|ND)|CDP:(N|L|LM|MH|H|ND)|TD:(N|L|M|H|ND)|[CIA]R:(L|M|H|ND))/)*(AV:[NAL]|AC:[LMH]|Au:[MSN]|[CIA]:[NPC]|E:(U|POC|F|H|ND)|RL:(OF|TF|W|U|ND)|RC:(UC|UR|C|ND)|CDP:(N|L|LM|MH|H|ND)|TD:(N|L|M|H|ND)|[CIA]R:(L|M|H|ND))$",
+          "type": "string"
+        },
+        "version": {
+          "description": "CVSS Version",
+          "enum": [
+            "2.0"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "vectorString",
+        "baseScore"
+      ],
+      "title": "JSON Schema for Common Vulnerability Scoring System version 2.0",
+      "type": "object"
+    },
+    "https://www.first.org/cvss/cvss-v3.0.json?20170531": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "definitions": {
+        "attackComplexityType": {
+          "enum": [
+            "HIGH",
+            "LOW"
+          ],
+          "type": "string"
+        },
+        "attackVectorType": {
+          "enum": [
+            "NETWORK",
+            "ADJACENT_NETWORK",
+            "LOCAL",
+            "PHYSICAL"
+          ],
+          "type": "string"
+        },
+        "ciaRequirementType": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "ciaType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "HIGH"
+          ],
+          "type": "string"
+        },
+        "confidenceType": {
+          "enum": [
+            "UNKNOWN",
+            "REASONABLE",
+            "CONFIRMED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "exploitCodeMaturityType": {
+          "enum": [
+            "UNPROVEN",
+            "PROOF_OF_CONCEPT",
+            "FUNCTIONAL",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedAttackComplexityType": {
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedAttackVectorType": {
+          "enum": [
+            "NETWORK",
+            "ADJACENT_NETWORK",
+            "LOCAL",
+            "PHYSICAL",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedCiaType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedPrivilegesRequiredType": {
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NONE",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedScopeType": {
+          "enum": [
+            "UNCHANGED",
+            "CHANGED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedUserInteractionType": {
+          "enum": [
+            "NONE",
+            "REQUIRED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "privilegesRequiredType": {
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NONE"
+          ],
+          "type": "string"
+        },
+        "remediationLevelType": {
+          "enum": [
+            "OFFICIAL_FIX",
+            "TEMPORARY_FIX",
+            "WORKAROUND",
+            "UNAVAILABLE",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "scopeType": {
+          "enum": [
+            "UNCHANGED",
+            "CHANGED"
+          ],
+          "type": "string"
+        },
+        "scoreType": {
+          "maximum": 10,
+          "minimum": 0,
+          "type": "number"
+        },
+        "severityType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ],
+          "type": "string"
+        },
+        "userInteractionType": {
+          "enum": [
+            "NONE",
+            "REQUIRED"
+          ],
+          "type": "string"
+        }
+      },
+      "id": "https://www.first.org/cvss/cvss-v3.0.json?20170531",
+      "license": [
+        "Copyright (c) 2017, FIRST.ORG, INC.",
+        "All rights reserved.",
+        "",
+        "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the ",
+        "following conditions are met:",
+        "1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following ",
+        "   disclaimer.",
+        "2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the ",
+        "   following disclaimer in the documentation and/or other materials provided with the distribution.",
+        "3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote ",
+        "   products derived from this software without specific prior written permission.",
+        "",
+        "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, ",
+        "INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE ",
+        "DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, ",
+        "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR ",
+        "SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, ",
+        "WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE ",
+        "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+      ],
+      "properties": {
+        "attackComplexity": {
+          "$ref": "#/definitions/attackComplexityType"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/attackVectorType"
+        },
+        "availabilityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "availabilityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "baseScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "baseSeverity": {
+          "$ref": "#/definitions/severityType"
+        },
+        "confidentialityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "confidentialityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "environmentalScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "environmentalSeverity": {
+          "$ref": "#/definitions/severityType"
+        },
+        "exploitCodeMaturity": {
+          "$ref": "#/definitions/exploitCodeMaturityType"
+        },
+        "integrityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "integrityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "modifiedAttackComplexity": {
+          "$ref": "#/definitions/modifiedAttackComplexityType"
+        },
+        "modifiedAttackVector": {
+          "$ref": "#/definitions/modifiedAttackVectorType"
+        },
+        "modifiedAvailabilityImpact": {
+          "$ref": "#/definitions/modifiedCiaType"
+        },
+        "modifiedConfidentialityImpact": {
+          "$ref": "#/definitions/modifiedCiaType"
+        },
+        "modifiedIntegrityImpact": {
+          "$ref": "#/definitions/modifiedCiaType"
+        },
+        "modifiedPrivilegesRequired": {
+          "$ref": "#/definitions/modifiedPrivilegesRequiredType"
+        },
+        "modifiedScope": {
+          "$ref": "#/definitions/modifiedScopeType"
+        },
+        "modifiedUserInteraction": {
+          "$ref": "#/definitions/modifiedUserInteractionType"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/privilegesRequiredType"
+        },
+        "remediationLevel": {
+          "$ref": "#/definitions/remediationLevelType"
+        },
+        "reportConfidence": {
+          "$ref": "#/definitions/confidenceType"
+        },
+        "scope": {
+          "$ref": "#/definitions/scopeType"
+        },
+        "temporalScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "temporalSeverity": {
+          "$ref": "#/definitions/severityType"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/userInteractionType"
+        },
+        "vectorString": {
+          "pattern": "^CVSS:3[.]0/((AV:[NALP]|AC:[LH]|PR:[NLH]|UI:[NR]|S:[UC]|[CIA]:[NLH]|E:[XUPFH]|RL:[XOTWU]|RC:[XURC]|[CIA]R:[XLMH]|MAV:[XNALP]|MAC:[XLH]|MPR:[XNLH]|MUI:[XNR]|MS:[XUC]|M[CIA]:[XNLH])/)*(AV:[NALP]|AC:[LH]|PR:[NLH]|UI:[NR]|S:[UC]|[CIA]:[NLH]|E:[XUPFH]|RL:[XOTWU]|RC:[XURC]|[CIA]R:[XLMH]|MAV:[XNALP]|MAC:[XLH]|MPR:[XNLH]|MUI:[XNR]|MS:[XUC]|M[CIA]:[XNLH])$",
+          "type": "string"
+        },
+        "version": {
+          "description": "CVSS Version",
+          "enum": [
+            "3.0"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "vectorString",
+        "baseScore",
+        "baseSeverity"
+      ],
+      "title": "JSON Schema for Common Vulnerability Scoring System version 3.0",
+      "type": "object"
+    },
+    "https://www.first.org/cvss/cvss-v3.1.json?20211103": {
+      "$id": "https://www.first.org/cvss/cvss-v3.1.json?20211103",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "definitions": {
+        "attackComplexityType": {
+          "enum": [
+            "HIGH",
+            "LOW"
+          ],
+          "type": "string"
+        },
+        "attackVectorType": {
+          "enum": [
+            "NETWORK",
+            "ADJACENT_NETWORK",
+            "LOCAL",
+            "PHYSICAL"
+          ],
+          "type": "string"
+        },
+        "ciaRequirementType": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "ciaType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "HIGH"
+          ],
+          "type": "string"
+        },
+        "confidenceType": {
+          "enum": [
+            "UNKNOWN",
+            "REASONABLE",
+            "CONFIRMED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "exploitCodeMaturityType": {
+          "enum": [
+            "UNPROVEN",
+            "PROOF_OF_CONCEPT",
+            "FUNCTIONAL",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedAttackComplexityType": {
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedAttackVectorType": {
+          "enum": [
+            "NETWORK",
+            "ADJACENT_NETWORK",
+            "LOCAL",
+            "PHYSICAL",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedCiaType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedPrivilegesRequiredType": {
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NONE",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedScopeType": {
+          "enum": [
+            "UNCHANGED",
+            "CHANGED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedUserInteractionType": {
+          "enum": [
+            "NONE",
+            "REQUIRED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "privilegesRequiredType": {
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NONE"
+          ],
+          "type": "string"
+        },
+        "remediationLevelType": {
+          "enum": [
+            "OFFICIAL_FIX",
+            "TEMPORARY_FIX",
+            "WORKAROUND",
+            "UNAVAILABLE",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "scopeType": {
+          "enum": [
+            "UNCHANGED",
+            "CHANGED"
+          ],
+          "type": "string"
+        },
+        "scoreType": {
+          "maximum": 10,
+          "minimum": 0,
+          "type": "number"
+        },
+        "severityType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ],
+          "type": "string"
+        },
+        "userInteractionType": {
+          "enum": [
+            "NONE",
+            "REQUIRED"
+          ],
+          "type": "string"
+        }
+      },
+      "license": [
+        "Copyright (c) 2021, FIRST.ORG, INC.",
+        "All rights reserved.",
+        "",
+        "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the ",
+        "following conditions are met:",
+        "1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following ",
+        "   disclaimer.",
+        "2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the ",
+        "   following disclaimer in the documentation and/or other materials provided with the distribution.",
+        "3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote ",
+        "   products derived from this software without specific prior written permission.",
+        "",
+        "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, ",
+        "INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE ",
+        "DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, ",
+        "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR ",
+        "SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, ",
+        "WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE ",
+        "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+      ],
+      "properties": {
+        "attackComplexity": {
+          "$ref": "#/definitions/attackComplexityType"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/attackVectorType"
+        },
+        "availabilityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "availabilityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "baseScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "baseSeverity": {
+          "$ref": "#/definitions/severityType"
+        },
+        "confidentialityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "confidentialityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "environmentalScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "environmentalSeverity": {
+          "$ref": "#/definitions/severityType"
+        },
+        "exploitCodeMaturity": {
+          "$ref": "#/definitions/exploitCodeMaturityType"
+        },
+        "integrityImpact": {
+          "$ref": "#/definitions/ciaType"
+        },
+        "integrityRequirement": {
+          "$ref": "#/definitions/ciaRequirementType"
+        },
+        "modifiedAttackComplexity": {
+          "$ref": "#/definitions/modifiedAttackComplexityType"
+        },
+        "modifiedAttackVector": {
+          "$ref": "#/definitions/modifiedAttackVectorType"
+        },
+        "modifiedAvailabilityImpact": {
+          "$ref": "#/definitions/modifiedCiaType"
+        },
+        "modifiedConfidentialityImpact": {
+          "$ref": "#/definitions/modifiedCiaType"
+        },
+        "modifiedIntegrityImpact": {
+          "$ref": "#/definitions/modifiedCiaType"
+        },
+        "modifiedPrivilegesRequired": {
+          "$ref": "#/definitions/modifiedPrivilegesRequiredType"
+        },
+        "modifiedScope": {
+          "$ref": "#/definitions/modifiedScopeType"
+        },
+        "modifiedUserInteraction": {
+          "$ref": "#/definitions/modifiedUserInteractionType"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/privilegesRequiredType"
+        },
+        "remediationLevel": {
+          "$ref": "#/definitions/remediationLevelType"
+        },
+        "reportConfidence": {
+          "$ref": "#/definitions/confidenceType"
+        },
+        "scope": {
+          "$ref": "#/definitions/scopeType"
+        },
+        "temporalScore": {
+          "$ref": "#/definitions/scoreType"
+        },
+        "temporalSeverity": {
+          "$ref": "#/definitions/severityType"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/userInteractionType"
+        },
+        "vectorString": {
+          "pattern": "^CVSS:3[.]1/((AV:[NALP]|AC:[LH]|PR:[NLH]|UI:[NR]|S:[UC]|[CIA]:[NLH]|E:[XUPFH]|RL:[XOTWU]|RC:[XURC]|[CIA]R:[XLMH]|MAV:[XNALP]|MAC:[XLH]|MPR:[XNLH]|MUI:[XNR]|MS:[XUC]|M[CIA]:[XNLH])/)*(AV:[NALP]|AC:[LH]|PR:[NLH]|UI:[NR]|S:[UC]|[CIA]:[NLH]|E:[XUPFH]|RL:[XOTWU]|RC:[XURC]|[CIA]R:[XLMH]|MAV:[XNALP]|MAC:[XLH]|MPR:[XNLH]|MUI:[XNR]|MS:[XUC]|M[CIA]:[XNLH])$",
+          "type": "string"
+        },
+        "version": {
+          "description": "CVSS Version",
+          "enum": [
+            "3.1"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "vectorString",
+        "baseScore",
+        "baseSeverity"
+      ],
+      "title": "JSON Schema for Common Vulnerability Scoring System version 3.1",
+      "type": "object"
+    },
+    "https://certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.json": {
+      "$defs": {
+        "MinimalDecisionPointValue": {
+          "additionalProperties": false,
+          "description": "A minimal representation of a decision point value.\nIntended to parallel the DecisionPointValue object, but with fewer required fields.\nA decision point value is uniquely identified within a decision point by its key.\nGlobally, the combination of Decision Point namespace, key, and version coupled with the value key\nuniquely identifies a value across all decision points and values.\nOther required fields in the DecisionPointValue object, such as name and description, are optional here.",
+          "properties": {
+            "definition": {
+              "minLength": 1,
+              "title": "Definition",
+              "type": "string"
+            },
+            "key": {
+              "description": "A short, non-empty string identifier for the object. Keys must start with an alphanumeric, contain only alphanumerics and `_`, and end with an alphanumeric.(`T*` is explicitly grandfathered in as a valid key, but should not be used for new objects.)",
+              "examples": [
+                "E",
+                "A",
+                "SI",
+                "L",
+                "M",
+                "H",
+                "Mixed_case_OK",
+                "alph4num3ric"
+              ],
+              "minLength": 1,
+              "pattern": "^(([a-zA-Z0-9])|([a-zA-Z0-9][a-zA-Z0-9_]*[a-zA-Z0-9])|(T\\*))$",
+              "title": "Key",
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "key"
+          ],
+          "title": "MinimalDecisionPointValue",
+          "type": "object"
+        },
+        "Reference": {
+          "additionalProperties": false,
+          "description": "A reference to a resource that provides additional context about the decision points or selections.\nThis object is intentionally minimal and contains only the URL and an optional description.",
+          "properties": {
+            "summary": {
+              "title": "Summary",
+              "type": "string"
+            },
+            "uri": {
+              "format": "uri",
+              "minLength": 1,
+              "title": "Uri",
+              "type": "string"
+            }
+          },
+          "required": [
+            "uri",
+            "summary"
+          ],
+          "title": "Reference",
+          "type": "object"
+        },
+        "Selection": {
+          "additionalProperties": false,
+          "description": "A minimal selection object that contains the decision point ID and the selected values.\nWhile the Selection object parallels the DecisionPoint object, it is intentionally minimal, with\nfewer required fields and no additional metadata, as it is meant to represent a selection made from a\npreviously defined decision point. The expectation is that a Selection object will usually have\nfewer values than the original decision point, as it represents a specific evaluation\nat a specific time and may therefore rule out some values that were previously considered.\nOther fields like name and description may be copied from the decision point, but are not required.",
+          "properties": {
+            "definition": {
+              "minLength": 1,
+              "title": "Definition",
+              "type": "string"
+            },
+            "key": {
+              "description": "A short, non-empty string identifier for the object. Keys must start with an alphanumeric, contain only alphanumerics and `_`, and end with an alphanumeric.(`T*` is explicitly grandfathered in as a valid key, but should not be used for new objects.)",
+              "examples": [
+                "E",
+                "A",
+                "SI",
+                "L",
+                "M",
+                "H",
+                "Mixed_case_OK",
+                "alph4num3ric"
+              ],
+              "minLength": 1,
+              "pattern": "^(([a-zA-Z0-9])|([a-zA-Z0-9][a-zA-Z0-9_]*[a-zA-Z0-9])|(T\\*))$",
+              "title": "Key",
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "title": "Name",
+              "type": "string"
+            },
+            "namespace": {
+              "description": "The namespace of the SSVC object.",
+              "examples": [
+                "ssvc",
+                "cisa",
+                "x_example.test#test//.example.test#private-extension",
+                "ssvc/de-DE/.example.organization#reference-arch-1"
+              ],
+              "maxLength": 1000,
+              "minLength": 3,
+              "pattern": "^(x_([a-z]|[0-9])(((([a-z]|[0-9])|-)){0,61}([a-z]|[0-9]))?(\\.([a-z]|[0-9])(((([a-z]|[0-9])|-)){0,61}([a-z]|[0-9]))?)+#(([a-z]|[0-9]))+((\\.|-)(([a-z]|[0-9]))+)*|[a-z]([a-z]|[0-9])(((\\.|-))?(([a-z]|[0-9]))+)+(#(([a-z]|[0-9]))+((\\.|-)(([a-z]|[0-9]))+)*)?)((/|/(([a-zA-Z]{2,3}(-[a-zA-Z]{3}(-[a-zA-Z]{3}){0,2})?|[a-zA-Z]{4,8})(-[a-zA-Z]{4})?(-([a-zA-Z]{2}|[0-9]{3}))?(-(([a-zA-Z0-9]){5,8}|[0-9]([a-zA-Z0-9]){3}))*(-[0-9A-WY-Za-wy-z](-([a-zA-Z0-9]){2,8})+)*(-[xX](-([a-zA-Z0-9]){2,8})+)?|[xX](-([a-zA-Z0-9]){2,8})+|i-default|i-mingo))((/((([a-zA-Z]{2,3}(-[a-zA-Z]{3}(-[a-zA-Z]{3}){0,2})?|[a-zA-Z]{4,8})(-[a-zA-Z]{4})?(-([a-zA-Z]{2}|[0-9]{3}))?(-(([a-zA-Z0-9]){5,8}|[0-9]([a-zA-Z0-9]){3}))*(-[0-9A-WY-Za-wy-z](-([a-zA-Z0-9]){2,8})+)*(-[xX](-([a-zA-Z0-9]){2,8})+)?|[xX](-([a-zA-Z0-9]){2,8})+|i-default|i-mingo)|\\.([a-z]|[0-9])(((([a-z]|[0-9])|-)){0,61}([a-z]|[0-9]))?(\\.([a-z]|[0-9])(((([a-z]|[0-9])|-)){0,61}([a-z]|[0-9]))?)+#(([a-z]|[0-9]))+((\\.|-)(([a-z]|[0-9]))+)*|\\.(([a-z]|[0-9])(((([a-z]|[0-9])|-)){0,61}([a-z]|[0-9]))?(\\.([a-z]|[0-9])(((([a-z]|[0-9])|-)){0,61}([a-z]|[0-9]))?)+|([a-z]|[0-9])(((([a-z]|[0-9])|-)){0,61}([a-z]|[0-9]))?(\\.([a-z]|[0-9])(((([a-z]|[0-9])|-)){0,61}([a-z]|[0-9]))?)+#(([a-z]|[0-9]))+((\\.|-)(([a-z]|[0-9]))+)*)\\$(([a-zA-Z]{2,3}(-[a-zA-Z]{3}(-[a-zA-Z]{3}){0,2})?|[a-zA-Z]{4,8})(-[a-zA-Z]{4})?(-([a-zA-Z]{2}|[0-9]{3}))?(-(([a-zA-Z0-9]){5,8}|[0-9]([a-zA-Z0-9]){3}))*(-[0-9A-WY-Za-wy-z](-([a-zA-Z0-9]){2,8})+)*(-[xX](-([a-zA-Z0-9]){2,8})+)?|[xX](-([a-zA-Z0-9]){2,8})+|i-default|i-mingo)))+)?)?$",
+              "title": "Namespace",
+              "type": "string"
+            },
+            "values": {
+              "description": "A list of selected value keys from the decision point values.",
+              "examples": [
+                [
+                  {
+                    "key": "N"
+                  },
+                  {
+                    "key": "Y"
+                  }
+                ],
+                [
+                  {
+                    "key": "A"
+                  },
+                  {
+                    "key": "B"
+                  },
+                  {
+                    "key": "C"
+                  }
+                ]
+              ],
+              "items": {
+                "$ref": "#/$defs/MinimalDecisionPointValue"
+              },
+              "minItems": 1,
+              "title": "Values",
+              "type": "array"
+            },
+            "version": {
+              "description": "The version of the SSVC object. This must be a valid semantic version string.",
+              "examples": [
+                "1.0.0",
+                "2.1.3"
+              ],
+              "minLength": 5,
+              "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          "required": [
+            "namespace",
+            "key",
+            "version",
+            "values"
+          ],
+          "title": "Selection",
+          "type": "object"
+        }
+      },
+      "$id": "https://certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "This schema defines the structure to represent an SSVC SelectionList object.",
+      "properties": {
+        "decision_point_resources": {
+          "description": "A list of resources that provide additional context about the decision points found in this selection.",
+          "examples": [
+            [
+              {
+                "summary": "Documentation for a set of decision points",
+                "uri": "https://example.com/decision_points"
+              },
+              {
+                "summary": "JSON representation of decision point 2",
+                "uri": "https://example.org/definitions/dp2.json"
+              },
+              {
+                "summary": "A JSON file containing extension decision points in the x_com.example namespace",
+                "uri": "https://example.com/ssvc/x_com.example/decision_points.json"
+              }
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/Reference"
+          },
+          "minItems": 1,
+          "title": "Decision Point Resources",
+          "type": "array"
+        },
+        "references": {
+          "description": "A list of references that provide additional context about the specific values selected.",
+          "examples": [
+            [
+              {
+                "summary": "A report on which the selections were based",
+                "uri": "https://example.com/report"
+              }
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/Reference"
+          },
+          "minItems": 1,
+          "title": "References",
+          "type": "array"
+        },
+        "schemaVersion": {
+          "const": "2.0.0",
+          "description": "The schema version of this selection list.",
+          "title": "Schemaversion",
+          "type": "string"
+        },
+        "selections": {
+          "description": "List of selections made from decision points. Each selection item corresponds to value keys contained in a specific decision point identified by its namespace, key, and version. Note that selection objects are deliberately minimal objects and do not contain the full decision point details.",
+          "items": {
+            "$ref": "#/$defs/Selection"
+          },
+          "minItems": 1,
+          "title": "Selections",
+          "type": "array"
+        },
+        "target_ids": {
+          "description": "Optional list of identifiers for the item or items (vulnerabilities, reports, advisories, systems, assets, etc.) being evaluated by these selections.",
+          "examples": [
+            [
+              "CVE-1900-0000"
+            ],
+            [
+              "VU#999999",
+              "GHSA-0123-4567-89ab"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Target Ids",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "timestamp": {
+          "description": "Timestamp of the selections, in RFC 3339 format.",
+          "examples": [
+            "2025-01-01T12:00:00Z",
+            "2025-01-02T15:30:45-04:00"
+          ],
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "timestamp",
+        "schemaVersion",
+        "selections"
+      ],
+      "title": "SelectionList",
+      "type": "object"
+    },
+    "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-content.json": {
+      "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-content.json",
+      "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+      "additionalProperties": false,
+      "description": "Representation of additional information extending a CSAF Document.",
+      "properties": {
+        "$schema": {
+          "$ref": "extension-metaschema.json#/$defs/content_schema_t",
+          "description": "Contains the URL of the CSAF Extension JSON schema which the JSON object promises to be valid for.",
+          "title": "CSAF Extension Schema"
+        },
+        "category": {
+          "description": "Holds the category of the extension content.",
+          "enum": [
+            "essential",
+            "significant",
+            "supplementary"
+          ],
+          "title": "Extension Category",
+          "type": "string"
+        },
+        "content": {
+          "additionalProperties": true,
+          "description": "Contains the additional information in its properties.",
+          "minProperties": 1,
+          "title": "Content",
+          "type": "object"
+        },
+        "critical": {
+          "default": false,
+          "description": "Determines whether using the extension would fail a mandatory test.",
+          "title": "Critical",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "$schema",
+        "category",
+        "critical",
+        "content"
+      ],
+      "title": "CSAF Extension Content",
+      "type": "object"
+    },
+    "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metadata.json": {
+      "$defs": {
+        "location_t": {
+          "additionalProperties": false,
+          "description": "Contains all necessary information for a single location.",
+          "properties": {
+            "max_occurrence": {
+              "default": 1,
+              "description": "Contains the number how often the extension can be present in this path.",
+              "minimum": 0,
+              "multipleOf": 1,
+              "title": "Maximum Occurrence",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "max_occurrence"
+          ],
+          "title": "Location",
+          "type": "object"
+        }
+      },
+      "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metadata.json",
+      "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+      "additionalProperties": false,
+      "description": "Representation of metadata for a CSAF Extension.",
+      "properties": {
+        "$schema": {
+          "const": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metadata.json",
+          "description": "Contains the URL of the CSAF Extension Metadata JSON schema which the JSON object promises to be valid for.",
+          "title": "CSAF Extension Metadata Schema",
+          "type": "string"
+        },
+        "extension_schema": {
+          "$ref": "extension-metaschema.json#/$defs/content_schema_t",
+          "description": "Holds the `$id` value of the CSAF Extension Schema this metadata applies to.",
+          "title": "Extension Schema"
+        },
+        "incompatible_extensions": {
+          "description": "Contains a list of incompatible extensions.",
+          "items": {
+            "$ref": "extension-metaschema.json#/$defs/content_schema_t",
+            "description": "Contains the `$id` value of a CSAF Extension Schema which is incompatible with this extension.",
+            "title": "Incompatible extension"
+          },
+          "minItems": 1,
+          "title": "List of Incompatible Extensions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "last_updated": {
+          "description": "Holds the date and time when the document was last updated.",
+          "format": "date-time",
+          "title": "Last updated",
+          "type": "string"
+        },
+        "requirement": {
+          "additionalProperties": false,
+          "description": "Contains the requirement for all possible paths.",
+          "properties": {
+            "$.document.x_extensions": {
+              "$ref": "#/$defs/location_t",
+              "description": "Contains requirements for this extension on document path.",
+              "title": "Document extension path"
+            },
+            "$.product_tree.branches..product.x_extensions": {
+              "$ref": "#/$defs/location_t",
+              "description": "Contains requirements for this extension on the Product Tree Branch path.",
+              "title": "Product Tree Branch extension path"
+            },
+            "$.product_tree.full_product_names[*].x_extensions": {
+              "$ref": "#/$defs/location_t",
+              "description": "Contains requirements for this extension on the Product Tree Full Product Names path.",
+              "title": "Product Tree Full Product Names extension path"
+            },
+            "$.product_tree.relationships[*].full_product_name.x_extensions": {
+              "$ref": "#/$defs/location_t",
+              "description": "Contains requirements for this extension on the Product Tree Relationships path.",
+              "title": "Product Tree Relationship extension path"
+            },
+            "$.vulnerabilities[*].metrics[*].content.x_extensions": {
+              "$ref": "#/$defs/location_t",
+              "description": "Contains requirements for this extension on the Vulnerabilities Metrics path.",
+              "title": "Vulnerabilities Metrics extension path"
+            },
+            "$.vulnerabilities[*].x_extensions": {
+              "$ref": "#/$defs/location_t",
+              "description": "Contains requirements for this extension on the Vulnerabilities path.",
+              "title": "Vulnerabilities extension path"
+            },
+            "$.x_extensions": {
+              "$ref": "#/$defs/location_t",
+              "description": "Contains requirements for this extension on the root path.",
+              "title": "Root extension path"
+            }
+          },
+          "required": [
+            "$.document.x_extensions",
+            "$.product_tree.branches..product.x_extensions",
+            "$.product_tree.full_product_names[*].x_extensions",
+            "$.product_tree.relationships[*].full_product_name.x_extensions",
+            "$.vulnerabilities[*].metrics[*].content.x_extensions",
+            "$.vulnerabilities[*].x_extensions",
+            "$.x_extensions"
+          ],
+          "title": "Requirement",
+          "type": "object"
+        }
+      },
+      "required": [
+        "$schema",
+        "extension_schema",
+        "last_updated",
+        "requirement"
+      ],
+      "title": "CSAF Extension Metadata",
+      "type": "object"
+    },
+    "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metaschema.json": {
+      "$defs": {
+        "content_schema_t": {
+          "description": "Contains the actual value of the $schema property.",
+          "format": "uri",
+          "not": {
+            "pattern": "^https:\\/\\/docs\\.oasis-open\\.org\\/csaf\\/csaf\\/v2\\.1\\/([^\\/\\s]+/)*schema\\/extension-content\\.json$"
+          },
+          "pattern": "^(https:\\/\\/[a-z0-9](([a-z0-9-]){0,61}[a-z0-9])?(\\.[a-z0-9](([a-z0-9-]){0,61}[a-z0-9])?)+\\/([^\\/\\s]+/)*[^\\/\\s]+_(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?\\.json)$",
+          "title": "CSAF Extension Content $schema Type",
+          "type": "string"
+        },
+        "schema": {
+          "$dynamicAnchor": "meta",
+          "allOf": [
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/core"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/applicator"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/unevaluated"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/validation"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/meta-data"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/format-assertion"
+            }
+          ]
+        }
+      },
+      "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metaschema.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$vocabulary": {
+        "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+        "https://json-schema.org/draft/2020-12/vocab/content": true,
+        "https://json-schema.org/draft/2020-12/vocab/core": true,
+        "https://json-schema.org/draft/2020-12/vocab/format-assertion": true,
+        "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
+        "https://json-schema.org/draft/2020-12/vocab/unevaluated": true,
+        "https://json-schema.org/draft/2020-12/vocab/validation": true
+      },
+      "description": "Representation of a CSAF Extension Schema",
+      "properties": {
+        "$defs": {
+          "$ref": "#/$defs/schema",
+          "description": "Contains the definitions as object of the CSAF Extension Schema.",
+          "minProperties": 1,
+          "title": "CSAF Extension Schema Definitions"
+        },
+        "$id": {
+          "$ref": "#/$defs/content_schema_t",
+          "description": "Contains the ID as URL of the CSAF Extension JSON schema which identifies the CSAF Extension Schema.",
+          "title": "CSAF Extension Schema ID"
+        },
+        "$schema": {
+          "const": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metaschema.json",
+          "description": "Contains the URL of the CSAF Extension Metaschema JSON schema which the JSON schema promises to be valid for.",
+          "title": "CSAF Extension Metaschema",
+          "type": "string"
+        },
+        "additionalProperties": {
+          "const": false,
+          "description": "Prohibits additional properties on this level.",
+          "title": "CSAF Extension Schema Required Properties",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "Contains the description for the CSAF Extension Schema detailing what the CSAF Extension is about.",
+          "minLength": 1,
+          "title": "Description of the CSAF Extension",
+          "type": "string"
+        },
+        "properties": {
+          "description": "Contains the definition of the properties a CSAF Extension Schema needs.",
+          "properties": {
+            "$schema": {
+              "additionalProperties": false,
+              "description": "Contains the definition of the object of the CSAF Extension JSON schema which the JSON object promises to be valid for.",
+              "maxProperties": 5,
+              "minProperties": 5,
+              "properties": {
+                "const": {
+                  "$ref": "#/$defs/content_schema_t",
+                  "description": "Contains the actual value of the $schema property.",
+                  "title": "CSAF Extension $schema value"
+                },
+                "description": {
+                  "default": "Contains the URL of the CSAF Extension JSON schema which the JSON object promises to be valid for.",
+                  "description": "Contains the description for the CSAF Extension $schema value.",
+                  "minLength": 1,
+                  "title": "Description of the CSAF Extension $schema value",
+                  "type": "string"
+                },
+                "format": {
+                  "const": "uri",
+                  "description": "Contains the format of the $schema value which is `uri`.",
+                  "title": "Format of the CSAF Extension $schema value",
+                  "type": "string"
+                },
+                "pattern": {
+                  "const": "^(?!https:\\/\\/docs\\.oasis-open\\.org\\/csaf\\/csaf\\/v2\\.1\\/([^\\/\\s]+/)*schema\\/extension-content\\.json)(https:\\/\\/[a-z0-9](([a-z0-9-]){0,61}[a-z0-9])?(\\.[a-z0-9](([a-z0-9-]){0,61}[a-z0-9])?)+\\/([^\\/\\s]+/)*[^\\/\\s]+_(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?\\.json)$",
+                  "description": "Contains the pattern for value of the $schema property.",
+                  "title": "CSAF Extension $schema pattern",
+                  "type": "string"
+                },
+                "title": {
+                  "default": "CSAF Extension Schema",
+                  "description": "Contains the title for the CSAF Extension $schema.",
+                  "minLength": 1,
+                  "title": "Title of the CSAF Extension $schema value",
+                  "type": "string"
+                },
+                "type": {
+                  "const": "string",
+                  "description": "Contains the type of the $schema value which is `string`.",
+                  "title": "Type of the CSAF Extension $schema value",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "type",
+                "format"
+              ],
+              "title": "CSAF Extension Schema",
+              "type": "object"
+            },
+            "category": {
+              "additionalProperties": false,
+              "description": "Contains the definition of the object of the CSAF Extension Category.",
+              "properties": {
+                "description": {
+                  "default": "Holds the category of the extension content.",
+                  "description": "Contains the description for the CSAF Extension category value.",
+                  "minLength": 1,
+                  "title": "Description of the CSAF Extension Category value",
+                  "type": "string"
+                },
+                "enum": {
+                  "description": "Contains the possible options for the category.",
+                  "items": {
+                    "enum": [
+                      "essential",
+                      "significant",
+                      "supplementary"
+                    ],
+                    "type": "string"
+                  },
+                  "maxItems": 3,
+                  "minItems": 1,
+                  "title": "Options of the CSAF Extension Category value",
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "title": {
+                  "default": "Extension Category",
+                  "description": "Contains the title for the CSAF Extension category.",
+                  "minLength": 1,
+                  "title": "Title of the CSAF Extension Category value",
+                  "type": "string"
+                },
+                "type": {
+                  "const": "string",
+                  "description": "Contains the type of the category value which is `string`.",
+                  "title": "Type of the CSAF Extension Category value",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "type",
+                "enum"
+              ],
+              "title": "CSAF Extension Category",
+              "type": "object"
+            },
+            "content": {
+              "$ref": "#/$defs/schema",
+              "additionalProperties": true,
+              "description": "Contains the definition of the object of the CSAF Extension content.",
+              "properties": {
+                "description": {
+                  "default": "Contains the additional information in its properties.",
+                  "description": "Contains the description for the CSAF Extension content object.",
+                  "minLength": 1,
+                  "title": "Description of the CSAF Extension Content object",
+                  "type": "string"
+                },
+                "minProperties": {
+                  "description": "Contains the number of properties within the `object`.",
+                  "minimum": 1,
+                  "title": "Minimum count of properties of the CSAF Extension Content object",
+                  "type": "integer"
+                },
+                "properties": {
+                  "$ref": "#/$defs/schema",
+                  "description": "Contains the properties as object of the CSAF Extension Schema.",
+                  "minProperties": 1,
+                  "title": "Properties of the CSAF Extension Content object"
+                },
+                "title": {
+                  "default": "Content",
+                  "description": "Contains the title for the CSAF Extension content.",
+                  "minLength": 1,
+                  "title": "Title of the CSAF Extension Content object",
+                  "type": "string"
+                },
+                "type": {
+                  "const": "object",
+                  "description": "Contains the type of the content object which is `object`.",
+                  "title": "Type of the CSAF Extension Content object",
+                  "type": "string"
+                },
+                "unevaluatedProperties": {
+                  "const": false,
+                  "description": "Contains the fact that no properties can be unevaluated within the CSAF Extension Content object.",
+                  "title": "Unevaluated properties of the CSAF Extension Content object",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "type",
+                "minProperties",
+                "properties",
+                "unevaluatedProperties"
+              ],
+              "title": "CSAF Extension Content",
+              "type": "object"
+            },
+            "critical": {
+              "additionalProperties": false,
+              "description": "Contains the definition of the object of the CSAF Extension critical.",
+              "maxProperties": 5,
+              "properties": {
+                "const": {
+                  "description": "Contains the only allowed value of the critical value as defined by the CSAF Extension Schema - either `true` or `false`.",
+                  "enum": [
+                    false,
+                    true
+                  ],
+                  "title": "Constant value of the CSAF Extension Critical value",
+                  "type": "boolean"
+                },
+                "default": {
+                  "description": "Contains the default of the critical value - either `true` or `false`.",
+                  "enum": [
+                    "false",
+                    "true"
+                  ],
+                  "title": "Default of the CSAF Extension Critical value",
+                  "type": "string"
+                },
+                "description": {
+                  "default": "Determines whether using the extension would fail a mandatory test.",
+                  "description": "Contains the description for the CSAF Extension critical value.",
+                  "minLength": 1,
+                  "title": "Description of the CSAF Extension Critical value",
+                  "type": "string"
+                },
+                "title": {
+                  "default": "Critical",
+                  "description": "Contains the title for the CSAF Extension critical.",
+                  "minLength": 1,
+                  "title": "Title of the CSAF Extension Critical value",
+                  "type": "string"
+                },
+                "type": {
+                  "const": "boolean",
+                  "description": "Contains the type of the critical value which is `boolean`.",
+                  "title": "Type of the CSAF Extension Critical value",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "description",
+                "type"
+              ],
+              "title": "CSAF Extension Critical",
+              "type": "object"
+            }
+          },
+          "required": [
+            "$schema",
+            "category",
+            "critical",
+            "content"
+          ],
+          "title": "CSAF Extension Schema Properties",
+          "type": "object"
+        },
+        "required": {
+          "const": [
+            "$schema",
+            "category",
+            "critical",
+            "content"
+          ],
+          "description": "Contains the list of required properties.",
+          "title": "CSAF Extension Schema Required Properties",
+          "type": "array"
+        },
+        "title": {
+          "description": "Contains the title for the CSAF Extension Schema.",
+          "minLength": 1,
+          "title": "Title of the CSAF Extension",
+          "type": "string"
+        },
+        "type": {
+          "const": "object",
+          "description": "Contains the type of the CSAF Extension Schema which is always `object`.",
+          "title": "Type of CSAF Extension Schema",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$schema",
+        "$id",
+        "title",
+        "description",
+        "type",
+        "required",
+        "properties",
+        "additionalProperties"
+      ],
+      "title": "CSAF Extension Metaschema",
+      "type": "object",
+      "unevaluatedProperties": false
+    },
+    "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json": {
+      "$dynamicAnchor": "meta",
+      "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$vocabulary": {
+        "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+        "https://json-schema.org/draft/2020-12/vocab/content": true,
+        "https://json-schema.org/draft/2020-12/vocab/core": true,
+        "https://json-schema.org/draft/2020-12/vocab/format-assertion": true,
+        "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
+        "https://json-schema.org/draft/2020-12/vocab/unevaluated": true,
+        "https://json-schema.org/draft/2020-12/vocab/validation": true
+      },
+      "allOf": [
+        {
+          "$ref": "https://json-schema.org/draft/2020-12/meta/core"
+        },
+        {
+          "$ref": "https://json-schema.org/draft/2020-12/meta/applicator"
+        },
+        {
+          "$ref": "https://json-schema.org/draft/2020-12/meta/unevaluated"
+        },
+        {
+          "$ref": "https://json-schema.org/draft/2020-12/meta/validation"
+        },
+        {
+          "$ref": "https://json-schema.org/draft/2020-12/meta/meta-data"
+        },
+        {
+          "$ref": "https://json-schema.org/draft/2020-12/meta/format-assertion"
+        },
+        {
+          "$ref": "https://json-schema.org/draft/2020-12/meta/content"
+        }
+      ]
+    },
+    "https://www.first.org/cvss/cvss-v4.0.json?20260226": {
+      "$defs": {
+        "attackComplexityType": {
+          "enum": [
+            "HIGH",
+            "LOW"
+          ],
+          "type": "string"
+        },
+        "attackRequirementsType": {
+          "enum": [
+            "NONE",
+            "PRESENT"
+          ],
+          "type": "string"
+        },
+        "attackVectorType": {
+          "enum": [
+            "NETWORK",
+            "ADJACENT",
+            "LOCAL",
+            "PHYSICAL"
+          ],
+          "type": "string"
+        },
+        "automatableType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "NO",
+            "YES",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "ciaRequirementType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "criticalScoreType": {
+          "maximum": 10,
+          "minimum": 9,
+          "multipleOf": 0.1,
+          "type": "number"
+        },
+        "criticalSeverityType": {
+          "const": "CRITICAL"
+        },
+        "exploitMaturityType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "UNREPORTED",
+            "PROOF_OF_CONCEPT",
+            "ATTACKED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "highScoreType": {
+          "maximum": 8.9,
+          "minimum": 7,
+          "type": "number"
+        },
+        "highSeverityType": {
+          "const": "HIGH"
+        },
+        "lowScoreType": {
+          "maximum": 3.9,
+          "minimum": 0.1,
+          "multipleOf": 0.1,
+          "type": "number"
+        },
+        "lowSeverityType": {
+          "const": "LOW"
+        },
+        "mediumScoreType": {
+          "maximum": 6.9,
+          "minimum": 4,
+          "multipleOf": 0.1,
+          "type": "number"
+        },
+        "mediumSeverityType": {
+          "const": "MEDIUM"
+        },
+        "modifiedAttackComplexityType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedAttackRequirementsType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "NONE",
+            "PRESENT",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedAttackVectorType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "NETWORK",
+            "ADJACENT",
+            "LOCAL",
+            "PHYSICAL",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedPrivilegesRequiredType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NONE",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedSubCType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "NEGLIGIBLE",
+            "LOW",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedSubIaType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "NEGLIGIBLE",
+            "LOW",
+            "HIGH",
+            "SAFETY",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedUserInteractionType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "NONE",
+            "PASSIVE",
+            "ACTIVE",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "modifiedVulnCiaType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "NONE",
+            "LOW",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "noneScoreType": {
+          "maximum": 0,
+          "minimum": 0,
+          "type": "number"
+        },
+        "noneSeverityType": {
+          "const": "NONE"
+        },
+        "privilegesRequiredType": {
+          "enum": [
+            "HIGH",
+            "LOW",
+            "NONE"
+          ],
+          "type": "string"
+        },
+        "providerUrgencyType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "CLEAR",
+            "GREEN",
+            "AMBER",
+            "RED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "recoveryType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "AUTOMATIC",
+            "USER",
+            "IRRECOVERABLE",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "safetyType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "NEGLIGIBLE",
+            "PRESENT",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "subCiaType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "HIGH"
+          ],
+          "type": "string"
+        },
+        "userInteractionType": {
+          "enum": [
+            "NONE",
+            "PASSIVE",
+            "ACTIVE"
+          ],
+          "type": "string"
+        },
+        "valueDensityType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "DIFFUSE",
+            "CONCENTRATED",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        },
+        "vulnCiaType": {
+          "enum": [
+            "NONE",
+            "LOW",
+            "HIGH"
+          ],
+          "type": "string"
+        },
+        "vulnerabilityResponseEffortType": {
+          "default": "NOT_DEFINED",
+          "enum": [
+            "LOW",
+            "MODERATE",
+            "HIGH",
+            "NOT_DEFINED"
+          ],
+          "type": "string"
+        }
+      },
+      "$id": "https://www.first.org/cvss/cvss-v4.0.json?20260226",
+      "$schema": "https://www.first.org/cvss/meta.json",
+      "allOf": [
+        {
+          "anyOf": [
+            {
+              "properties": {
+                "baseScore": {
+                  "$ref": "#/$defs/noneScoreType"
+                },
+                "baseSeverity": {
+                  "$ref": "#/$defs/noneSeverityType"
+                }
+              }
+            },
+            {
+              "properties": {
+                "baseScore": {
+                  "$ref": "#/$defs/lowScoreType"
+                },
+                "baseSeverity": {
+                  "$ref": "#/$defs/lowSeverityType"
+                }
+              }
+            },
+            {
+              "properties": {
+                "baseScore": {
+                  "$ref": "#/$defs/mediumScoreType"
+                },
+                "baseSeverity": {
+                  "$ref": "#/$defs/mediumSeverityType"
+                }
+              }
+            },
+            {
+              "properties": {
+                "baseScore": {
+                  "$ref": "#/$defs/highScoreType"
+                },
+                "baseSeverity": {
+                  "$ref": "#/$defs/highSeverityType"
+                }
+              }
+            },
+            {
+              "properties": {
+                "baseScore": {
+                  "$ref": "#/$defs/criticalScoreType"
+                },
+                "baseSeverity": {
+                  "$ref": "#/$defs/criticalSeverityType"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "license": [
+        "Copyright (c) 2025, FIRST.ORG, INC.",
+        "All rights reserved.",
+        "",
+        "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the ",
+        "following conditions are met:",
+        "1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following ",
+        "   disclaimer.",
+        "2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the ",
+        "   following disclaimer in the documentation and/or other materials provided with the distribution.",
+        "3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote ",
+        "   products derived from this software without specific prior written permission.",
+        "",
+        "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, ",
+        "INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE ",
+        "DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, ",
+        "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR ",
+        "SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, ",
+        "WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE ",
+        "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+      ],
+      "properties": {
+        "Automatable": {
+          "$ref": "#/$defs/automatableType"
+        },
+        "Recovery": {
+          "$ref": "#/$defs/recoveryType"
+        },
+        "Safety": {
+          "$ref": "#/$defs/safetyType"
+        },
+        "attackComplexity": {
+          "$ref": "#/$defs/attackComplexityType"
+        },
+        "attackRequirements": {
+          "$ref": "#/$defs/attackRequirementsType"
+        },
+        "attackVector": {
+          "$ref": "#/$defs/attackVectorType"
+        },
+        "availabilityRequirement": {
+          "$ref": "#/$defs/ciaRequirementType"
+        },
+        "confidentialityRequirement": {
+          "$ref": "#/$defs/ciaRequirementType"
+        },
+        "exploitMaturity": {
+          "$ref": "#/$defs/exploitMaturityType"
+        },
+        "integrityRequirement": {
+          "$ref": "#/$defs/ciaRequirementType"
+        },
+        "modifiedAttackComplexity": {
+          "$ref": "#/$defs/modifiedAttackComplexityType"
+        },
+        "modifiedAttackRequirements": {
+          "$ref": "#/$defs/modifiedAttackRequirementsType"
+        },
+        "modifiedAttackVector": {
+          "$ref": "#/$defs/modifiedAttackVectorType"
+        },
+        "modifiedPrivilegesRequired": {
+          "$ref": "#/$defs/modifiedPrivilegesRequiredType"
+        },
+        "modifiedSubAvailabilityImpact": {
+          "$ref": "#/$defs/modifiedSubIaType"
+        },
+        "modifiedSubConfidentialityImpact": {
+          "$ref": "#/$defs/modifiedSubCType"
+        },
+        "modifiedSubIntegrityImpact": {
+          "$ref": "#/$defs/modifiedSubIaType"
+        },
+        "modifiedUserInteraction": {
+          "$ref": "#/$defs/modifiedUserInteractionType"
+        },
+        "modifiedVulnAvailabilityImpact": {
+          "$ref": "#/$defs/modifiedVulnCiaType"
+        },
+        "modifiedVulnConfidentialityImpact": {
+          "$ref": "#/$defs/modifiedVulnCiaType"
+        },
+        "modifiedVulnIntegrityImpact": {
+          "$ref": "#/$defs/modifiedVulnCiaType"
+        },
+        "privilegesRequired": {
+          "$ref": "#/$defs/privilegesRequiredType"
+        },
+        "providerUrgency": {
+          "$ref": "#/$defs/providerUrgencyType"
+        },
+        "subAvailabilityImpact": {
+          "$ref": "#/$defs/subCiaType"
+        },
+        "subConfidentialityImpact": {
+          "$ref": "#/$defs/subCiaType"
+        },
+        "subIntegrityImpact": {
+          "$ref": "#/$defs/subCiaType"
+        },
+        "userInteraction": {
+          "$ref": "#/$defs/userInteractionType"
+        },
+        "valueDensity": {
+          "$ref": "#/$defs/valueDensityType"
+        },
+        "vectorString": {
+          "pattern": "^CVSS:4[.]0/AV:[NALP]/AC:[LH]/AT:[NP]/PR:[NLH]/UI:[NPA]/VC:[HLN]/VI:[HLN]/VA:[HLN]/SC:[HLN]/SI:[HLN]/SA:[HLN](/E:[XAPU])?(/CR:[XHML])?(/IR:[XHML])?(/AR:[XHML])?(/MAV:[XNALP])?(/MAC:[XLH])?(/MAT:[XNP])?(/MPR:[XNLH])?(/MUI:[XNPA])?(/MVC:[XNLH])?(/MVI:[XNLH])?(/MVA:[XNLH])?(/MSC:[XNLH])?(/MSI:[XNLHS])?(/MSA:[XNLHS])?(/S:[XNP])?(/AU:[XNY])?(/R:[XAUI])?(/V:[XDC])?(/RE:[XLMH])?(/U:(X|Clear|Green|Amber|Red))?$",
+          "type": "string"
+        },
+        "version": {
+          "description": "CVSS Version",
+          "enum": [
+            "4.0"
+          ],
+          "type": "string"
+        },
+        "vulnAvailabilityImpact": {
+          "$ref": "#/$defs/vulnCiaType"
+        },
+        "vulnConfidentialityImpact": {
+          "$ref": "#/$defs/vulnCiaType"
+        },
+        "vulnIntegrityImpact": {
+          "$ref": "#/$defs/vulnCiaType"
+        },
+        "vulnerabilityResponseEffort": {
+          "$ref": "#/$defs/vulnerabilityResponseEffortType"
+        }
+      },
+      "required": [
+        "version",
+        "vectorString",
+        "baseScore",
+        "baseSeverity"
+      ],
+      "title": "JSON Schema for Common Vulnerability Scoring System version 4.0, Revision 2",
+      "type": "object",
+      "unevaluatedProperties": false
+    },
+    "https://www.first.org/cvss/meta.json": {
+      "$defs": {
+        "schema": {
+          "$dynamicAnchor": "meta",
+          "allOf": [
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/core"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/applicator"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/unevaluated"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/validation"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/meta-data"
+            },
+            {
+              "$ref": "https://json-schema.org/draft/2020-12/meta/format-assertion"
+            }
+          ]
+        }
+      },
+      "$id": "https://www.first.org/cvss/meta.json",
+      "$ref": "#/$defs/schema",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$vocabulary": {
+        "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+        "https://json-schema.org/draft/2020-12/vocab/core": true,
+        "https://json-schema.org/draft/2020-12/vocab/format-assertion": true,
+        "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
+        "https://json-schema.org/draft/2020-12/vocab/unevaluated": true,
+        "https://json-schema.org/draft/2020-12/vocab/validation": true
+      },
+      "properties": {
+        "license": {
+          "maxItems": 19,
+          "minItems": 19,
+          "prefixItems": [
+            {
+              "pattern": "^Copyright \\(c\\) [1-9][0-9]{3}, FIRST\\.ORG, INC\\.$",
+              "type": "string"
+            },
+            {
+              "const": "All rights reserved.",
+              "type": "string"
+            },
+            {
+              "const": "",
+              "type": "string"
+            },
+            {
+              "const": "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the ",
+              "type": "string"
+            },
+            {
+              "const": "following conditions are met:",
+              "type": "string"
+            },
+            {
+              "const": "1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following ",
+              "type": "string"
+            },
+            {
+              "const": "   disclaimer.",
+              "type": "string"
+            },
+            {
+              "const": "2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the ",
+              "type": "string"
+            },
+            {
+              "const": "   following disclaimer in the documentation and/or other materials provided with the distribution.",
+              "type": "string"
+            },
+            {
+              "const": "3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote ",
+              "type": "string"
+            },
+            {
+              "const": "   products derived from this software without specific prior written permission.",
+              "type": "string"
+            },
+            {
+              "const": "",
+              "type": "string"
+            },
+            {
+              "const": "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, ",
+              "type": "string"
+            },
+            {
+              "const": "INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE ",
+              "type": "string"
+            },
+            {
+              "const": "DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, ",
+              "type": "string"
+            },
+            {
+              "const": "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR ",
+              "type": "string"
+            },
+            {
+              "const": "SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, ",
+              "type": "string"
+            },
+            {
+              "const": "WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE ",
+              "type": "string"
+            },
+            {
+              "const": "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+              "type": "string"
+            }
+          ],
+          "title": "License",
+          "type": "array",
+          "unevaluatedItems": false
+        }
+      },
+      "required": [
+        "license"
+      ],
+      "type": "object",
+      "unevaluatedProperties": false
+    }
+  }
+}
