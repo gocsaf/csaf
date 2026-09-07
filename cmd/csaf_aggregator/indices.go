@@ -239,8 +239,8 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 	entries := make([]*csaf.Entry, len(summaries))
 
 	format := csaf.Format{
-		Schema:  "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf_json_schema.json",
-		Version: "2.0",
+		Schema:  csaf.SchemaURI,
+		Version: csaf.Version,
 	}
 
 	for i := range summaries {

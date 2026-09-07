@@ -61,3 +61,9 @@ type ProviderPublisher = v21.PublisherT
 // ProviderDistributionsElemRolieFeedsElem contains one ROLIE feed declaration
 // from CSAF 2.1 provider metadata.
 type ProviderDistributionsElemRolieFeedsElem = v21.ProviderDistributionsElemRolieFeedsElem
+
+// SchemaURI and Version identify the supported CSAF advisory format.
+const (
+	SchemaURI = v21.SchemaURI
+	Version   = string(v21.CSAFDocumentCSAFVersionA21)
+)

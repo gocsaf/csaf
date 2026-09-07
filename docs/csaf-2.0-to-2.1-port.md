@@ -253,8 +253,8 @@ a single value becomes a list.
 
 ## Known limitations
 
-- The provider configuration still contains WHITE and the old TLP defaults. ROLIE
-  entry creation still sets the 2.0 schema URI and version.
+- Legacy WHITE provider configuration must be migrated explicitly to CLEAR.
+  Existing CSAF 2.0 advisories are not automatically relabeled.
 - Schema validation alone does not cover all semantic requirements of the
   standard. In particular, successful decoding must not be equated with full
   CSAF compliance.

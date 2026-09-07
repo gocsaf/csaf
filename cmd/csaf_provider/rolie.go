@@ -138,8 +138,8 @@ func (c *controller) extendROLIE(
 		{Rel: "signature", HRef: csafURL + ".asc"},
 	}
 	e.Format = csaf.Format{
-		Schema:  "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf_json_schema.json",
-		Version: "2.0",
+		Schema:  csaf.SchemaURI,
+		Version: csaf.Version,
 	}
 	e.Content = csaf.Content{
 		Type: "application/json",
