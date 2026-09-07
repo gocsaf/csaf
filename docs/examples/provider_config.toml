@@ -61,10 +61,10 @@
 #write_security = false
 
 # Set the TLP allowed to be send with the upload request
-# (one or more of "csaf", "white", "amber", "green", "red").
+# (one or more of "csaf", "clear", "amber", "amber+strict", "green", "red").
 # The "csaf" entry lets the provider take the value from the CSAF document.
 # These affect the list items in the web interface.
-#tlps = ["csaf", "white", "amber", "green", "red"]
+#tlps = ["csaf", "clear", "amber", "amber+strict", "green", "red"]
 
 # Make the provider create a ROLIE service document.
 #create_service_document = false
