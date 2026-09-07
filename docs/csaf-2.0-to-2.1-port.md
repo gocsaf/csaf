@@ -33,8 +33,7 @@ make generate_v21
 ```
 
 The OASIS inputs are pinned to commit
-[`fd04963f836406b2691c861feb80db58577fc9c7`][O21], currently the latest commit
-in the official repository that changes the CSAF 2.1 JSON schemas. CVSS and SSVC
+[`fd04963f836406b2691c861feb80db58577fc9c7`][O21]. CVSS and SSVC
 resources are downloaded from their servers during generation and then embedded.
 Runtime validation is therefore independent of the network. A later regeneration
 may nevertheless use changed external schemas.
@@ -56,15 +55,35 @@ may nevertheless use changed external schemas.
 
 The script repairs known issues in the generator output:
 
-| Generator output                              | Replacement                               |
-| --------------------------------------------- | ----------------------------------------- |
-| CVSS 3 field as `interface{}`                 | Interface `CVSSV3` with concrete variants |
-| CVSS 4 fields with types from the NONE branch | `float64` and `CVSSV40Severity`           |
-| SSVC `SchemaVersion` as `string`              | `SSVCV2SchemaVersion`                     |
-| `time.Time`                                   | String-based `DateTime`                   |
+| Generator output                                   | Replacement                               |
+| -------------------------------------------------- | ----------------------------------------- |
+| CVSS 3 field as `interface{}`                      | Interface `CVSSV3` with concrete variants |
+| CVSS 4 fields with types from the NONE branch      | `float64` and `CVSSV40Severity`           |
+| CVSS 4 severity constant types as `interface{}`    | Named string types                        |
+| Extension metaschema `Required` as `[]interface{}` | `[]string`                                |
+| SSVC `SchemaVersion` as `string`                   | `SSVCV2SchemaVersion`                     |
+| `time.Time`                                        | String-based `DateTime`                   |
 
-The changes expect exact text matches. Other revisions may therefore cause
-errors.
+The script also names branch elements, preserves the Go fields `PGPKeys` and
+`Aggregator.Version`, and shares equivalent publisher and role types.
+
+The severity constants and the exact `Required` list are still enforced by schema
+validation. Go string types alone cannot enforce their allowed values.
+
+The remaining empty interfaces are retained for these reasons:
+
+- `ExtensionContentJsonContent` is a `map[string]interface{}` because
+  [extension-content.json](../csaf/v21/schema/extension-content.json),
+  `/properties/content`, explicitly allows arbitrary properties and values via
+  `additionalProperties: true`. The content must be a nonempty object, but its
+  fields depend on the specific extension schema and cannot be predefined by
+  the library.
+- `Schema` remains `interface{}` in `ExtensionMetaschemaJson.Defs` and
+  `ExtensionMetaschemaJsonProperties.Content`. In
+  [extension-metaschema.json](../csaf/v21/schema/extension-metaschema.json),
+  `/$defs/schema` combines the JSON Schema metaschemas using `allOf` and a
+  dynamic anchor. Modeling these recursive schema descriptions would require
+  substantially more than a simple type replacement.
 
 ### `bundle_schema.py`
 
@@ -86,10 +105,13 @@ The functions `ValidateCSAF`, `ValidateProviderMetadata`,
 `ValidateAggregator`, and `ValidateROLIE` keep their signatures but delegate
 their logic to [csaf/v21/validation.go](../csaf/v21/validation.go).
 
-`CSAF.Validate()` checks the current object state through the same infrastructure.
-In the current state, `json.Marshal` does not validate automatically, however.
-Direct decoding of a provider or aggregator subtype and the `WriteTo` methods
-also do not perform a complete schema check.
+`Advisory.Validate()`, `ProviderMetadata.Validate()`, and `Aggregator.Validate()`
+check the current object against the bundled 2.1 schemas.
+
+`json.Marshal` and `WriteTo` do not validate automatically. Direct decoding of
+provider or aggregator models does not perform a full schema check. Use the
+validation methods explicitly. `LoadProviderMetadata` validates before decoding,
+and advisory decoding performs schema validation.
 
 ## Changes to the models and callers
 
@@ -126,8 +148,6 @@ The two relevant places in the advisory schemas are:
   `/properties/document/properties/distribution/properties/tlp/required`
   contains `label`.
 
-Types such as `tlpWhiteReporter` may need to be renamed.
-
 ### Provider
 
 In the [2.1 provider schema][P21],
@@ -145,8 +165,7 @@ For feeds, the new schema has the following under
 "required": ["last_updated", "tlp_label", "url"]
 ```
 
-The old schema had only `tlp_label` and `url`. We therefore also set
-`LastUpdated` when creating a feed now.
+The old schema had only `tlp_label` and `url`.
 
 Example:
 
@@ -207,29 +226,23 @@ S20/S21 section 7.1.7 and the provider schemas.
 In the new schema, a key requires both a fingerprint and a URL. In the old schema,
 only the URL was required.
 
-| Old                                                                              | New                                                                                                                                                    |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ProviderMetadata.Publisher` and `AdvisorySummary.Publisher` (each `*Publisher`) | `ProviderPublisher = v21.PublisherT` for `ProviderMetadata.Publisher`; `AdvisoryPublisher = v21.CSAFDocumentPublisher` for `AdvisorySummary.Publisher` |
-| `pmd.Publisher.Equals(...)`                                                      | `EqualsCSAFPublisher(...)`                                                                                                                             |
-| `ProviderMetadata.PGPKeys []PGPKey`                                              | `PublicOpenpgpKeys []ProviderPublicOpenpgpKeysElem`                                                                                                    |
-| `PGPKey.URL`                                                                     | `URL URLT`                                                                                                                                             |
-| `PGPKey.Fingerprint Fingerprint`                                                 | `Fingerprint string`                                                                                                                                   |
+Publisher contact details move from `contact_details` to the `contact`
+object, which can contain `details`, `email`, and `public_openpgp_key_url`.
+`ProviderMetadata.Publisher` is now a value rather than a pointer.
+`AdvisorySummary.Publisher` remains a pointer. `PGPKey.URL` is a `URLT` value
+rather than a pointer, and `Fingerprint` is a string alias.
 
-### Creating providers and aggregators
+### Metadata construction and Go field shapes
 
-S20/S21 sections 7.1.7 and 7.1.21.
+S20/S21 sections 7.1.7 and 7.1.21 and the provider and aggregator schemas.
 
-| Old                                                  | New                                |
-| ---------------------------------------------------- | ---------------------------------- |
-| `ProviderMetadata`                                   | `ProviderMetadata`                 |
-| `MetadataRole`                                       | `ProviderRole` or `AggregatorRole` |
-| `LastUpdated TimeStamp`                              | `LastUpdated DateTime`             |
-| `AggregatorInfo`                                     | `AggregatorInfo`                   |
-| `AggregatorCategory`                                 | `AggregatorAggregatorCategory`     |
-| `Aggregator.Version AggregatorVersion`               | `Aggregator.AggregatorVersion`     |
-| No aggregator `Schema`                               | `Aggregator.Schema`                |
-| `AggregatorCSAFProvider` / `AggregatorCSAFPublisher` | same public names                  |
-| `AggregatorCSAFProviderMetadata`                     | `AggregatorCSAFProviderMetadata`   |
+- Metadata versions must be 2.1. Use `MetadataVersion21` and `AggregatorVersion21`.
+- Metadata timestamps use string-based `DateTime` values instead of `TimeStamp`
+  pointers. Use `NewDateTime(t)` to construct them and `.Time()` to parse them.
+  ROLIE feed timestamps still use `TimeStamp`.
+- Required fields commonly use values where the 2.0 model used pointers.
+  Updating type names alone is therefore insufficient.
+  Optional fields and collections follow their current model declarations.
 
 ### Product tree and PURL examples
 
@@ -237,16 +250,13 @@ S20 section 3.2.2.4 describes `relationships`. S21 section 3.2.3.4 replaces
 them with `product_paths`. The `full_product_name` contained in it is relevant
 for searching product names.
 
-| Old                                    | New                                   |
-| -------------------------------------- | ------------------------------------- |
-| `Advisory`                             | `Advisory`                            |
-| `ProductTree`                          | `ProductTree`                         |
-| `FullProductNames`                     | `FullProductNames []FullProductNameT` |
-| `Branch` / `Branches`                  | `BranchesT`                           |
-| `RelationShips[].FullProductName`      | `ProductPaths[].FullProductName`      |
-| `FullProductName.ProductID *ProductID` | `ProductID ProductIDT`                |
-| `ProductIdentificationHelper`          | `ProductIdentificationHelper`         |
-| `helper.PURL PURL`                     | `helper.Purls []string`               |
+| Old                                                                 | New                                                                              |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ProductTree.FullProductNames` points to a list of product pointers | Slice of product values                                                          |
+| `Branches` contains branch pointers                                 | Slice of named `Branch` values. Nested `Branch.Branches` is a pointer to a slice |
+| `RelationShips[].FullProductName`                                   | `ProductPaths[].FullProductName`                                                 |
+| `FullProductName.ProductID` is a pointer                            | `ProductID` value                                                                |
+| `helper.PURL`                                                       | `helper.Purls []string`                                                          |
 
 The PURL change follows S20 section 3.1.3.3.4 and S21 section 3.1.4.3.4:
 a single value becomes a list.
@@ -258,15 +268,6 @@ a single value becomes a list.
 - Schema validation alone does not cover all semantic requirements of the
   standard. In particular, successful decoding must not be equated with full
   CSAF compliance.
-
-At the documented revision, `go test ./csaf/... ./examples/...` passes.
-The v21 tests compile all seven OASIS schemas and check the four publicly used
-schema roots, compilation only once for parallel calls, URI aliases, the absence
-of HTTP access for unknown schemas, and valid and invalid ROLIE inputs. The
-generator tests check reference cycles, alias mapping, deterministic output, and
-file-name collisions.
-`go test ./...` fails in checker and downloader tests with provider fixtures that
-are still based on 2.0. These results are not complete proof of compliance.
 
 [S20]: https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html
 [S21]: https://docs.oasis-open.org/csaf/csaf/v2.1/csd02/csaf-v2.1-csd02.html
