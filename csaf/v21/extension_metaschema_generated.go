@@ -33,7 +33,7 @@ type ExtensionMetaschemaJson struct {
 	Properties ExtensionMetaschemaJsonProperties `json:"properties"`
 
 	// Contains the list of required properties.
-	Required []interface{} `json:"required"`
+	Required []string `json:"required"`
 
 	// Contains the title for the CSAF Extension Schema.
 	Title string `json:"title"`

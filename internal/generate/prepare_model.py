@@ -20,6 +20,13 @@ REPLACEMENTS = {
     GENERATED_SSVC_V2_SCHEMA_VERSION_FIELD: TYPED_SSVC_V2_SCHEMA_VERSION_FIELD,
     '\tBaseScore NoneScoreType `json:"baseScore"`': ('\tBaseScore float64 `json:"baseScore"`'),
     '\tBaseSeverity NoneSeverityType `json:"baseSeverity"`': ('\tBaseSeverity CVSSV40Severity `json:"baseSeverity"`'),
+    '\tRequired []interface{} `json:"required"`': '\tRequired []string `json:"required"`',
+    # These schema definitions use string constants without an explicit type.
+    "type CriticalSeverityType interface{}": "type CriticalSeverityType string",
+    "type HighSeverityType interface{}": "type HighSeverityType string",
+    "type LowSeverityType interface{}": "type LowSeverityType string",
+    "type MediumSeverityType interface{}": "type MediumSeverityType string",
+    "type NoneSeverityType interface{}": "type NoneSeverityType string",
 }
 
 GENERATED_HEADER = """// SPDX-License-Identifier: Apache-2.0

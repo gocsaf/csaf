@@ -555,7 +555,7 @@ const ConfidenceTypeUNKNOWN ConfidenceType = "UNKNOWN"
 
 type CriticalScoreType float64
 
-type CriticalSeverityType interface{}
+type CriticalSeverityType string
 
 type ExploitCodeMaturityType string
 
@@ -582,15 +582,15 @@ const ExploitabilityTypeUNPROVEN ExploitabilityType = "UNPROVEN"
 
 type HighScoreType float64
 
-type HighSeverityType interface{}
+type HighSeverityType string
 
 type LowScoreType float64
 
-type LowSeverityType interface{}
+type LowSeverityType string
 
 type MediumScoreType float64
 
-type MediumSeverityType interface{}
+type MediumSeverityType string
 
 type ModifiedAttackComplexityType string
 
@@ -690,7 +690,7 @@ const ModifiedVulnCiaTypeNOTDEFINED ModifiedVulnCiaType = "NOT_DEFINED"
 
 type NoneScoreType float64
 
-type NoneSeverityType interface{}
+type NoneSeverityType string
 
 type PrivilegesRequiredType string
 
