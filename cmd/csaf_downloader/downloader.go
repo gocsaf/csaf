@@ -327,7 +327,7 @@ func (d *downloader) loadOpenPGPKeys(
 		return nil
 	}
 
-	var keys []csaf.PGPKey
+	var keys []csaf.ProviderPublicOpenpgpKeysElem
 	if err := util.ReMarshalJSON(&keys, src); err != nil {
 		return err
 	}
@@ -340,13 +340,13 @@ func (d *downloader) loadOpenPGPKeys(
 
 	for i := range keys {
 		key := &keys[i]
-		if key.URL == nil {
+		if key.URL == "" {
 			continue
 		}
-		u, err := url.Parse(*key.URL)
+		u, err := url.Parse(string(key.URL))
 		if err != nil {
 			slog.Warn("Invalid URL",
-				"url", *key.URL,
+				"url", key.URL,
 				"error", err)
 			continue
 		}

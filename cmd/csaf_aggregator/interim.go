@@ -191,14 +191,14 @@ func (w *worker) interimWork(ctx context.Context, wg *sync.WaitGroup, jobs <-cha
 			defer tx.rollback()
 
 			// Try all the labels
-			for _, label := range []string{
-				csaf.TLPLabelUnlabeled,
-				csaf.TLPLabelWhite,
+			for _, label := range []csaf.TLPLabel{
+				csaf.TLPLabelClear,
 				csaf.TLPLabelGreen,
 				csaf.TLPLabelAmber,
+				csaf.TLPLabelAmberStrict,
 				csaf.TLPLabelRed,
 			} {
-				label = strings.ToLower(label)
+				label := strings.ToLower(string(label))
 				labelPath := filepath.Join(providerPath, label)
 
 				interCSV := filepath.Join(labelPath, interimsCSV)

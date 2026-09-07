@@ -1,0 +1,15 @@
+
+===== emersion/go-jsonschema revision a828df1 =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work golang:1.26.5 sh -c mkdir\ -p\ tmp/schema-generator-comparison/output/emersion\ \&\&\ go\ run\ codeberg.org/emersion/go-jsonschema/cmd/jsonschemagen@a828df140a57\ -s\ tmp/schema-generator-comparison/input/csaf.json\ -o\ tmp/schema-generator-comparison/output/emersion/csaf.go\ -n\ comparison
+
+go: downloading codeberg.org/emersion/go-jsonschema v0.0.0-20251116133759-a828df140a57
+go: downloading github.com/dave/jennifer v1.7.1
+
+exit status: 0
+
+===== compile emersion/go-jsonschema output =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work/tmp/schema-generator-comparison/output/emersion golang:1.26.5 sh -c gofmt\ -w\ csaf.go\ \&\&\ go\ test\ csaf.go
+
+?   	command-line-arguments	[no test files]
+
+exit status: 0

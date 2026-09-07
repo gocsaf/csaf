@@ -290,13 +290,13 @@ func (c *controller) upload(r *http.Request) (any, error) {
 
 			// Take over publisher
 			switch {
-			case pmd.Publisher == nil:
+			case pmd.Publisher.Name == "":
 				warn("Publisher in provider metadata is not initialized. Forgot to configure?")
 				if c.cfg.DynamicProviderMetaData {
 					warn("Taking publisher from CSAF")
-					pmd.Publisher = ex.Publisher
+					pmd.Publisher = csaf.ProviderPublisherFromAdvisory(ex.Publisher)
 				}
-			case !pmd.Publisher.Equals(ex.Publisher):
+			case !pmd.Publisher.EqualsCSAFPublisher(ex.Publisher):
 				warn("Publishers in provider metadata and CSAF do not match.")
 			}
 

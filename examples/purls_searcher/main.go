@@ -39,6 +39,9 @@ func run(files []string, ids string) error {
 		if err != nil {
 			return fmt.Errorf("loading %q failed: %w", file, err)
 		}
+		if adv.ProductTree == nil {
+			continue
+		}
 
 		for id := range strings.SplitSeq(ids, ",") {
 			already := util.Set[csaf.PURL]{}
@@ -46,10 +49,12 @@ func run(files []string, ids string) error {
 			adv.ProductTree.FindProductIdentificationHelpers(
 				csaf.ProductID(id),
 				func(h *csaf.ProductIdentificationHelper) {
-					if h.PURL != nil && !already.Contains(*h.PURL) {
-						already.Add(*h.PURL)
-						i++
-						fmt.Printf("%d. %s\n", i, *h.PURL)
+					for _, purl := range h.Purls {
+						if !already.Contains(purl) {
+							already.Add(purl)
+							i++
+							fmt.Printf("%d. %s\n", i, purl)
+						}
 					}
 				})
 		}

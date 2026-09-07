@@ -11,6 +11,7 @@ package csaf
 import (
 	"time"
 
+	v21 "github.com/gocsaf/csaf/v3/csaf/v21"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -29,13 +30,17 @@ const (
 type AdvisorySummary struct {
 	ID                 string
 	Title              string
-	Publisher          *Publisher
+	Publisher          *AdvisoryPublisher
 	InitialReleaseDate time.Time
 	CurrentReleaseDate time.Time
 	Summary            string
 	TLPLabel           string
 	Status             string
 }
+
+// AdvisoryPublisher is the publisher information exposed by an
+// AdvisorySummary.
+type AdvisoryPublisher = v21.CSAFDocumentPublisher
 
 // NewAdvisorySummary creates a summary from an advisory doc
 // with the help of an expression evaluator expr.
@@ -45,7 +50,7 @@ func NewAdvisorySummary(
 ) (*AdvisorySummary, error) {
 
 	e := &AdvisorySummary{
-		Publisher: new(Publisher),
+		Publisher: new(AdvisoryPublisher),
 	}
 
 	if err := pe.Match([]util.PathEvalMatcher{

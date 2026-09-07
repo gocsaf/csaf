@@ -8,6 +8,7 @@ require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/Intevation/gval v1.3.0
 	github.com/Intevation/jsonpath v0.2.1
+	github.com/dlclark/regexp2 v1.11.0
 	github.com/ProtonMail/gopenpgp/v2 v2.10.0
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/gofrs/flock v0.13.0

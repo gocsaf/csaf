@@ -148,29 +148,32 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 	// Fill in directory URLs if needed.
 	if w.provider.writeIndices(w.processor.cfg) {
 		for _, label := range slices.Sorted(maps.Keys(w.summaries)) {
-			pm.AddDirectoryDistribution(prefixURL.JoinPath(label).String())
+			pm.AddDirectoryDistribution(
+				prefixURL.JoinPath(label).String(),
+				csaf.TLPLabel(strings.ToUpper(label)),
+			)
 		}
 	}
 
 	// Figure out the role
-	var role csaf.MetadataRole
+	var role csaf.ProviderRole
 
 	if strings.HasPrefix(w.provider.Domain, "https://") {
-		role = csaf.MetadataRolePublisher
+		role = csaf.ProviderRoleCSAFPublisher
 	} else {
-		role = csaf.MetadataRoleProvider
+		role = csaf.ProviderRoleCSAFProvider
 	}
 
-	pm.Role = &role
+	pm.Role = role
 
-	pm.Publisher = new(csaf.Publisher)
+	pm.Publisher = csaf.ProviderPublisher{}
 
 	var lastUpdate time.Time
 
 	if err := w.expr.Match([]util.PathEvalMatcher{
-		{Expr: `$.publisher`, Action: util.ReMarshalMatcher(pm.Publisher)},
+		{Expr: `$.publisher`, Action: util.ReMarshalMatcher(&pm.Publisher)},
 		{Expr: `$.last_updated`, Action: util.TimeMatcher(&lastUpdate, time.RFC3339)},
-		{Expr: `$.public_openpgp_keys`, Action: util.ReMarshalMatcher(&pm.PGPKeys)},
+		{Expr: `$.public_openpgp_keys`, Action: util.ReMarshalMatcher(&pm.PublicOpenpgpKeys)},
 	}, w.metadataProvider); err != nil {
 		// only log the errors
 		w.log.Error("Extracting data from original provider failed", "err", err)
@@ -181,8 +184,7 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 		return err
 	}
 
-	la := csaf.TimeStamp(lastUpdate)
-	pm.LastUpdated = &la
+	pm.SetLastUpdated(lastUpdate)
 
 	return util.WriteToFile(fname, pm)
 }
@@ -203,19 +205,19 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 		return keyURL.JoinPath("openpgp", fingerprint+".asc").String()
 	}
 
-	for i := range pm.PGPKeys {
-		pgpKey := &pm.PGPKeys[i]
-		if pgpKey.URL == nil {
+	for i := range pm.PublicOpenpgpKeys {
+		pgpKey := &pm.PublicOpenpgpKeys[i]
+		if pgpKey.URL == "" {
 			w.log.Warn("Ignoring PGP key without URL", "fingerprint", pgpKey.Fingerprint)
 			continue
 		}
 		if _, err := hex.DecodeString(string(pgpKey.Fingerprint)); err != nil {
-			w.log.Warn("Ignoring PGP key with invalid fingerprint", "url", *pgpKey.URL)
+			w.log.Warn("Ignoring PGP key with invalid fingerprint", "url", pgpKey.URL)
 			continue
 		}
 
 		// Fetch remote key.
-		res, err := w.client.GetWithContext(ctx, *pgpKey.URL)
+		res, err := w.client.GetWithContext(ctx, string(pgpKey.URL))
 		if err != nil {
 			os.RemoveAll(openPGPFolder)
 			return err
@@ -225,7 +227,7 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 			os.RemoveAll(openPGPFolder)
 			res.Body.Close()
 			return fmt.Errorf("cannot fetch PGP key %s: %s (%d)",
-				*pgpKey.URL, res.Status, res.StatusCode)
+				pgpKey.URL, res.Status, res.StatusCode)
 		}
 
 		fingerprint := strings.ToUpper(string(pgpKey.Fingerprint))
@@ -252,7 +254,7 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 
 		// replace the URL
 		u := localKeyURL(fingerprint)
-		pgpKey.URL = &u
+		pgpKey.URL = csaf.URLT(u)
 	}
 
 	// If we have public key configured copy it into the new folder
@@ -302,7 +304,7 @@ func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error
 
 	var (
 		lastUpdatedT time.Time
-		pub          csaf.Publisher
+		pub          csaf.ProviderPublisher
 		roleS        string
 		urlS         string
 	)
@@ -317,17 +319,17 @@ func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error
 	}
 
 	var (
-		lastUpdated = csaf.TimeStamp(lastUpdatedT)
-		role        = csaf.MetadataRole(roleS)
+		lastUpdated = csaf.NewDateTime(lastUpdatedT)
+		role        = csaf.AggregatorRole(roleS)
 		providerURL = csaf.ProviderURL(urlS)
 	)
 
 	return &csaf.AggregatorCSAFProvider{
-		Metadata: &csaf.AggregatorCSAFProviderMetadata{
-			LastUpdated: &lastUpdated,
-			Publisher:   &pub,
-			Role:        &role,
-			URL:         &providerURL,
+		Metadata: csaf.AggregatorCSAFProviderMetadata{
+			LastUpdated: lastUpdated,
+			Publisher:   pub,
+			Role:        role,
+			URL:         providerURL,
 		},
 	}, nil
 }

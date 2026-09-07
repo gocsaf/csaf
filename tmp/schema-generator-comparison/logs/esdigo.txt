@@ -1,0 +1,19 @@
+
+===== esdigo 0.4.1 =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work golang:1.26.5 sh -c go\ run\ github.com/binadel/esdigo/gen/cmd/esdigo-gen@v0.4.1\ -pkg\ comparison\ -name\ CSAF\ -o\ tmp/schema-generator-comparison/output/esdigo.go\ tmp/schema-generator-comparison/input/csaf.json
+
+go: downloading github.com/binadel/esdigo v0.4.1
+go: downloading gopkg.in/yaml.v3 v3.0.1
+error: unresolved $ref "extension-content.json" in items of "x_extensions"
+exit status 1
+
+exit status: 1
+
+===== esdigo 0.4.1 with all local references =====
+command: timeout 30s docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work golang:1.26.5 sh -c go\ run\ github.com/binadel/esdigo/gen/cmd/esdigo-gen@v0.4.1\ -pkg\ comparison\ -outdir\ tmp/schema-generator-comparison/output/esdigo-with-references\ tmp/schema-generator-comparison/input-with-references
+
+go: downloading github.com/binadel/esdigo v0.4.1
+go: downloading gopkg.in/yaml.v3 v3.0.1
+signal: terminated
+
+exit status: 1

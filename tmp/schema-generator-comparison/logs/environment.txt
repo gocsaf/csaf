@@ -1,0 +1,29 @@
+
+===== host Go version =====
+command: go version
+
+go version go1.27.1-X:nodwarf5 linux/amd64
+
+exit status: 0
+
+===== Go container image =====
+command: docker image inspect golang:1.26.5 --format image:\ \{\{.Id\}\}
+
+image: sha256:9ef24b56b1ae2fd357f480acd7f33dbddcb42960f3cca531c458edb32fdee509
+
+exit status: 0
+
+===== Node container image =====
+command: docker image inspect node:24-bookworm --format image:\ \{\{.Id\}\}
+
+image: sha256:aa09691f441f07a6d1f076f25470751bff882a4ba88274f3d7f9fa5af542f0ce
+
+exit status: 0
+
+===== Node and npm versions =====
+command: docker run --rm node:24-bookworm sh -c node\ --version\ \&\&\ npm\ --version
+
+v24.20.0
+11.19.0
+
+exit status: 0

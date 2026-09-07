@@ -1,0 +1,12 @@
+
+===== quicktype 26.0.0 =====
+command: docker run --rm --user 1000:1000 -e npm_config_cache=/tmp/npm -v /home/main/Documents/work/intevation/gocsaf:/work -w /work node:24-bookworm sh -c npx\ --yes\ quicktype@26.0.0\ --lang\ go\ --src-lang\ schema\ --package\ comparison\ --out\ tmp/schema-generator-comparison/output/quicktype.go\ tmp/schema-generator-comparison/input/csaf.json
+
+Error: Can't have non-specified required properties but forbidden additionalTypes at https://www.first.org/cvss/cvss-v4.0.json#.
+npm notice
+npm notice New major version of npm available! 11.19.0 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
+
+exit status: 1

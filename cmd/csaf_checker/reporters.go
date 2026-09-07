@@ -51,8 +51,8 @@ var reporters = [...]reporter{
 	1:  &validReporter{baseReporter{num: 1, description: "Valid CSAF documents"}},
 	2:  &filenameReporter{baseReporter{num: 2, description: "Filename"}},
 	3:  &tlsReporter{baseReporter{num: 3, description: "TLS"}},
-	4:  &tlpWhiteReporter{baseReporter{num: 4, description: "TLP:WHITE"}},
-	5:  &tlpAmberRedReporter{baseReporter{num: 5, description: "TLP:AMBER and TLP:RED"}},
+	4:  &tlpWhiteReporter{baseReporter{num: 4, description: "TLP:CLEAR"}},
+	5:  &tlpAmberRedReporter{baseReporter{num: 5, description: "TLP:AMBER, TLP:AMBER+STRICT, and TLP:RED"}},
 	6:  &redirectsReporter{baseReporter{num: 6, description: "Redirects"}},
 	7:  &providerMetadataReport{baseReporter{num: 7, description: "provider-metadata.json"}},
 	8:  &securityReporter{baseReporter{num: 8, description: "security.txt"}},
@@ -147,34 +147,34 @@ func (r *tlsReporter) report(p *processor, domain *Domain) {
 	req.message(ErrorType, urls...)
 }
 
-// report tests if a document labeled TLP:WHITE
+// report tests if a document labeled TLP:CLEAR
 // is freely accessible and sets the "message" field value
 // of the "Requirement" struct as a result of that.
 func (r *tlpWhiteReporter) report(p *processor, domain *Domain) {
 	req := r.requirement(domain)
 	if !p.badWhitePermissions.used() {
-		req.message(InfoType, "No access-protected advisories labeled TLP:WHITE found.")
+		req.message(InfoType, "No access-protected advisories labeled TLP:CLEAR found.")
 		return
 	}
 	if len(p.badWhitePermissions) == 0 {
-		req.message(InfoType, "All advisories labeled TLP:WHITE were freely accessible.")
+		req.message(InfoType, "All advisories labeled TLP:CLEAR were freely accessible.")
 		return
 	}
 	req.Messages = p.badWhitePermissions
 }
 
-// report tests if a document labeled TLP:AMBER
+// report tests if a document labeled TLP:AMBER, TLP:AMBER+STRICT,
 // or TLP:RED is access protected
 // and sets the "message" field value
 // of the "Requirement" struct as a result of that.
 func (r *tlpAmberRedReporter) report(p *processor, domain *Domain) {
 	req := r.requirement(domain)
 	if !p.badAmberRedPermissions.used() {
-		req.message(InfoType, "No advisories labeled TLP:AMBER or TLP:RED tested for accessibility.")
+		req.message(InfoType, "No advisories labeled TLP:AMBER, TLP:AMBER+STRICT, or TLP:RED tested for accessibility.")
 		return
 	}
 	if len(p.badAmberRedPermissions) == 0 {
-		req.message(InfoType, "All tested advisories labeled TLP:AMBER or TLP:RED were access-protected.")
+		req.message(InfoType, "All tested advisories labeled TLP:AMBER, TLP:AMBER+STRICT, or TLP:RED were access-protected.")
 		return
 	}
 	req.Messages = p.badAmberRedPermissions
@@ -330,7 +330,7 @@ func (r *directoryListingsReporter) report(p *processor, domain *Domain) {
 
 // report checks whether there is only a single ROLIE feed for a
 // given TLP level and whether any of the TLP levels
-// TLP:WHITE, TLP:GREEN or unlabeled exists and sets the "message" field value
+// TLP:CLEAR or TLP:GREEN exists and sets the "message" field value
 // of the "Requirement" struct as a result of that.
 func (r *rolieFeedReporter) report(p *processor, domain *Domain) {
 	req := r.requirement(domain)

@@ -1,0 +1,172 @@
+
+===== go-jsonschema v0.24.1 models only =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work golang:1.26.5 sh -c go\ run\ github.com/atombender/go-jsonschema@v0.24.1\ --only-models\ --tags\ json\ --capitalization\ ID\ --capitalization\ URI\ --capitalization\ URL\ --capitalization\ CVSS\ --capitalization\ CVE\ --capitalization\ CSAF\ --capitalization\ SSVC\ --capitalization\ EPSS\ --capitalization\ CPE\ --capitalization\ SBOM\ --capitalization\ TLP\ --capitalization\ CWE\ --schema-root-type=https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json=CSAF\ -p\ comparison\ -o\ tmp/schema-generator-comparison/output/go-jsonschema-models.go\ tmp/schema-generator-comparison/input/csaf.json\ https://www.first.org/cvss/cvss-v3.0.json\ https://www.first.org/cvss/cvss-v3.1.json
+
+go: downloading github.com/atombender/go-jsonschema v0.24.1
+go: downloading github.com/spf13/cobra v1.10.2
+go: downloading github.com/sosodev/duration v1.4.0
+go: downloading github.com/sanity-io/litter v1.5.8
+go: downloading github.com/goccy/go-yaml v1.19.2
+go: downloading github.com/google/go-cmp v0.7.0
+go: downloading dario.cat/mergo v1.0.2
+go: downloading github.com/mitchellh/go-wordwrap v1.0.1
+go: downloading github.com/spf13/pflag v1.0.10
+go-jsonschema: Warning: Multiple types map to the name "CiaRequirementType"; declaring duplicate as "CiaRequirementType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "AttackVectorType"; declaring duplicate as "AttackVectorType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "CiaType"; declaring duplicate as "CiaType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "ModifiedAttackComplexityType"; declaring duplicate as "ModifiedAttackComplexityType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "ModifiedAttackVectorType"; declaring duplicate as "ModifiedAttackVectorType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "ModifiedPrivilegesRequiredType"; declaring duplicate as "ModifiedPrivilegesRequiredType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "ModifiedUserInteractionType"; declaring duplicate as "ModifiedUserInteractionType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "UserInteractionType"; declaring duplicate as "UserInteractionType_1" instead
+
+exit status: 0
+
+===== compile go-jsonschema v0.24.1 models-only output =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work/tmp/schema-generator-comparison/output golang:1.26.5 sh -c gofmt\ -w\ go-jsonschema-models.go\ \&\&\ go\ test\ go-jsonschema-models.go
+
+?   	command-line-arguments	[no test files]
+
+exit status: 0
+
+===== go-jsonschema v0.24.1 with generated validation =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work golang:1.26.5 sh -c go\ run\ github.com/atombender/go-jsonschema@v0.24.1\ --tags\ json\ --capitalization\ ID\ --capitalization\ URI\ --capitalization\ URL\ --capitalization\ CVSS\ --capitalization\ CVE\ --capitalization\ CSAF\ --capitalization\ SSVC\ --capitalization\ EPSS\ --capitalization\ CPE\ --capitalization\ SBOM\ --capitalization\ TLP\ --capitalization\ CWE\ --schema-root-type=https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json=CSAF\ -p\ comparison\ -o\ tmp/schema-generator-comparison/output/go-jsonschema-validation.go\ tmp/schema-generator-comparison/input/csaf.json\ https://www.first.org/cvss/cvss-v3.0.json\ https://www.first.org/cvss/cvss-v3.1.json
+
+go: downloading github.com/atombender/go-jsonschema v0.24.1
+go: downloading github.com/google/go-cmp v0.7.0
+go: downloading github.com/goccy/go-yaml v1.19.2
+go: downloading github.com/mitchellh/go-wordwrap v1.0.1
+go: downloading github.com/sanity-io/litter v1.5.8
+go: downloading github.com/sosodev/duration v1.4.0
+go: downloading github.com/spf13/cobra v1.10.2
+go: downloading dario.cat/mergo v1.0.2
+go: downloading github.com/spf13/pflag v1.0.10
+go-jsonschema: Warning: Multiple types map to the name "CiaRequirementType"; declaring duplicate as "CiaRequirementType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "AttackVectorType"; declaring duplicate as "AttackVectorType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "CiaType"; declaring duplicate as "CiaType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "ModifiedAttackComplexityType"; declaring duplicate as "ModifiedAttackComplexityType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "ModifiedAttackVectorType"; declaring duplicate as "ModifiedAttackVectorType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "ModifiedPrivilegesRequiredType"; declaring duplicate as "ModifiedPrivilegesRequiredType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "ModifiedUserInteractionType"; declaring duplicate as "ModifiedUserInteractionType_1" instead
+go-jsonschema: Warning: Multiple types map to the name "UserInteractionType"; declaring duplicate as "UserInteractionType_1" instead
+go-jsonschema: Warning: The generated code could not be formatted automatically; falling back to unformatted: 3293:59: unknown escape sequence (and 111 more errors)
+
+exit status: 0
+
+===== compile go-jsonschema v0.24.1 validation output =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work/tmp/schema-generator-comparison/output golang:1.26.5 sh -c gofmt\ -w\ go-jsonschema-validation.go\ \&\&\ go\ test\ go-jsonschema-validation.go
+
+go-jsonschema-validation.go:3293:59: unknown escape sequence
+go-jsonschema-validation.go:3293:61: unknown escape sequence
+go-jsonschema-validation.go:3293:67: unknown escape sequence
+go-jsonschema-validation.go:3293:79: unknown escape sequence
+go-jsonschema-validation.go:3293:84: unknown escape sequence
+go-jsonschema-validation.go:3293:90: unknown escape sequence
+go-jsonschema-validation.go:3293:96: unknown escape sequence
+go-jsonschema-validation.go:3293:100: unknown escape sequence
+go-jsonschema-validation.go:3293:103: unknown escape sequence
+go-jsonschema-validation.go:3293:108: unknown escape sequence
+go-jsonschema-validation.go:3293:110: unknown escape sequence
+go-jsonschema-validation.go:3293:123: unknown escape sequence
+go-jsonschema-validation.go:3293:142: unknown escape sequence
+go-jsonschema-validation.go:3293:156: unknown escape sequence
+go-jsonschema-validation.go:3293:158: unknown escape sequence
+go-jsonschema-validation.go:3293:197: unknown escape sequence
+go-jsonschema-validation.go:3293:237: unknown escape sequence
+go-jsonschema-validation.go:3293:242: unknown escape sequence
+go-jsonschema-validation.go:3293:244: unknown escape sequence
+go-jsonschema-validation.go:3293:253: unknown escape sequence
+go-jsonschema-validation.go:3293:255: unknown escape sequence
+go-jsonschema-validation.go:3293:268: unknown escape sequence
+go-jsonschema-validation.go:3293:272: unknown escape sequence
+go-jsonschema-validation.go:3293:282: unknown escape sequence
+go-jsonschema-validation.go:3293:286: unknown escape sequence
+go-jsonschema-validation.go:3293:296: unknown escape sequence
+go-jsonschema-validation.go:3293:315: unknown escape sequence
+go-jsonschema-validation.go:3293:319: unknown escape sequence
+go-jsonschema-validation.go:3293:348: unknown escape sequence
+go-jsonschema-validation.go:3293:360: unknown escape sequence
+go-jsonschema-validation.go:3293:364: unknown escape sequence
+go-jsonschema-validation.go:3293:398: unknown escape sequence
+go-jsonschema-validation.go:3293:417: unknown escape sequence
+go-jsonschema-validation.go:3293:437: unknown escape sequence
+go-jsonschema-validation.go:3294:77: unknown escape sequence
+go-jsonschema-validation.go:3294:79: unknown escape sequence
+go-jsonschema-validation.go:3294:85: unknown escape sequence
+go-jsonschema-validation.go:3294:97: unknown escape sequence
+go-jsonschema-validation.go:3294:102: unknown escape sequence
+go-jsonschema-validation.go:3294:108: unknown escape sequence
+go-jsonschema-validation.go:3294:114: unknown escape sequence
+go-jsonschema-validation.go:3294:118: unknown escape sequence
+go-jsonschema-validation.go:3294:121: unknown escape sequence
+go-jsonschema-validation.go:3294:126: unknown escape sequence
+go-jsonschema-validation.go:3294:128: unknown escape sequence
+go-jsonschema-validation.go:3294:141: unknown escape sequence
+go-jsonschema-validation.go:3294:160: unknown escape sequence
+go-jsonschema-validation.go:3294:174: unknown escape sequence
+go-jsonschema-validation.go:3294:176: unknown escape sequence
+go-jsonschema-validation.go:3294:215: unknown escape sequence
+go-jsonschema-validation.go:3294:255: unknown escape sequence
+go-jsonschema-validation.go:3294:260: unknown escape sequence
+go-jsonschema-validation.go:3294:262: unknown escape sequence
+go-jsonschema-validation.go:3294:271: unknown escape sequence
+go-jsonschema-validation.go:3294:273: unknown escape sequence
+go-jsonschema-validation.go:3294:286: unknown escape sequence
+go-jsonschema-validation.go:3294:290: unknown escape sequence
+go-jsonschema-validation.go:3294:300: unknown escape sequence
+go-jsonschema-validation.go:3294:304: unknown escape sequence
+go-jsonschema-validation.go:3294:314: unknown escape sequence
+go-jsonschema-validation.go:3294:333: unknown escape sequence
+go-jsonschema-validation.go:3294:337: unknown escape sequence
+go-jsonschema-validation.go:3294:366: unknown escape sequence
+go-jsonschema-validation.go:3294:378: unknown escape sequence
+go-jsonschema-validation.go:3294:382: unknown escape sequence
+go-jsonschema-validation.go:3294:416: unknown escape sequence
+go-jsonschema-validation.go:3294:435: unknown escape sequence
+go-jsonschema-validation.go:3294:455: unknown escape sequence
+go-jsonschema-validation.go:3562:132: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:134: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:136: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:144: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:145: illegal character U+003F '?'
+go-jsonschema-validation.go:3562:148: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:150: illegal character U+003F '?'
+go-jsonschema-validation.go:3562:155: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:157: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:207: illegal character U+003F '?'
+go-jsonschema-validation.go:3562:211: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:213: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:223: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:224: illegal character U+003F '?'
+go-jsonschema-validation.go:3562:227: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:229: illegal character U+003F '?'
+go-jsonschema-validation.go:3562:242: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:244: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:250: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:251: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:253: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:254: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:255: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:257: illegal character U+005C '\'
+go-jsonschema-validation.go:3562:258: illegal character U+003F '?'
+go-jsonschema-validation.go:3562:260: string literal not terminated
+go-jsonschema-validation.go:3562:263: unknown escape sequence
+go-jsonschema-validation.go:3562:268: unknown escape sequence
+go-jsonschema-validation.go:3562:270: unknown escape sequence
+go-jsonschema-validation.go:3562:272: unknown escape sequence
+go-jsonschema-validation.go:3562:275: unknown escape sequence
+go-jsonschema-validation.go:3562:283: unknown escape sequence
+go-jsonschema-validation.go:3562:285: unknown escape sequence
+go-jsonschema-validation.go:3562:287: unknown escape sequence
+go-jsonschema-validation.go:3562:290: unknown escape sequence
+go-jsonschema-validation.go:3562:292: unknown escape sequence
+go-jsonschema-validation.go:3562:294: unknown escape sequence
+go-jsonschema-validation.go:3562:302: unknown escape sequence
+go-jsonschema-validation.go:3562:306: unknown escape sequence
+go-jsonschema-validation.go:3562:313: unknown escape sequence
+go-jsonschema-validation.go:3562:315: unknown escape sequence
+go-jsonschema-validation.go:3562:338: unknown escape sequence
+go-jsonschema-validation.go:3562:361: unknown escape sequence
+go-jsonschema-validation.go:3562:364: unknown escape sequence
+
+exit status: 2

@@ -285,7 +285,7 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 		if domain.Role == nil {
 			log.Printf("No role found in meta data for domain %q\n", d)
 			// Assume trusted provider to continue report generation
-			role := csaf.MetadataRoleTrustedProvider
+			role := csaf.ProviderRoleCSAFTrustedProvider
 			domain.Role = &role
 		}
 
@@ -324,8 +324,8 @@ func (p *processor) fillMeta(domain *Domain) error {
 	}
 
 	var (
-		pub  csaf.Publisher
-		role csaf.MetadataRole
+		pub  csaf.ProviderPublisher
+		role csaf.ProviderRole
 	)
 
 	if err := p.expr.Match([]util.PathEvalMatcher{
@@ -1277,7 +1277,7 @@ func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 	hasRolie = hasRolie && len(fs) > 0
 
 	if hasRolie {
-		var feeds [][]csaf.Feed
+		var feeds [][]csaf.ProviderDistributionsElemRolieFeedsElem
 		if err := util.ReMarshalJSON(&feeds, rolie); err != nil {
 			p.badProviderMetadata.error("ROLIE feeds are not compatible: %v.", err)
 		} else if err := p.processROLIEFeeds(ctx, feeds); err != nil {
@@ -1298,7 +1298,7 @@ func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 
 	// No rolie feeds -> try directory_urls.
 	directoryURLs, err := p.expr.Eval(
-		"$.distributions[*].directory_url", p.pmd)
+		"$.distributions[*].directory.url", p.pmd)
 
 	var dirURLs []string
 
@@ -1451,7 +1451,7 @@ func (p *processor) checkListing(ctx context.Context, _ string) error {
 	return nil
 }
 
-// checkWhitePermissions checks if the TLP:WHITE advisories are
+// checkWhitePermissions checks if the TLP:CLEAR advisories are
 // available with unprotected access.
 func (p *processor) checkWhitePermissions(context.Context, string) error {
 	var ids []string
@@ -1468,7 +1468,7 @@ func (p *processor) checkWhitePermissions(context.Context, string) error {
 	slices.Sort(ids)
 
 	p.badWhitePermissions.error(
-		"TLP:WHITE advisories with ids %s are only available access-protected.",
+		"TLP:CLEAR advisories with ids %s are only available access-protected.",
 		strings.Join(ids, ", "))
 
 	return nil
@@ -1700,7 +1700,7 @@ func (p *processor) checkPGPKeys(ctx context.Context, _ string) error {
 		return errContinue
 	}
 
-	var keys []csaf.PGPKey
+	var keys []csaf.ProviderPublicOpenpgpKeysElem
 	if err := util.ReMarshalJSON(&keys, src); err != nil {
 		p.badPGPs.error("Invalid public OpenPGP keys: %v.", err)
 		return errContinue
@@ -1717,13 +1717,13 @@ func (p *processor) checkPGPKeys(ctx context.Context, _ string) error {
 
 	for i := range keys {
 		key := &keys[i]
-		if key.URL == nil {
+		if key.URL == "" {
 			p.badPGPs.error("Missing URL for fingerprint %x.", key.Fingerprint)
 			continue
 		}
-		up, err := url.Parse(*key.URL)
+		up, err := url.Parse(string(key.URL))
 		if err != nil {
-			p.badPGPs.error("Invalid URL '%s': %v", *key.URL, err)
+			p.badPGPs.error("Invalid URL '%s': %v", key.URL, err)
 			continue
 		}
 
@@ -1731,7 +1731,7 @@ func (p *processor) checkPGPKeys(ctx context.Context, _ string) error {
 		u := up.String()
 		p.checkTLS(u)
 
-		res, err := client.GetWithContext(ctx, *key.URL)
+		res, err := client.GetWithContext(ctx, string(key.URL))
 		if err != nil {
 			p.badPGPs.error("Fetching public OpenPGP key %s failed: %v.", u, err)
 			continue

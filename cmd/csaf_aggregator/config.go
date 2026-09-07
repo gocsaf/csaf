@@ -47,8 +47,8 @@ type provider struct {
 	WriteIndices *bool     `toml:"write_indices"`
 	Categories   *[]string `toml:"categories"`
 	// ServiceDocument incidates if we should create a service.json document.
-	ServiceDocument     *bool                    `toml:"create_service_document"`
-	AggregatoryCategory *csaf.AggregatorCategory `toml:"category"`
+	ServiceDocument     *bool                              `toml:"create_service_document"`
+	AggregatoryCategory *csaf.AggregatorAggregatorCategory `toml:"category"`
 
 	// UpdateInterval is as the mandatory `update_interval` if this is a publisher.
 	UpdateInterval *string `toml:"update_interval"`
@@ -224,7 +224,7 @@ func (p *provider) writeIndices(c *config) bool {
 
 func (p *provider) runAsMirror(c *config) bool {
 	if p.AggregatoryCategory != nil {
-		return *p.AggregatoryCategory == csaf.AggregatorAggregator
+		return *p.AggregatoryCategory == csaf.AggregatorAggregatorCategoryAggregator
 	}
 	return c.runAsMirror()
 }
@@ -244,8 +244,7 @@ func (c *config) atLeastNMirrors(n int) bool {
 
 // runAsMirror determines if the aggregator should run in mirror mode.
 func (c *config) runAsMirror() bool {
-	return c.Aggregator.Category != nil &&
-		*c.Aggregator.Category == csaf.AggregatorAggregator
+	return c.Aggregator.Category == csaf.AggregatorAggregatorCategoryAggregator
 }
 
 func (c *config) privateOpenPGPKey() (*crypto.Key, error) {

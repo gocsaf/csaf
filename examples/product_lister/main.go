@@ -46,42 +46,8 @@ func visitFullProductNames(
 	adv *csaf.Advisory,
 	visit func(*csaf.FullProductName),
 ) {
-	// Iterate over all full product names
-	if fpns := adv.ProductTree.FullProductNames; fpns != nil {
-		for _, fpn := range *fpns {
-			if fpn != nil && fpn.ProductID != nil {
-				visit(fpn)
-			}
-		}
-	}
-
-	// Iterate over branches recursively
-	var recBranch func(b *csaf.Branch)
-	recBranch = func(b *csaf.Branch) {
-		if b == nil {
-			return
-		}
-		if fpn := b.Product; fpn != nil && fpn.ProductID != nil {
-			visit(fpn)
-
-		}
-		for _, c := range b.Branches {
-			recBranch(c)
-		}
-	}
-	for _, b := range adv.ProductTree.Branches {
-		recBranch(b)
-	}
-
-	// Iterate over relationships
-	if rels := adv.ProductTree.RelationShips; rels != nil {
-		for _, rel := range *rels {
-			if rel != nil {
-				if fpn := rel.FullProductName; fpn != nil && fpn.ProductID != nil {
-					visit(fpn)
-				}
-			}
-		}
+	if adv.ProductTree != nil {
+		adv.ProductTree.VisitFullProductNames(visit)
 	}
 }
 
@@ -115,7 +81,7 @@ func printProductIDMapping(adv *csaf.Advisory) error {
 
 	productIDMap := map[csaf.ProductID][]productNameHelperMapping{}
 	visitFullProductNames(adv, func(fpn *csaf.FullProductName) {
-		productIDMap[*fpn.ProductID] = append(productIDMap[*fpn.ProductID], productNameHelperMapping{
+		productIDMap[fpn.ProductID] = append(productIDMap[fpn.ProductID], productNameHelperMapping{
 			FullProductName:             fpn,
 			ProductIdentificationHelper: fpn.ProductIdentificationHelper,
 		})
@@ -132,9 +98,12 @@ func printProductIdentHelperMapping(adv *csaf.Advisory) error {
 
 	productIdentMap := []productIdentIDMapping{}
 	visitFullProductNames(adv, func(fpn *csaf.FullProductName) {
+		if fpn.ProductIdentificationHelper == nil {
+			return
+		}
 		productIdentMap = append(productIdentMap, productIdentIDMapping{
 			ProductNameHelperMapping: *fpn.ProductIdentificationHelper,
-			ProductID:                fpn.ProductID,
+			ProductID:                &fpn.ProductID,
 		})
 	})
 	return printJSON(productIdentMap)

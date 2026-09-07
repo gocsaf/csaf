@@ -52,29 +52,31 @@ func (lc *labelChecker) reset() {
 // tlpLevel returns an inclusion order of TLP colors.
 func tlpLevel(label csaf.TLPLabel) int {
 	switch label {
-	case csaf.TLPLabelWhite:
+	case csaf.TLPLabelClear:
 		return 1
 	case csaf.TLPLabelGreen:
 		return 2
 	case csaf.TLPLabelAmber:
 		return 3
-	case csaf.TLPLabelRed:
+	case csaf.TLPLabelAmberStrict:
 		return 4
+	case csaf.TLPLabelRed:
+		return 5
 	default:
 		return 0
 	}
 }
 
 // extractTLP extracts the tlp label of the given document
-// and defaults to UNLABELED if not found.
+// and returns an invalid empty label if it cannot be extracted.
 func (p *processor) extractTLP(doc any) csaf.TLPLabel {
 	labelString, err := p.expr.Eval(`$.document.distribution.tlp.label`, doc)
 	if err != nil {
-		return csaf.TLPLabelUnlabeled
+		return ""
 	}
 	label, ok := labelString.(string)
 	if !ok {
-		return csaf.TLPLabelUnlabeled
+		return ""
 	}
 	return csaf.TLPLabel(label)
 }
@@ -107,9 +109,9 @@ func (lc *labelChecker) checkPermissions(
 	url string,
 ) {
 	switch label {
-	case csaf.TLPLabelAmber, csaf.TLPLabelRed:
+	case csaf.TLPLabelAmber, csaf.TLPLabelAmberStrict, csaf.TLPLabelRed:
 		// If the client has no authorization it shouldn't be able
-		// to access TLP:AMBER or TLP:RED advisories
+		// to access TLP:AMBER, TLP:AMBER+STRICT, or TLP:RED advisories
 		p.badAmberRedPermissions.use()
 		if !p.usedAuthorizedClient() {
 			p.badAmberRedPermissions.error(
@@ -130,8 +132,8 @@ func (lc *labelChecker) checkPermissions(
 			}
 		}
 
-	case csaf.TLPLabelWhite:
-		// If we found a white labeled document we need to track it
+	case csaf.TLPLabelClear:
+		// If we found a clear labeled document we need to track it
 		// to find out later if there was an unprotected way to access it.
 
 		p.badWhitePermissions.use()
@@ -152,13 +154,13 @@ func (lc *labelChecker) checkPermissions(
 				if resp, err := p.unauthorizedClient().GetWithContext(ctx, url); err == nil {
 					accessible := resp.StatusCode == http.StatusOK
 					lc.whiteAdvisories[id] = accessible
-					// If we are in a white rolie feed or in a dirlisting
+					// If we are in a clear ROLIE feed or in a directory listing,
 					// directly warn if we cannot access it.
-					// The cases of being in an amber or red feed are resolved.
+					// The cases of being in an amber, amber+strict, or red feed are resolved.
 					if !accessible &&
-						(lc.feedLabel == "" || lc.feedLabel == csaf.TLPLabelWhite) {
+						(lc.feedLabel == "" || lc.feedLabel == csaf.TLPLabelClear) {
 						p.badWhitePermissions.warn(
-							"Advisory %s of TLP level WHITE is access-protected.", url)
+							"Advisory %s of TLP level CLEAR is access-protected.", url)
 					}
 					resp.Body.Close()
 				}
@@ -192,16 +194,10 @@ func (lc *labelChecker) checkRank(
 	switch advisoryRank, feedRank := tlpLevel(label), tlpLevel(lc.feedLabel); {
 
 	case advisoryRank < feedRank:
-		if advisoryRank == 0 { // All kinds of 'UNLABELED'
-			p.badROLIEFeed.info(
-				"Found unlabeled advisory %q in feed %q.",
-				url, lc.feedURL)
-		} else {
-			p.badROLIEFeed.warn(
-				"Found advisory %q labled TLP:%s in feed %q (TLP:%s).",
-				url, label,
-				lc.feedURL, lc.feedLabel)
-		}
+		p.badROLIEFeed.warn(
+			"Found advisory %q labeled TLP:%s in feed %q (TLP:%s).",
+			url, label,
+			lc.feedURL, lc.feedLabel)
 
 	case advisoryRank > feedRank:
 		// Must not happen, give error
@@ -211,32 +207,26 @@ func (lc *labelChecker) checkRank(
 	}
 }
 
-// defaults returns the value of the referencend pointer p
-// if it is not nil, def otherwise.
-func defaults[T any](p *T, def T) T {
-	if p != nil {
-		return *p
-	}
-	return def
-}
-
 // processROLIEFeeds goes through all ROLIE feeds and checks their
 // integrity and completeness.
-func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) error {
+func (p *processor) processROLIEFeeds(
+	ctx context.Context,
+	feeds [][]csaf.ProviderDistributionsElemRolieFeedsElem,
+) error {
 	p.badROLIEFeed.use()
 
-	advisories := map[*csaf.Feed][]csaf.AdvisoryFile{}
+	advisories := map[*csaf.ProviderDistributionsElemRolieFeedsElem][]csaf.AdvisoryFile{}
 
 	// Phase 1: load all advisories urls.
 	for _, fs := range feeds {
 		for i := range fs {
 			feed := &fs[i]
-			if feed.URL == nil {
+			if feed.URL == "" {
 				continue
 			}
-			feedBase, err := url.Parse(string(*feed.URL))
+			feedBase, err := url.Parse(string(feed.URL))
 			if err != nil {
-				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
+				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", feed.URL, err)
 				continue
 			}
 			feedURL := feedBase.String()
@@ -257,7 +247,7 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 	for _, fs := range feeds {
 		for i := range fs {
 			feed := &fs[i]
-			if feed.URL == nil {
+			if feed.URL == "" {
 				continue
 			}
 			files := advisories[feed]
@@ -265,9 +255,9 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 				continue
 			}
 
-			feedURL, err := url.Parse(string(*feed.URL))
+			feedURL, err := url.Parse(string(feed.URL))
 			if err != nil {
-				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
+				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", feed.URL, err)
 				continue
 			}
 
@@ -277,7 +267,7 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 				continue
 			}
 
-			label := defaults(feed.TLPLabel, csaf.TLPLabelUnlabeled)
+			label := csaf.TLPLabel(feed.TLPLabel)
 			if err := p.categoryCheck(ctx, feedBase, label); err != nil {
 				if err != errContinue {
 					return err
@@ -303,15 +293,14 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 	hasSummary := util.Set[csaf.TLPLabel]{}
 
 	var (
-		hasUnlabeled = false
-		hasWhite     = false
-		hasGreen     = false
+		hasClear = false
+		hasGreen = false
 	)
 
 	for _, fs := range feeds {
 		for i := range fs {
 			feed := &fs[i]
-			if feed.URL == nil {
+			if feed.URL == "" {
 				continue
 			}
 			files := advisories[feed]
@@ -319,20 +308,18 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 				continue
 			}
 
-			feedBase, err := url.Parse(string(*feed.URL))
+			feedBase, err := url.Parse(string(feed.URL))
 			if err != nil {
-				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
+				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", feed.URL, err)
 				continue
 			}
 
 			makeAbs := makeAbsolute(feedBase)
-			label := defaults(feed.TLPLabel, csaf.TLPLabelUnlabeled)
+			label := csaf.TLPLabel(feed.TLPLabel)
 
 			switch label {
-			case csaf.TLPLabelUnlabeled:
-				hasUnlabeled = true
-			case csaf.TLPLabelWhite:
-				hasWhite = true
+			case csaf.TLPLabelClear:
+				hasClear = true
 			case csaf.TLPLabelGreen:
 				hasGreen = true
 			}
@@ -344,7 +331,7 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 				u, err := url.Parse(adv.URL())
 				if err != nil {
 					p.badProviderMetadata.error(
-						"Invalid URL %s in feed: %v.", *feed.URL, err)
+						"Invalid URL %s in feed: %v.", feed.URL, err)
 					continue
 				}
 				advisories.Add(makeAbs(u).String())
@@ -355,18 +342,18 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 		}
 	}
 
-	if !hasWhite && !hasGreen && !hasUnlabeled {
+	if !hasClear && !hasGreen {
 		p.badROLIEFeed.error(
-			"One ROLIE feed with a TLP:WHITE, TLP:GREEN or unlabeled tlp must exist, " +
+			"One ROLIE feed with TLP:CLEAR or TLP:GREEN must exist, " +
 				"but none were found.")
 	}
 
 	// Every TLP level with data should have at least on summary feed.
 	for _, label := range []csaf.TLPLabel{
-		csaf.TLPLabelUnlabeled,
-		csaf.TLPLabelWhite,
+		csaf.TLPLabelClear,
 		csaf.TLPLabelGreen,
 		csaf.TLPLabelAmber,
+		csaf.TLPLabelAmberStrict,
 		csaf.TLPLabelRed,
 	} {
 		if !hasSummary.Contains(label) && len(p.labelChecker.advisories[label]) > 0 {
@@ -418,7 +405,10 @@ func (p *processor) categoryCheck(ctx context.Context, folderURL string, label c
 
 // serviceCheck checks if a ROLIE service document exists and if it does,
 // whether it contains all ROLIE feeds.
-func (p *processor) serviceCheck(ctx context.Context, feeds [][]csaf.Feed) error {
+func (p *processor) serviceCheck(
+	ctx context.Context,
+	feeds [][]csaf.ProviderDistributionsElemRolieFeedsElem,
+) error {
 	// service category document should be next to the pmd
 	pmdURL, err := url.Parse(p.pmdURL)
 	if err != nil {
@@ -470,7 +460,7 @@ func (p *processor) serviceCheck(ctx context.Context, feeds [][]csaf.Feed) error
 	}
 	for _, r := range feeds {
 		for _, s := range r {
-			ffeeds.Add(string(*s.URL))
+			ffeeds.Add(string(s.URL))
 		}
 	}
 

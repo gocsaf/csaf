@@ -20,6 +20,24 @@ import (
 	"github.com/gocsaf/csaf/v3/util"
 )
 
+// TimeStamp represents a timestamp in a ROLIE document.
+type TimeStamp time.Time
+
+// UnmarshalText implements [encoding.TextUnmarshaler].
+func (timestamp *TimeStamp) UnmarshalText(data []byte) error {
+	value, err := time.Parse(time.RFC3339, string(data))
+	if err != nil {
+		return err
+	}
+	*timestamp = TimeStamp(value)
+	return nil
+}
+
+// MarshalText implements [encoding.TextMarshaler].
+func (timestamp TimeStamp) MarshalText() ([]byte, error) {
+	return []byte(time.Time(timestamp).Format(time.RFC3339)), nil
+}
+
 // ROLIEServiceWorkspaceCollectionCategoriesCategory is a category in a ROLIE service collection.
 type ROLIEServiceWorkspaceCollectionCategoriesCategory struct {
 	Scheme string `json:"scheme"`

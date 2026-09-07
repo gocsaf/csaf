@@ -1,0 +1,12 @@
+
+===== prepare pinned schema input =====
+command: python3 /home/main/Documents/work/intevation/gocsaf/internal/generate/prepare_schema.py https://raw.githubusercontent.com/oasis-tcs/csaf/fd04963f836406b2691c861feb80db58577fc9c7/csaf_2.1/json_schema /home/main/Documents/work/intevation/gocsaf/tmp/schema-generator-comparison/input
+
+
+exit status: 0
+
+===== prepare pinned schema input including external references =====
+command: python3 /home/main/Documents/work/intevation/gocsaf/internal/generate/prepare_schema.py --follow-references https://raw.githubusercontent.com/oasis-tcs/csaf/fd04963f836406b2691c861feb80db58577fc9c7/csaf_2.1/json_schema /home/main/Documents/work/intevation/gocsaf/tmp/schema-generator-comparison/input-with-references
+
+
+exit status: 0

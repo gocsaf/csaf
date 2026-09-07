@@ -3,6 +3,7 @@
 | Dependency                                         | License      |
 | -------------------------------------------------- | ------------ |
 | github.com/BurntSushi/toml                         | MIT          |
+| github.com/dlclark/regexp2                         | MIT          |
 | github.com/PaesslerAG/jsonpath                     | BSD-3-Clause |
 | github.com/PaesslerAG/gval                         | BSD-3-Clause |
 | github.com/ProtonMail/gopenpgp/v2                  | MIT          |

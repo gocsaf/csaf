@@ -82,7 +82,7 @@ func (c *controller) extendROLIE(
 		return err
 	}
 
-	feedURL := csaf.JSONURL(
+	feedURL := csaf.JsonURLT(
 		c.cfg.CanonicalURLPrefix +
 			"/.well-known/csaf/" + ts + "/" + feedName)
 

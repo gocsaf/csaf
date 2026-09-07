@@ -170,7 +170,7 @@ func createROLIEfeed(c *config, t tlp, folder string) error {
 
 	feed := filepath.Join(folder, feedName)
 
-	feedURL := csaf.JSONURL(
+	feedURL := csaf.JsonURLT(
 		c.CanonicalURLPrefix +
 			"/.well-known/csaf/" + ts + "/" + feedName)
 
@@ -352,7 +352,9 @@ func createProviderMetadata(c *config, wellknownCSAF string) error {
 		for _, t := range c.TLPs {
 			if t != tlpCSAF {
 				pm.AddDirectoryDistribution(
-					c.CanonicalURLPrefix + "/.well-known/csaf/" + string(t))
+					c.CanonicalURLPrefix+"/.well-known/csaf/"+string(t),
+					csaf.TLPLabel(strings.ToUpper(string(t))),
+				)
 			}
 		}
 	}

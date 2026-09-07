@@ -37,9 +37,9 @@ const (
 )
 
 type providerMetadataConfig struct {
-	ListOnCSAFAggregators   *bool           `toml:"list_on_CSAF_aggregators"`
-	MirrorOnCSAFAggregators *bool           `toml:"mirror_on_CSAF_aggregators"`
-	Publisher               *csaf.Publisher `toml:"publisher"`
+	ListOnCSAFAggregators   *bool                   `toml:"list_on_CSAF_aggregators"`
+	MirrorOnCSAFAggregators *bool                   `toml:"mirror_on_CSAF_aggregators"`
+	Publisher               *csaf.ProviderPublisher `toml:"publisher"`
 }
 
 // configs contains the config values for the provider.
@@ -72,13 +72,13 @@ func (pmdc *providerMetadataConfig) apply(pmd *csaf.ProviderMetadata) {
 		return
 	}
 	if pmdc.ListOnCSAFAggregators != nil {
-		pmd.ListOnCSAFAggregators = pmdc.ListOnCSAFAggregators
+		pmd.ListOnCSAFAggregators = *pmdc.ListOnCSAFAggregators
 	}
 	if pmdc.MirrorOnCSAFAggregators != nil {
-		pmd.MirrorOnCSAFAggregators = pmdc.MirrorOnCSAFAggregators
+		pmd.MirrorOnCSAFAggregators = *pmdc.MirrorOnCSAFAggregators
 	}
 	if pmdc.Publisher != nil {
-		pmd.Publisher = pmdc.Publisher
+		pmd.Publisher = *pmdc.Publisher
 	}
 }
 
@@ -281,10 +281,10 @@ func loadConfig() (*config, error) {
 	}
 
 	if cfg.ProviderMetaData.Publisher == nil {
-		cfg.ProviderMetaData.Publisher = &csaf.Publisher{
-			Category:  func(c csaf.Category) *csaf.Category { return &c }(csaf.CSAFCategoryVendor),
-			Name:      func(s string) *string { return &s }("Example Company"),
-			Namespace: func(s string) *string { return &s }("https://example.com"),
+		cfg.ProviderMetaData.Publisher = &csaf.ProviderPublisher{
+			Category:  csaf.ProviderPublisherCategoryVendor,
+			Name:      "Example Company",
+			Namespace: "https://example.com",
 		}
 	}
 

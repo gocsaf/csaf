@@ -1,0 +1,125 @@
+
+===== schemagen 0.0.8 =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work golang:1.26.5 sh -c go\ run\ github.com/mirpo/schemagen@v0.0.8\ generate\ tmp/schema-generator-comparison/input/csaf.json\ --out-go\ tmp/schema-generator-comparison/output/schemagen\ --go-package\ comparison
+
+go: downloading github.com/mirpo/schemagen v0.0.8
+go: downloading github.com/rs/zerolog v1.35.1
+go: downloading gopkg.in/yaml.v3 v3.0.1
+go: downloading github.com/fatih/color v1.19.0
+go: downloading github.com/spf13/cobra v1.10.2
+go: downloading github.com/kylelemons/godebug v1.1.0
+go: downloading github.com/spf13/pflag v1.0.10
+go: downloading github.com/mattn/go-colorable v0.1.15
+go: downloading github.com/mattn/go-isatty v0.0.22
+go: downloading golang.org/x/sys v0.46.0
+[90m8:02AM[0m [32mINF[0m [1mLoading schemas[0m [36minput=[0mtmp/schema-generator-comparison/input/csaf.json
+[90m8:02AM[0m [32mINF[0m [1mLoaded schemas[0m [36mcount=[0m1
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://www.first.org/cvss/cvss-v2.0.json" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://www.first.org/cvss/cvss-v3.0.json" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://www.first.org/cvss/cvss-v3.1.json" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://www.first.org/cvss/cvss-v4.0.json" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.json" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [32mINF[0m [1mGeneration complete[0m [36mdir=[0mtmp/schema-generator-comparison/output/schemagen [36mlang=[0mgo
+
+exit status: 0
+
+===== compile schemagen 0.0.8 output =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work/tmp/schema-generator-comparison/output/schemagen golang:1.26.5 sh -c gofmt\ -w\ .\ \&\&\ go\ test\ \*.go
+
+csaf.go:109:6: illegal character U+0024 '$'
+csaf.go:112:2: illegal character U+0024 '$'
+csaf.go:116:1: expected 'IDENT', found 'type'
+csaf.go:124:1: expected 'IDENT', found 'type'
+csaf.go:126:1: expected 'IDENT', found 'const'
+csaf.go:127:17: expected ')', found CsafVersion
+csaf.go:143:12: expected ';', found '+'
+csaf.go:150:1: expected 'IDENT', found 'type'
+csaf.go:158:1: expected 'IDENT', found 'type'
+csaf.go:168:1: expected 'IDENT', found 'type'
+csaf.go:170:1: expected 'IDENT', found 'const'
+
+exit status: 2
+
+===== schemagen 0.0.8 with all local references =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work golang:1.26.5 sh -c go\ run\ github.com/mirpo/schemagen@v0.0.8\ generate\ tmp/schema-generator-comparison/input-with-references\ --out-go\ tmp/schema-generator-comparison/output/schemagen-with-references\ --go-package\ comparison
+
+go: downloading github.com/mirpo/schemagen v0.0.8
+go: downloading github.com/fatih/color v1.19.0
+go: downloading github.com/rs/zerolog v1.35.1
+go: downloading gopkg.in/yaml.v3 v3.0.1
+go: downloading github.com/spf13/cobra v1.10.2
+go: downloading github.com/kylelemons/godebug v1.1.0
+go: downloading github.com/mattn/go-colorable v0.1.15
+go: downloading github.com/mattn/go-isatty v0.0.22
+go: downloading github.com/spf13/pflag v1.0.10
+go: downloading golang.org/x/sys v0.46.0
+[90m8:02AM[0m [32mINF[0m [1mLoading schemas[0m [36minput=[0mtmp/schema-generator-comparison/input-with-references
+[90m8:02AM[0m [32mINF[0m [1mLoaded schemas[0m [36mcount=[0m12
+[90m8:02AM[0m [33mWRN[0m [1m$ref "provider.json#/$defs/publisher_t" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "provider.json#/$defs/role_t" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "provider.json#/$defs/canonical_url_t" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "extension-metaschema.json#/$defs/content_schema_t" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "extension-metaschema.json#/$defs/content_schema_t" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "extension-metaschema.json#/$defs/content_schema_t" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/core" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/applicator" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/unevaluated" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/validation" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/meta-data" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/format-assertion" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1mschema "CriticalSeverityType" did not produce a type (no recognizable structure)[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1mschema "HighSeverityType" did not produce a type (no recognizable structure)[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1mschema "LowSeverityType" did not produce a type (no recognizable structure)[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1mschema "MediumSeverityType" did not produce a type (no recognizable structure)[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1mschema "NoneSeverityType" did not produce a type (no recognizable structure)[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/core" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/applicator" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/unevaluated" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/validation" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/meta-data" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/format-assertion" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1m$ref "https://json-schema.org/draft/2020-12/meta/content" could not be resolved to a known schema; using filename-derived name[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [33mWRN[0m [1mschema "CanonicalUrlT" did not produce a type (no recognizable structure)[0m [36mlanguage=[0mgo
+[90m8:02AM[0m [32mINF[0m [1mGeneration complete[0m [36mdir=[0mtmp/schema-generator-comparison/output/schemagen-with-references [36mlang=[0mgo
+
+exit status: 0
+
+===== compile schemagen 0.0.8 output with all local references =====
+command: docker run --rm --user 1000:1000 -e GOCACHE=/tmp/go-cache -e GOMODCACHE=/tmp/go-mod -v /home/main/Documents/work/intevation/gocsaf:/work -w /work/tmp/schema-generator-comparison/output/schemagen-with-references golang:1.26.5 sh -c gofmt\ -w\ .\ \&\&\ go\ test\ \*.go\ external/\*\*/\*.go
+
+aggregator.go:29:6: illegal character U+0024 '$'
+aggregator.go:32:2: illegal character U+0024 '$'
+aggregator.go:36:1: expected 'IDENT', found 'type'
+aggregator.go:38:1: expected 'IDENT', found 'const'
+aggregator.go:39:21: expected ')', found Category
+aggregator.go:85:10: illegal character U+0024 '$'
+csaf.go:114:6: illegal character U+0024 '$'
+csaf.go:117:2: illegal character U+0024 '$'
+csaf.go:121:1: expected 'IDENT', found 'type'
+csaf.go:129:1: expected 'IDENT', found 'type'
+csaf.go:131:1: expected 'IDENT', found 'const'
+csaf.go:132:17: expected ')', found CsafVersion
+csaf.go:148:12: expected ';', found '+'
+csaf.go:155:1: expected 'IDENT', found 'type'
+csaf.go:163:1: expected 'IDENT', found 'type'
+csaf.go:173:1: expected 'IDENT', found 'type'
+csaf.go:175:1: expected 'IDENT', found 'const'
+extension-metaschema.go:22:6: illegal character U+0024 '$'
+extension-metaschema.go:90:10: illegal character U+0024 '$'
+external/certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.go:12:1: expected declaration, found Intended
+external/certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.go:25:1: expected declaration, found This
+external/certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.go:32:1: expected declaration, found While
+external/www.first.org/cvss/cvss-v4.0.go:149:60: expected type, found ','
+provider.go:59:16: expected ';', found '+'
+provider.go:66:1: expected 'IDENT', found 'type'
+provider.go:68:1: expected 'IDENT', found 'const'
+provider.go:69:22: expected ')', found RoleT
+provider.go:75:6: illegal character U+0024 '$'
+provider.go:78:2: illegal character U+0024 '$'
+provider.go:82:1: expected 'IDENT', found 'type'
+provider.go:90:1: expected 'IDENT', found 'type'
+provider.go:102:1: expected 'IDENT', found 'type'
+provider.go:112:1: expected 'IDENT', found 'type'
+provider.go:120:1: expected 'IDENT', found 'type'
+
+exit status: 2

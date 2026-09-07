@@ -85,13 +85,13 @@ func (rules *requirementRules) clone() *requirementRules {
 }
 
 // roleRequirements returns the rules for the given role.
-func roleRequirements(role csaf.MetadataRole) *requirementRules {
+func roleRequirements(role csaf.ProviderRole) *requirementRules {
 	switch role {
-	case csaf.MetadataRoleTrustedProvider:
+	case csaf.ProviderRoleCSAFTrustedProvider:
 		return trustedProviderRules
-	case csaf.MetadataRoleProvider:
+	case csaf.ProviderRoleCSAFProvider:
 		return providerRules
-	case csaf.MetadataRolePublisher:
+	case csaf.ProviderRoleCSAFPublisher:
 		return publisherRules
 	default:
 		return nil
