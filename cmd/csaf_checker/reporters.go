@@ -25,7 +25,7 @@ type (
 	validReporter             struct{ baseReporter }
 	filenameReporter          struct{ baseReporter }
 	tlsReporter               struct{ baseReporter }
-	tlpWhiteReporter          struct{ baseReporter }
+	tlpClearReporter          struct{ baseReporter }
 	tlpAmberRedReporter       struct{ baseReporter }
 	redirectsReporter         struct{ baseReporter }
 	providerMetadataReport    struct{ baseReporter }
@@ -51,7 +51,7 @@ var reporters = [...]reporter{
 	1:  &validReporter{baseReporter{num: 1, description: "Valid CSAF documents"}},
 	2:  &filenameReporter{baseReporter{num: 2, description: "Filename"}},
 	3:  &tlsReporter{baseReporter{num: 3, description: "TLS"}},
-	4:  &tlpWhiteReporter{baseReporter{num: 4, description: "TLP:CLEAR"}},
+	4:  &tlpClearReporter{baseReporter{num: 4, description: "TLP:CLEAR"}},
 	5:  &tlpAmberRedReporter{baseReporter{num: 5, description: "TLP:AMBER, TLP:AMBER+STRICT, and TLP:RED"}},
 	6:  &redirectsReporter{baseReporter{num: 6, description: "Redirects"}},
 	7:  &providerMetadataReport{baseReporter{num: 7, description: "provider-metadata.json"}},
@@ -150,17 +150,17 @@ func (r *tlsReporter) report(p *processor, domain *Domain) {
 // report tests if a document labeled TLP:CLEAR
 // is freely accessible and sets the "message" field value
 // of the "Requirement" struct as a result of that.
-func (r *tlpWhiteReporter) report(p *processor, domain *Domain) {
+func (r *tlpClearReporter) report(p *processor, domain *Domain) {
 	req := r.requirement(domain)
-	if !p.badWhitePermissions.used() {
+	if !p.badClearPermissions.used() {
 		req.message(InfoType, "No access-protected advisories labeled TLP:CLEAR found.")
 		return
 	}
-	if len(p.badWhitePermissions) == 0 {
+	if len(p.badClearPermissions) == 0 {
 		req.message(InfoType, "All advisories labeled TLP:CLEAR were freely accessible.")
 		return
 	}
-	req.Messages = p.badWhitePermissions
+	req.Messages = p.badClearPermissions
 }
 
 // report tests if a document labeled TLP:AMBER, TLP:AMBER+STRICT,

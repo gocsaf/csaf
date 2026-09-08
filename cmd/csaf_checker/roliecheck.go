@@ -38,7 +38,7 @@ type labelChecker struct {
 	feedLabel csaf.TLPLabel
 
 	advisories      map[csaf.TLPLabel]util.Set[string]
-	whiteAdvisories map[identifier]bool
+	clearAdvisories map[identifier]bool
 }
 
 // reset brings the checker back to an initial state.
@@ -46,7 +46,7 @@ func (lc *labelChecker) reset() {
 	lc.feedLabel = ""
 	lc.feedURL = ""
 	lc.advisories = map[csaf.TLPLabel]util.Set[string]{}
-	lc.whiteAdvisories = map[identifier]bool{}
+	lc.clearAdvisories = map[identifier]bool{}
 }
 
 // tlpLevel returns an inclusion order of TLP colors.
@@ -136,30 +136,30 @@ func (lc *labelChecker) checkPermissions(
 		// If we found a clear labeled document we need to track it
 		// to find out later if there was an unprotected way to access it.
 
-		p.badWhitePermissions.use()
+		p.badClearPermissions.use()
 		// Being not able to extract the identifier from the document
 		// indicates that the document is not valid. Should not happen
 		// as the schema validation passed before.
 		p.invalidAdvisories.use()
 		if id, err := p.extractAdvisoryIdentifier(doc); err != nil {
 			p.invalidAdvisories.error("Bad document %s: %v", url, err)
-		} else if !lc.whiteAdvisories[id] {
+		} else if !lc.clearAdvisories[id] {
 			// Only do check if we haven't seen it as accessible before.
 
 			if !p.usedAuthorizedClient() {
 				// We already downloaded it without protection
-				lc.whiteAdvisories[id] = true
+				lc.clearAdvisories[id] = true
 			} else {
 				// Need to try to re-download it unauthorized.
 				if resp, err := p.unauthorizedClient().GetWithContext(ctx, url); err == nil {
 					accessible := resp.StatusCode == http.StatusOK
-					lc.whiteAdvisories[id] = accessible
+					lc.clearAdvisories[id] = accessible
 					// If we are in a clear ROLIE feed or in a directory listing,
 					// directly warn if we cannot access it.
 					// The cases of being in an amber, amber+strict, or red feed are resolved.
 					if !accessible &&
 						(lc.feedLabel == "" || lc.feedLabel == csaf.TLPLabelClear) {
-						p.badWhitePermissions.warn(
+						p.badClearPermissions.warn(
 							"Advisory %s of TLP level CLEAR is access-protected.", url)
 					}
 					resp.Body.Close()

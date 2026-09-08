@@ -76,7 +76,7 @@ type processor struct {
 	badROLIEFeed           topicMessages
 	badROLIEService        topicMessages
 	badROLIECategory       topicMessages
-	badWhitePermissions    topicMessages
+	badClearPermissions    topicMessages
 	badAmberRedPermissions topicMessages
 
 	expr *util.PathEval
@@ -192,7 +192,7 @@ func newProcessor(cfg *config) (*processor, error) {
 		validator:      validator,
 		labelChecker: labelChecker{
 			advisories:      map[csaf.TLPLabel]util.Set[string]{},
-			whiteAdvisories: map[identifier]bool{},
+			clearAdvisories: map[identifier]bool{},
 		},
 		timesAdv:     map[string]time.Time{},
 		timesChanges: map[string]time.Time{},
@@ -236,7 +236,7 @@ func (p *processor) reset() {
 	p.badROLIEFeed.reset()
 	p.badROLIEService.reset()
 	p.badROLIECategory.reset()
-	p.badWhitePermissions.reset()
+	p.badClearPermissions.reset()
 	p.badAmberRedPermissions.reset()
 	p.labelChecker.reset()
 }
@@ -375,7 +375,7 @@ func (p *processor) domainChecks(domain string) []func(*processor, context.Conte
 		(*processor).checkMissing,
 		(*processor).checkInvalid,
 		(*processor).checkListing,
-		(*processor).checkWhitePermissions,
+		(*processor).checkClearPermissions,
 	)
 
 	return checks
@@ -1451,11 +1451,11 @@ func (p *processor) checkListing(ctx context.Context, _ string) error {
 	return nil
 }
 
-// checkWhitePermissions checks if the TLP:CLEAR advisories are
+// checkClearPermissions checks if the TLP:CLEAR advisories are
 // available with unprotected access.
-func (p *processor) checkWhitePermissions(context.Context, string) error {
+func (p *processor) checkClearPermissions(context.Context, string) error {
 	var ids []string
-	for id, open := range p.labelChecker.whiteAdvisories {
+	for id, open := range p.labelChecker.clearAdvisories {
 		if !open {
 			ids = append(ids, id.String())
 		}
@@ -1467,7 +1467,7 @@ func (p *processor) checkWhitePermissions(context.Context, string) error {
 
 	slices.Sort(ids)
 
-	p.badWhitePermissions.error(
+	p.badClearPermissions.error(
 		"TLP:CLEAR advisories with ids %s are only available access-protected.",
 		strings.Join(ids, ", "))
 
