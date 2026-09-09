@@ -44,6 +44,9 @@ func updateIndex(dir, fname string) error {
 				return nil, nil
 			}
 		}
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
 		return append(lines, fname), nil
 	}()
 	if err != nil {
