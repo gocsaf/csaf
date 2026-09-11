@@ -4,7 +4,7 @@ The new version of the CSAF standard is likely to come in fall this year (2026).
 We expect a new Committee Specification Draft within the next weeks.
 The
 [current draft](https://github.com/oasis-tcs/csaf/blob/master/csaf_2.1/prose/share/csaf-v2.1-draft.md) is partly stable enough
-so that we will start implementing it.
+so that we have started implementing it.
 
 **This is our plan.
 We appreciate your feedback in issues or email
@@ -32,19 +32,19 @@ it will handle 2.0 ones as well.
 As the library and tools from the repo are central to a number of CSAF
 implementations, we will keep the stable 3 version around and maintain
 it for now. At least as long as the new major version is not ready
-to replae it for handling CSAF 2.0 documents.
+to replace it for handling CSAF 2.0 documents.
 
 ## Improved downloading has to wait for major 5
 
 ISDuBA uses this library in several regards, and builds a runtime
 downloader on top, that can effectively track changes over many
-CSAF providers simultaniously.
+CSAF providers simultaneously.
 
-Ideally this would be provided as severate library part as well, so
+Ideally this would be provided as separate library part as well, so
 the `csaf_downloader` and other tools can use the better approach.
 
-Given the timeframe of about 8 weeks to support CSAF 2.1 in beta quality,
-we put extracting the ISDuBA online tracking code on the backburner.
+Given the time frame of about 8 weeks to support CSAF 2.1 in beta quality,
+we put extracting the ISDuBA online tracking code on the back-burner.
 It is likely to happen for the next major release.
 
 ## Approach
@@ -63,7 +63,7 @@ We start with a `csaf_downloader` first and rebuild it with the new code.
 We attempt to use the contravider to pose for an early CSAF 2.1 provider,
 so the downloader has something to work against.
 If this does not work out or not,
-going for a new `csaf_prodiver` is the next goal.
+going for a new `csaf_provider` is the next goal.
 
 In between a number of clutched CSAF 2.1 example files will be generated.
 
@@ -77,5 +77,5 @@ This is the approach we see for other tools that are based on gocsaf/csaf
 as well: have development to see how the new 2.1 API is working out.
 
 Later, support for CSAF 2.0 will be added to the new major 4 version
-as well. This is when we can think about the timeframe to set an end of life
+as well. This is when we can think about the time frame to set an end of life
 date for the old version 3.
