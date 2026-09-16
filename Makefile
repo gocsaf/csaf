@@ -41,13 +41,14 @@ tag_checked_out:
 # into a semver version. For this we increase the PATCH number, so that
 # any commit after a tag is considered newer than the semver from the tag
 # without an optional 'v'
+# A dirty repository must increase the patch version too, thus we use --dirty=-1-modified
 # Note we need `--tags` because github releases only create lightweight tags
 #   (see feature request https://github.com/github/feedback/discussions/4924).
 #   We use `--always` in case of being run as github action with shallow clone.
 #   In this case we might in some situations see an error like
 #   `/bin/bash: line 1: 2b55bbb: value too great for base (error token is "2b55bbb")`
 #   which can be ignored.
-GITDESC := $(shell git describe --tags --always --dirty=-modified 2>/dev/null || true)
+GITDESC := $(shell git describe --tags --always --dirty=-1-modified 2>/dev/null || true)
 CURRENT_FOLDER_NAME := $(notdir $(CURDIR))
 ifeq ($(strip $(GITDESC)),)
 SEMVER := $(CURRENT_FOLDER_NAME)
