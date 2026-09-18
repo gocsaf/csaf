@@ -143,6 +143,9 @@ func (rcd *ROLIECategoryDocument) WriteTo(w io.Writer) (int64, error) {
 // Link for ROLIE.
 type Link = models.Link
 
+// StreamingROLIEParser for ISDuBA integration
+type StreamingROLIEParser = models.StreamingROLIEParser
+
 // ROLIECategory for ROLIE.
 type ROLIECategory struct {
 	Scheme string `json:"scheme,omitempty"`
