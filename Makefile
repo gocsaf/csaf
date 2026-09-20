@@ -16,7 +16,7 @@ MKDIR = mkdir -p
 
 PYTHON ?= python3
 GENERATOR_VERSION := v0.24.1
-OASIS_SCHEMA_BASE := https://raw.githubusercontent.com/oasis-tcs/csaf/fd04963f836406b2691c861feb80db58577fc9c7/csaf_2.1/json_schema
+OASIS_SCHEMA_BASE := https://raw.githubusercontent.com/oasis-tcs/csaf/e0da5a98af185acce66e1ef4c2686c8f215703b2/csaf_2.1/json_schema
 CSAF_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json
 AGGREGATOR_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json
 PROVIDER_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json

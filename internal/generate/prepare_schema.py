@@ -68,12 +68,17 @@ def patch_property_references(schemas: dict[str, Any]) -> None:
     csaf_document = csaf["properties"]["document"]["properties"]
     provider_definitions = provider["$defs"]
     provider_properties = provider["properties"]
-    provider_definitions["publisher_t"] = deepcopy(csaf_document["publisher"])
+    csaf_schema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
+    publisher = deepcopy(csaf_document["publisher"])
+    replace_expected_references(
+        publisher,
+        {"#/$defs/contact_t": f"{csaf_schema}#/$defs/contact_t"},
+    )
+    provider_definitions["publisher_t"] = publisher
     provider_definitions["tlp_label_t"] = deepcopy(csaf_document["distribution"]["properties"]["tlp"]["properties"]["label"])
     provider_definitions["role_t"] = deepcopy(provider_properties["role"])
     provider_definitions["canonical_url_t"] = deepcopy(provider_properties["canonical_url"])
 
-    csaf_schema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
     provider_schema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json"
 
     extension_content_schema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-content.json"

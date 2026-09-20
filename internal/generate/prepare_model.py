@@ -88,7 +88,6 @@ def prepare_public_api(models: dict[str, str]) -> dict[str, str]:
     for old, shared in (
         ("CSAFDocumentPublisher", "PublisherT"),
         ("CSAFDocumentPublisherCategory", "PublisherTCategory"),
-        ("CSAFDocumentPublisherContact", "PublisherTContact"),
     ):
         definition = type_definition(csaf, old)
         if definition.replace("CSAFDocumentPublisher", "PublisherT") != type_definition(provider, shared):
@@ -104,14 +103,33 @@ def prepare_public_api(models: dict[str, str]) -> dict[str, str]:
         if not values(left, old) or values(left, old) != values(provider, shared):
             msg = f"generated enum values diverged: {old}, {shared}"
             raise ValueError(msg)
+    type_definition(csaf, "ContactT")
+    csaf = replace_once(
+        csaf,
+        "package v21\n",
+        "package v21\n\n"
+        "// CSAFDocumentPublisherContact is retained for source compatibility.\n"
+        "type CSAFDocumentPublisherContact = ContactT\n",
+    )
+    provider = replace_once(
+        provider,
+        "package v21\n",
+        "package v21\n\n"
+        "// PublisherTContact is retained for source compatibility.\n"
+        "type PublisherTContact = ContactT\n",
+    )
     provider = replace_once(provider, "type RoleT string", "type RoleT = ProviderRole")
 
-    for field in ("issuing_authority", "public_openpgp_key_url"):
-        provider = replace_once(
-            provider,
-            f'`json:"{field},omitempty,omitzero"`',
-            f'`json:"{field},omitempty,omitzero" toml:"{field}"`',
-        )
+    provider = replace_once(
+        provider,
+        '`json:"issuing_authority,omitempty,omitzero"`',
+        '`json:"issuing_authority,omitempty,omitzero" toml:"issuing_authority"`',
+    )
+    csaf = replace_once(
+        csaf,
+        '`json:"public_openpgp_key_url,omitempty,omitzero"`',
+        '`json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`',
+    )
     csaf = replace_once(
         csaf,
         "type BranchesT []struct {",

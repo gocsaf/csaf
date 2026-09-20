@@ -6,6 +6,9 @@
 
 package v21
 
+// CSAFDocumentPublisherContact is retained for source compatibility.
+type CSAFDocumentPublisherContact = ContactT
+
 // Contains a list of acknowledgment elements.
 type AcknowledgmentsT []struct {
 	// Contains the names of contributors being recognized.
@@ -21,6 +24,10 @@ type AcknowledgmentsT []struct {
 	// Specifies a list of URLs or location of the reference to be acknowledged.
 	Urls []string `json:"urls,omitempty,omitzero"`
 }
+
+// Contains a token required to identify an action uniquely in the context of the
+// current document so that it can be referred to from other parts in the document.
+type ActionIDT string
 
 // Contains branch elements as children of the current element.
 type BranchesT []Branch
@@ -100,6 +107,9 @@ type CSAFDocument struct {
 
 	// Describe any constraints on how this document might be shared.
 	Distribution CSAFDocumentDistribution `json:"distribution"`
+
+	// Contains the coordination record stating entities and actions between them.
+	Involvement *CSAFDocumentInvolvement `json:"involvement,omitempty,omitzero"`
 
 	// Identifies the language used by this document, corresponding to IETF BCP 47 /
 	// RFC 5646.
@@ -194,6 +204,121 @@ const CSAFDocumentDistributionTLPLabelCLEAR CSAFDocumentDistributionTLPLabel = "
 const CSAFDocumentDistributionTLPLabelGREEN CSAFDocumentDistributionTLPLabel = "GREEN"
 const CSAFDocumentDistributionTLPLabelRED CSAFDocumentDistributionTLPLabel = "RED"
 
+// Contains the coordination record stating entities and actions between them.
+type CSAFDocumentInvolvement struct {
+	// Contains the timeline of actions.
+	Actions []CSAFDocumentInvolvementActionsElem `json:"actions"`
+
+	// Contains a list of entities related.
+	Entities []CSAFDocumentInvolvementEntitiesElem `json:"entities"`
+
+	// Contains a list of entity groups.
+	EntityGroups []CSAFDocumentInvolvementEntityGroupsElem `json:"entity_groups,omitempty,omitzero"`
+}
+
+// Contains details about a single event in the timeline.
+type CSAFDocumentInvolvementActionsElem struct {
+	// Contains a list of entities that act.
+	ActingEntityRefs EntityRefsT `json:"acting_entity_refs"`
+
+	// Contains the reference token for this action.
+	ActionID ActionIDT `json:"action_id"`
+
+	// Specifies the category which this action belongs to.
+	Category CSAFDocumentInvolvementActionsElemCategory `json:"category"`
+
+	// Contains the date when the action occurred.
+	Date DateTime `json:"date"`
+
+	// Contains a list of local IDs referring to vulnerabilities within the same
+	// document that this action applies to.
+	DlVulnIds []DlVulnIDT `json:"dl_vuln_ids,omitempty,omitzero"`
+
+	// GroupIds corresponds to the JSON schema field "group_ids".
+	GroupIds ProductGroupsT `json:"group_ids,omitempty,omitzero"`
+
+	// ProductIds corresponds to the JSON schema field "product_ids".
+	ProductIds ProductsT `json:"product_ids,omitempty,omitzero"`
+
+	// Contains a list of entities that receive the action.
+	ReceivingEntityRefs EntityRefsT `json:"receiving_entity_refs,omitempty,omitzero"`
+
+	// Contains a list of other actions reference by this action.
+	ReferencedActionIds []ActionIDT `json:"referenced_action_ids,omitempty,omitzero"`
+
+	// Contains an observation about the action.
+	Status CSAFDocumentInvolvementActionsElemStatus `json:"status"`
+
+	// Contains information about the action.
+	Summary *string `json:"summary,omitempty,omitzero"`
+}
+
+type CSAFDocumentInvolvementActionsElemCategory string
+
+const CSAFDocumentInvolvementActionsElemCategoryConfirmation CSAFDocumentInvolvementActionsElemCategory = "confirmation"
+const CSAFDocumentInvolvementActionsElemCategoryCoordination CSAFDocumentInvolvementActionsElemCategory = "coordination"
+const CSAFDocumentInvolvementActionsElemCategoryDiscovery CSAFDocumentInvolvementActionsElemCategory = "discovery"
+const CSAFDocumentInvolvementActionsElemCategoryDispute CSAFDocumentInvolvementActionsElemCategory = "dispute"
+const CSAFDocumentInvolvementActionsElemCategoryExploitation CSAFDocumentInvolvementActionsElemCategory = "exploitation"
+const CSAFDocumentInvolvementActionsElemCategoryFixDeployment CSAFDocumentInvolvementActionsElemCategory = "fix_deployment"
+const CSAFDocumentInvolvementActionsElemCategoryFixRelease CSAFDocumentInvolvementActionsElemCategory = "fix_release"
+const CSAFDocumentInvolvementActionsElemCategoryNotification CSAFDocumentInvolvementActionsElemCategory = "notification"
+const CSAFDocumentInvolvementActionsElemCategoryTriage CSAFDocumentInvolvementActionsElemCategory = "triage"
+
+type CSAFDocumentInvolvementActionsElemStatus string
+
+const CSAFDocumentInvolvementActionsElemStatusAttempted CSAFDocumentInvolvementActionsElemStatus = "attempted"
+const CSAFDocumentInvolvementActionsElemStatusCompleted CSAFDocumentInvolvementActionsElemStatus = "completed"
+const CSAFDocumentInvolvementActionsElemStatusDeferred CSAFDocumentInvolvementActionsElemStatus = "deferred"
+const CSAFDocumentInvolvementActionsElemStatusDiscontinued CSAFDocumentInvolvementActionsElemStatus = "discontinued"
+const CSAFDocumentInvolvementActionsElemStatusInProgress CSAFDocumentInvolvementActionsElemStatus = "in_progress"
+const CSAFDocumentInvolvementActionsElemStatusOutstanding CSAFDocumentInvolvementActionsElemStatus = "outstanding"
+const CSAFDocumentInvolvementActionsElemStatusPlanned CSAFDocumentInvolvementActionsElemStatus = "planned"
+
+// Contains information about a single entity.
+type CSAFDocumentInvolvementEntitiesElem struct {
+	// Specifies the category of the party.
+	Category CSAFDocumentInvolvementEntitiesElemCategory `json:"category"`
+
+	// Contains information on how to contact the entity.
+	Contact *ContactT `json:"contact,omitempty,omitzero"`
+
+	// Contains an ID for the entity.
+	EntityID EntityIDT `json:"entity_id"`
+
+	// Contains the name of the entity.
+	Name *string `json:"name,omitempty,omitzero"`
+}
+
+type CSAFDocumentInvolvementEntitiesElemCategory string
+
+const CSAFDocumentInvolvementEntitiesElemCategoryAdversary CSAFDocumentInvolvementEntitiesElemCategory = "adversary"
+const CSAFDocumentInvolvementEntitiesElemCategoryCoordinator CSAFDocumentInvolvementEntitiesElemCategory = "coordinator"
+const CSAFDocumentInvolvementEntitiesElemCategoryDiscoverer CSAFDocumentInvolvementEntitiesElemCategory = "discoverer"
+const CSAFDocumentInvolvementEntitiesElemCategoryMultiplier CSAFDocumentInvolvementEntitiesElemCategory = "multiplier"
+const CSAFDocumentInvolvementEntitiesElemCategoryOther CSAFDocumentInvolvementEntitiesElemCategory = "other"
+const CSAFDocumentInvolvementEntitiesElemCategoryPublic CSAFDocumentInvolvementEntitiesElemCategory = "public"
+const CSAFDocumentInvolvementEntitiesElemCategoryReportingAuthority CSAFDocumentInvolvementEntitiesElemCategory = "reporting_authority"
+const CSAFDocumentInvolvementEntitiesElemCategoryUser CSAFDocumentInvolvementEntitiesElemCategory = "user"
+const CSAFDocumentInvolvementEntitiesElemCategoryVendor CSAFDocumentInvolvementEntitiesElemCategory = "vendor"
+
+// Defines a new logical group of entities that can then be referred to in other
+// parts of the document to address a group of entities with a single identifier.
+type CSAFDocumentInvolvementEntityGroupsElem struct {
+	// Contains an ID for the entity group.
+	EntityGroupID EntityGroupIDT `json:"entity_group_id"`
+
+	// Lists the Entity IDs of those entities which are known as one group in the
+	// document.
+	EntityIds []EntityIDT `json:"entity_ids"`
+
+	// Contains a human-readable name for the entities grouped.
+	Name string `json:"name"`
+
+	// Contains a human-readable summary stating the purpose of the group.
+	Summary *string `json:"summary,omitempty,omitzero"`
+}
+
 // Provides information about the publisher of the document.
 type CSAFDocumentPublisher = PublisherT
 
@@ -206,9 +331,6 @@ const CSAFDocumentPublisherCategoryOther CSAFDocumentPublisherCategory = "other"
 const CSAFDocumentPublisherCategoryTranslator CSAFDocumentPublisherCategory = "translator"
 const CSAFDocumentPublisherCategoryUser CSAFDocumentPublisherCategory = "user"
 const CSAFDocumentPublisherCategoryVendor CSAFDocumentPublisherCategory = "vendor"
-
-// Contains information on how to contact the publisher.
-type CSAFDocumentPublisherContact = PublisherTContact
 
 // Is a container designated to hold all management attributes necessary to track a
 // CSAF document as a whole.
@@ -311,7 +433,7 @@ type CSAFProductTreeProductGroupsElem struct {
 	// GroupID corresponds to the JSON schema field "group_id".
 	GroupID ProductGroupIDT `json:"group_id"`
 
-	// Lists the product_ids of those products which known as one group in the
+	// Lists the product_ids of those products which are known as one group in the
 	// document.
 	ProductIds []ProductIDT `json:"product_ids"`
 
@@ -360,6 +482,10 @@ type CSAFVulnerabilitiesElem struct {
 	// Holds the date and time the vulnerability was originally discovered.
 	DiscoveryDate *DateTime `json:"discovery_date,omitempty,omitzero"`
 
+	// Contains the local IDs referring to this vulnerability from another part of the
+	// same document.
+	DlVulnID *DlVulnIDT `json:"dl_vuln_id,omitempty,omitzero"`
+
 	// Contains a list of dates of first known exploitations.
 	FirstKnownExploitationDates []CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem `json:"first_known_exploitation_dates,omitempty,omitzero"`
 
@@ -369,9 +495,6 @@ type CSAFVulnerabilitiesElem struct {
 	// Represents a list of unique labels or tracking IDs for the vulnerability (if
 	// such information exists).
 	Ids []CSAFVulnerabilitiesElemIdsElem `json:"ids,omitempty,omitzero"`
-
-	// Contains a list of involvements.
-	Involvements []CSAFVulnerabilitiesElemInvolvementsElem `json:"involvements,omitempty,omitzero"`
 
 	// Contains metric objects for the current vulnerability.
 	Metrics []CSAFVulnerabilitiesElemMetricsElem `json:"metrics,omitempty,omitzero"`
@@ -470,49 +593,6 @@ type CSAFVulnerabilitiesElemIdsElem struct {
 	// exists).
 	Text string `json:"text"`
 }
-
-// Is a container, that allows the document producers to comment on the level of
-// involvement (or engagement) of themselves or third parties in the vulnerability
-// identification, scoping, and remediation process.
-type CSAFVulnerabilitiesElemInvolvementsElem struct {
-	// Contains the contact information of the party that was used in this state.
-	Contact *string `json:"contact,omitempty,omitzero"`
-
-	// Holds the date and time of the involvement entry.
-	Date *DateTime `json:"date,omitempty,omitzero"`
-
-	// GroupIds corresponds to the JSON schema field "group_ids".
-	GroupIds ProductGroupsT `json:"group_ids,omitempty,omitzero"`
-
-	// Defines the category of the involved party.
-	Party CSAFVulnerabilitiesElemInvolvementsElemParty `json:"party"`
-
-	// ProductIds corresponds to the JSON schema field "product_ids".
-	ProductIds ProductsT `json:"product_ids,omitempty,omitzero"`
-
-	// Defines contact status of the involved party.
-	Status CSAFVulnerabilitiesElemInvolvementsElemStatus `json:"status"`
-
-	// Contains additional context regarding what is going on.
-	Summary *string `json:"summary,omitempty,omitzero"`
-}
-
-type CSAFVulnerabilitiesElemInvolvementsElemParty string
-
-const CSAFVulnerabilitiesElemInvolvementsElemPartyCoordinator CSAFVulnerabilitiesElemInvolvementsElemParty = "coordinator"
-const CSAFVulnerabilitiesElemInvolvementsElemPartyDiscoverer CSAFVulnerabilitiesElemInvolvementsElemParty = "discoverer"
-const CSAFVulnerabilitiesElemInvolvementsElemPartyOther CSAFVulnerabilitiesElemInvolvementsElemParty = "other"
-const CSAFVulnerabilitiesElemInvolvementsElemPartyUser CSAFVulnerabilitiesElemInvolvementsElemParty = "user"
-const CSAFVulnerabilitiesElemInvolvementsElemPartyVendor CSAFVulnerabilitiesElemInvolvementsElemParty = "vendor"
-
-type CSAFVulnerabilitiesElemInvolvementsElemStatus string
-
-const CSAFVulnerabilitiesElemInvolvementsElemStatusCompleted CSAFVulnerabilitiesElemInvolvementsElemStatus = "completed"
-const CSAFVulnerabilitiesElemInvolvementsElemStatusContactAttempted CSAFVulnerabilitiesElemInvolvementsElemStatus = "contact_attempted"
-const CSAFVulnerabilitiesElemInvolvementsElemStatusDisputed CSAFVulnerabilitiesElemInvolvementsElemStatus = "disputed"
-const CSAFVulnerabilitiesElemInvolvementsElemStatusInProgress CSAFVulnerabilitiesElemInvolvementsElemStatus = "in_progress"
-const CSAFVulnerabilitiesElemInvolvementsElemStatusNotContacted CSAFVulnerabilitiesElemInvolvementsElemStatus = "not_contacted"
-const CSAFVulnerabilitiesElemInvolvementsElemStatusOpen CSAFVulnerabilitiesElemInvolvementsElemStatus = "open"
 
 // Contains all metadata about the metric including products it applies to and the
 // source and the content itself.
@@ -703,6 +783,41 @@ type CSAFVulnerabilitiesElemThreatsElemCategory string
 const CSAFVulnerabilitiesElemThreatsElemCategoryExploitStatus CSAFVulnerabilitiesElemThreatsElemCategory = "exploit_status"
 const CSAFVulnerabilitiesElemThreatsElemCategoryImpact CSAFVulnerabilitiesElemThreatsElemCategory = "impact"
 const CSAFVulnerabilitiesElemThreatsElemCategoryTargetSet CSAFVulnerabilitiesElemThreatsElemCategory = "target_set"
+
+// Contains information on how to contact the party.
+type ContactT struct {
+	// Contains details regarding ways to reach the party, e.g. through web sites,
+	// phone numbers, and postal mail addresses.
+	Details *string `json:"details,omitempty,omitzero"`
+
+	// Contains the email address that can be used to reach the party.
+	Email *string `json:"email,omitempty,omitzero"`
+
+	// Contains a URL pointing to a public OpenPGP key valid for the email of party
+	// provided in the sibling property `email`.
+	PublicOpenpgpKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`
+
+	// Contains a URL that can be used to reach the party.
+	URL *string `json:"url,omitempty,omitzero"`
+}
+
+// Contains a token required to identify a vulnerability uniquely in the context of
+// the current document so that it can be referred to from other parts in the
+// document.
+type DlVulnIDT string
+
+// Contains a token required to identify a group of entities uniquely in the
+// context of the current document so that it can be referred to from other parts
+// in the document.
+type EntityGroupIDT string
+
+// Contains a token required to identify an entity uniquely in the context of the
+// current document so that it can be referred to from other parts in the document.
+type EntityIDT string
+
+// Specifies a list of entity_ids or entity_group_ids to give context to the parent
+// item.
+type EntityRefsT []interface{}
 
 // Contains a list of extension elements for the current context.
 type ExtensionsT []ExtensionContentJson

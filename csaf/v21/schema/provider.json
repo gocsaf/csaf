@@ -38,54 +38,9 @@
           "type": "string"
         },
         "contact": {
-          "additionalProperties": false,
-          "dependentRequired": {
-            "public_openpgp_key_url": [
-              "email"
-            ]
-          },
+          "$ref": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json#/$defs/contact_t",
           "description": "Contains information on how to contact the publisher.",
-          "minProperties": 1,
-          "properties": {
-            "details": {
-              "description": "Contains details regarding ways to reach the publisher, e.g. through web sites, phone numbers, and postal mail addresses.",
-              "examples": [
-                "Example Company can be reached at tel:+493023125232, or via our website at https://www.example.com/contact."
-              ],
-              "minLength": 1,
-              "title": "Contact Details",
-              "type": "string"
-            },
-            "email": {
-              "description": "Contains the email address that can be used to reach the issuing party.",
-              "examples": [
-                "productcert@example.net",
-                "psirt@example.com",
-                "reporter@securityresearcher.example",
-                "vulnerability@coordinator.example"
-              ],
-              "format": "email",
-              "minLength": 6,
-              "title": "Email",
-              "type": "string"
-            },
-            "public_openpgp_key_url": {
-              "description": "Contains a URL pointing to a public OpenPGP key valid for the email of issuing party provided in the sibling property `email`.",
-              "examples": [
-                "https://coordinator.example/.well-known/openpgpkey/hu/nxdcs8npc6mn3xyfpcbiqhcu9s357r5m?l=vulnerability",
-                "https://example.net/.well-known/openpgpkey/hu/euwmpyfh4rzf8ymbqhjjhrirgib4dyfs?l=productcert",
-                "https://openpgpkey.securityresearcher.example/.well-known/openpgpkey/securityresearcher.example/hu/enudbakzkbdym3ymwjy9pcxztka75f73?l=reporter",
-                "https://psirt.example.com/security/openpgp/latest"
-              ],
-              "format": "uri",
-              "minLength": 11,
-              "pattern": "^https:\\/\\/",
-              "title": "Public OpenPGP Key URL",
-              "type": "string"
-            }
-          },
-          "title": "Contact",
-          "type": "object"
+          "title": "Contact"
         },
         "issuing_authority": {
           "description": "Provides information about the authority of the issuing party to release the document, in particular, the party's constituency and responsibilities or other obligations.",
