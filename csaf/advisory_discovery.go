@@ -9,6 +9,7 @@
 package csaf
 
 import (
+	"bufio"
 	"context"
 	"encoding/csv"
 	"fmt"
@@ -395,8 +396,14 @@ func (afp *AdvisoryFileProcessor) ProcessWithContext(
 				continue
 			}
 
-			// Use changes.csv to be able to filter by age.
-			files, err := afp.loadChanges(ctx, directory.url, lg)
+			var files []AdvisoryFile
+			if afp.AgeAccept == nil {
+				files, err = afp.loadIndex(ctx, directory.url, lg)
+			} else {
+				// Use changes.csv to filter by age. Its history may be
+				// incomplete because providers only list recent changes.
+				files, err = afp.loadChanges(ctx, directory.url, lg)
+			}
 			if err != nil {
 				return err
 			}
@@ -406,6 +413,53 @@ func (afp *AdvisoryFileProcessor) ProcessWithContext(
 		}
 	} // TODO: else scan directories?
 	return nil
+}
+
+// loadIndex loads baseURL/index.txt and returns a list of files
+// prefixed by baseURL/.
+func (afp *AdvisoryFileProcessor) loadIndex(
+	ctx context.Context,
+	baseURL string,
+	lg func(slog.Level, string, ...any),
+) ([]AdvisoryFile, error) {
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	indexURL := base.JoinPath("index.txt").String()
+
+	var resp *http.Response
+	if cwc, ok := afp.client.(util.ClientWithContext); ok {
+		resp, err = cwc.GetWithContext(ctx, indexURL)
+	} else {
+		resp, err = afp.client.Get(indexURL)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fetching %s failed. Status code %d (%s)",
+			indexURL, resp.StatusCode, resp.Status)
+	}
+
+	var files []AdvisoryFile
+	scanner := bufio.NewScanner(resp.Body)
+	for line := 1; scanner.Scan(); line++ {
+		path := scanner.Text()
+		pathURL, err := url.Parse(path)
+		if err != nil {
+			lg(slog.LevelError, "Contains an invalid URL", "url", indexURL, "path", path, "line", line)
+			continue
+		}
+		files = append(files,
+			DirectoryAdvisoryFile{Path: misc.JoinURL(base, pathURL).String()})
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return files, nil
 }
 
 // loadChanges loads baseURL/changes.csv and returns a list of files
