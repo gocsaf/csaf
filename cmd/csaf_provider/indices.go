@@ -17,8 +17,6 @@ import (
 	"path/filepath"
 	"slices"
 	"time"
-
-	"github.com/gocsaf/csaf/v3/util"
 )
 
 func updateIndex(dir, fname string) error {
@@ -143,7 +141,7 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 	if err != nil {
 		return err
 	}
-	c := util.NewFullyQuotedCSWWriter(o)
+	c := csv.NewWriter(o)
 	record := make([]string, 2)
 	for _, ch := range chs {
 		record[timeColumn] = ch.time.Format(dateFormat)

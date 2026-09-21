@@ -111,11 +111,11 @@ func (w *worker) writeCSV(label string, summaries []summary) error {
 	copy(ss, summaries)
 
 	slices.SortStableFunc(ss, func(a, b summary) int {
-		return a.summary.CurrentReleaseDate.Compare(
-			b.summary.CurrentReleaseDate)
+		return b.summary.CurrentReleaseDate.Compare(
+			a.summary.CurrentReleaseDate)
 	})
 
-	out := util.NewFullyQuotedCSWWriter(f)
+	out := csv.NewWriter(f)
 
 	record := make([]string, 2)
 
