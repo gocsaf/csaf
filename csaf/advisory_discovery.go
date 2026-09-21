@@ -306,6 +306,7 @@ type AdvisoryFileProcessor struct {
 	expr                 *util.PathEval
 	doc                  any
 	pmdURL               *url.URL
+	role                 ProviderRole
 	StreamingROLIEParser bool
 }
 
@@ -317,11 +318,15 @@ func NewAdvisoryFileProcessor(
 	doc any,
 	pmdURL *url.URL,
 ) *AdvisoryFileProcessor {
+	role := string(ProviderRoleCSAFTrustedProvider)
+	_ = expr.Extract("$.role", util.StringMatcher(&role), false, doc)
+
 	return &AdvisoryFileProcessor{
 		client: client,
 		expr:   expr,
 		doc:    doc,
 		pmdURL: pmdURL,
+		role:   ProviderRole(role),
 	}
 }
 
@@ -633,10 +638,10 @@ func (afp *AdvisoryFileProcessor) processROLIELegacy(files *[]AdvisoryFile, res 
 		}
 
 		switch {
-		case sha256 == "" && sha512 == "":
+		case afp.role == ProviderRoleCSAFTrustedProvider && sha256 == "" && sha512 == "":
 			slog.Error("No hash listed on ROLIE feed", "file", self)
 			return
-		case sign == "":
+		case afp.role == ProviderRoleCSAFTrustedProvider && sign == "":
 			slog.Error("No signature listed on ROLIE feed", "file", self)
 			return
 		default:
@@ -684,10 +689,10 @@ func (afp *AdvisoryFileProcessor) processROLIEStream(files *[]AdvisoryFile, res 
 			var file AdvisoryFile
 
 			switch {
-			case sha256 == "" && sha512 == "":
+			case afp.role == ProviderRoleCSAFTrustedProvider && sha256 == "" && sha512 == "":
 				slog.Error("No hash listed on ROLIE feed", "file", self)
 				return
-			case sign == "":
+			case afp.role == ProviderRoleCSAFTrustedProvider && sign == "":
 				slog.Error("No signature listed on ROLIE feed", "file", self)
 				return
 			default:

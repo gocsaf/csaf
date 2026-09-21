@@ -596,8 +596,8 @@ func (dc *downloadContext) downloadAdvisory(
 
 	// Validate OpenPGP signature.
 	keysCheck := func() error {
-		// Only check signature if we have loaded keys.
-		if dc.d.keys == nil {
+		// Only check signature if it is present and we have loaded keys.
+		if file.SignURL() == "" || dc.d.keys == nil {
 			return nil
 		}
 		var sign *crypto.PGPSignature
