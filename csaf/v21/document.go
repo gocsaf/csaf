@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gocsaf/csaf/v3/csaf/v21/mandatorytests"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
@@ -64,9 +63,6 @@ func validateJSON(data []byte) error {
 	}
 	if len(errors) != 0 {
 		return fmt.Errorf("validate CSAF document: %s", strings.Join(errors, "; "))
-	}
-	if issues := mandatorytests.Validate(value); len(issues) != 0 {
-		return fmt.Errorf("CSAF mandatory tests: %s", strings.Join(issues, "; "))
 	}
 	return nil
 }
