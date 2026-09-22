@@ -58,10 +58,7 @@ type forwarder struct {
 
 // newForwarder creates a new forwarder.
 func newForwarder(cfg *config) *forwarder {
-	queue := cfg.ForwardQueue
-	if queue < 1 {
-		queue = 1
-	}
+	queue := max(cfg.ForwardQueue, 1)
 	return &forwarder{
 		cfg:  cfg,
 		cmds: make(chan func(*forwarder), queue),
@@ -99,6 +96,9 @@ func (f *forwarder) httpClient() util.ClientWithContext {
 	}
 
 	hClient := http.Client{}
+	if f.cfg.ClientTimeout != nil {
+		hClient.Timeout = *f.cfg.ClientTimeout
+	}
 
 	var tlsConfig tls.Config
 	if f.cfg.ForwardInsecure {

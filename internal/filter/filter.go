@@ -12,6 +12,7 @@ package filter
 import (
 	"fmt"
 	"regexp"
+	"slices"
 )
 
 // PatternMatcher is a list of regular expressions.
@@ -33,10 +34,7 @@ func NewPatternMatcher(patterns []string) (PatternMatcher, error) {
 
 // Matches returns true if the given string matches any of the expressions.
 func (pm PatternMatcher) Matches(s string) bool {
-	for _, expr := range pm {
-		if expr.MatchString(s) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(pm, func(expr *regexp.Regexp) bool {
+		return expr.MatchString(s)
+	})
 }

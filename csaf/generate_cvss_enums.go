@@ -18,7 +18,7 @@ import (
 	"log"
 	"os"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -137,7 +137,7 @@ func main() {
 			defs = append(defs, k)
 		}
 	}
-	sort.Strings(defs)
+	slices.Sort(defs)
 
 	license := "determine license(s) from input file and replace this line"
 

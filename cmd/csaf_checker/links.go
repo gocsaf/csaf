@@ -78,6 +78,7 @@ func (pgs pages) listed(
 		pro.badDirListings.error("Fetching %s failed. Status code %d (%s)",
 			base, res.StatusCode, res.Status)
 		badDirs.Add(base)
+		res.Body.Close()
 		return false, errContinue
 	}
 

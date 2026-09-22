@@ -24,12 +24,14 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v3/internal/models"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/time/rate"
@@ -254,7 +256,6 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 
 	for _, d := range domains {
 		p.reset()
-
 		domain := &Domain{Name: d}
 		if !p.checkProviderMetadata(ctx, d) {
 			// We need to fail the domain if the PMD cannot be parsed.
@@ -266,7 +267,13 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 			}).report(p, domain)
 			report.Domains = append(report.Domains, domain)
 			continue
+		} else if p.cfg.PreFlight {
+			log.Printf("Preflight check passed. Domain: %q, pmdURL: %s\n", d, p.pmdURL)
+			continue
 		}
+		domain.URL = &p.pmdURL
+		log.Printf("PMD used %q\n", p.pmdURL)
+
 		if err := p.checkDomain(ctx, d); err != nil {
 			p.badProviderMetadata.use()
 			p.badProviderMetadata.error("Failed to find valid provider-metadata.json for domain %s: %v. ", d, err)
@@ -305,6 +312,9 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 		}
 
 		report.Domains = append(report.Domains, domain)
+	}
+	if p.cfg.PreFlight {
+		return nil, nil
 	}
 
 	return &report, nil
@@ -426,6 +436,9 @@ func (p *processor) checkRedirect(r *http.Request, via []*http.Request) error {
 // fullClient returns a fully configure HTTP client.
 func (p *processor) fullClient() util.ClientWithContext {
 	hClient := http.Client{}
+	if p.cfg.ClientTimeout != nil {
+		hClient.Timeout = *p.cfg.ClientTimeout
+	}
 
 	hClient.CheckRedirect = p.checkRedirect
 
@@ -471,6 +484,9 @@ func (p *processor) fullClient() util.ClientWithContext {
 // basicClient returns a http Client w/o certs and headers.
 func (p *processor) basicClient() util.ClientWithContext {
 	hClient := http.Client{}
+	if p.cfg.ClientTimeout != nil {
+		hClient.Timeout = *p.cfg.ClientTimeout
+	}
 	if p.cfg.Insecure {
 		hClient.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -507,21 +523,145 @@ func (p *processor) usedAuthorizedClient() bool {
 	return p.cfg.protectedAccess()
 }
 
-// rolieFeedEntries loads the references to the advisory files for a given feed.
-func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.AdvisoryFile, error) {
-	client := p.httpClient()
-	res, err := client.GetWithContext(ctx, feed)
-	p.badDirListings.use()
-	if err != nil {
-		p.badProviderMetadata.error("Cannot fetch feed %s: %v", feed, err)
-		return nil, errContinue
-	}
-	if res.StatusCode != http.StatusOK {
-		p.badProviderMetadata.warn("Fetching %s failed. Status code %d (%s)",
-			feed, res.StatusCode, res.Status)
-		return nil, errContinue
-	}
+// teeMux muxes an io.Reader into two io.Readers.
+type teeMux struct {
+	*io.PipeWriter
+	r1 io.Reader
+	r2 *io.PipeReader
+}
 
+func newTeeMux(r io.Reader) *teeMux {
+	pr, pw := io.Pipe()
+	return &teeMux{
+		PipeWriter: pw,
+		r1:         io.TeeReader(r, pw),
+		r2:         pr,
+	}
+}
+
+func (p *processor) dumpValidationErrors(feed string, errors []string) {
+	if len(errors) == 0 {
+		return
+	}
+	p.badProviderMetadata.error("%s: Validating against JSON schema failed:", feed)
+	for _, msg := range errors {
+		p.badProviderMetadata.error("%s", strings.ReplaceAll(msg, `%`, `%%`))
+	}
+}
+
+func (p *processor) extractAdvisoryFilesFromROLIE(
+	feed string,
+	files *[]csaf.AdvisoryFile,
+	hasEntries *bool,
+) func(srp *models.StreamingROLIEParser) {
+	return func(sr *models.StreamingROLIEParser) {
+		// Detect if this handler was called.
+		*hasEntries = true
+		// Filter if we have date checking.
+		if accept := p.cfg.Range; accept != nil {
+			if !sr.Updated.IsZero() && !accept.Contains(sr.Updated) {
+				return
+			}
+		}
+		// Extract the data from the links.
+		var url, sha256, sha512, sign string
+		for _, link := range sr.Links {
+			lower := strings.ToLower(link.HRef)
+			switch link.Rel {
+			case "self":
+				if !strings.HasSuffix(lower, ".json") {
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "self" has unexpected file extension.`,
+						link.HRef, feed)
+				}
+				url = link.HRef
+			case "signature":
+				if !strings.HasSuffix(lower, ".asc") {
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "signature" has unexpected file extension.`,
+						link.HRef, feed)
+				}
+				sign = link.HRef
+			case "hash":
+				switch {
+				case strings.HasSuffix(lower, "sha256"):
+					sha256 = link.HRef
+				case strings.HasSuffix(lower, "sha512"):
+					sha512 = link.HRef
+				default:
+					p.badProviderMetadata.warn(
+						`ROLIE feed entry link %s in %s with "rel": "hash" has unsupported file extension.`,
+						link.HRef, feed)
+				}
+			}
+		}
+		if url == "" {
+			p.badProviderMetadata.warn(
+				`ROLIE feed %s contains entry link with no "self" URL.`, feed)
+			return
+		}
+		switch {
+		case sha256 == "" && sha512 != "":
+			p.badROLIEFeed.info("%s has no sha256 hash file listed", url)
+		case sha256 != "" && sha512 == "":
+			p.badROLIEFeed.info("%s has no sha512 hash file listed", url)
+		case sha256 == "" && sha512 == "":
+			p.badROLIEFeed.error("No hash listed on ROLIE feed %s", url)
+		case sign == "":
+			p.badROLIEFeed.error("No signature listed on ROLIE feed %s", url)
+		}
+		*files = append(*files, csaf.PlainAdvisoryFile{
+			Path:   url,
+			SHA256: sha256,
+			SHA512: sha512,
+			Sign:   sign,
+		})
+	}
+}
+
+func (p *processor) extractWithStreamingParser(feed string, res *http.Response) ([]csaf.AdvisoryFile, error) {
+	var (
+		files      []csaf.AdvisoryFile // List of files to check.
+		hasEntries bool                // Where there any entries in the ROLIE feed?
+		rolieDoc   any                 // Document used for schema checking.
+	)
+	if err := func() error {
+		defer res.Body.Close()
+		var (
+			errCh = make(chan error, 1)
+			tm    = newTeeMux(res.Body) // Muxing here because we need the stream twice.
+		)
+		go func() {
+			srp := models.StreamingROLIEParser{
+				HandleEntry: p.extractAdvisoryFilesFromROLIE(
+					feed, &files, &hasEntries),
+			}
+			err := srp.Parse(tm.r2)
+			if _, drainErr := io.Copy(io.Discard, tm.r2); err == nil {
+				err = drainErr
+			}
+			errCh <- err
+		}()
+		rolieDocErr := misc.StrictJSONParse(tm.r1, &rolieDoc)
+		tm.CloseWithError(rolieDocErr)
+		srpErr := <-errCh
+		return errors.Join(srpErr, rolieDocErr)
+	}(); err != nil {
+		p.badProviderMetadata.error("Loading ROLIE feed failed: %v.", err)
+		return nil, errContinue
+	}
+	if !hasEntries {
+		p.badROLIEFeed.warn("No entries in %s", feed)
+	}
+	errors, err := csaf.ValidateROLIE(rolieDoc)
+	if err != nil {
+		return nil, err
+	}
+	p.dumpValidationErrors(feed, errors)
+	return files, nil
+}
+
+func (p *processor) extractWithModel(feed string, res *http.Response) ([]csaf.AdvisoryFile, error) {
 	rfeed, rolieDoc, err := func() (*csaf.ROLIEFeed, any, error) {
 		defer res.Body.Close()
 		all, err := io.ReadAll(res.Body)
@@ -548,12 +688,7 @@ func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.A
 	if err != nil {
 		return nil, err
 	}
-	if len(errors) > 0 {
-		p.badProviderMetadata.error("%s: Validating against JSON schema failed:", feed)
-		for _, msg := range errors {
-			p.badProviderMetadata.error("%s", strings.ReplaceAll(msg, `%`, `%%`))
-		}
-	}
+	p.dumpValidationErrors(feed, errors)
 
 	// Extract the CSAF files from feed.
 	var files []csaf.AdvisoryFile
@@ -609,9 +744,9 @@ func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.A
 
 		switch {
 		case sha256 == "" && sha512 != "":
-			p.badROLIEFeed.info("%s has no sha256 hash file listed", url)
+			p.badROLIEFeed.info("No sha256 hash file listed on ROLIE feed %s", url)
 		case sha256 != "" && sha512 == "":
-			p.badROLIEFeed.info("%s has no sha512 hash file listed", url)
+			p.badROLIEFeed.info("No sha512 hash file listed on ROLIE feed %s", url)
 		case sha256 == "" && sha512 == "":
 			p.badROLIEFeed.error("No hash listed on ROLIE feed %s", url)
 		case sign == "":
@@ -623,6 +758,30 @@ func (p *processor) rolieFeedEntries(ctx context.Context, feed string) ([]csaf.A
 	})
 
 	return files, nil
+}
+
+// rolieFeedEntries loads the references to the advisory files for a given feed.
+func (p *processor) rolieFeedEntries(
+	ctx context.Context,
+	feed string,
+) ([]csaf.AdvisoryFile, error) {
+	client := p.httpClient()
+	res, err := client.GetWithContext(ctx, feed)
+	p.badDirListings.use()
+	if err != nil {
+		p.badProviderMetadata.error("Cannot fetch feed %s: %v", feed, err)
+		return nil, errContinue
+	}
+	if res.StatusCode != http.StatusOK {
+		p.badProviderMetadata.warn("Fetching %s failed. Status code %d (%s)",
+			feed, res.StatusCode, res.Status)
+		res.Body.Close()
+		return nil, errContinue
+	}
+	if p.cfg.StreamingROLIEParser {
+		return p.extractWithStreamingParser(feed, res)
+	}
+	return p.extractWithModel(feed, res)
 }
 
 // makeAbsolute returns a function that checks if a given
@@ -649,13 +808,14 @@ func (p *processor) integrity(
 ) error {
 	client := p.httpClient()
 
-	var data bytes.Buffer
+	data := bytes.NewBuffer(make([]byte, 0, misc.MinBufSize))
 
-	for _, f := range files {
+	// checks an advisory and the dependent files like checksums and so on.
+	checkFile := func(f csaf.AdvisoryFile) error {
 		fp, err := url.Parse(f.URL())
 		if err != nil {
 			lg(ErrorType, "Bad URL %s: %v", f, err)
-			continue
+			return nil
 		}
 
 		u := fp.String()
@@ -665,11 +825,11 @@ func (p *processor) integrity(
 			if p.cfg.Verbose {
 				log.Printf("Ignoring %q\n", u)
 			}
-			continue
+			return nil
 		}
 
 		if p.markChecked(u, mask) {
-			continue
+			return nil
 		}
 		p.checkTLS(u)
 
@@ -688,12 +848,13 @@ func (p *processor) integrity(
 		res, err := client.GetWithContext(ctx, u)
 		if err != nil {
 			lg(ErrorType, "Fetching %s failed: %v.", u, err)
-			continue
+			return nil
 		}
+		defer res.Body.Close()
 		if res.StatusCode != http.StatusOK {
 			lg(ErrorType, "Fetching %s failed: Status code %d (%s)",
 				u, res.StatusCode, res.Status)
-			continue
+			return nil
 		}
 
 		// Error if we do not get JSON.
@@ -705,27 +866,32 @@ func (p *processor) integrity(
 
 		s256 := sha256.New()
 		s512 := sha512.New()
-		data.Reset()
-		hasher := io.MultiWriter(s256, s512, &data)
+
+		if data.Cap() > misc.MaxBufSize { // Throw away if buffer gets too big.
+			data = bytes.NewBuffer(make([]byte, 0, misc.MinBufSize))
+		} else {
+			data.Reset()
+		}
+		hasher := io.MultiWriter(s256, s512, data)
 
 		var doc any
 
-		if err := func() error {
-			defer res.Body.Close()
-			tee := io.TeeReader(res.Body, hasher)
-			return misc.StrictJSONParse(tee, &doc)
-		}(); err != nil {
+		tee := io.TeeReader(res.Body, hasher)
+		if err := misc.StrictJSONParse(tee, &doc); err != nil {
 			lg(ErrorType, "Reading %s failed: %v", u, err)
-			continue
+			return nil
 		}
 
 		p.invalidAdvisories.use()
+		if !utf8.Valid(data.Bytes()) {
+			p.invalidAdvisories.error("Invalid UTF-8 in: %s", u)
+		}
 
 		// Validate against JSON schema.
 		errors, err := csaf.ValidateCSAF(doc)
 		if err != nil {
 			p.invalidAdvisories.error("Failed to validate %s: %v", u, err)
-			continue
+			return nil
 		}
 		if len(errors) > 0 {
 			p.invalidAdvisories.error("CSAF file %s has %d validation errors.", u, len(errors))
@@ -733,8 +899,7 @@ func (p *processor) integrity(
 
 		if err := util.IDMatchesFilename(p.expr, doc, filepath.Base(u)); err != nil {
 			p.badFilenames.error("%s: %v", u, err)
-			continue
-
+			return nil
 		}
 		// Validate against remote validator.
 		if p.validator != nil {
@@ -785,40 +950,42 @@ func (p *processor) integrity(
 		hashFetchErrors := []string{}
 
 		for _, x := range hashes {
-			hu, err := url.Parse(x.url())
-			if err != nil {
-				lg(ErrorType, "Bad URL %s: %v", x.url(), err)
-				continue
-			}
-			hashFile := hu.String()
+			checkHash := func() { // Ensure the http client connection get closed.
+				hu, err := url.Parse(x.url())
+				if err != nil {
+					lg(ErrorType, "Bad URL %s: %v", x.url(), err)
+					return
+				}
+				hashFile := hu.String()
 
-			p.checkTLS(hashFile)
-			if res, err = client.GetWithContext(ctx, hashFile); err != nil {
-				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: %v.", hashFile, err))
-				continue
-			}
-			if res.StatusCode != http.StatusOK {
-				hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: Status code %d (%s)",
-					hashFile, res.StatusCode, res.Status))
-				continue
-			}
-			couldFetchHash = true
-			h, err := func() ([]byte, error) {
+				p.checkTLS(hashFile)
+				res, err := client.GetWithContext(ctx, hashFile)
+				if err != nil {
+					hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: %v.", hashFile, err))
+					return
+				}
 				defer res.Body.Close()
-				return util.HashFromReader(res.Body)
-			}()
-			if err != nil {
-				p.badIntegrities.error("Reading %s failed: %v.", hashFile, err)
-				continue
+				if res.StatusCode != http.StatusOK {
+					hashFetchErrors = append(hashFetchErrors, fmt.Sprintf("Fetching %s failed: Status code %d (%s)",
+						hashFile, res.StatusCode, res.Status))
+					return
+				}
+				couldFetchHash = true
+				h, err := util.HashFromReader(res.Body)
+				if err != nil {
+					p.badIntegrities.error("Reading %s failed: %v.", hashFile, err)
+					return
+				}
+				if len(h) == 0 {
+					p.badIntegrities.error("No hash found in %s.", hashFile)
+					return
+				}
+				if !bytes.Equal(h, x.hash) {
+					p.badIntegrities.error("%s hash of %s does not match %s.",
+						x.ext, u, hashFile)
+				}
 			}
-			if len(h) == 0 {
-				p.badIntegrities.error("No hash found in %s.", hashFile)
-				continue
-			}
-			if !bytes.Equal(h, x.hash) {
-				p.badIntegrities.error("%s hash of %s does not match %s.",
-					x.ext, u, hashFile)
-			}
+			checkHash()
 		}
 
 		msgType := ErrorType
@@ -837,43 +1004,53 @@ func (p *processor) integrity(
 		su, err := url.Parse(f.SignURL())
 		if err != nil {
 			lg(ErrorType, "Bad URL %s: %v", f.SignURL(), err)
-			continue
+			return nil
 		}
 		sigFile := su.String()
 		p.checkTLS(sigFile)
 
 		p.badSignatures.use()
 
-		if res, err = client.GetWithContext(ctx, sigFile); err != nil {
-			p.badSignatures.error("Fetching %s failed: %v.", sigFile, err)
-			continue
-		}
-		if res.StatusCode != http.StatusOK {
-			p.badSignatures.error("Fetching %s failed: status code %d (%s)",
-				sigFile, res.StatusCode, res.Status)
-			continue
-		}
-
-		sig, err := func() (*crypto.PGPSignature, error) {
-			defer res.Body.Close()
-			all, err := io.ReadAll(res.Body)
+		checkSignature := func() {
+			res, err := client.GetWithContext(ctx, sigFile)
 			if err != nil {
-				return nil, err
+				p.badSignatures.error("Fetching %s failed: %v.", sigFile, err)
+				return
 			}
-			return crypto.NewPGPSignatureFromArmored(string(all))
-		}()
-		if err != nil {
-			p.badSignatures.error("Loading signature from %s failed: %v.",
-				sigFile, err)
-			continue
+			defer res.Body.Close()
+			if res.StatusCode != http.StatusOK {
+				p.badSignatures.error("Fetching %s failed: status code %d (%s)",
+					sigFile, res.StatusCode, res.Status)
+				return
+			}
+			sig, err := func() (*crypto.PGPSignature, error) {
+				all, err := io.ReadAll(res.Body)
+				if err != nil {
+					return nil, err
+				}
+				return crypto.NewPGPSignatureFromArmored(string(all))
+			}()
+			if err != nil {
+				p.badSignatures.error("Loading signature from %s failed: %v.",
+					sigFile, err)
+				return
+			}
+			if p.keys != nil {
+				pm := crypto.NewPlainMessage(data.Bytes())
+				t := crypto.GetUnixTime()
+				if err := p.keys.VerifyDetached(pm, sig, t); err != nil {
+					p.badSignatures.error(
+						"Signature of %s could not be verified: %v.", u, err)
+				}
+			}
 		}
+		checkSignature()
+		return nil
+	}
 
-		if p.keys != nil {
-			pm := crypto.NewPlainMessage(data.Bytes())
-			t := crypto.GetUnixTime()
-			if err := p.keys.VerifyDetached(pm, sig, t); err != nil {
-				p.badSignatures.error("Signature of %s could not be verified: %v.", u, err)
-			}
+	for _, f := range files {
+		if err := checkFile(f); err != nil {
+			return err
 		}
 	}
 
@@ -949,6 +1126,7 @@ func (p *processor) checkIndex(ctx context.Context, base string, mask whereType)
 		} else {
 			p.badIndices.error("Fetching index.txt failed: %v not found.", index)
 		}
+		res.Body.Close()
 		return errContinue
 	}
 	p.badIndices.info("Found %v", index)
@@ -1013,6 +1191,7 @@ func (p *processor) checkChanges(ctx context.Context, base string, mask whereTyp
 		} else {
 			p.badChanges.error("Fetching changes.csv failed: %v not found.", changes)
 		}
+		res.Body.Close()
 		return errContinue
 	}
 	p.badChanges.info("Found %v", changes)
@@ -1071,8 +1250,8 @@ func (p *processor) checkChanges(ctx context.Context, base string, mask whereTyp
 		p.badChanges.warn("%s", "no entries in changes.csv found"+filtered)
 	}
 
-	if !sort.SliceIsSorted(times, func(i, j int) bool {
-		return times[j].Before(times[i])
+	if !slices.IsSortedFunc(times, func(a, b time.Time) int {
+		return b.Compare(a)
 	}) {
 		p.badChanges.error("%s is not sorted in descending order", changes)
 	}
@@ -1083,14 +1262,11 @@ func (p *processor) checkChanges(ctx context.Context, base string, mask whereTyp
 	return p.integrity(ctx, files, mask, p.badChanges.add)
 }
 
-// empty checks if list of strings contains at least one none empty string.
+// empty checks if list of strings contains only empty strings.
 func empty(arr []string) bool {
-	for _, s := range arr {
-		if s != "" {
-			return false
-		}
-	}
-	return true
+	return !slices.ContainsFunc(arr, func(a string) bool {
+		return a != ""
+	})
 }
 
 func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
@@ -1198,7 +1374,7 @@ func (p *processor) checkMissing(context.Context, string) error {
 			files = append(files, f)
 		}
 	}
-	sort.Strings(files)
+	slices.Sort(files)
 	for _, f := range files {
 		v := p.alreadyChecked[f]
 		var where []string
@@ -1248,7 +1424,7 @@ func (p *processor) checkInvalid(context.Context, string) error {
 	}
 
 	if len(invalids) > 0 {
-		sort.Strings(invalids)
+		slices.Sort(invalids)
 		p.badDirListings.error("advisories with invalid file names: %s",
 			strings.Join(invalids, ", "))
 	}
@@ -1282,7 +1458,7 @@ func (p *processor) checkListing(ctx context.Context, _ string) error {
 	}
 
 	if len(unlisted) > 0 {
-		sort.Strings(unlisted)
+		slices.Sort(unlisted)
 		p.badDirListings.error("Not listed advisories: %s",
 			strings.Join(unlisted, ", "))
 	}
@@ -1304,7 +1480,7 @@ func (p *processor) checkWhitePermissions(context.Context, string) error {
 		return nil
 	}
 
-	sort.Strings(ids)
+	slices.Sort(ids)
 
 	p.badWhitePermissions.error(
 		"TLP:WHITE advisories with ids %s are only available access-protected.",
@@ -1372,16 +1548,24 @@ func (p *processor) checkSecurityFolder(ctx context.Context, folder string) stri
 	}
 
 	if res.StatusCode != http.StatusOK {
+		res.Body.Close()
 		return fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
 			path, res.StatusCode, res.Status)
 	}
 
 	u, err := func() (string, error) {
 		defer res.Body.Close()
-		lines, err := csaf.ExtractProviderURL(res.Body, false)
+		lines, err := csaf.ExtractProviderURL(res.Body, true)
 		var u string
 		if len(lines) > 0 {
 			u = lines[0]
+			for i, unused := range lines[1:] {
+				if i == 0 {
+					p.badSecurity.use()
+				}
+				p.badSecurity.add(WarnType, "Unused PMD in security.txt: %s", unused)
+				log.Printf("WARN: Unused PMD in security.txt: %s\n", unused)
+			}
 		}
 		return u, err
 	}()
@@ -1402,11 +1586,11 @@ func (p *processor) checkSecurityFolder(ctx context.Context, folder string) stri
 	if res, err = client.GetWithContext(ctx, u); err != nil {
 		return fmt.Sprintf("Cannot fetch %s from security.txt: %v", u, err)
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		return fmt.Sprintf("Fetching %s failed. Status code %d (%s)",
 			u, res.StatusCode, res.Status)
 	}
-	defer res.Body.Close()
 	// Compare checksums to already read provider-metadata.json.
 	h := sha256.New()
 	if _, err := io.Copy(h, res.Body); err != nil {
@@ -1464,6 +1648,7 @@ func (p *processor) checkWellknown(ctx context.Context, domain string) {
 			"Fetching %s failed: %v", path, err)
 		return
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		p.badWellknownMetadata.add(ErrorType, "Fetching %s failed. Status code %d (%s)",
 			path, res.StatusCode, res.Status)
@@ -1566,34 +1751,40 @@ func (p *processor) checkPGPKeys(ctx context.Context, _ string) error {
 			p.badPGPs.error("Fetching public OpenPGP key %s failed: %v.", u, err)
 			continue
 		}
-		if res.StatusCode != http.StatusOK {
-			p.badPGPs.error("Fetching public OpenPGP key %s status code: %d (%s)",
-				u, res.StatusCode, res.Status)
-			continue
-		}
-
-		ckey, err := func() (*crypto.Key, error) {
+		check := func() {
 			defer res.Body.Close()
-			return crypto.NewKeyFromArmoredReader(res.Body)
-		}()
-		if err != nil {
-			p.badPGPs.error("Reading public OpenPGP key %s failed: %v", u, err)
-			continue
-		}
-
-		if !strings.EqualFold(ckey.GetFingerprint(), string(key.Fingerprint)) {
-			p.badPGPs.error("Given Fingerprint (%q) of public OpenPGP key %q does not match remotely loaded (%q).", string(key.Fingerprint), u, ckey.GetFingerprint())
-			continue
-		}
-		if p.keys == nil {
-			if keyring, err := crypto.NewKeyRing(ckey); err != nil {
-				p.badPGPs.error("Creating store for public OpenPGP key %s failed: %v.", u, err)
-			} else {
-				p.keys = keyring
+			if res.StatusCode != http.StatusOK {
+				p.badPGPs.error("Fetching public OpenPGP key %s status code: %d (%s)",
+					u, res.StatusCode, res.Status)
+				return
 			}
-		} else {
-			p.keys.AddKey(ckey)
+			ckey, err := crypto.NewKeyFromArmoredReader(res.Body)
+			if err != nil {
+				p.badPGPs.error("Reading public OpenPGP key %s failed: %v", u, err)
+				return
+			}
+			if !strings.EqualFold(
+				ckey.GetFingerprint(),
+				string(key.Fingerprint),
+			) {
+				p.badPGPs.error(
+					"Given Fingerprint (%q) of public OpenPGP key %q "+
+						"does not match remotely loaded (%q).",
+					string(key.Fingerprint), u, ckey.GetFingerprint())
+				return
+			}
+			if p.keys == nil {
+				if keyring, err := crypto.NewKeyRing(ckey); err != nil {
+					p.badPGPs.error(
+						"Creating store for public OpenPGP key %s failed: %v.", u, err)
+				} else {
+					p.keys = keyring
+				}
+			} else {
+				p.keys.AddKey(ckey)
+			}
 		}
+		check()
 	}
 
 	if p.keys == nil {

@@ -10,7 +10,7 @@ package util
 
 import (
 	"reflect"
-	"sort"
+	"slices"
 	"testing"
 )
 
@@ -57,7 +57,7 @@ func TestSet(t *testing.T) {
 
 	wantKeys := []int{0, 1, 2, 3}
 	gotKeys := s2.Keys()
-	sort.Ints(gotKeys)
+	slices.Sort(gotKeys)
 
 	if !reflect.DeepEqual(wantKeys, gotKeys) {
 		t.Errorf("Set.Keys: Expected %q got %q", wantKeys, gotKeys)

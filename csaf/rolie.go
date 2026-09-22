@@ -9,12 +9,14 @@
 package csaf
 
 import (
+	"cmp"
 	"encoding/json"
 	"io"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v3/internal/models"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -113,8 +115,8 @@ func (rcd *ROLIECategoryDocument) Merge(categories ...string) bool {
 	}
 
 	// Re-establish order.
-	sort.Slice(rcd.Categories.Category, func(i, j int) bool {
-		return rcd.Categories.Category[i].Term < rcd.Categories.Category[j].Term
+	slices.SortFunc(rcd.Categories.Category, func(a, b ROLIECategory) int {
+		return cmp.Compare(a.Term, b.Term)
 	})
 
 	return true
@@ -139,10 +141,7 @@ func (rcd *ROLIECategoryDocument) WriteTo(w io.Writer) (int64, error) {
 }
 
 // Link for ROLIE.
-type Link struct {
-	Rel  string `json:"rel"`
-	HRef string `json:"href"`
-}
+type Link = models.Link
 
 // ROLIECategory for ROLIE.
 type ROLIECategory struct {
@@ -208,6 +207,11 @@ func LoadROLIEFeed(r io.Reader) (*ROLIEFeed, error) {
 	if err := misc.StrictJSONParse(r, &rf); err != nil {
 		return nil, err
 	}
+	// A JSON null inside the entry array unmarshals to a nil *Entry.
+	// Drop those here so consumers can rely on all entries being non-nil.
+	rf.Feed.Entry = slices.DeleteFunc(rf.Feed.Entry, func(e *Entry) bool {
+		return e == nil
+	})
 	return &rf, nil
 }
 
@@ -241,9 +245,8 @@ func (rf *ROLIEFeed) Entries(fn func(*Entry)) {
 // SortEntriesByUpdated sorts all the entries in the feed
 // by their update times.
 func (rf *ROLIEFeed) SortEntriesByUpdated() {
-	entries := rf.Feed.Entry
-	sort.Slice(entries, func(i, j int) bool {
-		return time.Time(entries[j].Updated).Before(time.Time(entries[i].Updated))
+	slices.SortFunc(rf.Feed.Entry, func(a, b *Entry) int {
+		return time.Time(b.Updated).Compare(time.Time(a.Updated))
 	})
 }
 

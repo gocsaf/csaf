@@ -40,7 +40,7 @@ func run(files []string, ids string) error {
 			return fmt.Errorf("loading %q failed: %w", file, err)
 		}
 
-		for _, id := range strings.Split(ids, ",") {
+		for id := range strings.SplitSeq(ids, ",") {
 			already := util.Set[csaf.PURL]{}
 			i := 0
 			adv.ProductTree.FindProductIdentificationHelpers(

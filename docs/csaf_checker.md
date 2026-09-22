@@ -17,12 +17,15 @@ Application Options:
   -v, --verbose                         Verbose output
   -r, --rate=                           The average upper limit of https operations per second (defaults to unlimited)
   -t, --time_range=RANGE                RANGE of time from which advisories to download
+      --client_timeout=DURATION         DURATION for HTTP Client timeouts
   -i, --ignore_pattern=PATTERN          Do not download files if their URLs match any of the given PATTERNs
   -H, --header=                         One or more extra HTTP header fields
       --validator=URL                   URL to validate documents remotely
       --validator_cache=FILE            FILE to cache remote validations
       --validator_preset=               One or more presets to validate remotely (default: [mandatory])
+      --pre_flight                      Only check if valid provider-metadata.json can be found and loaded, skip advisory checks
   -c, --config=TOML-FILE                Path to config TOML file
+      --streaming_rolie_parser          If flag is set, uses the experimental streaming ROLIE parser
 
 Help Options:
   -h, --help                            Show this help message
@@ -33,6 +36,9 @@ Will check all given _domains_, by trying each as a CSAF provider.
 If no user agent is specified with `--header=user-agent:custom-agent/1.0` then the default agent in the form of `csaf_distribution/VERSION` is sent.
 
 If a _domain_ starts with `https://` it is instead considered a direct URL to the `provider-metadata.json` and checking proceeds from there.
+
+If pre-flight mode is selected with `--pre_flight` flag, only check for valid PMD without deeper advisory checks. On successful check, logs
+the pmdURL of checked domain. In pre-flight mode no report will be generated.
 
 If no config file is explictly given the follwing places are searched for a config file:
 
@@ -46,19 +52,22 @@ with `~` expanding to `$HOME` on unixoid systems and `%HOMEPATH` on Windows syst
 Supported options in config files:
 
 ```
-output              = ""
-format              = "json"
-insecure            = false
-# client_cert       # not set by default
-# client_key        # not set by default
-# client_passphrase # not set by default
-verbose             = false
-# rate              # not set by default
-# time_range         # not set by default
-# header            # not set by default
-# validator         # not set by default
-# validator_cache   # not set by default
-validator_preset    = ["mandatory"]
+output                 = ""
+format                 = "json"
+insecure               = false
+# client_cert          # not set by default
+# client_key           # not set by default
+# client_passphrase    # not set by default
+# client_timeout       # not set by default
+verbose                = false
+# rate                 # not set by default
+# time_range           # not set by default
+# header               # not set by default
+# validator            # not set by default
+# validator_cache      # not set by default
+validator_preset       = ["mandatory"]
+pre_flight             = false
+streaming_rolie_parser = false
 ```
 
 Usage example:
@@ -77,6 +86,9 @@ The checker result is a success if no checks resulted in type 2, and a failure o
 The option `timerange` allows to only check advisories from a given time
 interval. It can only be given once. See the
 [downloader documentation](csaf_downloader.md#timerange-option) for details.
+
+The `client_timeout` allows to set a duration for HTTP client requests. If deadline is
+exceeded, the request fails with a timeout, preventing long unresponsive server wait time.
 
 Some providers may limit the rate of requests that may be sent to retrieve advisories.
 This may cause the checker to be unable to retrieve all advisories. In this case,

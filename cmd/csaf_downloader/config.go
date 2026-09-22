@@ -55,6 +55,7 @@ type config struct {
 	ClientCert           *string           `long:"client_cert" description:"TLS client certificate file (PEM encoded data)" value-name:"CERT-FILE" toml:"client_cert"`
 	ClientKey            *string           `long:"client_key" description:"TLS client private key file (PEM encoded data)" value-name:"KEY-FILE" toml:"client_key"`
 	ClientPassphrase     *string           `long:"client_passphrase" description:"Optional passphrase for the client cert (limited, experimental, see doc)" value-name:"PASSPHRASE" toml:"client_passphrase"`
+	ClientTimeout        *time.Duration    `long:"client_timeout" description:"DURATION for HTTP Client timeouts" value-name:"DURATION" toml:"client_timeout"`
 	Version              bool              `long:"version" description:"Display version of the binary" toml:"-"`
 	NoStore              bool              `long:"no_store" short:"n" description:"Do not store files" toml:"no_store"`
 	Rate                 *float64          `long:"rate" short:"r" description:"The average upper limit of https operations per second (defaults to unlimited)" toml:"rate"`
@@ -63,6 +64,7 @@ type config struct {
 	Folder               string            `long:"folder" short:"f" description:"Download into a given subFOLDER" value-name:"FOLDER" toml:"folder"`
 	IgnorePattern        []string          `long:"ignore_pattern" short:"i" description:"Do not download files if their URLs match any of the given PATTERNs" value-name:"PATTERN" toml:"ignore_pattern"`
 	ExtraHeader          http.Header       `long:"header" short:"H" description:"One or more extra HTTP header fields" toml:"header"`
+	StreamingROLIEParser bool              `long:"streaming_rolie_parser" description:"Use the streaming ROLIE feed parser (experimental)" toml:"streaming_rolie_parser"`
 
 	EnumeratePMDOnly bool `long:"enumerate_pmd_only" description:"If this flag is set to true, the downloader will only enumerate valid provider metadata files, but not download documents" toml:"enumerate_pmd_only"`
 

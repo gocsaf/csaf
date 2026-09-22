@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
@@ -55,14 +56,16 @@ type worker struct {
 	summaries        map[string][]summary        // the summaries of the advisories.
 	categories       map[string]util.Set[string] // the categories per label.
 	log              *slog.Logger                // the structured logger, supplied with the worker number.
+	pool             misc.BufferPool
 }
 
-func newWorker(num int, processor *processor) *worker {
+func newWorker(num int, processor *processor, pool misc.BufferPool) *worker {
 	return &worker{
 		num:       num,
 		processor: processor,
 		expr:      util.NewPathEval(),
 		log:       processor.log.With(slog.Int("worker", num)),
+		pool:      pool,
 	}
 }
 

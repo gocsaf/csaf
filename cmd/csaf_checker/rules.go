@@ -11,7 +11,6 @@ package main
 import (
 	"fmt"
 	"slices"
-	"sort"
 
 	"github.com/gocsaf/csaf/v3/csaf"
 )
@@ -137,7 +136,7 @@ func (rules *requirementRules) reporters(nums []int) []reporter {
 	}
 	recurse(rules)
 
-	sort.Ints(nums)
+	slices.Sort(nums)
 
 	reps := make([]reporter, len(nums))
 
