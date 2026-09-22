@@ -1262,13 +1262,6 @@ func (p *processor) checkChanges(ctx context.Context, base string, mask whereTyp
 	return p.integrity(ctx, files, mask, p.badChanges.add)
 }
 
-// empty checks if list of strings contains only empty strings.
-func empty(arr []string) bool {
-	return !slices.ContainsFunc(arr, func(a string) bool {
-		return a != ""
-	})
-}
-
 func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 	// Check for ROLIE
 	rolie, err := p.expr.Eval("$.distributions[*].rolie.feeds", p.pmd)
