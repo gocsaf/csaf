@@ -344,7 +344,9 @@ func createProviderMetadata(c *config, wellknownCSAF string) error {
 		return err
 	}
 	pm := csaf.NewProviderMetadataDomain(c.CanonicalURLPrefix, c.modelTLPs())
-	c.ProviderMetaData.apply(pm)
+	if err := c.ProviderMetaData.apply(pm); err != nil {
+		return err
+	}
 
 	// We have directory based distributions.
 	if c.WriteIndices {

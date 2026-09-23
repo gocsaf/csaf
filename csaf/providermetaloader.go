@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
@@ -50,6 +51,8 @@ const (
 	WellknownSecurityMismatch
 	// IgnoreProviderMetadata indicates that an extra PMD was ignored.
 	IgnoreProviderMetadata
+	// MaintenanceExpired indicates that a provider distribution is no longer maintained.
+	MaintenanceExpired
 )
 
 // ProviderMetadataLoadMessage is a message generated while loading
@@ -383,11 +386,42 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string
 				strings.ReplaceAll(msg, `%`, `%%`))
 		}
 	default:
-		// Only store in result if validation passed.
-		result.Document = doc
-		result.Hash = sum
+		if err := checkProviderMaintenance(doc, path, time.Now()); err != nil {
+			result.Messages.Add(MaintenanceExpired, err.Error())
+		} else {
+			result.Document = doc
+			result.Hash = sum
+		}
 	}
 
 	pmdl.already[key] = &result
 	return &result
+}
+
+func checkProviderMaintenance(doc any, path string, now time.Time) error {
+	fields := doc.(map[string]any)
+	if value, ok := fields["maintained_from"].(string); ok {
+		from, err := time.Parse(time.RFC3339Nano, value)
+		if err != nil {
+			return fmt.Errorf("invalid maintained_from in %s: %w", path, err)
+		}
+		if now.Before(from) {
+			slog.Warn("Provider distribution is not maintained yet",
+				"url", path, "maintained_from", value)
+		}
+	}
+	if value, ok := fields["maintained_until"].(string); ok {
+		until, err := time.Parse(time.RFC3339Nano, value)
+		if err != nil {
+			return fmt.Errorf("invalid maintained_until in %s: %w", path, err)
+		}
+		if now.After(until) {
+			return fmt.Errorf("provider distribution at %s is no longer maintained (maintained_until: %s)", path, value)
+		}
+		if now.Before(until) && now.UTC().AddDate(0, 0, 90).After(until) {
+			slog.Warn("Provider distribution maintenance ends in less than 90 days",
+				"url", path, "maintained_until", value)
+		}
+	}
+	return nil
 }

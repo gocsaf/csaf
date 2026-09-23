@@ -20,6 +20,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	v21 "github.com/gocsaf/csaf/v3/csaf/v21"
 )
 
 const (
@@ -39,6 +40,8 @@ const (
 type providerMetadataConfig struct {
 	ListOnCSAFAggregators   *bool                   `toml:"list_on_CSAF_aggregators"`
 	MirrorOnCSAFAggregators *bool                   `toml:"mirror_on_CSAF_aggregators"`
+	MaintainedFrom          *string                 `toml:"maintained_from"`
+	MaintainedUntil         *string                 `toml:"maintained_until"`
 	Publisher               *csaf.ProviderPublisher `toml:"publisher"`
 }
 
@@ -67,9 +70,9 @@ type config struct {
 	WriteSecurity           bool                         `toml:"write_security"`
 }
 
-func (pmdc *providerMetadataConfig) apply(pmd *csaf.ProviderMetadata) {
+func (pmdc *providerMetadataConfig) apply(pmd *csaf.ProviderMetadata) error {
 	if pmdc == nil {
-		return
+		return nil
 	}
 	if pmdc.ListOnCSAFAggregators != nil {
 		pmd.ListOnCSAFAggregators = *pmdc.ListOnCSAFAggregators
@@ -80,6 +83,21 @@ func (pmdc *providerMetadataConfig) apply(pmd *csaf.ProviderMetadata) {
 	if pmdc.Publisher != nil {
 		pmd.Publisher = *pmdc.Publisher
 	}
+	if pmdc.MaintainedFrom != nil {
+		value := v21.DateTime(*pmdc.MaintainedFrom)
+		if _, err := value.Time(); err != nil {
+			return fmt.Errorf("invalid provider_metadata.maintained_from: %w", err)
+		}
+		pmd.MaintainedFrom = &value
+	}
+	if pmdc.MaintainedUntil != nil {
+		value := v21.DateTime(*pmdc.MaintainedUntil)
+		if _, err := value.Time(); err != nil {
+			return fmt.Errorf("invalid provider_metadata.maintained_until: %w", err)
+		}
+		pmd.MaintainedUntil = &value
+	}
+	return nil
 }
 
 type tlp string

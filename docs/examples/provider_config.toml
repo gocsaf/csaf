@@ -88,6 +88,9 @@
 #cache = "/var/lib/csaf/validations.db"
 
 [provider_metadata]
+# Optional RFC 3339 timestamps for the maintenance window of this distribution.
+#maintained_from = "2026-01-01T00:00:00Z"
+#maintained_until = "2027-01-01T00:00:00Z"
 # Indicate that aggregators can list us.
 list_on_CSAF_aggregators = true
 # Indicate that aggregators can mirror us.
