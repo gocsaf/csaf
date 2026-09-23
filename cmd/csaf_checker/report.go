@@ -58,7 +58,7 @@ type Domain struct {
 	Requirements   []*Requirement     `json:"requirements,omitempty"`
 	Passed         bool               `json:"passed"`
 	EvaluatedRules *requirementRules  `json:"evaluated_rules,omitempty"`
-	DirURLs        []string           `json:"dirurls,omitempty"`
+	DirURLs        []string           `json:"dir_urls,omitempty"`
 }
 
 // ReportTime stores the time of the report.
