@@ -239,7 +239,6 @@ func (r *providerMetadataReport) report(p *processor, domain *Domain) {
 		return
 	}
 	req.Messages = p.badProviderMetadata
-	domain.DirURLs = p.dirURLs
 }
 
 // report tests the "security.txt" file and sets the "message" field value
