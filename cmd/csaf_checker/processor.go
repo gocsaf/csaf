@@ -79,6 +79,8 @@ type processor struct {
 	badWhitePermissions    topicMessages
 	badAmberRedPermissions topicMessages
 
+	dirURLs []string
+
 	expr *util.PathEval
 }
 
@@ -215,6 +217,7 @@ func (p *processor) reset() {
 	p.pmd256 = nil
 	p.pmd = nil
 	p.keys = nil
+	p.dirURLs = nil
 	clear(p.alreadyChecked)
 	clear(p.noneTLS)
 	clear(p.timesAdv)
@@ -264,7 +267,9 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 			}).report(p, domain)
 			report.Domains = append(report.Domains, domain)
 			continue
-		} else if p.cfg.PreFlight {
+		}
+
+		if p.cfg.PreFlight {
 			log.Printf("Preflight check passed. Domain: %q, pmdURL: %s\n", d, p.pmdURL)
 			continue
 		}
@@ -307,6 +312,8 @@ func (p *processor) run(ctx context.Context, domains []string) (*Report, error) 
 			domain.EvaluatedRules = evaluated
 			domain.Passed = evaluated.passed()
 		}
+
+		domain.DirURLs = p.dirURLs
 
 		report.Domains = append(report.Domains, domain)
 	}
@@ -1259,13 +1266,6 @@ func (p *processor) checkChanges(ctx context.Context, base string, mask whereTyp
 	return p.integrity(ctx, files, mask, p.badChanges.add)
 }
 
-// empty checks if list of strings contains only empty strings.
-func empty(arr []string) bool {
-	return !slices.ContainsFunc(arr, func(a string) bool {
-		return a != ""
-	})
-}
-
 func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 	// Check for ROLIE
 	rolie, err := p.expr.Eval("$.distributions[*].rolie.feeds", p.pmd)
@@ -1306,14 +1306,28 @@ func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 		p.badProviderMetadata.warn("extracting directory URLs failed: %v.", err)
 	} else {
 		var ok bool
-		dirURLs, ok = util.AsStrings(directoryURLs)
-		if !ok {
+		if dirURLs, ok = util.AsStrings(directoryURLs); !ok {
 			p.badProviderMetadata.warn("directory URLs are not strings.")
+		} else {
+			// XXX: Remove the empty strings.
+			// util.AsStrings should do this but that would be an API change.
+			var stripped []string
+			for _, u := range dirURLs {
+				if u != "" {
+					stripped = append(stripped, u)
+				}
+			}
+			dirURLs, p.dirURLs = stripped, stripped
 		}
 	}
 
 	// Not found -> fall back to PMD url
-	if empty(dirURLs) {
+	if len(dirURLs) == 0 {
+		// XXX: Is this _really_ a good fallback?
+		// The assumption that we have a directory besides the PMD if we
+		// don't have an explicit list of directories should
+		// be checked against the standard.
+		// I guess this is not valid assumption.
 		pmdURL, err := url.Parse(p.pmdURL)
 		if err != nil {
 			return err
@@ -1326,9 +1340,7 @@ func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 	}
 
 	for _, base := range dirURLs {
-		if base == "" {
-			continue
-		}
+		log.Printf("dirURL for directory based provider: %s\n", base)
 		if err := p.checkIndex(ctx, base, indexMask); err != nil && err != errContinue {
 			return err
 		}
