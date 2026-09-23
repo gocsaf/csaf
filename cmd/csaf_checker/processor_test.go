@@ -258,3 +258,10 @@ func TestShaMarking(t *testing.T) {
 		})
 	}
 }
+
+func TestLongestPrefix(t *testing.T) {
+	input := []string{"flask", "flavor", "fluid"}
+	if have := longestPrefix(input); have != "fl" {
+		t.Errorf("Want 'fl' have: %v", have)
+	}
+}
