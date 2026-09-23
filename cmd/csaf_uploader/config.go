@@ -34,8 +34,8 @@ type config struct {
 	//lint:ignore SA5008 We are using choice twice: upload, create.
 	Action string `short:"a" long:"action" choice:"upload" choice:"create" description:"Action to perform" toml:"action"`
 	URL    string `short:"u" long:"url" description:"URL of the CSAF provider" value-name:"URL" toml:"url"`
-	//lint:ignore SA5008 We are using choice many times: csaf, clear, green, amber, red.
-	TLP                string        `short:"t" long:"tlp" choice:"csaf" choice:"clear" choice:"green" choice:"amber" choice:"red" description:"TLP of the feed" toml:"tlp"`
+	//lint:ignore SA5008 We are using choice many times: csaf, clear, green, amber, amber+strict, red.
+	TLP                string        `short:"t" long:"tlp" choice:"csaf" choice:"clear" choice:"green" choice:"amber" choice:"amber+strict" choice:"red" description:"TLP of the feed" toml:"tlp"`
 	ExternalSigned     bool          `short:"x" long:"external_signed" description:"CSAF files are signed externally. Assumes .asc files beside CSAF files." toml:"external_signed"`
 	SigningTool        string        `short:"X" long:"signing_tool" description:"Tool to sign a file externally" toml:"signing_tool"`
 	SigningToolTimeout time.Duration `long:"signing_tool_timeout" description:"Timeout for the external signing tool" toml:"signing_tool_timeout"`

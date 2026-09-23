@@ -9,7 +9,7 @@ Application Options:
   -a, --action=[upload|create]              Action to perform (default: upload)
   -u, --url=URL                             URL of the CSAF provider (default:
                                             https://localhost/cgi-bin/csaf_provider.go)
-  -t, --tlp=[csaf|clear|green|amber|red]    TLP of the feed (default: csaf)
+  -t, --tlp=[csaf|clear|green|amber|amber+strict|red]    TLP of the feed (default: csaf)
   -x, --external_signed                     CSAF files are signed externally. Assumes .asc files beside
                                             CSAF files.
   -X, --signing_tool=                       Tool to sign a file externally
