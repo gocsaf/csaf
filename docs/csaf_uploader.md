@@ -6,30 +6,27 @@
 csaf_uploader [OPTIONS] advisories...
 
 Application Options:
-  -a, --action=[upload|create]              Action to perform (default: upload)
-  -u, --url=URL                             URL of the CSAF provider (default:
-                                            https://localhost/cgi-bin/csaf_provider.go)
+  -a, --action=[upload|create]                           Action to perform (default: upload)
+  -u, --url=URL                                          URL of the CSAF provider (default: https://localhost/cgi-bin/csaf_provider.go)
   -t, --tlp=[csaf|clear|green|amber|amber+strict|red]    TLP of the feed (default: csaf)
-  -x, --external_signed                     CSAF files are signed externally. Assumes .asc files beside
-                                            CSAF files.
-  -X, --signing_tool=                       Tool to sign a file externally
-      --signing_tool_timeout=               Timeout for the external signing tool
-  -s, --no_schema_check                     Do not check files against CSAF JSON schema locally.
-  -k, --key=KEY-FILE                        OpenPGP key to sign the CSAF files
-  -p, --password=PASSWORD                   Authentication password for accessing the CSAF provider
-  -P, --passphrase=PASSPHRASE               Passphrase to unlock the OpenPGP key
-      --client_cert=CERT-FILE.crt           TLS client certificate file (PEM encoded data)
-      --client_key=KEY-FILE.pem             TLS client private key file (PEM encoded data)
-      --client_passphrase=PASSPHRASE        Optional passphrase for the client cert (limited,
-                                            experimental, see downloader doc)
-  -i, --password_interactive                Enter password interactively
-  -I, --passphrase_interactive              Enter OpenPGP key passphrase interactively
-      --insecure                            Do not check TLS certificates from provider
-  -c, --config=TOML-FILE                    Path to config TOML file
-      --version                             Display version of the binary
+  -x, --external_signed                                  CSAF files are signed externally. Assumes .asc files beside CSAF files.
+  -X, --signing_tool=                                    Tool to sign a file externally
+      --signing_tool_timeout=                            Timeout for the external signing tool
+  -s, --no_schema_check                                  Do not check files against CSAF JSON schema locally.
+  -k, --key=KEY-FILE                                     OpenPGP key to sign the CSAF files
+  -p, --password=PASSWORD                                Authentication password for accessing the CSAF provider
+  -P, --passphrase=PASSPHRASE                            Passphrase to unlock the OpenPGP key
+      --client_cert=CERT-FILE.crt                        TLS client certificate file (PEM encoded data)
+      --client_key=KEY-FILE.pem                          TLS client private key file (PEM encoded data)
+      --client_passphrase=PASSPHRASE                     Optional passphrase for the client cert (limited, experimental, see downloader doc)
+  -i, --password_interactive                             Enter password interactively
+  -I, --passphrase_interactive                           Enter OpenPGP key passphrase interactively
+      --insecure                                         Do not check TLS certificates from provider
+  -c, --config=TOML-FILE                                 Path to config TOML file
+      --version                                          Display version of the binary
 
 Help Options:
-  -h, --help                                Show this help message
+  -h, --help                                             Show this help message
 ```
 E.g. creating the initial directories and files.
 This must only be done once, as subsequent `create` calls to the
