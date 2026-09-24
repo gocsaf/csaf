@@ -4,6 +4,13 @@ A tool to download CSAF documents from CSAF providers.
 
 ### Usage
 
+#### example
+```./csaf_downloader example.com # replace example.com with a CSAF domain```
+
+We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
+
+#### options
+
 ```
 csaf_downloader [OPTIONS] domain...
 
