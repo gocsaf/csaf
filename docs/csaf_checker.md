@@ -1,6 +1,11 @@
 ## csaf_checker
+We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
 
 ### Usage
+
+#### example
+`./csaf_checker example.com` # replace example.com with your domain.
+
 
 ```
 Usage:
