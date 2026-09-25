@@ -153,9 +153,6 @@ func (cfg *config) checkPassword(hash string) bool {
 	if hash == "" && cfg.Password != nil {
 		return false
 	}
-	if hash != "" && cfg.Password == nil {
-		return false
-	}
 	// Limit the CPU cycles to an acceptable default.
 	const maxAcceptedCost = bcrypt.DefaultCost + 2
 	msg := []byte(hash)
