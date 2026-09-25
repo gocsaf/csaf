@@ -1,4 +1,5 @@
 ## csaf_checker
+We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
 
 ### Usage
 
