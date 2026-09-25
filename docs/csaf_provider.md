@@ -3,6 +3,8 @@ and reads its configuration from a [TOML](https://toml.io/en/) file.
 The [setup docs](../README.md#setup-trusted-provider)
 explain how to wire this up with nginx and where the config file lives.
 
+We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
+
 When installed, two endpoints are offered,
 and you should use the [csaf_uploader](../docs/csaf_uploader.md)
 to access them:
