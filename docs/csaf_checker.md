@@ -3,6 +3,10 @@ We recommend using the prebuild binaries from [the latest release](https://githu
 
 ### Usage
 
+#### example
+`./csaf_checker example.com` # replace example.com with your domain.
+
+
 ```
 Usage:
   csaf_checker [OPTIONS] domain...
