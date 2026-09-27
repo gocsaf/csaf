@@ -12,12 +12,53 @@ SHELL = /bin/bash
 BUILD = go build
 MKDIR = mkdir -p
 
-.PHONY: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 tag_checked_out mostlyclean
+.PHONY: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 generate_v20 tag_checked_out mostlyclean
+
+PYTHON ?= python3
+GENERATOR_VERSION := v0.24.1
+CSAF_V20_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.0/csaf_json_schema.json
+PROVIDER_V20_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.0/provider_json_schema.json
+AGGREGATOR_V20_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.0/aggregator_json_schema.json
+CVSS_V20_SCHEMA_ID := https://www.first.org/cvss/cvss-v2.0.json
+CVSS_V30_SCHEMA_ID := https://www.first.org/cvss/cvss-v3.0.json
+CVSS_V31_SCHEMA_ID := https://www.first.org/cvss/cvss-v3.1.json
 
 all:
 	@echo choose a target from: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 mostlyclean
 	@echo prepend \`make BUILDTAG=1\` to checkout the highest git tag before building
 	@echo or set BUILDTAG to a specific tag
+
+generate_v20:
+	@set -eu; \
+	output=$$(mktemp -d csaf/v20/model-output.XXXXXX); \
+	trap 'rm -r "$$output"' EXIT; \
+	$(PYTHON) internal/generate/prepare_v20_schema.py csaf/schema "$$output/schema"; \
+	go run github.com/atombender/go-jsonschema@$(GENERATOR_VERSION) \
+		--only-models --tags json \
+		--capitalization ID --capitalization URI --capitalization URL \
+		--capitalization CVSS --capitalization CVE --capitalization CSAF \
+		--capitalization CPE --capitalization TLP --capitalization CWE \
+		--schema-root-type=$(CSAF_V20_SCHEMA_ID)=CSAF \
+		--schema-root-type=$(PROVIDER_V20_SCHEMA_ID)=Provider \
+		--schema-root-type=$(AGGREGATOR_V20_SCHEMA_ID)=Aggregator \
+		--schema-root-type=$(CVSS_V20_SCHEMA_ID)=CVSSV20 \
+		--schema-root-type=$(CVSS_V30_SCHEMA_ID)=CVSSV30 \
+		--schema-root-type=$(CVSS_V31_SCHEMA_ID)=CVSSV31 \
+		--schema-output=$(PROVIDER_V20_SCHEMA_ID)="$$output/provider_generated.go" \
+		--schema-output=$(AGGREGATOR_V20_SCHEMA_ID)="$$output/aggregator_generated.go" \
+		--schema-output=$(CVSS_V20_SCHEMA_ID)="$$output/cvss_generated.go" \
+		--schema-output=$(CVSS_V30_SCHEMA_ID)="$$output/cvss_generated.go" \
+		--schema-output=$(CVSS_V31_SCHEMA_ID)="$$output/cvss_generated.go" \
+		-p v20 -o "$$output/csaf_generated.go" \
+		"$$output/schema/csaf_json_schema.json" \
+		"$$output/schema/provider_json_schema.json" \
+		"$$output/schema/aggregator_json_schema.json" \
+		"$$output/schema/cvss-v2.0.json" \
+		"$$output/schema/cvss-v3.0.json" \
+		"$$output/schema/cvss-v3.1.json"; \
+	$(PYTHON) internal/generate/prepare_v20_model.py "$$output"/*_generated.go; \
+	gofmt -w "$$output"/*_generated.go; \
+	mv "$$output"/*_generated.go csaf/v20/
 
 # Build all binaries
 build: build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64
