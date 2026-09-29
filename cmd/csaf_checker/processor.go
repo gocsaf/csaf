@@ -1442,62 +1442,19 @@ func (p *processor) checkListing(ctx context.Context, _ string) error {
 		}
 	}
 
-	if len(unlisted) > 0 {
+	if l := len(unlisted); l > 0 {
+		const maxListed = 20
 		slices.Sort(unlisted)
-		prefix := longestPrefix(unlisted)
-		if l := len(prefix); l > 4 {
-			var b strings.Builder
-			b.WriteString("Not listed advisories: ")
-			b.WriteString(unlisted[0])
-			b.WriteString(",")
-			for _, other := range unlisted[1:] {
-				b.WriteString(", ...")
-				b.WriteString(other[l:])
-			}
-			p.badDirListings.error("%s", b.String())
-		} else {
-			p.badDirListings.error("Not listed advisories: %s",
-				strings.Join(unlisted, ", "))
+		var rest string
+		if l > maxListed { // Shorten it to prevent overlong lines.
+			unlisted = unlisted[:maxListed]
+			rest = fmt.Sprintf(" and %d more", l-maxListed)
 		}
+		p.badDirListings.error("Not listed advisories: %s%s",
+			strings.Join(unlisted, ", "), rest)
 	}
 
 	return nil
-}
-
-func longestPrefix(strs []string) string {
-	if len(strs) < 2 {
-		return ""
-	}
-	var (
-		leads    []rune
-		leadLens []int
-		others   = slices.Clone(strs[1:])
-		last     int
-	)
-	for ofs, r := range strs[0] {
-		if r == utf8.RuneError {
-			break
-		}
-		if ofs != 0 {
-			leadLens = append(leadLens, ofs-last)
-		}
-		last = ofs
-		leads = append(leads, r)
-	}
-	leadLens = append(leadLens, len(strs[0])-last)
-	var prefix []rune
-	for i, lead := range leads {
-		leadLen := leadLens[i]
-		for index, other := range others {
-			otherLead, otherLeadLen := utf8.DecodeRuneInString(other)
-			if leadLen != otherLeadLen || otherLead != lead {
-				return string(prefix)
-			}
-			others[index] = others[index][leadLen:]
-		}
-		prefix = append(prefix, lead)
-	}
-	return string(prefix)
 }
 
 // checkWhitePermissions checks if the TLP:WHITE advisories are
