@@ -1,7 +1,7 @@
 ## csaf_validator
 
 is a tool to validate local advisories files against the JSON Schema and an optional remote validator.
-
+We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
 ### Exit codes
 
 If no fatal error occurs the program will exit with an exit code `n` with the following conditions:
