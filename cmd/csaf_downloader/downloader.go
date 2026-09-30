@@ -240,6 +240,22 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 
 	expr := util.NewPathEval()
 
+	if d.cfg.TrustedProvider {
+		// Enforce that this is a trusted provider.
+		var role string
+		if err := expr.Extract(
+			"$.role",
+			util.StringMatcher(&role),
+			false,
+			lpmd.Document,
+		); err != nil {
+			return fmt.Errorf("cannot extract role from PMD: %w", err)
+		}
+		if csaf.MetadataRoleTrustedProvider != csaf.MetadataRole(role) {
+			return fmt.Errorf("not a a trusted provider: %q", role)
+		}
+	}
+
 	if err := d.loadOpenPGPKeys(
 		ctx,
 		client,
