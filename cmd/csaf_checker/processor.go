@@ -1442,10 +1442,16 @@ func (p *processor) checkListing(ctx context.Context, _ string) error {
 		}
 	}
 
-	if len(unlisted) > 0 {
+	if l := len(unlisted); l > 0 {
+		const maxListed = 20
 		slices.Sort(unlisted)
-		p.badDirListings.error("Not listed advisories: %s",
-			strings.Join(unlisted, ", "))
+		var rest string
+		if l > maxListed { // Shorten it to prevent overlong lines.
+			unlisted = unlisted[:maxListed]
+			rest = fmt.Sprintf(" and %d more", l-maxListed)
+		}
+		p.badDirListings.error("Not listed advisories: %s%s",
+			strings.Join(unlisted, ", "), rest)
 	}
 
 	return nil
