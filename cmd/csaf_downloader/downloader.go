@@ -588,6 +588,8 @@ func (dc *downloadContext) downloadAdvisory(
 		return nil
 	}
 
+	type fatalError struct{ error }
+
 	if !utf8.Valid(data.Bytes()) {
 		slog.Warn("Invalid UTF-8 in file",
 			"url", file.URL())
@@ -619,6 +621,12 @@ func (dc *downloadContext) downloadAdvisory(
 		var sign *crypto.PGPSignature
 		sign, signData, err = loadSignature(ctx, dc.client, file.SignURL())
 		if err != nil {
+			// When in trusted provider mode every error should be fatal around signatures.
+			if dc.d.cfg.TrustedProvider {
+				return fatalError{
+					fmt.Errorf("cannot load signature for %s: %v", file.URL(), err),
+				}
+			}
 			slog.Warn("Downloading signature failed",
 				"url", file.SignURL(),
 				"error", err)
@@ -627,7 +635,11 @@ func (dc *downloadContext) downloadAdvisory(
 			if err := dc.d.checkSignature(data.Bytes(), sign); err != nil {
 				if !dc.d.cfg.IgnoreSignatureCheck {
 					dc.stats.signatureFailed++
-					return fmt.Errorf("cannot verify signature for %s: %v", file.URL(), err)
+					err = fmt.Errorf("cannot verify signature for %s: %v", file.URL(), err)
+					if dc.d.cfg.TrustedProvider {
+						err = fatalError{err}
+					}
+					return err
 				}
 			}
 		}
@@ -685,6 +697,9 @@ func (dc *downloadContext) downloadAdvisory(
 		if err := check(); err != nil {
 			slog.Error("Validation check failed", "error", err)
 			valStatus.update(invalidValidationStatus)
+			if errors.Is(err, fatalError{}) {
+				return err
+			}
 			if dc.d.cfg.ValidationMode == validationStrict {
 				return nil
 			}
