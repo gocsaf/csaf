@@ -590,6 +590,14 @@ func (dc *downloadContext) downloadAdvisory(
 
 	type fatalError struct{ error }
 
+	// When in trusted provider mode signature and checksum errors should be fatal.
+	wrapTrusted := func(err error) error {
+		if dc.d.cfg.TrustedProvider {
+			return fatalError{err}
+		}
+		return err
+	}
+
 	if !utf8.Valid(data.Bytes()) {
 		slog.Warn("Invalid UTF-8 in file",
 			"url", file.URL())
@@ -599,7 +607,7 @@ func (dc *downloadContext) downloadAdvisory(
 	s256Check := func() error {
 		if s256 != nil && !bytes.Equal(s256.Sum(nil), remoteSHA256) {
 			dc.stats.sha256Failed++
-			return fmt.Errorf("SHA256 checksum of %s does not match", file.URL())
+			return wrapTrusted(fmt.Errorf("SHA256 checksum of %s does not match", file.URL()))
 		}
 		return nil
 	}
@@ -607,7 +615,7 @@ func (dc *downloadContext) downloadAdvisory(
 	s512Check := func() error {
 		if s512 != nil && !bytes.Equal(s512.Sum(nil), remoteSHA512) {
 			dc.stats.sha512Failed++
-			return fmt.Errorf("SHA512 checksum of %s does not match", file.URL())
+			return wrapTrusted(fmt.Errorf("SHA512 checksum of %s does not match", file.URL()))
 		}
 		return nil
 	}
@@ -621,7 +629,6 @@ func (dc *downloadContext) downloadAdvisory(
 		var sign *crypto.PGPSignature
 		sign, signData, err = loadSignature(ctx, dc.client, file.SignURL())
 		if err != nil {
-			// When in trusted provider mode every error should be fatal around signatures.
 			if dc.d.cfg.TrustedProvider {
 				return fatalError{
 					fmt.Errorf("cannot load signature for %s: %v", file.URL(), err),
