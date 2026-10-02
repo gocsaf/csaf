@@ -13,38 +13,39 @@ A tool to download CSAF documents from CSAF providers. We recommend using the pr
 csaf_downloader [OPTIONS] domain...
 
 Application Options:
-  -d, --directory=DIR                            DIRectory to store the downloaded files in
-      --insecure                                 Do not check TLS certificates from provider
-      --ignore_sigcheck                          Ignore signature check results, just warn on mismatch
-      --client_cert=CERT-FILE                    TLS client certificate file (PEM encoded data)
-      --client_key=KEY-FILE                      TLS client private key file (PEM encoded data)
-      --client_passphrase=PASSPHRASE             Optional passphrase for the client cert (limited, experimental, see doc)
-      --client_timeout=DURATION                  Optional timeout for HTTP Client connections
-      --version                                  Display version of the binary
-  -n, --no_store                                 Do not store files
-  -r, --rate=                                    The average upper limit of https operations per second (defaults to unlimited)
-  -w, --worker=NUM                               NUMber of concurrent downloads (default: 2)
-  -t, --time_range=RANGE                         RANGE of time from which advisories to download
-  -f, --folder=FOLDER                            Download into a given subFOLDER
-  -i, --ignore_pattern=PATTERN                   Do not download files if their URLs match any of the given PATTERNs
-  -H, --header=                                  One or more extra HTTP header fields
-      --enumerate_pmd_only                       If this flag is set to true, the downloader will only enumerate valid provider metadata files, but not download documents
-      --validator=URL                            URL to validate documents remotely
-      --validator_cache=FILE                     FILE to cache remote validations
-      --validator_preset=PRESETS                 One or more PRESETS to validate remotely (default: [mandatory])
-  -m, --validation_mode=MODE[strict|unsafe]      MODE how strict the validation is (default: strict)
-      --forward_url=URL                          URL of HTTP endpoint to forward downloads to
-      --forward_header=                          One or more extra HTTP header fields used by forwarding
-      --forward_queue=LENGTH                     Maximal queue LENGTH before forwarder (default: 5)
-      --forward_insecure                         Do not check TLS certificates from forward endpoint
-      --log_file=FILE                            FILE to log downloading to (default: downloader.log)
-      --log_level=LEVEL[debug|info|warn|error]   LEVEL of logging details (default: info)
-  -c, --config=TOML-FILE                         Path to config TOML file
-      --preferred_hash=HASH[sha256|sha512]       HASH to prefer
-      --streaming_rolie_parser                   If flag is set, uses the experimental streaming ROLIE parser
+  -d, --directory=DIR                             DIRectory to store the downloaded files in
+      --insecure                                  Do not check TLS certificates from provider
+      --ignore_sigcheck                           Ignore signature check results, just warn on mismatch
+      --client_cert=CERT-FILE                     TLS client certificate file (PEM encoded data)
+      --client_key=KEY-FILE                       TLS client private key file (PEM encoded data)
+      --client_passphrase=PASSPHRASE              Optional passphrase for the client cert (limited, experimental, see doc)
+      --client_timeout=DURATION                   DURATION for HTTP Client timeouts
+      --version                                   Display version of the binary
+  -n, --no_store                                  Do not store files
+  -r, --rate=                                     The average upper limit of https operations per second (defaults to unlimited)
+  -w, --worker=NUM                                NUMber of concurrent downloads (default: 2)
+  -t, --time_range=RANGE                          RANGE of time from which advisories to download
+  -f, --folder=FOLDER                             Download into a given subFOLDER
+  -i, --ignore_pattern=PATTERN                    Do not download files if their URLs match any of the given PATTERNs
+  -H, --header=                                   One or more extra HTTP header fields
+      --streaming_rolie_parser                    Use the streaming ROLIE feed parser (experimental)
+      --enumerate_pmd_only                        If this flag is set to true, the downloader will only enumerate valid provider metadata files, but not download documents
+      --validator=URL                             URL to validate documents remotely
+      --validator_cache=FILE                      FILE to cache remote validations
+      --validator_preset=PRESETS                  One or more PRESETS to validate remotely (default: [mandatory])
+  -m, --validation_mode=MODE[strict|unsafe]       MODE how strict the validation is (default: strict)
+      --forward_url=URL                           URL of HTTP endpoint to forward downloads to
+      --forward_header=                           One or more extra HTTP header fields used by forwarding
+      --forward_queue=LENGTH                      Maximal queue LENGTH before forwarder (default: 5)
+      --forward_insecure                          Do not check TLS certificates from forward endpoint
+      --log_file=FILE                             FILE to log downloading to (default: downloader.log)
+      --log_level=LEVEL[debug|info|warn|error]    LEVEL of logging details (default: info)
+  -c, --config=TOML-FILE                          Path to config TOML file
+      --preferred_hash=HASH[sha256|sha512]        HASH to prefer
+      --trusted_provider                          Check if the given providers are trusted and force signature and checksum checks to pass
 
 Help Options:
-  -h, --help                                     Show this help message
+  -h, --help                                      Show this help message
 ```
 
 Will download all CSAF documents for the given _domains_, by trying each as a CSAF provider.

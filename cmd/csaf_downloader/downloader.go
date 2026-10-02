@@ -240,6 +240,22 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 
 	expr := util.NewPathEval()
 
+	if d.cfg.TrustedProvider {
+		// Enforce that this is a trusted provider.
+		var role string
+		if err := expr.Extract(
+			"$.role",
+			util.StringMatcher(&role),
+			false,
+			lpmd.Document,
+		); err != nil {
+			return fmt.Errorf("cannot extract role from PMD: %w", err)
+		}
+		if csaf.MetadataRoleTrustedProvider != csaf.MetadataRole(role) {
+			return fmt.Errorf("not a a trusted provider: %q", role)
+		}
+	}
+
 	if err := d.loadOpenPGPKeys(
 		ctx,
 		client,
@@ -572,16 +588,37 @@ func (dc *downloadContext) downloadAdvisory(
 		return nil
 	}
 
+	type fatalError struct{ error }
+
+	// When in trusted provider mode signature and checksum errors should be fatal.
+	wrapTrusted := func(err error) error {
+		if dc.d.cfg.TrustedProvider {
+			return fatalError{err}
+		}
+		return err
+	}
+
 	if !utf8.Valid(data.Bytes()) {
 		slog.Warn("Invalid UTF-8 in file",
 			"url", file.URL())
+	}
+
+	// trusted providers need at least one checksum per advisory.
+	trustedProviderRequirements := func() error {
+		if !dc.d.cfg.TrustedProvider {
+			return nil
+		}
+		if s256 == nil && s512 == nil {
+			return fatalError{fmt.Errorf("checksum is missing for %s", file.URL())}
+		}
+		return nil
 	}
 
 	// Compare the checksums.
 	s256Check := func() error {
 		if s256 != nil && !bytes.Equal(s256.Sum(nil), remoteSHA256) {
 			dc.stats.sha256Failed++
-			return fmt.Errorf("SHA256 checksum of %s does not match", file.URL())
+			return wrapTrusted(fmt.Errorf("SHA256 checksum of %s does not match", file.URL()))
 		}
 		return nil
 	}
@@ -589,7 +626,7 @@ func (dc *downloadContext) downloadAdvisory(
 	s512Check := func() error {
 		if s512 != nil && !bytes.Equal(s512.Sum(nil), remoteSHA512) {
 			dc.stats.sha512Failed++
-			return fmt.Errorf("SHA512 checksum of %s does not match", file.URL())
+			return wrapTrusted(fmt.Errorf("SHA512 checksum of %s does not match", file.URL()))
 		}
 		return nil
 	}
@@ -603,6 +640,11 @@ func (dc *downloadContext) downloadAdvisory(
 		var sign *crypto.PGPSignature
 		sign, signData, err = loadSignature(ctx, dc.client, file.SignURL())
 		if err != nil {
+			if dc.d.cfg.TrustedProvider {
+				return fatalError{
+					fmt.Errorf("cannot load signature for %s: %v", file.URL(), err),
+				}
+			}
 			slog.Warn("Downloading signature failed",
 				"url", file.SignURL(),
 				"error", err)
@@ -611,7 +653,11 @@ func (dc *downloadContext) downloadAdvisory(
 			if err := dc.d.checkSignature(data.Bytes(), sign); err != nil {
 				if !dc.d.cfg.IgnoreSignatureCheck {
 					dc.stats.signatureFailed++
-					return fmt.Errorf("cannot verify signature for %s: %v", file.URL(), err)
+					err = fmt.Errorf("cannot verify signature for %s: %v", file.URL(), err)
+					if dc.d.cfg.TrustedProvider {
+						err = fatalError{err}
+					}
+					return err
 				}
 			}
 		}
@@ -659,6 +705,7 @@ func (dc *downloadContext) downloadAdvisory(
 	// Run all the validations.
 	valStatus := notValidatedValidationStatus
 	for _, check := range []func() error{
+		trustedProviderRequirements,
 		s256Check,
 		s512Check,
 		keysCheck,
@@ -669,6 +716,9 @@ func (dc *downloadContext) downloadAdvisory(
 		if err := check(); err != nil {
 			slog.Error("Validation check failed", "error", err)
 			valStatus.update(invalidValidationStatus)
+			if errors.Is(err, fatalError{}) {
+				return err
+			}
 			if dc.d.cfg.ValidationMode == validationStrict {
 				return nil
 			}
