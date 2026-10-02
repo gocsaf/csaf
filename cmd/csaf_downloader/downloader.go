@@ -603,6 +603,17 @@ func (dc *downloadContext) downloadAdvisory(
 			"url", file.URL())
 	}
 
+	// trusted providers need at least one checksum per advisory.
+	trustedProviderRequirements := func() error {
+		if !dc.d.cfg.TrustedProvider {
+			return nil
+		}
+		if s256 == nil && s512 == nil {
+			return fatalError{fmt.Errorf("checksum is missing for %s", file.URL())}
+		}
+		return nil
+	}
+
 	// Compare the checksums.
 	s256Check := func() error {
 		if s256 != nil && !bytes.Equal(s256.Sum(nil), remoteSHA256) {
@@ -694,6 +705,7 @@ func (dc *downloadContext) downloadAdvisory(
 	// Run all the validations.
 	valStatus := notValidatedValidationStatus
 	for _, check := range []func() error{
+		trustedProviderRequirements,
 		s256Check,
 		s512Check,
 		keysCheck,
