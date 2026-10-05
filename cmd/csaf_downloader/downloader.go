@@ -717,7 +717,8 @@ func (dc *downloadContext) downloadAdvisory(
 			slog.Error("Validation check failed", "error", err)
 			valStatus.update(invalidValidationStatus)
 			if errors.Is(err, fatalError{}) {
-				return err
+				errorCh <- err
+				return nil
 			}
 			if dc.d.cfg.ValidationMode == validationStrict {
 				return nil
