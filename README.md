@@ -123,15 +123,6 @@ Binaries will be placed in directories named like `bin-linux-amd64/` and `bin-wi
 
 For further details of the development process consult our [development page](./docs/Development.md).
 
-## Previous repo URLs
-
-> [!NOTE]
-> To avoid future breakage, if you have `csaf-poc` in some of your URLs:
-> 1. Adjust your HTML links.
-> 2. Adjust your go module paths, see [#579](https://github.com/gocsaf/csaf/issues/579#issuecomment-2497244379).
->
-> (This repository was moved here from https://github.com/csaf-poc/csaf_distribution on 2024-10-28. The old one is deprecated and redirection will be switched off sometime in 2025.)
-
 ## License
 
 - `csaf` is licensed as Free Software under the terms of the [Apache License, Version 2.0](./LICENSES/Apache-2.0.txt).
