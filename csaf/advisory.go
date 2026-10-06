@@ -352,9 +352,8 @@ type ProductGroup struct {
 }
 
 // ProductGroups is a list of ProductGroupIDs
-type ProductGroups struct {
-	ProductGroupIDs []*ProductGroupID `json:"product_group_ids"` // unique elements
-}
+type ProductGroups []*ProductGroup
+type ProductGroupIDs []*ProductGroupID
 
 // RelationshipCategory is the category of a relationship.
 type RelationshipCategory string
@@ -444,9 +443,9 @@ var csafFlagLabelPattern = alternativesUnmarshal(
 // machine readable flag. For example, this could be a machine readable justification
 // code why a product is not affected.
 type Flag struct {
-	Date     *string        `json:"date,omitempty"`
-	GroupIDs *ProductGroups `json:"group_ids,omitempty"`
-	Label    *FlagLabel     `json:"label"` // required
+	Date     *string          `json:"date,omitempty"`
+	GroupIDs *ProductGroupIDs `json:"group_ids,omitempty"`
+	Label    *FlagLabel       `json:"label"` // required
 	//revive:disable-next-line:var-naming  until new major version w fix
 	ProductIds *Products `json:"product_ids,omitempty"`
 }
@@ -612,8 +611,8 @@ type Remediation struct {
 	Details      *string              `json:"details"` // required
 	Entitlements []*string            `json:"entitlements,omitempty"`
 	//revive:disable:var-naming until new major version w fix
-	GroupIds   *ProductGroups `json:"group_ids,omitempty"`
-	ProductIds *Products      `json:"product_ids,omitempty"`
+	GroupIds   *ProductGroupIDs `json:"group_ids,omitempty"`
+	ProductIds *Products        `json:"product_ids,omitempty"`
 	//revive:enable
 	RestartRequired *RestartRequired `json:"restart_required,omitempty"`
 	URL             *string          `json:"url,omitempty"`
@@ -746,8 +745,8 @@ type Threat struct {
 	Date     *string         `json:"date,omitempty"`
 	Details  *string         `json:"details"` // required
 	//revive:disable:var-naming until new major version w fix
-	GroupIds   *ProductGroups `json:"group_ids,omitempty"`
-	ProductIds *Products      `json:"product_ids,omitempty"`
+	GroupIds   *ProductGroupIDs `json:"group_ids,omitempty"`
+	ProductIds *Products        `json:"product_ids,omitempty"`
 	//revive:enable
 }
 
