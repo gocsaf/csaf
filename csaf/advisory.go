@@ -351,8 +351,9 @@ type ProductGroup struct {
 	Summary    *string   `json:"summary,omitempty"`
 }
 
-// ProductGroups is a list of ProductGroupIDs
+// ProductGroups is a list of ProductGroup objects
 type ProductGroups []*ProductGroup
+// ProductGroupsIDs is a list of ProductGroupID objects
 type ProductGroupIDs []*ProductGroupID
 
 // RelationshipCategory is the category of a relationship.
