@@ -49,8 +49,8 @@ Application Options:
       --log_level=LEVEL[debug|info|warn|error]    LEVEL of logging details (default: info)
   -c, --config=TOML-FILE                          Path to config TOML file
       --preferred_hash=HASH[sha256|sha512]        HASH to prefer
-      --trusted_provider                          Check if the given providers are trusted and ignore the
-                                                  adivsory download if signature or checksum checks fail
+      --trusted_provider                          Only download from trusted providers;
+                                                  only write or forward documents with valid signatures
 
 Help Options:
   -h, --help                                      Show this help message
