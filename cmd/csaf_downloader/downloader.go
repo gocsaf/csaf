@@ -588,12 +588,13 @@ func (dc *downloadContext) downloadAdvisory(
 		return nil
 	}
 
-	type fatalError struct{ error }
+	type trustedError struct{ error }
 
-	// When in trusted provider mode signature and checksum errors should be fatal.
+	// When in trusted provider mode signature and checksum errors should
+	// result in ignoring the respective advisory.
 	wrapTrusted := func(err error) error {
 		if dc.d.cfg.TrustedProvider {
-			return fatalError{err}
+			return trustedError{err}
 		}
 		return err
 	}
@@ -609,7 +610,7 @@ func (dc *downloadContext) downloadAdvisory(
 			return nil
 		}
 		if s256 == nil && s512 == nil {
-			return fatalError{fmt.Errorf("checksum is missing for %s", file.URL())}
+			return trustedError{fmt.Errorf("checksum is missing for %s", file.URL())}
 		}
 		return nil
 	}
@@ -641,7 +642,7 @@ func (dc *downloadContext) downloadAdvisory(
 		sign, signData, err = loadSignature(ctx, dc.client, file.SignURL())
 		if err != nil {
 			if dc.d.cfg.TrustedProvider {
-				return fatalError{
+				return trustedError{
 					fmt.Errorf("cannot load signature for %s: %v", file.URL(), err),
 				}
 			}
@@ -655,7 +656,7 @@ func (dc *downloadContext) downloadAdvisory(
 					dc.stats.signatureFailed++
 					err = fmt.Errorf("cannot verify signature for %s: %v", file.URL(), err)
 					if dc.d.cfg.TrustedProvider {
-						err = fatalError{err}
+						err = trustedError{err}
 					}
 					return err
 				}
@@ -716,7 +717,7 @@ func (dc *downloadContext) downloadAdvisory(
 		if err := check(); err != nil {
 			slog.Error("Validation check failed", "error", err)
 			valStatus.update(invalidValidationStatus)
-			if errors.Is(err, fatalError{}) {
+			if errors.Is(err, trustedError{}) {
 				errorCh <- err
 				return nil
 			}
