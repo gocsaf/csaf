@@ -1,0 +1,243 @@
+{
+  "$defs": {
+    "aggregator_url_t": {
+      "description": "Contains a URL.",
+      "format": "uri",
+      "pattern": "\\/aggregator\\.json$",
+      "title": "Aggregator URL type",
+      "type": "string"
+    },
+    "metadata_t": {
+      "additionalProperties": false,
+      "description": "Contains the metadata of a single CSAF issuing party.",
+      "properties": {
+        "last_updated": {
+          "description": "Holds the date and time when this entry was last updated.",
+          "format": "date-time",
+          "title": "Last updated",
+          "type": "string"
+        },
+        "publisher": {
+          "$ref": "provider.json#/$defs/publisher_t",
+          "description": "Provides information about the issuing party for this entry.",
+          "title": "Publisher"
+        },
+        "role": {
+          "$ref": "provider.json#/$defs/role_t",
+          "description": "Contains the role of the issuing party according to section 7 in the CSAF standard.",
+          "title": "Role of the issuing party"
+        },
+        "url": {
+          "$ref": "provider.json#/$defs/canonical_url_t",
+          "description": "Contains the URL of the provider-metadata.json for that entry.",
+          "title": "URL of the metadata"
+        }
+      },
+      "required": [
+        "last_updated",
+        "publisher",
+        "role",
+        "url"
+      ],
+      "title": "CSAF issuing party metadata.",
+      "type": "object"
+    },
+    "mirrors_t": {
+      "description": "Contains a list of URLs or mirrors for this issuing party.",
+      "items": {
+        "$ref": "provider.json#/$defs/provider_url_t",
+        "description": "Contains the base URL of the mirror for this issuing party.",
+        "title": "Mirror"
+      },
+      "minItems": 1,
+      "title": "List of mirrors",
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json",
+  "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+  "additionalProperties": false,
+  "description": "Representation of information where to find CSAF providers as a JSON document.",
+  "properties": {
+    "$schema": {
+      "description": "Contains the URL of the Aggregator JSON schema which the document promises to be valid for.",
+      "enum": [
+        "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json"
+      ],
+      "format": "uri",
+      "title": "JSON schema",
+      "type": "string"
+    },
+    "aggregator": {
+      "additionalProperties": false,
+      "description": "Provides information about the aggregator.",
+      "properties": {
+        "category": {
+          "description": "Provides information about the category of aggregator.",
+          "enum": [
+            "aggregator",
+            "lister"
+          ],
+          "title": "Category of aggregator",
+          "type": "string"
+        },
+        "contact_details": {
+          "description": "Information on how to contact the aggregator, possibly including details such as web sites, email addresses, phone numbers, and postal mail addresses.",
+          "examples": [
+            "Aggregator can be reached at contact_us@aggregator.example.com, or via our website at https://www.example.com/security/csaf/aggregator/contact."
+          ],
+          "minLength": 1,
+          "title": "Contact details",
+          "type": "string"
+        },
+        "issuing_authority": {
+          "description": "Provides information about the authority of the aggregator to release the list, in particular, the party's constituency and responsibilities or other obligations.",
+          "minLength": 1,
+          "title": "Issuing authority",
+          "type": "string"
+        },
+        "name": {
+          "description": "Contains the name of the aggregator.",
+          "examples": [
+            "BSI",
+            "CISA",
+            "CSAF TC"
+          ],
+          "minLength": 1,
+          "title": "Name of aggregator",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "Contains a URL which is under control of the aggregator and can be used as a globally unique identifier for that aggregator.",
+          "examples": [
+            "https://www.example.com",
+            "https://csaf.io"
+          ],
+          "format": "uri",
+          "title": "Namespace of aggregator",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "name",
+        "namespace"
+      ],
+      "title": "Aggregator",
+      "type": "object"
+    },
+    "aggregator_version": {
+      "description": "Gives the version of the CSAF aggregator specification which the document was generated for.",
+      "enum": [
+        "2.1"
+      ],
+      "title": "CSAF aggregator version",
+      "type": "string"
+    },
+    "canonical_url": {
+      "$ref": "#/$defs/aggregator_url_t",
+      "description": "Contains the URL for this document.",
+      "title": "Canonical URL"
+    },
+    "csaf_providers": {
+      "description": "Contains a list with information from CSAF providers.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Contains information from a CSAF provider.",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/metadata_t",
+            "description": "Contains the metadata of a single CSAF provider.",
+            "title": "CSAF provider metadata."
+          },
+          "mirrors": {
+            "$ref": "#/$defs/mirrors_t",
+            "description": "Contains a list of URLs or mirrors for this CSAF provider.",
+            "title": "List of mirrors"
+          }
+        },
+        "required": [
+          "metadata"
+        ],
+        "title": "CSAF provider entry",
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "List of CSAF providers",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "csaf_publishers": {
+      "description": "Contains a list with information from CSAF publishers.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Contains information from a CSAF publisher.",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/metadata_t",
+            "description": "Contains the metadata of a single CSAF publisher extracted from one of its CSAF documents.",
+            "title": "CSAF publisher metadata."
+          },
+          "mirrors": {
+            "$ref": "#/$defs/mirrors_t",
+            "description": "Contains a list of URLs or mirrors for this CSAF publisher.",
+            "title": "List of mirrors"
+          },
+          "update_interval": {
+            "description": "Contains information about how often the CSAF publisher is checked for new CSAF documents.",
+            "examples": [
+              "daily",
+              "weekly",
+              "monthly",
+              "on best effort",
+              "on notification by CSAF publisher"
+            ],
+            "minLength": 1,
+            "title": "Update interval",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metadata",
+          "mirrors",
+          "update_interval"
+        ],
+        "title": "CSAF publisher entry",
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "List of CSAF publishers",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "last_updated": {
+      "description": "Holds the date and time when the document was last updated.",
+      "format": "date-time",
+      "title": "Last updated",
+      "type": "string"
+    },
+    "maintained_from": {
+      "description": "Holds the date and time from when this CSAF aggregator file is in a maintained state.",
+      "format": "date-time",
+      "title": "Maintained from",
+      "type": "string"
+    },
+    "maintained_until": {
+      "description": "Holds the date and time until when this CSAF aggregator file is in a maintained state.",
+      "format": "date-time",
+      "title": "Maintained until",
+      "type": "string"
+    }
+  },
+  "required": [
+    "$schema",
+    "aggregator",
+    "aggregator_version",
+    "canonical_url",
+    "csaf_providers",
+    "last_updated"
+  ],
+  "title": "CSAF aggregator",
+  "type": "object"
+}

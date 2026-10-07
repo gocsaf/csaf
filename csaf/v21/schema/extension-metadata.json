@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "location_t": {
+      "additionalProperties": false,
+      "description": "Contains all necessary information for a single location.",
+      "properties": {
+        "max_occurrence": {
+          "default": 1,
+          "description": "Contains the number how often the extension can be present in this path.",
+          "minimum": 0,
+          "multipleOf": 1,
+          "title": "Maximum Occurrence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_occurrence"
+      ],
+      "title": "Location",
+      "type": "object"
+    }
+  },
+  "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metadata.json",
+  "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+  "additionalProperties": false,
+  "description": "Representation of metadata for a CSAF Extension.",
+  "properties": {
+    "$schema": {
+      "const": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metadata.json",
+      "description": "Contains the URL of the CSAF Extension Metadata JSON schema which the JSON object promises to be valid for.",
+      "title": "CSAF Extension Metadata Schema",
+      "type": "string"
+    },
+    "extension_schema": {
+      "$ref": "extension-metaschema.json#/$defs/content_schema_t",
+      "description": "Holds the `$id` value of the CSAF Extension Schema this metadata applies to.",
+      "title": "Extension Schema"
+    },
+    "incompatible_extensions": {
+      "description": "Contains a list of incompatible extensions.",
+      "items": {
+        "$ref": "extension-metaschema.json#/$defs/content_schema_t",
+        "description": "Contains the `$id` value of a CSAF Extension Schema which is incompatible with this extension.",
+        "title": "Incompatible extension"
+      },
+      "minItems": 1,
+      "title": "List of Incompatible Extensions",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "last_updated": {
+      "description": "Holds the date and time when the document was last updated.",
+      "format": "date-time",
+      "title": "Last updated",
+      "type": "string"
+    },
+    "requirement": {
+      "additionalProperties": false,
+      "description": "Contains the requirement for all possible paths.",
+      "properties": {
+        "$.document.x_extensions": {
+          "$ref": "#/$defs/location_t",
+          "description": "Contains requirements for this extension on document path.",
+          "title": "Document extension path"
+        },
+        "$.product_tree.branches..product.x_extensions": {
+          "$ref": "#/$defs/location_t",
+          "description": "Contains requirements for this extension on the Product Tree Branch path.",
+          "title": "Product Tree Branch extension path"
+        },
+        "$.product_tree.full_product_names[*].x_extensions": {
+          "$ref": "#/$defs/location_t",
+          "description": "Contains requirements for this extension on the Product Tree Full Product Names path.",
+          "title": "Product Tree Full Product Names extension path"
+        },
+        "$.product_tree.relationships[*].full_product_name.x_extensions": {
+          "$ref": "#/$defs/location_t",
+          "description": "Contains requirements for this extension on the Product Tree Relationships path.",
+          "title": "Product Tree Relationship extension path"
+        },
+        "$.vulnerabilities[*].metrics[*].content.x_extensions": {
+          "$ref": "#/$defs/location_t",
+          "description": "Contains requirements for this extension on the Vulnerabilities Metrics path.",
+          "title": "Vulnerabilities Metrics extension path"
+        },
+        "$.vulnerabilities[*].x_extensions": {
+          "$ref": "#/$defs/location_t",
+          "description": "Contains requirements for this extension on the Vulnerabilities path.",
+          "title": "Vulnerabilities extension path"
+        },
+        "$.x_extensions": {
+          "$ref": "#/$defs/location_t",
+          "description": "Contains requirements for this extension on the root path.",
+          "title": "Root extension path"
+        }
+      },
+      "required": [
+        "$.document.x_extensions",
+        "$.product_tree.branches..product.x_extensions",
+        "$.product_tree.full_product_names[*].x_extensions",
+        "$.product_tree.relationships[*].full_product_name.x_extensions",
+        "$.vulnerabilities[*].metrics[*].content.x_extensions",
+        "$.vulnerabilities[*].x_extensions",
+        "$.x_extensions"
+      ],
+      "title": "Requirement",
+      "type": "object"
+    }
+  },
+  "required": [
+    "$schema",
+    "extension_schema",
+    "last_updated",
+    "requirement"
+  ],
+  "title": "CSAF Extension Metadata",
+  "type": "object"
+}

@@ -1,0 +1,44 @@
+{
+  "$id": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-content.json",
+  "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json",
+  "additionalProperties": false,
+  "description": "Representation of additional information extending a CSAF Document.",
+  "properties": {
+    "$schema": {
+      "$ref": "extension-metaschema.json#/$defs/content_schema_t",
+      "description": "Contains the URL of the CSAF Extension JSON schema which the JSON object promises to be valid for.",
+      "title": "CSAF Extension Schema"
+    },
+    "category": {
+      "description": "Holds the category of the extension content.",
+      "enum": [
+        "essential",
+        "significant",
+        "supplementary"
+      ],
+      "title": "Extension Category",
+      "type": "string"
+    },
+    "content": {
+      "additionalProperties": true,
+      "description": "Contains the additional information in its properties.",
+      "minProperties": 1,
+      "title": "Content",
+      "type": "object"
+    },
+    "critical": {
+      "default": false,
+      "description": "Determines whether using the extension would fail a mandatory test.",
+      "title": "Critical",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "$schema",
+    "category",
+    "critical",
+    "content"
+  ],
+  "title": "CSAF Extension Content",
+  "type": "object"
+}
