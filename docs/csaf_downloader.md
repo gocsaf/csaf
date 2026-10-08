@@ -114,10 +114,10 @@ trusted_provider       = false
 
 The `trusted_provider` checks if the given domains announce that they are
 trusted. If not the whole domain is ignored. The downloaded advisories
-of the accepted domains are not stored if the checksum or the signature
-validation fail. This is countermeasure to prevent poisoned advisories
-to be processed further.
-
+of the accepted domains are only stored if the signature is valid.
+This is a countermeasure to prevent poisoned documents
+to be processed further. If we have a good signature and a bad checksum
+we only store the signature and do not store the broken checksum.
 
 If the `folder` option is given all the advisories are stored in a subfolder
 of this name. Otherwise the advisories are each stored in a folder named
