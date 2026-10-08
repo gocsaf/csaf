@@ -240,7 +240,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 
 	expr := util.NewPathEval()
 
-	if d.cfg.TrustedProvider {
+	if d.cfg.TrustedOnly {
 		// Enforce that this is a trusted provider.
 		var role string
 		if err := expr.Extract(
@@ -600,7 +600,7 @@ func (dc *downloadContext) downloadAdvisory(
 	// This assumes that the signature check is done and
 	// passed before the checksum checks.
 	ignoreTrusted := func(err error, checksum *[]byte) error {
-		if dc.d.cfg.TrustedProvider && err != nil {
+		if dc.d.cfg.TrustedOnly && err != nil {
 			*checksum = nil
 		}
 		return err
@@ -636,7 +636,7 @@ func (dc *downloadContext) downloadAdvisory(
 		var sign *crypto.PGPSignature
 		sign, signData, err = loadSignature(ctx, dc.client, file.SignURL())
 		if err != nil {
-			if dc.d.cfg.TrustedProvider {
+			if dc.d.cfg.TrustedOnly {
 				return trustedError{
 					fmt.Errorf("cannot load signature for %s: %v", file.URL(), err),
 				}
@@ -650,7 +650,7 @@ func (dc *downloadContext) downloadAdvisory(
 				if !dc.d.cfg.IgnoreSignatureCheck {
 					dc.stats.signatureFailed++
 					err = fmt.Errorf("cannot verify signature for %s: %v", file.URL(), err)
-					if dc.d.cfg.TrustedProvider {
+					if dc.d.cfg.TrustedOnly {
 						err = trustedError{err}
 					}
 					return err

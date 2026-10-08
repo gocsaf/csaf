@@ -12,7 +12,6 @@ A tool to download CSAF documents from CSAF providers. We recommend using the pr
 ```
 csaf_downloader [OPTIONS] domain...
 
-
 Application Options:
   -d, --directory=DIR                             DIRectory to store the downloaded files in
       --insecure                                  Do not check TLS certificates from provider
@@ -24,37 +23,37 @@ Application Options:
       --client_timeout=DURATION                   DURATION for HTTP Client timeouts
       --version                                   Display version of the binary
   -n, --no_store                                  Do not store files
-  -r, --rate=                                     The average upper limit of https operations per second
-                                                  (defaults to unlimited)
+  -r, --rate=                                     The average upper limit of https operations per
+                                                  second (defaults to unlimited)
   -w, --worker=NUM                                NUMber of concurrent downloads (default: 2)
   -t, --time_range=RANGE                          RANGE of time from which advisories to download
   -f, --folder=FOLDER                             Download into a given subFOLDER
-  -i, --ignore_pattern=PATTERN                    Do not download files if their URLs match any of the given
-                                                  PATTERNs
+  -i, --ignore_pattern=PATTERN                    Do not download files if their URLs match any of the
+                                                  given PATTERNs
   -H, --header=                                   One or more extra HTTP header fields
       --streaming_rolie_parser                    Use the streaming ROLIE feed parser (experimental)
       --enumerate_pmd_only                        If this flag is set to true, the downloader will only
-                                                  enumerate valid provider metadata files, but not download
-                                                  documents
+                                                  enumerate valid provider metadata files, but not
+                                                  download documents
       --validator=URL                             URL to validate documents remotely
       --validator_cache=FILE                      FILE to cache remote validations
       --validator_preset=PRESETS                  One or more PRESETS to validate remotely (default:
                                                   [mandatory])
   -m, --validation_mode=MODE[strict|unsafe]       MODE how strict the validation is (default: strict)
       --forward_url=URL                           URL of HTTP endpoint to forward downloads to
-      --forward_header=                           One or more extra HTTP header fields used by forwarding
+      --forward_header=                           One or more extra HTTP header fields used by
+                                                  forwarding
       --forward_queue=LENGTH                      Maximal queue LENGTH before forwarder (default: 5)
       --forward_insecure                          Do not check TLS certificates from forward endpoint
       --log_file=FILE                             FILE to log downloading to (default: downloader.log)
       --log_level=LEVEL[debug|info|warn|error]    LEVEL of logging details (default: info)
   -c, --config=TOML-FILE                          Path to config TOML file
       --preferred_hash=HASH[sha256|sha512]        HASH to prefer
-      --trusted_provider                          Only download from trusted providers;
-                                                  only write or forward documents with valid signatures
+      --trusted_only                              Only download from trusted providers; only write or
+                                                  forward documents with valid signatures
 
 Help Options:
   -h, --help                                      Show this help message
-
 ```
 
 Will download all CSAF documents for the given _domains_, by trying each as a CSAF provider.
@@ -109,10 +108,10 @@ validation_mode        = "strict"
 forward_queue          = 5
 forward_insecure       = false
 streaming_rolie_parser = false
-trusted_provider       = false
+trusted_only           = false
 ```
 
-The `trusted_provider` checks if the given domains announce that they are
+The `trusted_only` checks if the given domains announce that they are
 trusted. If not the whole domain is ignored. The downloaded advisories
 of the accepted domains are only stored if the signature is valid.
 This is a countermeasure to prevent poisoned documents
