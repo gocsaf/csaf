@@ -590,36 +590,29 @@ func (dc *downloadContext) downloadAdvisory(
 
 	type trustedError struct{ error }
 
-	// When in trusted provider mode signature and checksum errors should
-	// result in ignoring the respective advisory.
-	wrapTrusted := func(err error) error {
-		if dc.d.cfg.TrustedProvider {
-			return trustedError{err}
-		}
-		return err
-	}
-
 	if !utf8.Valid(data.Bytes()) {
 		slog.Warn("Invalid UTF-8 in file",
 			"url", file.URL())
 	}
 
-	// trusted providers need at least one checksum per advisory.
-	trustedProviderRequirements := func() error {
-		if !dc.d.cfg.TrustedProvider {
-			return nil
+	// If we have a good signature and we have a bad checksum
+	// do not store this checksum.
+	// This assumes that the signature check is done and
+	// passed before the checksum checks.
+	ignoreTrusted := func(err error, checksum *[]byte) error {
+		if dc.d.cfg.TrustedProvider && err != nil {
+			*checksum = nil
 		}
-		if s256 == nil && s512 == nil {
-			return trustedError{fmt.Errorf("checksum is missing for %s", file.URL())}
-		}
-		return nil
+		return err
 	}
 
 	// Compare the checksums.
 	s256Check := func() error {
 		if s256 != nil && !bytes.Equal(s256.Sum(nil), remoteSHA256) {
 			dc.stats.sha256Failed++
-			return wrapTrusted(fmt.Errorf("SHA256 checksum of %s does not match", file.URL()))
+			return ignoreTrusted(
+				fmt.Errorf("SHA256 checksum of %s does not match", file.URL()),
+				&s256Data)
 		}
 		return nil
 	}
@@ -627,7 +620,9 @@ func (dc *downloadContext) downloadAdvisory(
 	s512Check := func() error {
 		if s512 != nil && !bytes.Equal(s512.Sum(nil), remoteSHA512) {
 			dc.stats.sha512Failed++
-			return wrapTrusted(fmt.Errorf("SHA512 checksum of %s does not match", file.URL()))
+			return ignoreTrusted(
+				fmt.Errorf("SHA512 checksum of %s does not match", file.URL()),
+				&s512Data)
 		}
 		return nil
 	}
@@ -706,10 +701,9 @@ func (dc *downloadContext) downloadAdvisory(
 	// Run all the validations.
 	valStatus := notValidatedValidationStatus
 	for _, check := range []func() error{
-		trustedProviderRequirements,
+		keysCheck,
 		s256Check,
 		s512Check,
-		keysCheck,
 		schemaCheck,
 		filenameCheck,
 		remoteValidatorCheck,
@@ -896,15 +890,11 @@ func loadHashes(ctx context.Context, client util.ClientWithContext, hashes []has
 		} else {
 			switch h.hashType {
 			case algSha512:
-				{
-					remoteSha512 = remote
-					sha512Data = data
-				}
+				remoteSha512 = remote
+				sha512Data = data
 			case algSha256:
-				{
-					remoteSha256 = remote
-					sha256Data = data
-				}
+				remoteSha256 = remote
+				sha256Data = data
 			}
 			if h.preferred {
 				break
