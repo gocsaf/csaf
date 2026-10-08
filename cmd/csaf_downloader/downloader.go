@@ -715,7 +715,10 @@ func (dc *downloadContext) downloadAdvisory(
 				errorCh <- err
 				return nil
 			}
-			if dc.d.cfg.ValidationMode == validationStrict {
+			if dc.d.cfg.ValidationMode == validationStrict &&
+				!dc.d.cfg.TrustedOnly {
+				// In trusted mode we ignore invalid checksums
+				// but store valid signatures.
 				return nil
 			}
 		}

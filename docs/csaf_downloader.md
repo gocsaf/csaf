@@ -117,6 +117,7 @@ of the accepted domains are only stored if the signature is valid.
 This is a countermeasure to prevent poisoned documents
 to be processed further. If we have a good signature and a bad checksum
 we only store the signature and do not store the broken checksum.
+This behavior overrules `validation_mode` set to `strict`.
 
 If the `folder` option is given all the advisories are stored in a subfolder
 of this name. Otherwise the advisories are each stored in a folder named
