@@ -91,6 +91,8 @@ type config struct {
 
 	//lint:ignore SA5008 We are using choice or than once: sha256, sha512
 	PreferredHash hashAlgorithm `long:"preferred_hash" choice:"sha256" choice:"sha512" value-name:"HASH" description:"HASH to prefer" toml:"preferred_hash"`
+
+	TrustedOnly bool `long:"trusted_only" description:"Only download from trusted providers; only write or forward documents with valid signatures"`
 }
 
 // configPaths are the potential file locations of the config file.
