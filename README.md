@@ -26,12 +26,12 @@ and others.
 
 
 > [!NOTE]
-> ### Development for CSAF 2.1 starts → new major version 4
-> [develop-4](https://github.com/gocsaf/csaf/tree/develop-4) is the branch
-where we put the new code for CSAF 2.1.
+> ### Development for CSAF 2.1 → new major version 5
+> [develop-5](https://github.com/gocsaf/csaf/tree/develop-5) is the branch
+where we are putting the new code for CSAF 2.1.
 >
-> What do you think of our
-> [rough plan](https://github.com/gocsaf/csaf/blob/develop-4/docs/planning-for-csaf-2.1.md)?
+> Here is our
+> [rough plan](https://github.com/gocsaf/csaf/blob/develop-4/docs/planning-for-csaf-2.1.md).
 
 
 ## Tools for users
@@ -122,15 +122,6 @@ Binaries will be placed in directories named like `bin-linux-amd64/` and `bin-wi
 ### Development
 
 For further details of the development process consult our [development page](./docs/Development.md).
-
-## Previous repo URLs
-
-> [!NOTE]
-> To avoid future breakage, if you have `csaf-poc` in some of your URLs:
-> 1. Adjust your HTML links.
-> 2. Adjust your go module paths, see [#579](https://github.com/gocsaf/csaf/issues/579#issuecomment-2497244379).
->
-> (This repository was moved here from https://github.com/csaf-poc/csaf_distribution on 2024-10-28. The old one is deprecated and redirection will be switched off sometime in 2025.)
 
 ## License
 
