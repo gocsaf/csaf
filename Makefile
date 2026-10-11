@@ -12,7 +12,7 @@ SHELL = /bin/bash
 BUILD = go build
 MKDIR = mkdir -p
 
-.PHONY: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 generate_v20 generate_v21 tag_checked_out mostlyclean
+.PHONY: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 generate_v20 generate_v21 generate_bare tag_checked_out mostlyclean
 
 PYTHON ?= python3
 GENERATOR_VERSION := v0.24.1
@@ -43,6 +43,9 @@ all:
 	@echo choose a target from: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 mostlyclean
 	@echo prepend \`make BUILDTAG=1\` to checkout the highest git tag before building
 	@echo or set BUILDTAG to a specific tag
+
+generate_bare:
+	go run ./internal/generate/bare
 
 generate_v20:
 	@set -eu; \
