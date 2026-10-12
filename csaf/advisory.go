@@ -354,7 +354,7 @@ type ProductGroup struct {
 // ProductGroups is a list of ProductGroup objects
 type ProductGroups []*ProductGroup
 
-// ProductGroupsIDs is a list of ProductGroupID objects
+// ProductGroupIDs is a list of ProductGroupID objects
 type ProductGroupIDs []*ProductGroupID
 
 // RelationshipCategory is the category of a relationship.
