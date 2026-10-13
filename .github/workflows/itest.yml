@@ -5,19 +5,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: '^1.23.6'
+          go-version-file: "go.mod"
+          check-latest: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v7
         with:
-          node-version: 16
-
-      - name: Checkout
-        uses: actions/checkout@v4
+          node-version: 24
 
       - name: Execute the scripts
         run: |
@@ -36,10 +36,10 @@ jobs:
         shell: bash
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-            name: checker-results
-            path: |
-                ~/checker-results.html
-                ~/checker-results-no-clientcert.json
-            if-no-files-found: error
+          name: checker-results
+          path: |
+            ~/checker-results.html
+            ~/checker-results-no-clientcert.json
+          if-no-files-found: error

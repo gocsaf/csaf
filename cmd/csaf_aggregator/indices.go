@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -53,9 +53,9 @@ func (w *worker) writeInterims(label string, summaries []summary) error {
 		return nil
 	}
 
-	sort.SliceStable(ss, func(i, j int) bool {
-		return ss[i].summary.CurrentReleaseDate.After(
-			ss[j].summary.CurrentReleaseDate)
+	slices.SortStableFunc(ss, func(a, b summary) int {
+		return a.summary.CurrentReleaseDate.Compare(
+			b.summary.CurrentReleaseDate)
 	})
 
 	fname := filepath.Join(w.dir, label, interimsCSV)
@@ -110,9 +110,9 @@ func (w *worker) writeCSV(label string, summaries []summary) error {
 	ss := make([]summary, len(summaries))
 	copy(ss, summaries)
 
-	sort.SliceStable(ss, func(i, j int) bool {
-		return ss[i].summary.CurrentReleaseDate.After(
-			ss[j].summary.CurrentReleaseDate)
+	slices.SortStableFunc(ss, func(a, b summary) int {
+		return a.summary.CurrentReleaseDate.Compare(
+			b.summary.CurrentReleaseDate)
 	})
 
 	out := util.NewFullyQuotedCSWWriter(f)
@@ -347,7 +347,7 @@ func (w *worker) writeService() error {
 		labels[i] = strings.ToLower(label)
 		i++
 	}
-	sort.Strings(labels)
+	slices.Sort(labels)
 
 	categories := csaf.ROLIEServiceWorkspaceCollectionCategories{
 		Category: []csaf.ROLIEServiceWorkspaceCollectionCategoriesCategory{{

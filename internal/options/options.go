@@ -46,7 +46,6 @@ type Parser[C any] struct {
 // If a config file was specified it is loaded.
 // Returns the arguments and the configuration.
 func (p *Parser[C]) Parse() ([]string, *C, error) {
-
 	var cmdLineOpts C
 	if p.SetDefaults != nil {
 		p.SetDefaults(&cmdLineOpts)
@@ -82,6 +81,7 @@ func (p *Parser[C]) Parse() ([]string, *C, error) {
 
 	// No config file -> We are good.
 	if path == "" {
+		slog.Warn("No config file found. Maybe you want to specify one or store it in a respective default location", "locations", p.DefaultConfigLocations)
 		return args, &cmdLineOpts, nil
 	}
 

@@ -12,6 +12,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gocsaf/csaf/v3/internal/certs"
 	"github.com/gocsaf/csaf/v3/internal/filter"
@@ -38,16 +39,19 @@ type config struct {
 	Verbose                bool              `long:"verbose" short:"v" description:"Verbose output" toml:"verbose"`
 	Rate                   *float64          `long:"rate" short:"r" description:"The average upper limit of https operations per second (defaults to unlimited)" toml:"rate"`
 	Range                  *models.TimeRange `long:"time_range" short:"t" description:"RANGE of time from which advisories to download" value-name:"RANGE" toml:"time_range"`
+	ClientTimeout          *time.Duration    `long:"client_timeout" description:"DURATION for HTTP Client timeouts" value-name:"DURATION" toml:"client_timeout"`
 	IgnorePattern          []string          `long:"ignore_pattern" short:"i" description:"Do not download files if their URLs match any of the given PATTERNs" value-name:"PATTERN" toml:"ignore_pattern"`
 	ExtraHeader            http.Header       `long:"header" short:"H" description:"One or more extra HTTP header fields" toml:"header"`
 	RemoteValidator        string            `long:"validator" description:"URL to validate documents remotely" value-name:"URL" toml:"validator"`
 	RemoteValidatorCache   string            `long:"validator_cache" description:"FILE to cache remote validations" value-name:"FILE" toml:"validator_cache"`
 	RemoteValidatorPresets []string          `long:"validator_preset" description:"One or more presets to validate remotely" toml:"validator_preset"`
+	PreFlight              bool              `long:"pre_flight" description:"Check for valid provider-metadata.json and output domain and pmdURL if successful, skip further checks and report" toml:"pre_flight"`
 
 	Config string `short:"c" long:"config" description:"Path to config TOML file" value-name:"TOML-FILE" toml:"-"`
 
-	clientCerts   []tls.Certificate
-	ignorePattern filter.PatternMatcher
+	clientCerts          []tls.Certificate
+	ignorePattern        filter.PatternMatcher
+	StreamingROLIEParser bool `long:"streaming_rolie_parser" description:"Use the streaming ROLIE feed parser (experimental)" toml:"streaming_rolie_parser"`
 }
 
 // configPaths are the potential file locations of the config file.

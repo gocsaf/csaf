@@ -20,13 +20,13 @@ func TestLoadCertificates(t *testing.T) {
 		passphrase     = "qwer"
 		missingCert    = "data/testclientcert_missing.crt"
 		missingTestkey = "data/testclientkey_missing.pem"
-		privateKey     = "data/privated.pem"
+		privateKey     = "data/private.pem"
 		privateCert    = "data/cert.crt"
 	)
 
 	// Try to load cert that is not protected, expect success.
 	if cert, err := LoadCertificate(&testCert, &testKey, nil); cert == nil || err != nil {
-		t.Errorf("Failure: Couldn't load supposedly valid certificate.")
+		t.Errorf("Failure: Couldn't load supposedly valid certificate. Got error: %v", err)
 	}
 	// Try to load no cert, expect error.
 	if cert, err := LoadCertificate(nil, &testKey, nil); cert != nil || err == nil {
@@ -46,7 +46,7 @@ func TestLoadCertificates(t *testing.T) {
 	}
 	// Try to load encrypted cert, expecting success.
 	if cert, err := LoadCertificate(&privateCert, &privateKey, &passphrase); cert == nil || err != nil {
-		t.Errorf("Failure: Couldn't load supposedly valid encrypted certificate.")
+		t.Errorf("Failure: Couldn't load supposedly valid encrypted certificate. Got error: %v", err)
 	}
 	// Try to load wrong encrypted cert, expecting error.
 	if cert, err := LoadCertificate(&testKey, &privateKey, &passphrase); cert != nil || err == nil {
@@ -56,8 +56,8 @@ func TestLoadCertificates(t *testing.T) {
 	if cert, err := LoadCertificate(&missingCert, &privateKey, &passphrase); cert != nil || err == nil {
 		t.Errorf("Failure: No Failure while loading nonexistens certificate.")
 	}
-	// Try to load nonexistent encrypted cert, expecting error.
+	// Try to load nonexistent encrypted cert, expecting success.
 	if cert, err := LoadCertificate(nil, nil, nil); cert != nil || err != nil {
-		t.Errorf("Failure: Expected nil return.")
+		t.Errorf("Failure: Expected nil return. Got error: %v", err)
 	}
 }

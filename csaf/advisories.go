@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v3/internal/models"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -90,12 +92,13 @@ func (daf DirectoryAdvisoryFile) LogValue() slog.Value {
 // AdvisoryFileProcessor implements the extraction of
 // advisory file names from a given provider metadata.
 type AdvisoryFileProcessor struct {
-	AgeAccept func(time.Time) bool
-	Log       func(loglevel slog.Level, format string, args ...any)
-	client    util.Client
-	expr      *util.PathEval
-	doc       any
-	base      *url.URL
+	AgeAccept            func(time.Time) bool
+	Log                  func(loglevel slog.Level, format string, args ...any)
+	client               util.Client
+	expr                 *util.PathEval
+	doc                  any
+	pmdURL               *url.URL
+	StreamingROLIEParser bool
 }
 
 // NewAdvisoryFileProcessor constructs a filename extractor
@@ -104,13 +107,13 @@ func NewAdvisoryFileProcessor(
 	client util.Client,
 	expr *util.PathEval,
 	doc any,
-	base *url.URL,
+	pmdURL *url.URL,
 ) *AdvisoryFileProcessor {
 	return &AdvisoryFileProcessor{
 		client: client,
 		expr:   expr,
 		doc:    doc,
-		base:   base,
+		pmdURL: pmdURL,
 	}
 }
 
@@ -124,15 +127,25 @@ func empty(arr []string) bool {
 	return true
 }
 
-// Process extracts the advisory filenames and passes them with
-// the corresponding label to fn.
+// Process is a wrapper for ProcessWithContext function and supplements
+// a required context.Background() as first parameter.
 func (afp *AdvisoryFileProcessor) Process(
+	fn func(TLPLabel, []AdvisoryFile) error,
+) error {
+	return afp.ProcessWithContext(context.Background(), fn)
+}
+
+// ProcessWithContext extracts the advisory filenames and passes them with
+// the corresponding label to fn. This function is context aware and takes
+// context.Context as first parameter.
+func (afp *AdvisoryFileProcessor) ProcessWithContext(
+	ctx context.Context,
 	fn func(TLPLabel, []AdvisoryFile) error,
 ) error {
 	lg := afp.Log
 	if lg == nil {
 		lg = func(loglevel slog.Level, format string, args ...any) {
-			slog.Log(context.Background(), loglevel, "AdvisoryFileProcessor.Process: "+format, args...)
+			slog.Log(ctx, loglevel, "AdvisoryFileProcessor.Process: "+format, args...)
 		}
 	}
 
@@ -155,7 +168,7 @@ func (afp *AdvisoryFileProcessor) Process(
 		lg(slog.LevelInfo, "Found ROLIE feed(s)", "length", len(feeds))
 
 		for _, feed := range feeds {
-			if err := afp.processROLIE(feed, fn); err != nil {
+			if err := afp.processROLIE(ctx, feed, fn); err != nil {
 				return err
 			}
 		}
@@ -179,7 +192,7 @@ func (afp *AdvisoryFileProcessor) Process(
 
 		// Not found -> fall back to PMD url
 		if empty(dirURLs) {
-			baseURL, err := util.BaseURL(afp.base)
+			baseURL, err := util.BaseURL(afp.pmdURL)
 			if err != nil {
 				return err
 			}
@@ -192,7 +205,7 @@ func (afp *AdvisoryFileProcessor) Process(
 			}
 
 			// Use changes.csv to be able to filter by age.
-			files, err := afp.loadChanges(base, lg)
+			files, err := afp.loadChanges(ctx, base, lg)
 			if err != nil {
 				return err
 			}
@@ -208,6 +221,7 @@ func (afp *AdvisoryFileProcessor) Process(
 // loadChanges loads baseURL/changes.csv and returns a list of files
 // prefixed by baseURL/.
 func (afp *AdvisoryFileProcessor) loadChanges(
+	ctx context.Context,
 	baseURL string,
 	lg func(slog.Level, string, ...any),
 ) ([]AdvisoryFile, error) {
@@ -217,17 +231,22 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 	}
 	changesURL := base.JoinPath("changes.csv").String()
 
-	resp, err := afp.client.Get(changesURL)
+	var resp *http.Response
+	if cwc, ok := afp.client.(util.ClientWithContext); ok {
+		resp, err = cwc.GetWithContext(ctx, changesURL)
+	} else {
+		resp, err = afp.client.Get(changesURL)
+	}
 	if err != nil {
 		return nil, err
 	}
 
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetching %s failed. Status code %d (%s)",
 			changesURL, resp.StatusCode, resp.Status)
 	}
 
-	defer resp.Body.Close()
 	var files []AdvisoryFile
 	c := csv.NewReader(resp.Body)
 	const (
@@ -261,13 +280,19 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 			continue
 		}
 
+		pathURL, err := url.Parse(path)
+		if err != nil {
+			return nil, err
+		}
+
 		files = append(files,
-			DirectoryAdvisoryFile{Path: base.JoinPath(path).String()})
+			DirectoryAdvisoryFile{Path: misc.JoinURL(base, pathURL).String()})
 	}
 	return files, nil
 }
 
 func (afp *AdvisoryFileProcessor) processROLIE(
+	ctx context.Context,
 	labeledFeeds []Feed,
 	fn func(TLPLabel, []AdvisoryFile) error,
 ) error {
@@ -276,12 +301,11 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		if feed.URL == nil {
 			continue
 		}
-		up, err := url.Parse(string(*feed.URL))
+		feedURL, err := url.Parse(string(*feed.URL))
 		if err != nil {
 			slog.Error("Invalid URL in feed", "feed", *feed.URL, "err", err)
 			continue
 		}
-		feedURL := afp.base.ResolveReference(up)
 		slog.Info("Got feed URL", "feed", feedURL)
 
 		fb, err := util.BaseURL(feedURL)
@@ -289,13 +313,13 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			slog.Error("Invalid feed base URL", "url", fb, "err", err)
 			continue
 		}
-		feedBaseURL, err := url.Parse(fb)
-		if err != nil {
-			slog.Error("Cannot parse feed base URL", "url", fb, "err", err)
-			continue
-		}
 
-		res, err := afp.client.Get(feedURL.String())
+		var res *http.Response
+		if cwc, ok := afp.client.(util.ClientWithContext); ok {
+			res, err = cwc.GetWithContext(ctx, feedURL.String())
+		} else {
+			res, err = afp.client.Get(feedURL.String())
+		}
 		if err != nil {
 			slog.Error("Cannot get feed", "err", err)
 			continue
@@ -303,55 +327,115 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		if res.StatusCode != http.StatusOK {
 			slog.Error("Fetching failed",
 				"url", feedURL, "status_code", res.StatusCode, "status", res.Status)
+			res.Body.Close()
 			continue
 		}
-		rfeed, err := func() (*ROLIEFeed, error) {
-			defer res.Body.Close()
-			return LoadROLIEFeed(res.Body)
-		}()
-		if err != nil {
+		var files []AdvisoryFile
+		if afp.StreamingROLIEParser {
+			if err := afp.processROLIEStream(&files, res); err != nil {
+				slog.Error("Streaming ROLIE feed failed", "err", err)
+				continue
+			}
+		} else if err := afp.processROLIELegacy(&files, res); err != nil {
 			slog.Error("Loading ROLIE feed failed", "err", err)
 			continue
 		}
 
-		var files []AdvisoryFile
-
-		resolve := func(u string) string {
-			if u == "" {
-				return ""
-			}
-			p, err := url.Parse(u)
-			if err != nil {
-				slog.Error("Invalid URL", "url", u, "err", err)
-				return ""
-			}
-			return feedBaseURL.ResolveReference(p).String()
+		var label TLPLabel
+		if feed.TLPLabel != nil {
+			label = *feed.TLPLabel
+		} else {
+			label = "unknown"
 		}
 
-		rfeed.Entries(func(entry *Entry) {
+		if err := fn(label, files); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (afp *AdvisoryFileProcessor) processROLIELegacy(files *[]AdvisoryFile, res *http.Response) error {
+	rfeed, err := func() (*ROLIEFeed, error) {
+		defer res.Body.Close()
+		return LoadROLIEFeed(res.Body)
+	}()
+	if err != nil {
+		return err
+	}
+	rfeed.Entries(func(entry *Entry) {
+		// Filter if we have date checking.
+		if afp.AgeAccept != nil {
+			if t := time.Time(entry.Updated); !t.IsZero() && !afp.AgeAccept(t) {
+				return
+			}
+		}
+
+		var self, sha256, sha512, sign string
+
+		for i := range entry.Link {
+			link := &entry.Link[i]
+			lower := strings.ToLower(link.HRef)
+			switch link.Rel {
+			case "self":
+				self = afp.resolveURL(link.HRef)
+			case "signature":
+				sign = afp.resolveURL(link.HRef)
+			case "hash":
+				switch {
+				case strings.HasSuffix(lower, ".sha256"):
+					sha256 = afp.resolveURL(link.HRef)
+				case strings.HasSuffix(lower, ".sha512"):
+					sha512 = afp.resolveURL(link.HRef)
+				}
+			}
+		}
+
+		if self == "" {
+			return
+		}
+
+		switch {
+		case sha256 == "" && sha512 == "":
+			slog.Error("No hash listed on ROLIE feed", "file", self)
+			return
+		case sign == "":
+			slog.Error("No signature listed on ROLIE feed", "file", self)
+			return
+		default:
+			*files = append(*files, PlainAdvisoryFile{self, sha256, sha512, sign})
+		}
+	})
+	return nil
+}
+
+func (afp *AdvisoryFileProcessor) processROLIEStream(files *[]AdvisoryFile, res *http.Response) error {
+	defer res.Body.Close()
+	srp := models.StreamingROLIEParser{
+		HandleEntry: func(sr *models.StreamingROLIEParser) {
 			// Filter if we have date checking.
 			if afp.AgeAccept != nil {
-				if t := time.Time(entry.Updated); !t.IsZero() && !afp.AgeAccept(t) {
+				if t := time.Time(sr.Updated); !t.IsZero() && !afp.AgeAccept(t) {
 					return
 				}
 			}
 
 			var self, sha256, sha512, sign string
 
-			for i := range entry.Link {
-				link := &entry.Link[i]
+			for i := range sr.Links {
+				link := sr.Links[i]
 				lower := strings.ToLower(link.HRef)
 				switch link.Rel {
 				case "self":
-					self = resolve(link.HRef)
+					self = afp.resolveURL(link.HRef)
 				case "signature":
-					sign = resolve(link.HRef)
+					sign = afp.resolveURL(link.HRef)
 				case "hash":
 					switch {
 					case strings.HasSuffix(lower, ".sha256"):
-						sha256 = resolve(link.HRef)
+						sha256 = afp.resolveURL(link.HRef)
 					case strings.HasSuffix(lower, ".sha512"):
-						sha512 = resolve(link.HRef)
+						sha512 = afp.resolveURL(link.HRef)
 					}
 				}
 			}
@@ -373,19 +457,20 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 				file = PlainAdvisoryFile{self, sha256, sha512, sign}
 			}
 
-			files = append(files, file)
-		})
-
-		var label TLPLabel
-		if feed.TLPLabel != nil {
-			label = *feed.TLPLabel
-		} else {
-			label = "unknown"
-		}
-
-		if err := fn(label, files); err != nil {
-			return err
-		}
+			*files = append(*files, file)
+		},
 	}
-	return nil
+	return srp.Parse(res.Body)
+}
+
+func (afp *AdvisoryFileProcessor) resolveURL(u string) string {
+	if u == "" {
+		return ""
+	}
+	p, err := url.Parse(u)
+	if err != nil {
+		slog.Error("Invalid URL", "url", u, "err", err)
+		return ""
+	}
+	return p.String()
 }

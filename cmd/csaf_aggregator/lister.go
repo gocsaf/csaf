@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gocsaf/csaf/v3/csaf"
@@ -23,7 +24,7 @@ func (w *worker) listAllowed() bool {
 		util.BoolMatcher(&b), false, w.metadataProvider) == nil && b
 }
 
-func (w *worker) lister() (*csaf.AggregatorCSAFProvider, error) {
+func (w *worker) lister(_ context.Context) (*csaf.AggregatorCSAFProvider, error) {
 	// Check if we are allowed to mirror this domain.
 	if !w.listAllowed() {
 		return nil, fmt.Errorf(

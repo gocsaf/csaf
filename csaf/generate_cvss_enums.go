@@ -12,16 +12,17 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"go/format"
 	"log"
 	"os"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"text/template"
+
+	"github.com/gocsaf/csaf/v3/internal/misc"
 )
 
 // We from Intevation consider the source code parts in the following
@@ -98,7 +99,7 @@ func loadSchema(filename string) (*schema, error) {
 	}
 	defer f.Close()
 	var s schema
-	if err := json.NewDecoder(f).Decode(&s); err != nil {
+	if err := misc.StrictJSONParse(f, &s); err != nil {
 		return nil, err
 	}
 	return &s, nil
@@ -136,7 +137,7 @@ func main() {
 			defs = append(defs, k)
 		}
 	}
-	sort.Strings(defs)
+	slices.Sort(defs)
 
 	license := "determine license(s) from input file and replace this line"
 

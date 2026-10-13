@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"strings"
 
@@ -149,8 +150,16 @@ func (cfg *config) openPGPPublicURL(fingerprint string) string {
 // checkPassword compares the given hashed password with the plaintext in the "password" config value.
 // It returns true if these matches or if the "password" config value is not set, otherwise false.
 func (cfg *config) checkPassword(hash string) bool {
-	return cfg.Password == nil ||
-		bcrypt.CompareHashAndPassword([]byte(hash), []byte(*cfg.Password)) == nil
+	if hash == "" && cfg.Password != nil {
+		return false
+	}
+	// Limit the CPU cycles to an acceptable default.
+	const maxAcceptedCost = bcrypt.DefaultCost + 2
+	msg := []byte(hash)
+	if cost, err := bcrypt.Cost(msg); err != nil || cost > maxAcceptedCost {
+		return false
+	}
+	return bcrypt.CompareHashAndPassword(msg, []byte(*cfg.Password)) == nil
 }
 
 // HasCategories tells if categories are configured.
@@ -261,6 +270,14 @@ func loadConfig() (*config, error) {
 
 	if cfg.CanonicalURLPrefix == "" {
 		cfg.CanonicalURLPrefix = "https://" + os.Getenv("SERVER_NAME")
+	}
+	// Check if canonical url prefix is invalid
+	parsedURL, err := url.ParseRequestURI(cfg.CanonicalURLPrefix)
+	if err != nil {
+		return nil, err
+	}
+	if parsedURL.Scheme != "https" && parsedURL.Scheme != "http" {
+		return nil, fmt.Errorf("invalid canonical URL: %q", cfg.CanonicalURLPrefix)
 	}
 
 	if cfg.TLPs == nil {

@@ -1,0 +1,170 @@
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "distribution": {
+      "tlp": {
+        "label": "WHITE",
+        "url": "https://www.first.org/tlp/v1/"
+      }
+    },
+    "notes": [
+      {
+        "category": "summary",
+        "title": "Test document summary",
+        "text": "Auto generated test CSAF document"
+      }
+    ],
+    "publisher": {
+      "category": "vendor",
+      "name": "ACME Inc.",
+      "namespace": "https://www.example.com"
+    },
+    "title": "Test CSAF document",
+    "tracking": {
+      "current_release_date": "2020-01-01T00:00:00Z",
+      "generator": {
+        "date": "2020-01-01T00:00:00Z",
+        "engine": {
+          "name": "csaf-tool",
+          "version": "0.3.2"
+        }
+      },
+      "id": "Avendor-advisory-0004",
+      "initial_release_date": "2020-01-01T00:00:00Z",
+      "revision_history": [
+        {
+          "date": "2020-01-01T00:00:00Z",
+          "number": "1",
+          "summary": "Initial version"
+        }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "AVendor",
+        "branches": [
+          {
+            "category": "product_name",
+            "name": "product_1",
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "1.1",
+                "product": {
+                  "name": "AVendor product_1 1.1",
+                  "product_id": "CSAFPID_0001"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "1.2",
+                "product": {
+                  "name": "AVendor product_1 1.2",
+                  "product_id": "CSAFPID_0002"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "2.0",
+                "product": {
+                  "name": "AVendor product_1 2.0",
+                  "product_id": "CSAFPID_0003"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "vendor",
+        "name": "AVendor1",
+        "branches": [
+          {
+            "category": "product_name",
+            "name": "product_2",
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "1",
+                "product": {
+                  "name": "AVendor1 product_2 1",
+                  "product_id": "CSAFPID_0004"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "vendor",
+        "name": "AVendor",
+        "branches": [
+          {
+            "category": "product_name",
+            "name": "product_3",
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "2022H2",
+                "product": {
+                  "name": "AVendor product_3 2022H2",
+                  "product_id": "CSAFPID_0005"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2020-1234",
+      "notes": [
+        {
+          "category": "description",
+          "title": "CVE description",
+          "text": "https://nvd.nist.gov/vuln/detail/CVE-2020-1234"
+        }
+      ],
+      "product_status": {
+        "under_investigation": ["CSAFPID_0001"]
+      },
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Customers should upgrade to the latest version of the product",
+          "date": "2020-01-01T00:00:00Z",
+          "product_ids": ["CSAFPID_0001"]
+        }
+      ]
+    },
+    {
+      "cve": "CVE-2020-9876",
+      "notes": [
+        {
+          "category": "description",
+          "title": "CVE description",
+          "text": "https://nvd.nist.gov/vuln/detail/CVE-2020-9876"
+        }
+      ],
+      "product_status": {
+        "under_investigation": ["CSAFPID_0001"]
+      },
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Still under investigation",
+          "date": "2020-01-01T00:00:00Z",
+          "product_ids": ["CSAFPID_0001"]
+        }
+      ]
+    }
+  ]
+}

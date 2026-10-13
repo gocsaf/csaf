@@ -14,9 +14,11 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -382,10 +384,8 @@ func patternUnmarshal(pattern string) func([]byte) (string, error) {
 func alternativesUnmarshal(alternatives ...string) func([]byte) (string, error) {
 	return func(data []byte) (string, error) {
 		s := string(data)
-		for _, alt := range alternatives {
-			if alt == s {
-				return s, nil
-			}
+		if slices.Contains(alternatives, s) {
+			return s, nil
 		}
 		return "", fmt.Errorf("%s not in [%s]", s, strings.Join(alternatives, "|"))
 	}
@@ -575,7 +575,6 @@ func (d *Distribution) Validate() error {
 // Validate checks if the provider metadata is valid.
 // Returns an error if the validation fails otherwise nil.
 func (pmd *ProviderMetadata) Validate() error {
-
 	switch {
 	case pmd.CanonicalURL == nil:
 		return errors.New("canonical_url is mandatory")
@@ -695,8 +694,7 @@ func (pmd *ProviderMetadata) WriteTo(w io.Writer) (int64, error) {
 func LoadProviderMetadata(r io.Reader) (*ProviderMetadata, error) {
 
 	var pmd ProviderMetadata
-	dec := json.NewDecoder(r)
-	if err := dec.Decode(&pmd); err != nil {
+	if err := misc.StrictJSONParse(r, &pmd); err != nil {
 		return nil, err
 	}
 

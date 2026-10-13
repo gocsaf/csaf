@@ -9,11 +9,14 @@
 package csaf
 
 import (
+	"cmp"
 	"encoding/json"
 	"io"
-	"sort"
+	"slices"
 	"time"
 
+	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v3/internal/models"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -54,7 +57,7 @@ type ROLIEServiceDocument struct {
 // LoadROLIEServiceDocument loads a ROLIE service document from a reader.
 func LoadROLIEServiceDocument(r io.Reader) (*ROLIEServiceDocument, error) {
 	var rsd ROLIEServiceDocument
-	if err := json.NewDecoder(r).Decode(&rsd); err != nil {
+	if err := misc.StrictJSONParse(r, &rsd); err != nil {
 		return nil, err
 	}
 	return &rsd, nil
@@ -112,8 +115,8 @@ func (rcd *ROLIECategoryDocument) Merge(categories ...string) bool {
 	}
 
 	// Re-establish order.
-	sort.Slice(rcd.Categories.Category, func(i, j int) bool {
-		return rcd.Categories.Category[i].Term < rcd.Categories.Category[j].Term
+	slices.SortFunc(rcd.Categories.Category, func(a, b ROLIECategory) int {
+		return cmp.Compare(a.Term, b.Term)
 	})
 
 	return true
@@ -122,7 +125,7 @@ func (rcd *ROLIECategoryDocument) Merge(categories ...string) bool {
 // LoadROLIECategoryDocument loads a ROLIE category document from a reader.
 func LoadROLIECategoryDocument(r io.Reader) (*ROLIECategoryDocument, error) {
 	var rcd ROLIECategoryDocument
-	if err := json.NewDecoder(r).Decode(&rcd); err != nil {
+	if err := misc.StrictJSONParse(r, &rcd); err != nil {
 		return nil, err
 	}
 	return &rcd, nil
@@ -138,10 +141,10 @@ func (rcd *ROLIECategoryDocument) WriteTo(w io.Writer) (int64, error) {
 }
 
 // Link for ROLIE.
-type Link struct {
-	Rel  string `json:"rel"`
-	HRef string `json:"href"`
-}
+type Link = models.Link
+
+// StreamingROLIEParser for ISDuBA integration
+type StreamingROLIEParser = models.StreamingROLIEParser
 
 // ROLIECategory for ROLIE.
 type ROLIECategory struct {
@@ -168,14 +171,22 @@ type Format struct {
 
 // Entry for ROLIE.
 type Entry struct {
-	ID        string    `json:"id"`
-	Titel     string    `json:"title"`
-	Link      []Link    `json:"link"`
-	Published TimeStamp `json:"published"`
-	Updated   TimeStamp `json:"updated"`
-	Summary   *Summary  `json:"summary,omitempty"`
-	Content   Content   `json:"content"`
-	Format    Format    `json:"format"`
+	Base        *string          `json:"base,omitempty"`
+	LanguageTag *string          `json:"lang,omitempty"`
+	Author      *json.RawMessage `json:"author,omitempty"`
+	Category    []ROLIECategory  `json:"category,omitempty"`
+	Content     Content          `json:"content"`
+	Contributor *json.RawMessage `json:"contributor,omitempty"`
+	ID          string           `json:"id"`
+	Link        []Link           `json:"link"`
+	Published   TimeStamp        `json:"published"`
+	Rights      *json.RawMessage `json:"rights,omitempty"`
+	Source      *json.RawMessage `json:"source,omitempty"`
+	Summary     *Summary         `json:"summary,omitempty"`
+	Titel       string           `json:"title"`
+	Updated     TimeStamp        `json:"updated"`
+	Format      Format           `json:"format"`
+	Property    *json.RawMessage `json:"property,omitempty"`
 }
 
 // FeedData is the content of the ROLIE feed.
@@ -195,11 +206,15 @@ type ROLIEFeed struct {
 
 // LoadROLIEFeed loads a ROLIE feed from a reader.
 func LoadROLIEFeed(r io.Reader) (*ROLIEFeed, error) {
-	dec := json.NewDecoder(r)
 	var rf ROLIEFeed
-	if err := dec.Decode(&rf); err != nil {
+	if err := misc.StrictJSONParse(r, &rf); err != nil {
 		return nil, err
 	}
+	// A JSON null inside the entry array unmarshals to a nil *Entry.
+	// Drop those here so consumers can rely on all entries being non-nil.
+	rf.Feed.Entry = slices.DeleteFunc(rf.Feed.Entry, func(e *Entry) bool {
+		return e == nil
+	})
 	return &rf, nil
 }
 
@@ -233,9 +248,8 @@ func (rf *ROLIEFeed) Entries(fn func(*Entry)) {
 // SortEntriesByUpdated sorts all the entries in the feed
 // by their update times.
 func (rf *ROLIEFeed) SortEntriesByUpdated() {
-	entries := rf.Feed.Entry
-	sort.Slice(entries, func(i, j int) bool {
-		return time.Time(entries[j].Updated).Before(time.Time(entries[i].Updated))
+	slices.SortFunc(rf.Feed.Entry, func(a, b *Entry) int {
+		return time.Time(b.Updated).Compare(time.Time(a.Updated))
 	})
 }
 

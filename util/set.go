@@ -6,7 +6,7 @@
 // SPDX-FileCopyrightText: 2023 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2023 Intevation GmbH <https://intevation.de>
 
-package util
+package util //revive:disable-line:var-naming
 
 // Set is a simple set type.
 type Set[K comparable] map[K]struct{}

@@ -9,9 +9,12 @@
 package main
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/gocsaf/csaf/v3/internal/misc"
 
 	"github.com/PuerkitoBio/goquery"
 
@@ -27,6 +30,7 @@ type (
 )
 
 func (pgs pages) listed(
+	ctx context.Context,
 	path string,
 	pro *processor,
 	badDirs util.Set[string],
@@ -61,7 +65,7 @@ func (pgs pages) listed(
 	// load page
 	client := pro.httpClient()
 	pro.checkTLS(base)
-	res, err := client.Get(base)
+	res, err := client.GetWithContext(ctx, base)
 
 	pro.badDirListings.use()
 
@@ -74,6 +78,7 @@ func (pgs pages) listed(
 		pro.badDirListings.error("Fetching %s failed. Status code %d (%s)",
 			base, res.StatusCode, res.Status)
 		badDirs.Add(base)
+		res.Body.Close()
 		return false, errContinue
 	}
 
@@ -93,7 +98,12 @@ func (pgs pages) listed(
 				return err
 			}
 			// Links may be relative
-			abs := baseURL.ResolveReference(u).String()
+			var abs string
+			if u.IsAbs() {
+				abs = u.String()
+			} else {
+				abs = misc.JoinURL(baseURL, u).String()
+			}
 			content.links.Add(abs)
 			return nil
 		})

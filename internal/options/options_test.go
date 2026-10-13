@@ -90,7 +90,7 @@ func TestParse(t *testing.T) {
 	cmd.Env = append(os.Environ(), "TEST_HELP=1")
 	err := cmd.Run()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	// test the version flag
@@ -104,7 +104,7 @@ func TestParse(t *testing.T) {
 	cmd.Env = append(os.Environ(), "TEST_VERSION=1")
 	err = cmd.Run()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 }
 
@@ -140,7 +140,7 @@ func TestLoadToml(t *testing.T) {
 		t.Errorf("Failure: Succeeded in parsing nonexistant parameter")
 	}
 	if err := loadTOML(&cfg, "data/config.toml"); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 }
 

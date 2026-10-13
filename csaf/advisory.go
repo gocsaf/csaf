@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/gocsaf/csaf/v3/internal/misc"
 )
 
 // Acknowledgement reflects the 'acknowledgement' object in the list of acknowledgements.
@@ -349,10 +351,11 @@ type ProductGroup struct {
 	Summary    *string   `json:"summary,omitempty"`
 }
 
-// ProductGroups is a list of ProductGroupIDs
-type ProductGroups struct {
-	ProductGroupIDs []*ProductGroupID `json:"product_group_ids"` // unique elements
-}
+// ProductGroups is a list of ProductGroup objects
+type ProductGroups []*ProductGroup
+
+// ProductGroupIDs is a list of ProductGroupID objects
+type ProductGroupIDs []*ProductGroupID
 
 // RelationshipCategory is the category of a relationship.
 type RelationshipCategory string
@@ -442,10 +445,10 @@ var csafFlagLabelPattern = alternativesUnmarshal(
 // machine readable flag. For example, this could be a machine readable justification
 // code why a product is not affected.
 type Flag struct {
-	Date       *string        `json:"date,omitempty"`
-	GroupIDs   *ProductGroups `json:"group_ids,omitempty"`
-	Label      *FlagLabel     `json:"label"` // required
-	ProductIDs *Products      `json:"product_ids,omitempty"`
+	Date       *string          `json:"date,omitempty"`
+	GroupIDs   *ProductGroupIDs `json:"group_ids,omitempty"`
+	Label      *FlagLabel       `json:"label"` // required
+	ProductIDs *Products        `json:"product_ids,omitempty"`
 }
 
 // Flags is a list if Flag elements.
@@ -608,7 +611,7 @@ type Remediation struct {
 	Date            *string              `json:"date,omitempty"`
 	Details         *string              `json:"details"` // required
 	Entitlements    []*string            `json:"entitlements,omitempty"`
-	GroupIDs        *ProductGroups       `json:"group_ids,omitempty"`
+	GroupIDs        *ProductGroupIDs     `json:"group_ids,omitempty"`
 	ProductIDs      *Products            `json:"product_ids,omitempty"`
 	RestartRequired *RestartRequired     `json:"restart_required,omitempty"`
 	URL             *string              `json:"url,omitempty"`
@@ -737,11 +740,11 @@ var csafThreatCategoryPattern = alternativesUnmarshal(
 
 // Threat contains information about a vulnerability that can change with time.
 type Threat struct {
-	Category   *ThreatCategory `json:"category"` // required
-	Date       *string         `json:"date,omitempty"`
-	Details    *string         `json:"details"` // required
-	GroupIDs   *ProductGroups  `json:"group_ids,omitempty"`
-	ProductIDs *Products       `json:"product_ids,omitempty"`
+	Category   *ThreatCategory  `json:"category"` // required
+	Date       *string          `json:"date,omitempty"`
+	Details    *string          `json:"details"` // required
+	GroupIDs   *ProductGroupIDs `json:"group_ids,omitempty"`
+	ProductIDs *Products        `json:"product_ids,omitempty"`
 }
 
 // Threats is a list of Threat elements.
@@ -884,8 +887,8 @@ func (rs Revisions) Validate() error {
 
 // Validate validates an Engine.
 func (e *Engine) Validate() error {
-	if e.Version == nil {
-		return errors.New("'version' is missing")
+	if e.Name == nil {
+		return errors.New("'name' is missing")
 	}
 	return nil
 }
@@ -1390,7 +1393,7 @@ func LoadAdvisory(fname string) (*Advisory, error) {
 	}
 	defer f.Close()
 	var advisory Advisory
-	if err := json.NewDecoder(f).Decode(&advisory); err != nil {
+	if err := misc.StrictJSONParse(f, &advisory); err != nil {
 		return nil, err
 	}
 	if err := advisory.Validate(); err != nil {

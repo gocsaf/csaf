@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -19,8 +20,8 @@ import (
 
 var errNotFound = errors.New("not found")
 
-func downloadJSON(c util.Client, url string, found func(io.Reader) error) error {
-	res, err := c.Get(url)
+func downloadJSON(ctx context.Context, c util.ClientWithContext, url string, found func(io.Reader) error) error {
+	res, err := c.GetWithContext(ctx, url)
 	if err != nil {
 		return fmt.Errorf("not found: %w", err)
 	}

@@ -1,5 +1,5 @@
 Scripts for assisting the Integration tests.
-They were written on Ubuntu 20.04 TLS amd64 and also tested with 24.04 TLS.
+They were written on Ubuntu 20.04 LTS amd64 and also tested with 24.04 LTS.
 
 - `prepareUbuntuInstanceForITests.sh` installs the required packages for the csaf integration tests on a naked Ubuntu LTS amd64.
 
@@ -8,9 +8,9 @@ and configures nginx for serving TLS connections.
 
 - `TLSClientConfigsForITest.sh` generates client certificates by calling `createCCForITest.sh` which uses the root certificate initialized before with `createRootCAForITest.sh`. It configures nginx to enable the authentication with client certificate. (This assumes that the same folder name is used to create the root certificate)
 
-- `setupProviderForITest.sh` builds the csaf_provider, writes the required nginx configurations and create the initial folders. IT calls `uploadToProvider.sh` to upload some csaf example files to the provider.
+- `setupProviderForITest.sh` builds the `csaf_provider`, writes the required nginx configurations and create the initial folders. IT calls `uploadToProvider.sh` to upload some csaf example files to the provider.
 
-As creating the folders needs to authenticate with the csaf_provider, the configurations of TLS server and Client certificate authentication should be set. So it is recommended to call the scripts in this order: `TLSConfigsForITest.sh`, `TLSClientConfigsForITest.sh`, `setupProviderForITest.sh`
+As creating the folders needs to authenticate with the `csaf_provider`, the configurations of TLS server and Client certificate authentication should be set. So it is recommended to call the scripts in this order: `TLSConfigsForITest.sh`, `TLSClientConfigsForITest.sh`, `setupProviderForITest.sh`
 
 Calling example (as user with sudo privileges):
 ``` bash

@@ -10,8 +10,8 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,8 +19,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/armor"
 	"github.com/ProtonMail/gopenpgp/v2/constants"
@@ -82,8 +84,9 @@ func (p *processor) create() error {
 	}
 	defer resp.Body.Close()
 
+	var createError error
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Create failed: %s\n", resp.Status)
+		createError = fmt.Errorf("create failed: %s", resp.Status)
 	}
 
 	var result struct {
@@ -91,7 +94,7 @@ func (p *processor) create() error {
 		Errors  []string `json:"errors"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
 		return err
 	}
 
@@ -101,7 +104,7 @@ func (p *processor) create() error {
 
 	writeStrings("Errors:", result.Errors)
 
-	return nil
+	return createError
 }
 
 // uploadRequest creates the request for uploading a csaf document by passing the filename.
@@ -115,7 +118,7 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 
 	if !p.cfg.NoSchemaCheck {
 		var doc any
-		if err := json.NewDecoder(bytes.NewReader(data)).Decode(&doc); err != nil {
+		if err := misc.StrictJSONParse(bytes.NewReader(data), &doc); err != nil {
 			return nil, err
 		}
 		errs, err := csaf.ValidateCSAF(doc)
@@ -173,7 +176,17 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 		}
 	}
 
-	if p.cfg.ExternalSigned {
+	switch {
+	case p.cfg.SigningTool != "":
+		signature, err := p.signExternally(data)
+		if err != nil {
+			return nil, err
+		}
+		if err := writer.WriteField("signature", signature); err != nil {
+			return nil, err
+		}
+
+	case p.cfg.ExternalSigned:
 		signature, err := os.ReadFile(filename + ".asc")
 		if err != nil {
 			return nil, err
@@ -239,7 +252,7 @@ func (p *processor) process(filename string) error {
 		Errors      []string `json:"errors"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
 		return err
 	}
 
@@ -254,6 +267,32 @@ func (p *processor) process(filename string) error {
 	writeStrings("Errors:", result.Errors)
 
 	return uploadErr
+}
+
+func (p *processor) signExternally(data []byte) (string, error) {
+	if p.cfg.SigningTool == "" {
+		return "", errors.New("no signing tool specified")
+	}
+	ctx := context.Background()
+	if p.cfg.SigningToolTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, p.cfg.SigningToolTimeout)
+		defer cancel()
+	}
+	var output bytes.Buffer
+	cmd := exec.CommandContext(ctx, p.cfg.SigningTool)
+	cmd.Stdin = bytes.NewReader(data)
+	cmd.Stdout = &output
+	cmd.Stderr = os.Stderr
+	cmd.WaitDelay = 500 * time.Millisecond
+	// Create a process group to be killed.
+	if p.cfg.SigningToolTimeout > 0 {
+		prepareKillingProcessGroup(cmd)
+	}
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("running signing tool failed: %w", err)
+	}
+	return output.String(), nil
 }
 
 func (p *processor) run(args []string) error {

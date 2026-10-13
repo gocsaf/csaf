@@ -3,6 +3,8 @@ and reads its configuration from a [TOML](https://toml.io/en/) file.
 The [setup docs](../README.md#setup-trusted-provider)
 explain how to wire this up with nginx and where the config file lives.
 
+We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
+
 When installed, two endpoints are offered,
 and you should use the [csaf_uploader](../docs/csaf_uploader.md)
 to access them:
@@ -58,7 +60,8 @@ The following example file documents all available configuration options:
 # The following shows an example of a manually set prefix:
 #canonical_url_prefix  = "https://localhost"
 
-# Require users to use a password and a valid Client Certificate for write access.
+# Require users to use both
+# (1) a password and (2) a valid Client Certificate for write access.
 #certificate_and_password = false
 
 # Allow the user to send the request without having to send a passphrase

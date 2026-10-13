@@ -10,7 +10,7 @@ package util
 
 import (
 	"reflect"
-	"sort"
+	"slices"
 	"testing"
 )
 
@@ -38,7 +38,7 @@ func TestSet(t *testing.T) {
 	diff1 := s1.Difference(s0)
 
 	if reflect.DeepEqual(diff0, diff1) {
-		t.Errorf("Set.Difference: %q and %q are different", diff0, diff1)
+		t.Errorf("Set.Difference: %v and %v are different", diff0, diff1)
 	}
 
 	if s0.ContainsAll(s1) {
@@ -57,9 +57,9 @@ func TestSet(t *testing.T) {
 
 	wantKeys := []int{0, 1, 2, 3}
 	gotKeys := s2.Keys()
-	sort.Ints(gotKeys)
+	slices.Sort(gotKeys)
 
 	if !reflect.DeepEqual(wantKeys, gotKeys) {
-		t.Errorf("Set.Keys: Expected %q got %q", wantKeys, gotKeys)
+		t.Errorf("Set.Keys: Expected %v got %v", wantKeys, gotKeys)
 	}
 }

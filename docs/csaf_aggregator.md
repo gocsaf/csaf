@@ -1,4 +1,5 @@
 ## csaf_aggregator
+We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
 
 ### Usage
 
@@ -6,13 +7,14 @@
   csaf_aggregator [OPTIONS]
 
 Application Options:
-  -t, --time_range=RANGE    RANGE of time from which advisories to download
-  -i, --interim             Perform an interim scan
-      --version             Display version of the binary
-  -c, --config=TOML-FILE    Path to config TOML file
+      --client_timeout=Duration    DURATION for HTTP Client timeouts
+  -t, --time_range=RANGE           RANGE of time from which advisories to download
+  -i, --interim                    Perform an interim scan
+      --version                    Display version of the binary
+  -c, --config=TOML-FILE           Path to config TOML file
 
 Help Options:
-  -h, --help                Show this help message
+  -h, --help                       Show this help message
 ```
 
 If no config file is explictly given the follwing places are searched for a config file:
@@ -104,10 +106,12 @@ lock_file               // path to lockfile, to stop other instances if one is n
 interim_years           // limiting the years for which interim documents are searched (default 0)
 verbose                 // print more diagnostic output, e.g. https requests (default false)
 allow_single_provider   // debugging option (default false)
+streaming_rolie_parser  // enables use of the experimental streaming ROLIE parser (default false)
 ignore_pattern          // patterns of advisory URLs to be ignored (see checker doc for details)
 client_cert             // path to client certificate to access access-protected advisories
 client_key              // path to client key to access access-protected advisories
 client_passphrase       // optional client cert passphrase (limited, experimental, see downloader doc)
+client_timeout          // optional timeout for HTTP Client connections
 header                  // adds extra HTTP header fields to the client
 time_range              // Accepted time range of advisories to handle. See downloader docs for details.
 ```
@@ -145,6 +149,7 @@ ignore_pattern
 client_cert
 client_key
 client_passphrase
+client_timeout
 header
 ```
 
@@ -194,10 +199,13 @@ insecure = true
 #passphrase =
 #write_indices = false
 #time_range =
+#client_timeout =
 
 # specification requires at least two providers (default),
 # to override for testing, enable:
 # allow_single_provider = true
+# to use the experimental streaming ROLIE parser, enable:
+# streaming_rolie_parser = true
 
 [aggregator]
   # Set if this instance shall be a mirror (aka `aggregator`) or a `lister`.
@@ -225,6 +233,7 @@ insecure = true
   write_indices = true
   client_cert = "./../devca1/testclient1.crt"
   client_key = "./../devca1/testclient1-key.pem"
+  client_timeout = "30s"
 #  client_passphrase = # Limited and experimental, see downloader doc.
 #  header =
 
@@ -247,3 +256,9 @@ insecure = true
 In case you want to provide CSAF advisories from others
 that only qualify as CSAF publishers, see
 [how to use the `csaf_aggregator` as "CSAF proxy provider"](proxy-provider-for-aggregator.md).
+
+Some providers may limit the rate of requests that may be sent to retrieve advisories.
+This may cause issues with the aggregator. 
+In this case, the --rate option can be used to adjust the requests per second
+sent by each worker of the aggregator to an acceptable rate.
+(The rate that is considered acceptable depends on the provider.)

@@ -9,13 +9,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
@@ -26,7 +29,7 @@ type processor struct {
 	cfg *config
 
 	// remoteValidator is a globally configured remote validator.
-	remoteValidator csaf.RemoteValidator
+	remoteValidator csaf.RemoteValidatorWithContext
 
 	// log is the structured logger for the whole processor.
 	log *slog.Logger
@@ -45,7 +48,7 @@ type worker struct {
 	expr     *util.PathEval
 	signRing *crypto.KeyRing
 
-	client           util.Client                 // client per provider
+	client           util.ClientWithContext      // client per provider
 	provider         *provider                   // current provider
 	metadataProvider any                         // current metadata provider
 	loc              string                      // URL of current provider-metadata.json
@@ -53,14 +56,16 @@ type worker struct {
 	summaries        map[string][]summary        // the summaries of the advisories.
 	categories       map[string]util.Set[string] // the categories per label.
 	log              *slog.Logger                // the structured logger, supplied with the worker number.
+	pool             misc.BufferPool
 }
 
-func newWorker(num int, processor *processor) *worker {
+func newWorker(num int, processor *processor, pool misc.BufferPool) *worker {
 	return &worker{
 		num:       num,
 		processor: processor,
 		expr:      util.NewPathEval(),
 		log:       processor.log.With(slog.Int("worker", num)),
+		pool:      pool,
 	}
 }
 
@@ -84,11 +89,11 @@ func (w *worker) createDir() (string, error) {
 	return dir, err
 }
 
-func (w *worker) locateProviderMetadata(domain string) error {
+func (w *worker) locateProviderMetadata(ctx context.Context, domain string) error {
 
 	loader := csaf.NewProviderMetadataLoader(w.client)
 
-	lpmd := loader.Load(domain)
+	lpmd := loader.LoadWithContext(ctx, domain)
 
 	if !lpmd.Valid() {
 		for i := range lpmd.Messages {
@@ -213,6 +218,11 @@ func (p *processor) removeOrphans() error {
 
 // process is the main driver of the jobs handled by work.
 func (p *processor) process() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+	defer stop()
+
 	if err := ensureDir(p.cfg.Folder); err != nil {
 		return err
 	}
@@ -226,8 +236,8 @@ func (p *processor) process() error {
 	}
 
 	if p.cfg.Interim {
-		return p.interim()
+		return p.interim(ctx)
 	}
 
-	return p.full()
+	return p.full(ctx)
 }

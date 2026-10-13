@@ -1,43 +1,59 @@
 ## csaf_downloader
 
-A tool to download CSAF documents from CSAF providers.
+A tool to download CSAF documents from CSAF providers. We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
 
 ### Usage
+
+#### example
+```./csaf_downloader example.com # replace example.com with a CSAF domain```
+
+#### options
 
 ```
 csaf_downloader [OPTIONS] domain...
 
 Application Options:
-  -d, --directory=DIR                            DIRectory to store the downloaded files in
-      --insecure                                 Do not check TLS certificates from provider
-      --ignore_sigcheck                          Ignore signature check results, just warn on mismatch
-      --client_cert=CERT-FILE                    TLS client certificate file (PEM encoded data)
-      --client_key=KEY-FILE                      TLS client private key file (PEM encoded data)
-      --client_passphrase=PASSPHRASE             Optional passphrase for the client cert (limited, experimental, see doc)
-      --version                                  Display version of the binary
-  -n, --no_store                                 Do not store files
-  -r, --rate=                                    The average upper limit of https operations per second (defaults to unlimited)
-  -w, --worker=NUM                               NUMber of concurrent downloads (default: 2)
-  -t, --time_range=RANGE                         RANGE of time from which advisories to download
-  -f, --folder=FOLDER                            Download into a given subFOLDER
-  -i, --ignore_pattern=PATTERN                   Do not download files if their URLs match any of the given PATTERNs
-  -H, --header=                                  One or more extra HTTP header fields
-      --enumerate_pmd_only                       If this flag is set to true, the downloader will only enumerate valid provider metadata files, but not download documents
-      --validator=URL                            URL to validate documents remotely
-      --validator_cache=FILE                     FILE to cache remote validations
-      --validator_preset=PRESETS                 One or more PRESETS to validate remotely (default: [mandatory])
-  -m, --validation_mode=MODE[strict|unsafe]      MODE how strict the validation is (default: strict)
-      --forward_url=URL                          URL of HTTP endpoint to forward downloads to
-      --forward_header=                          One or more extra HTTP header fields used by forwarding
-      --forward_queue=LENGTH                     Maximal queue LENGTH before forwarder (default: 5)
-      --forward_insecure                         Do not check TLS certificates from forward endpoint
-      --log_file=FILE                            FILE to log downloading to (default: downloader.log)
-      --log_level=LEVEL[debug|info|warn|error]   LEVEL of logging details (default: info)
-  -c, --config=TOML-FILE                         Path to config TOML file
-      --preferred_hash=HASH[sha256|sha512]       HASH to prefer
+  -d, --directory=DIR                             DIRectory to store the downloaded files in
+      --insecure                                  Do not check TLS certificates from provider
+      --ignore_sigcheck                           Ignore signature check results, just warn on mismatch
+      --client_cert=CERT-FILE                     TLS client certificate file (PEM encoded data)
+      --client_key=KEY-FILE                       TLS client private key file (PEM encoded data)
+      --client_passphrase=PASSPHRASE              Optional passphrase for the client cert (limited,
+                                                  experimental, see doc)
+      --client_timeout=DURATION                   DURATION for HTTP Client timeouts
+      --version                                   Display version of the binary
+  -n, --no_store                                  Do not store files
+  -r, --rate=                                     The average upper limit of https operations per
+                                                  second (defaults to unlimited)
+  -w, --worker=NUM                                NUMber of concurrent downloads (default: 2)
+  -t, --time_range=RANGE                          RANGE of time from which advisories to download
+  -f, --folder=FOLDER                             Download into a given subFOLDER
+  -i, --ignore_pattern=PATTERN                    Do not download files if their URLs match any of the
+                                                  given PATTERNs
+  -H, --header=                                   One or more extra HTTP header fields
+      --streaming_rolie_parser                    Use the streaming ROLIE feed parser (experimental)
+      --enumerate_pmd_only                        If this flag is set to true, the downloader will only
+                                                  enumerate valid provider metadata files, but not
+                                                  download documents
+      --validator=URL                             URL to validate documents remotely
+      --validator_cache=FILE                      FILE to cache remote validations
+      --validator_preset=PRESETS                  One or more PRESETS to validate remotely (default:
+                                                  [mandatory])
+  -m, --validation_mode=MODE[strict|unsafe]       MODE how strict the validation is (default: strict)
+      --forward_url=URL                           URL of HTTP endpoint to forward downloads to
+      --forward_header=                           One or more extra HTTP header fields used by
+                                                  forwarding
+      --forward_queue=LENGTH                      Maximal queue LENGTH before forwarder (default: 5)
+      --forward_insecure                          Do not check TLS certificates from forward endpoint
+      --log_file=FILE                             FILE to log downloading to (default: downloader.log)
+      --log_level=LEVEL[debug|info|warn|error]    LEVEL of logging details (default: info)
+  -c, --config=TOML-FILE                          Path to config TOML file
+      --preferred_hash=HASH[sha256|sha512]        HASH to prefer
+      --trusted_only                              Only download from trusted providers; only write or
+                                                  forward documents with valid signatures
 
 Help Options:
-  -h, --help                                     Show this help message
+  -h, --help                                      Show this help message
 ```
 
 Will download all CSAF documents for the given _domains_, by trying each as a CSAF provider.
@@ -50,6 +66,12 @@ Increasing the number of workers opens more connections to the web servers
 to download more advisories at once. This may improve the overall speed of the download.
 However, since this also increases the load on the servers, their administrators could
 have taken countermeasures to limit this.
+
+For example, some providers may limit the rate of requests that may be sent to retrieve advisories.
+This may cause the downloader to be unable to retrieve all advisories. 
+In this case, the --rate option can be used to adjust the requests per second
+sent by the downloader to an acceptable rate.
+(The rate that is considered acceptable depends on the provider.)
 
 If no config file is explictly given the follwing places are searched for a config file:
 
@@ -64,27 +86,38 @@ with `~` expanding to `$HOME` on unixoid systems and `%HOMEPATH` on Windows syst
 Supported options in config files:
 
 ```
-# directory         # not set by default
-insecure            = false
-# client_cert       # not set by default
-# client_key        # not set by default
-# client_passphrase # not set by default
-ignoresigcheck      = false
-# rate              # set to unlimited
-worker              = 2
-# time_range        # not set by default
-# folder            # not set by default
-# ignore_pattern    # not set by default
-# header            # not set by default
-# validator         # not set by default
-# validator_cache   # not set by default
-validator_preset    = ["mandatory"]
-validation_mode     = "strict"
-# forward_url       # not set by default
-# forward_header    # not set by default
-forward_queue       = 5
-forward_insecure    = false
+# directory            # not set by default
+insecure               = false
+# client_cert          # not set by default
+# client_key           # not set by default
+# client_passphrase    # not set by default
+# client_timeout       # not set by default
+ignore_sigcheck        = false
+# rate                 # set to unlimited
+worker                 = 2
+# time_range           # not set by default
+# folder               # not set by default
+# ignore_pattern       # not set by default
+# header               # not set by default
+# validator            # not set by default
+# validator_cache      # not set by default
+validator_preset       = ["mandatory"]
+validation_mode        = "strict"
+# forward_url          # not set by default
+# forward_header       # not set by default
+forward_queue          = 5
+forward_insecure       = false
+streaming_rolie_parser = false
+trusted_only           = false
 ```
+
+The `trusted_only` checks if the given domains announce that they are
+trusted. If not the whole domain is ignored. The downloaded advisories
+of the accepted domains are only stored if the signature is valid.
+This is a countermeasure to prevent poisoned documents
+to be processed further. If we have a good signature and a bad checksum
+we only store the signature and do not store the broken checksum.
+This behavior overrules `validation_mode` set to `strict`.
 
 If the `folder` option is given all the advisories are stored in a subfolder
 of this name. Otherwise the advisories are each stored in a folder named
@@ -104,8 +137,9 @@ ignorepattern = [".*white.*", ".*red.*"]
 
 #### Timerange option
 
-The `timerange` parameter enables downloading advisories which last changes falls
-into a given intervall. There are three possible notations:
+The `time_range` parameter enables downloading advisories
+which last changes falls into a given intervall.
+There are three possible notations:
 
 1. Relative. If the given string follows the rules of a
    [Go duration](https://pkg.go.dev/time@go1.20.6#ParseDuration),

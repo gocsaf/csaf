@@ -9,10 +9,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/gocsaf/csaf/v3/csaf"
@@ -80,6 +81,7 @@ func (p *processor) extractTLP(doc any) csaf.TLPLabel {
 
 // check tests if the TLP label of an advisory is used correctly.
 func (lc *labelChecker) check(
+	ctx context.Context,
 	p *processor,
 	doc any,
 	url string,
@@ -87,7 +89,7 @@ func (lc *labelChecker) check(
 	label := p.extractTLP(doc)
 
 	// Check the permissions.
-	lc.checkPermissions(p, label, doc, url)
+	lc.checkPermissions(ctx, p, label, doc, url)
 
 	// Associate advisory label to urls.
 	lc.add(label, url)
@@ -98,6 +100,7 @@ func (lc *labelChecker) check(
 
 // checkPermissions checks for mistakes in access-protection.
 func (lc *labelChecker) checkPermissions(
+	ctx context.Context,
 	p *processor,
 	label csaf.TLPLabel,
 	doc any,
@@ -113,14 +116,17 @@ func (lc *labelChecker) checkPermissions(
 				"Advisory %s of TLP level %v is not access protected.",
 				url, label)
 		} else {
-			res, err := p.unauthorizedClient().Get(url)
+			res, err := p.unauthorizedClient().GetWithContext(ctx, url)
 			if err != nil {
 				p.badAmberRedPermissions.error(
 					"Unexpected Error %v when trying to fetch: %s", err, url)
-			} else if res.StatusCode == http.StatusOK {
-				p.badAmberRedPermissions.error(
-					"Advisory %s of TLP level %v is not properly access protected.",
-					url, label)
+			} else {
+				if res.StatusCode == http.StatusOK {
+					p.badAmberRedPermissions.error(
+						"Advisory %s of TLP level %v is not properly access protected.",
+						url, label)
+				}
+				res.Body.Close()
 			}
 		}
 
@@ -143,7 +149,7 @@ func (lc *labelChecker) checkPermissions(
 				lc.whiteAdvisories[id] = true
 			} else {
 				// Need to try to re-download it unauthorized.
-				if resp, err := p.unauthorizedClient().Get(url); err == nil {
+				if resp, err := p.unauthorizedClient().GetWithContext(ctx, url); err == nil {
 					accessible := resp.StatusCode == http.StatusOK
 					lc.whiteAdvisories[id] = accessible
 					// If we are in a white rolie feed or in a dirlisting
@@ -154,6 +160,7 @@ func (lc *labelChecker) checkPermissions(
 						p.badWhitePermissions.warn(
 							"Advisory %s of TLP level WHITE is access-protected.", url)
 					}
+					resp.Body.Close()
 				}
 			}
 		}
@@ -215,12 +222,7 @@ func defaults[T any](p *T, def T) T {
 
 // processROLIEFeeds goes through all ROLIE feeds and checks their
 // integrity and completeness.
-func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
-
-	base, err := url.Parse(p.pmdURL)
-	if err != nil {
-		return err
-	}
+func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) error {
 	p.badROLIEFeed.use()
 
 	advisories := map[*csaf.Feed][]csaf.AdvisoryFile{}
@@ -232,16 +234,15 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 			if feed.URL == nil {
 				continue
 			}
-			up, err := url.Parse(string(*feed.URL))
+			feedBase, err := url.Parse(string(*feed.URL))
 			if err != nil {
 				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
 				continue
 			}
-			feedBase := base.ResolveReference(up)
 			feedURL := feedBase.String()
 			p.checkTLS(feedURL)
 
-			advs, err := p.rolieFeedEntries(feedURL)
+			advs, err := p.rolieFeedEntries(ctx, feedURL)
 			if err != nil {
 				if err != errContinue {
 					return err
@@ -264,13 +265,12 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 				continue
 			}
 
-			up, err := url.Parse(string(*feed.URL))
+			feedURL, err := url.Parse(string(*feed.URL))
 			if err != nil {
 				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
 				continue
 			}
 
-			feedURL := base.ResolveReference(up)
 			feedBase, err := util.BaseURL(feedURL)
 			if err != nil {
 				p.badProviderMetadata.error("Bad base path: %v", err)
@@ -278,7 +278,7 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 			}
 
 			label := defaults(feed.TLPLabel, csaf.TLPLabelUnlabeled)
-			if err := p.categoryCheck(feedBase, label); err != nil {
+			if err := p.categoryCheck(ctx, feedBase, label); err != nil {
 				if err != errContinue {
 					return err
 				}
@@ -290,7 +290,7 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 			// TODO: Issue a warning if we want check AMBER+ without an
 			// authorizing client.
 
-			if err := p.integrity(files, feedBase, rolieMask, p.badProviderMetadata.add); err != nil {
+			if err := p.integrity(ctx, files, rolieMask, p.badProviderMetadata.add); err != nil {
 				if err != errContinue {
 					return err
 				}
@@ -319,13 +319,12 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 				continue
 			}
 
-			up, err := url.Parse(string(*feed.URL))
+			feedBase, err := url.Parse(string(*feed.URL))
 			if err != nil {
 				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
 				continue
 			}
 
-			feedBase := base.ResolveReference(up)
 			makeAbs := makeAbsolute(feedBase)
 			label := defaults(feed.TLPLabel, csaf.TLPLabelUnlabeled)
 
@@ -382,13 +381,13 @@ func (p *processor) processROLIEFeeds(feeds [][]csaf.Feed) error {
 
 // categoryCheck checks for the existence of a feeds ROLIE category document and if it does,
 // whether the category document contains distinguishing categories
-func (p *processor) categoryCheck(folderURL string, label csaf.TLPLabel) error {
+func (p *processor) categoryCheck(ctx context.Context, folderURL string, label csaf.TLPLabel) error {
 	labelname := strings.ToLower(string(label))
 	urlrc := folderURL + "category-" + labelname + ".json"
 
 	p.badROLIECategory.use()
 	client := p.httpClient()
-	res, err := client.Get(urlrc)
+	res, err := client.GetWithContext(ctx, urlrc)
 	if err != nil {
 		p.badROLIECategory.error(
 			"Cannot fetch rolie category document %s: %v", urlrc, err)
@@ -397,6 +396,7 @@ func (p *processor) categoryCheck(folderURL string, label csaf.TLPLabel) error {
 	if res.StatusCode != http.StatusOK {
 		p.badROLIECategory.warn("Fetching %s failed. Status code %d (%s)",
 			urlrc, res.StatusCode, res.Status)
+		res.Body.Close()
 		return errContinue
 	}
 	rolieCategory, err := func() (*csaf.ROLIECategoryDocument, error) {
@@ -418,7 +418,7 @@ func (p *processor) categoryCheck(folderURL string, label csaf.TLPLabel) error {
 
 // serviceCheck checks if a ROLIE service document exists and if it does,
 // whether it contains all ROLIE feeds.
-func (p *processor) serviceCheck(feeds [][]csaf.Feed) error {
+func (p *processor) serviceCheck(ctx context.Context, feeds [][]csaf.Feed) error {
 	// service category document should be next to the pmd
 	pmdURL, err := url.Parse(p.pmdURL)
 	if err != nil {
@@ -434,7 +434,7 @@ func (p *processor) serviceCheck(feeds [][]csaf.Feed) error {
 	p.badROLIEService.use()
 
 	client := p.httpClient()
-	res, err := client.Get(urls)
+	res, err := client.GetWithContext(ctx, urls)
 	if err != nil {
 		p.badROLIEService.error(
 			"Cannot fetch rolie service document %s: %v", urls, err)
@@ -443,6 +443,7 @@ func (p *processor) serviceCheck(feeds [][]csaf.Feed) error {
 	if res.StatusCode != http.StatusOK {
 		p.badROLIEService.warn("Fetching %s failed. Status code %d (%s)",
 			urls, res.StatusCode, res.Status)
+		res.Body.Close()
 		return errContinue
 	}
 
@@ -475,12 +476,12 @@ func (p *processor) serviceCheck(feeds [][]csaf.Feed) error {
 
 	// Check if ROLIE Service Document contains exactly all ROLIE feeds
 	if m1 := sfeeds.Difference(ffeeds).Keys(); len(m1) != 0 {
-		sort.Strings(m1)
+		slices.Sort(m1)
 		p.badROLIEService.error(
 			"The ROLIE service document %s contains nonexistent feed entries: %v", urls, m1)
 	}
 	if m2 := ffeeds.Difference(sfeeds).Keys(); len(m2) != 0 {
-		sort.Strings(m2)
+		slices.Sort(m2)
 		p.badROLIEService.error(
 			"The ROLIE service document %s is missing feed entries: %v", urls, m2)
 	}

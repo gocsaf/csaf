@@ -9,22 +9,30 @@
 -->
 
 
-> [!IMPORTANT]
-> To avoid future breakage, if you still use `csaf-poc`:
-> 1. Adjust your HTML links.
-> 2. Adjust your go module paths, see [#579](https://github.com/gocsaf/csaf/issues/579#issuecomment-2497244379).
->
-> (This repository was moved here on 2024-10-28. The old one is deprecated
-> and redirection will be switched off a few months later.)
-
 
 # csaf
 
-Implements a [CSAF](https://oasis-open.github.io/csaf-documentation/)
-([specification v2.0](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
+Tools and Go library for [CSAF](csaf.io).
+
+Implements a CSAF [v2.0](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
 and its [errata](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html))
-trusted provider, checker, aggregator and downloader.
+**trusted provider**, checker, aggregator and **downloader**.
 Includes an uploader command line tool for the trusted provider.
+
+Powers
+[ISDuBA](https://github.com/ISDuBA/ISDuBA),
+[Online CSAF Provider Check](https://check.provider.csaf.dev/)
+and others.
+
+
+> [!NOTE]
+> ### Development for CSAF 2.1 → new major version 5
+> [develop-5](https://github.com/gocsaf/csaf/tree/develop-5) is the branch
+where we are putting the new code for CSAF 2.1.
+>
+> Here is our
+> [rough plan](https://github.com/gocsaf/csaf/blob/develop-4/docs/planning-for-csaf-2.1.md).
+
 
 ## Tools for users
 ### [csaf_downloader](docs/csaf_downloader.md)
@@ -49,13 +57,20 @@ is a tool for testing a CSAF Trusted Provider according to [Section 7 of the CSA
 ### [csaf_aggregator](docs/csaf_aggregator.md)
 is a CSAF Aggregator, to list or mirror providers.
 
-## Other stuff
+
+## Use as go library
+
+The modules of this repository can be used as library by other Go applications. [ISDuBA](https://github.com/ISDuBA/ISDuBA) does so, for example.
+But there is only limited support and thus it is _not officially supported_.
+There are plans to change this without a concrete schedule within a future major release, e.g. see [#367](https://github.com/gocsaf/csaf/issues/367).
+
+Initially envisioned as a toolbox, it was not constructed as a library,
+and to name one issue, exposes too many functions.
+This leads to problems like [#634](https://github.com/gocsaf/csaf/issues/634), where we have to accept that with 3.2.0 there was an unintended API change.
 
 ### [examples](./examples/README.md)
-are small examples of how to use `github.com/gocsaf/csaf`
-as an API. Currently this is a work in progress, as usage of this repository
-as a library to access is _not officially supported_, e.g.
-see https://github.com/gocsaf/csaf/issues/367 .
+are small examples of how to use `github.com/gocsaf/csaf` as an API. Currently this is a work in progress.
+
 
 ## Setup
 Binaries for the server side are only available and tested
@@ -79,7 +94,8 @@ Download the binaries from the most recent release assets on Github.
 
 ### Build from sources
 
-- A recent version of **Go** (1.23+) should be installed. [Go installation](https://go.dev/doc/install)
+- Needs a [supported version](docs/Development.md) of **Go** to be installed.
+  [Go installation](https://go.dev/doc/install)
 
 - Clone the repository `git clone https://github.com/gocsaf/csaf.git `
 
@@ -106,7 +122,6 @@ Binaries will be placed in directories named like `bin-linux-amd64/` and `bin-wi
 ### Development
 
 For further details of the development process consult our [development page](./docs/Development.md).
-
 
 ## License
 
