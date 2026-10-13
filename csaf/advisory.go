@@ -445,11 +445,10 @@ var csafFlagLabelPattern = alternativesUnmarshal(
 // machine readable flag. For example, this could be a machine readable justification
 // code why a product is not affected.
 type Flag struct {
-	Date     *string          `json:"date,omitempty"`
-	GroupIDs *ProductGroupIDs `json:"group_ids,omitempty"`
-	Label    *FlagLabel       `json:"label"` // required
-	//revive:disable-next-line:var-naming  until new major version w fix
-	ProductIds *Products `json:"product_ids,omitempty"`
+	Date       *string          `json:"date,omitempty"`
+	GroupIDs   *ProductGroupIDs `json:"group_ids,omitempty"`
+	Label      *FlagLabel       `json:"label"` // required
+	ProductIDs *Products        `json:"product_ids,omitempty"`
 }
 
 // Flags is a list if Flag elements.
@@ -608,16 +607,14 @@ type RestartRequired struct {
 
 // Remediation specifies details on how to handle (and presumably, fix) a vulnerability.
 type Remediation struct {
-	Category     *RemediationCategory `json:"category"` // required
-	Date         *string              `json:"date,omitempty"`
-	Details      *string              `json:"details"` // required
-	Entitlements []*string            `json:"entitlements,omitempty"`
-	//revive:disable:var-naming until new major version w fix
-	GroupIds   *ProductGroupIDs `json:"group_ids,omitempty"`
-	ProductIds *Products        `json:"product_ids,omitempty"`
-	//revive:enable
-	RestartRequired *RestartRequired `json:"restart_required,omitempty"`
-	URL             *string          `json:"url,omitempty"`
+	Category        *RemediationCategory `json:"category"` // required
+	Date            *string              `json:"date,omitempty"`
+	Details         *string              `json:"details"` // required
+	Entitlements    []*string            `json:"entitlements,omitempty"`
+	GroupIDs        *ProductGroupIDs     `json:"group_ids,omitempty"`
+	ProductIDs      *Products            `json:"product_ids,omitempty"`
+	RestartRequired *RestartRequired     `json:"restart_required,omitempty"`
+	URL             *string              `json:"url,omitempty"`
 }
 
 // Remediations is a list of Remediation elements.
@@ -743,13 +740,11 @@ var csafThreatCategoryPattern = alternativesUnmarshal(
 
 // Threat contains information about a vulnerability that can change with time.
 type Threat struct {
-	Category *ThreatCategory `json:"category"` // required
-	Date     *string         `json:"date,omitempty"`
-	Details  *string         `json:"details"` // required
-	//revive:disable:var-naming until new major version w fix
-	GroupIds   *ProductGroupIDs `json:"group_ids,omitempty"`
-	ProductIds *Products        `json:"product_ids,omitempty"`
-	//revive:enable
+	Category   *ThreatCategory  `json:"category"` // required
+	Date       *string          `json:"date,omitempty"`
+	Details    *string          `json:"details"` // required
+	GroupIDs   *ProductGroupIDs `json:"group_ids,omitempty"`
+	ProductIDs *Products        `json:"product_ids,omitempty"`
 }
 
 // Threats is a list of Threat elements.
