@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
 // Software-Engineering: 2026 Intevation GmbH <https://intevation.de>
 
-// Command bare generates an intermediate CSAF model from both versioned models.
+// bare generates intermediate models and typed common models
 package main
 
 import (
@@ -10,7 +10,10 @@ import (
 	"fmt"
 	"go/format"
 	"log"
+	"maps"
 	"os"
+	"path/filepath"
+	"slices"
 	"strconv"
 )
 
@@ -30,19 +33,7 @@ func typeName(node *match) string {
 	}
 }
 
-func generate(rootName, v20Dir, v21Dir string) ([]byte, error) {
-	left, err := loadModel(v20Dir)
-	if err != nil {
-		return nil, err
-	}
-	right, err := loadModel(v21Dir)
-	if err != nil {
-		return nil, err
-	}
-	structures, err := compareModels(left, right, rootName)
-	if err != nil {
-		return nil, err
-	}
+func generateBare(structures []*match) ([]byte, error) {
 	var source bytes.Buffer
 	source.WriteString("// SPDX-License-Identifier: Apache-2.0\n")
 	source.WriteString("// SPDX-FileCopyrightText: 2026 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>\n")
@@ -72,19 +63,51 @@ func generate(rootName, v20Dir, v21Dir string) ([]byte, error) {
 	return format.Source(source.Bytes())
 }
 
-var roots = map[string]string{
-	"CSAF":       "internal/bare/csaf_generated.go",
-	"Aggregator": "internal/bare/aggregator_generated.go",
-	"Provider":   "internal/bare/provider_generated.go",
+var roots = map[string]struct {
+	barePath    string
+	packageName string
+}{
+	"CSAF":       {"internal/bare/csaf_generated.go", "advisory"},
+	"Aggregator": {"internal/bare/aggregator_generated.go", "aggregator"},
+	"Provider":   {"internal/bare/provider_generated.go", "provider"},
 }
 
 func main() {
-	for rootName, output := range roots {
-		source, err := generate(rootName, "csaf/v20", "csaf/v21")
+	left, err := loadModel("csaf/v20")
+	if err != nil {
+		log.Fatal(err)
+	}
+	right, err := loadModel("csaf/v21")
+	if err != nil {
+		log.Fatal(err)
+	}
+	outputs := make(map[string][]byte)
+	for _, rootName := range slices.Sorted(maps.Keys(roots)) {
+		root := roots[rootName]
+		structures, err := compareModels(left, right, rootName)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := os.WriteFile(output, source, 0o644); err != nil {
+		source, err := generateBare(structures)
+		if err != nil {
+			log.Fatal(err)
+		}
+		outputs[root.barePath] = source
+		model, err := newTypedModel(left, right, rootName, structures[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		outputs[filepath.Join("csaf", root.packageName, "model_generated.go")], err = model.emitModel(root.packageName)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	for _, output := range slices.Sorted(maps.Keys(outputs)) {
+		if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+			log.Fatal(err)
+		}
+		if err := os.WriteFile(output, outputs[output], 0644); err != nil {
 			log.Fatal(err)
 		}
 	}

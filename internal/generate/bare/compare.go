@@ -20,10 +20,11 @@ type match struct {
 }
 
 type fieldMatch struct {
-	jsonName  string // JSON name of the field
-	goName    string // field name in Go struct
-	typ       *match // match result type
-	omitEmpty bool   // set for raw fields and for fields optional in either version
+	jsonName  string       // JSON name of the field
+	goName    string       // field name in Go struct
+	typ       *match       // match result type
+	omitEmpty bool         // set for raw fields and for fields optional in either version
+	versions  [2]jsonField // original types and presence, retained for typed output
 }
 
 type typePair struct{ left, right ast.Expr }
@@ -53,6 +54,8 @@ func compareModels(left, right *model, rootName string) ([]*match, error) {
 	return c.structs, nil
 }
 
+// resolve exposes the type structure behind a type name so callers can compare
+// types by their definitions rather than their names
 func (m *model) resolve(expr ast.Expr) (ast.Expr, bool) {
 	for {
 		ident, ok := expr.(*ast.Ident)
@@ -163,7 +166,10 @@ func (c *comparison) compareStruct(node *match, left, right *ast.StructType, nam
 			return nil, err
 		}
 		omitEmpty := typ.raw || first.omitEmpty || second.omitEmpty
-		node.fields = append(node.fields, fieldMatch{name, goName, typ, omitEmpty})
+		node.fields = append(node.fields, fieldMatch{
+			jsonName: name, goName: goName, typ: typ, omitEmpty: omitEmpty,
+			versions: [2]jsonField{first, second},
+		})
 	}
 	return node, nil
 }
