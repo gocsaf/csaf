@@ -24,8 +24,8 @@ require (
 	github.com/andybalholm/cascadia v1.3.5 // indirect
 	github.com/cloudflare/circl v1.6.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/shopspring/decimal v1.5.0 // indirect
-	golang.org/x/net v0.60.0 // indirect
+	github.com/shopspring/decimal v1.6.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 )
