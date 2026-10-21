@@ -203,11 +203,11 @@ func (afp *AdvisoryFileProcessor) ProcessWithContext(
 			if base == "" {
 				continue
 			}
-
 			// Use changes.csv to be able to filter by age.
 			files, err := afp.loadChanges(ctx, base, lg)
 			if err != nil {
-				return err
+				lg(slog.LevelError, "loading changes failed", "err", err)
+				continue
 			}
 			// XXX: Is treating as white okay? better look into the advisories?
 			if err := fn(TLPLabelWhite, files); err != nil {
