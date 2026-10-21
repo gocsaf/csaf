@@ -113,6 +113,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		outputs[filepath.Join("csaf", root.packageName, "from_bare_generated.go")], err = model.emitConverter(root.packageName)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	for _, output := range slices.Sorted(maps.Keys(outputs)) {

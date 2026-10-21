@@ -21,6 +21,18 @@ const generatedHeader = `// SPDX-License-Identifier: Apache-2.0
 
 func typedSource(packageName, body string) ([]byte, error) {
 	var imports []string
+	for _, pkg := range []string{"encoding/json", "fmt"} {
+		qualifier := pkg
+		if pkg == "encoding/json" {
+			qualifier = "json"
+		}
+		if strings.Contains(body, qualifier+".") {
+			imports = append(imports, fmt.Sprintf("%q", pkg))
+		}
+	}
+	if strings.Contains(body, "bare.") {
+		imports = append(imports, `"github.com/gocsaf/csaf/v3/internal/bare"`)
+	}
 	for _, pkg := range []string{"v20", "v21"} {
 		if strings.Contains(body, pkg+".") {
 			path := "csaf/" + pkg

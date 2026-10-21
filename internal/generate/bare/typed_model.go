@@ -215,6 +215,13 @@ func optionalityDiffers(fields [2]jsonField, models [2]*model) bool {
 	return leftPointer != rightPointer
 }
 
+func containsStruct(t *typedType) bool {
+	for t.shape == "pointer" || t.shape == "slice" {
+		t = t.elem
+	}
+	return t.shape == "struct"
+}
+
 func typedName(t *typedType) string {
 	switch t.shape {
 	case "pointer":
