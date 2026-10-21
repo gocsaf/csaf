@@ -68,6 +68,11 @@ type jsonField struct {
 	omitEmpty bool
 }
 
+// required follows the versioned model generator's JSON tag convention.
+func (f jsonField) required() bool {
+	return f.typ != nil && !f.omitEmpty
+}
+
 func structFields(structure *ast.StructType) (map[string]jsonField, error) {
 	fields := make(map[string]jsonField)
 	for _, field := range structure.Fields.List {

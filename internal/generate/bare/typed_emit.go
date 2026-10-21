@@ -56,19 +56,19 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 				fmt.Fprintf(&out, "%s %s %s\n", f.name, typedName(f.common), jsonTag(f.jsonName, optional))
 			}
 		}
-		for version := range 2 {
-			if len(details(node, version)) > 0 {
-				fmt.Fprintf(&out, "*%s%dDetails\n", node.name, 20+version)
+		for _, detail := range node.details {
+			if detail != nil {
+				fmt.Fprintf(&out, "*%s\n", detail.name)
 			}
 		}
 		out.WriteString("}\n")
-		for version := range 2 {
-			fs := details(node, version)
-			if len(fs) == 0 {
+		for _, detail := range node.details {
+			if detail == nil {
 				continue
 			}
-			fmt.Fprintf(&out, "// %s%dDetails contains fields specific to CSAF 2.%d.\ntype %s%dDetails struct {\n", node.name, 20+version, version, node.name, 20+version)
-			for _, f := range fs {
+			version := detail.version
+			fmt.Fprintf(&out, "// %s contains fields specific to CSAF 2.%d.\ntype %s struct {\n", detail.name, version, detail.name)
+			for _, f := range detail.fields {
 				typ, err := wireType(f.versions[version].typ, 20+version, m.models[version])
 				if err != nil {
 					return nil, err
@@ -76,7 +76,7 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 				fmt.Fprintf(&out, "%s %s %s\n", f.name, typ, jsonTag(f.jsonName, f.versions[version].omitEmpty))
 			}
 			out.WriteString("}\n")
-			for _, f := range fs {
+			for _, f := range detail.fields {
 				suffix := ""
 				if f.versions[1-version].typ != nil {
 					suffix = fmt.Sprint(20 + version)
@@ -85,7 +85,7 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 				if err != nil {
 					return nil, err
 				}
-				fmt.Fprintf(&out, "// Get%s%s reports whether the matching version details are present.\nfunc (v *%s) Get%s%s() (%s,bool) {\n if v == nil || v.%s%dDetails == nil { var zero %s; return zero,false }; return v.%s%dDetails.%s,true\n}\n", f.name, suffix, node.name, f.name, suffix, typ, node.name, 20+version, typ, node.name, 20+version, f.name)
+				fmt.Fprintf(&out, "// Get%s%s reports whether the matching version details are present.\nfunc (v *%s) Get%s%s() (%s,bool) {\n if v == nil || v.%s == nil { var zero %s; return zero,false }; return v.%s.%s,true\n}\n", f.name, suffix, node.name, f.name, suffix, typ, detail.name, typ, detail.name, f.name)
 			}
 		}
 	}

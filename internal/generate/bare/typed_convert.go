@@ -154,18 +154,17 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 				return nil, err
 			}
 		}
-		hasDetails := len(details(node, 0)) > 0 || len(details(node, 1)) > 0
+		hasDetails := node.details[0] != nil || node.details[1] != nil
 		if hasDetails {
 			c.write("switch v {\n")
-			for i := range 2 {
+			for i, detail := range node.details {
 				c.write("case version%d:\n", 20+i)
-				fs := details(node, i)
-				if len(fs) == 0 {
+				if detail == nil {
 					c.write("// No version details for version %d\n", 20+i)
 					continue
 				}
-				c.write("details := &%s%dDetails{}\n", node.name, 20+i)
-				for _, f := range fs {
+				c.write("details := &%s{}\n", detail.name)
+				for _, f := range detail.fields {
 					original := fields[f.jsonName]
 					if original.typ == nil || !original.typ.raw {
 						return nil, fmt.Errorf("version detail %s.%s requires a raw bare field", node.name, f.jsonName)
@@ -174,7 +173,7 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 					c.write("if len(%s) > 0 {\nif err := json.Unmarshal(%s, &details.%s); err != nil { return target, fmt.Errorf(%q, err) }\n}\n", source, source, f.name, f.jsonName+": %w")
 					c.clear(source, original.typ)
 				}
-				c.write("target.%s%dDetails = details\n", node.name, 20+i)
+				c.write("target.%s = details\n", detail.name)
 			}
 			c.write("}\n")
 		}

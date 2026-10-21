@@ -117,6 +117,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		outputs[filepath.Join("csaf", root.packageName, "check_generated.go")], err = model.emitCheck(root.packageName)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	for _, output := range slices.Sorted(maps.Keys(outputs)) {

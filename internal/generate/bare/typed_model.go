@@ -15,11 +15,20 @@ import (
 
 // typedType describes a common representation
 type typedType struct {
-	shape  string       // primitive, "pointer", "slice", "struct"
-	name   string       // struct name, if shape is "struct"
-	elem   *typedType   // element type, if shape is "pointer" or "slice"
-	fields []typedField // fields, if shape is "struct"
-	bare   *match       // bare match, if any
+	shape   string           // primitive, "pointer", "slice", "struct"
+	name    string           // struct name, if shape is "struct"
+	elem    *typedType       // element type, if shape is "pointer" or "slice"
+	fields  []typedField     // fields, if shape is "struct"
+	bare    *match           // bare match, if any
+	details [2]*typedDetails // version-specific structs, nil when absent
+}
+
+// typedDetails describes a version detail struct once for all emitters.
+// version indexes the original v20/v21 model and field definitions.
+type typedDetails struct {
+	name    string
+	version int
+	fields  []typedField
 }
 
 type typedField struct {
@@ -33,7 +42,7 @@ type typedField struct {
 type typedModel struct {
 	models     [2]*model // left and right models
 	cache      map[typePair]*typedType
-	structures []*typedType // all structs in the order they were generated
+	structures []*typedType // shared structs in generation order. Each owns its details
 	names      map[string]bool
 }
 
@@ -41,6 +50,23 @@ func newTypedModel(left, right *model, rootName string, root *match) (*typedMode
 	m := &typedModel{models: [2]*model{left, right}, cache: make(map[typePair]*typedType), names: make(map[string]bool)}
 	if _, err := m.common(left.types[rootName], right.types[rootName], rootName, root); err != nil {
 		return nil, err
+	}
+	for _, node := range m.structures {
+		for version := range 2 {
+			var fields []typedField
+			for _, f := range node.fields {
+				if f.common == nil && f.versions[version].typ != nil {
+					fields = append(fields, f)
+				}
+			}
+			if len(fields) > 0 {
+				node.details[version] = &typedDetails{
+					name:    fmt.Sprintf("%s%dDetails", node.name, 20+version),
+					version: version,
+					fields:  fields,
+				}
+			}
+		}
 	}
 	return m, nil
 }
@@ -293,14 +319,4 @@ func jsonTag(name string, optional bool) string {
 		name += ",omitempty"
 	}
 	return "`json:" + strconv.Quote(name) + "`"
-}
-
-func details(node *typedType, version int) []typedField {
-	var result []typedField
-	for _, f := range node.fields {
-		if f.common == nil && f.versions[version].typ != nil {
-			result = append(result, f)
-		}
-	}
-	return result
 }
