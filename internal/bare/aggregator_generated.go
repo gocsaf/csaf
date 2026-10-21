@@ -6,7 +6,11 @@
 
 package bare
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/gocsaf/csaf/v3/csaf/v21"
+)
 
 type Aggregator struct {
 	Schema            json.RawMessage                `json:"$schema,omitempty"`
@@ -15,7 +19,7 @@ type Aggregator struct {
 	CanonicalURL      string                         `json:"canonical_url"`
 	CSAFProviders     []AggregatorCSAFProvidersElem  `json:"csaf_providers"`
 	CSAFPublishers    []AggregatorCSAFPublishersElem `json:"csaf_publishers,omitempty"`
-	LastUpdated       json.RawMessage                `json:"last_updated,omitempty"`
+	LastUpdated       v21.DateTime                   `json:"last_updated"`
 	MaintainedFrom    json.RawMessage                `json:"maintained_from,omitempty"`
 	MaintainedUntil   json.RawMessage                `json:"maintained_until,omitempty"`
 }
@@ -34,9 +38,9 @@ type AggregatorCSAFProvidersElem struct {
 }
 
 type AggregatorCSAFProvidersElemMetadata struct {
-	LastUpdated json.RawMessage                              `json:"last_updated,omitempty"`
+	LastUpdated v21.DateTime                                 `json:"last_updated"`
 	Publisher   AggregatorCSAFProvidersElemMetadataPublisher `json:"publisher"`
-	Role        json.RawMessage                              `json:"role,omitempty"`
+	Role        *string                                      `json:"role,omitempty"`
 	URL         string                                       `json:"url"`
 }
 

@@ -125,37 +125,8 @@ func (v *ProviderDistributionsElemRolieFeedsElem) GetLastUpdated() (v21.DateTime
 
 // ProviderPublicOpenpgpKeysElem contains common fields and optional version-specific details.
 type ProviderPublicOpenpgpKeysElem struct {
-	URL string `json:"url"`
-	*ProviderPublicOpenpgpKeysElem20Details
-	*ProviderPublicOpenpgpKeysElem21Details
-}
-
-// ProviderPublicOpenpgpKeysElem20Details contains fields specific to CSAF 2.0.
-type ProviderPublicOpenpgpKeysElem20Details struct {
 	Fingerprint *string `json:"fingerprint,omitempty"`
-}
-
-// GetFingerprint20 reports whether the matching version details are present.
-func (v *ProviderPublicOpenpgpKeysElem) GetFingerprint20() (*string, bool) {
-	if v == nil || v.ProviderPublicOpenpgpKeysElem20Details == nil {
-		var zero *string
-		return zero, false
-	}
-	return v.ProviderPublicOpenpgpKeysElem20Details.Fingerprint, true
-}
-
-// ProviderPublicOpenpgpKeysElem21Details contains fields specific to CSAF 2.1.
-type ProviderPublicOpenpgpKeysElem21Details struct {
-	Fingerprint string `json:"fingerprint"`
-}
-
-// GetFingerprint21 reports whether the matching version details are present.
-func (v *ProviderPublicOpenpgpKeysElem) GetFingerprint21() (string, bool) {
-	if v == nil || v.ProviderPublicOpenpgpKeysElem21Details == nil {
-		var zero string
-		return zero, false
-	}
-	return v.ProviderPublicOpenpgpKeysElem21Details.Fingerprint, true
+	URL         string  `json:"url"`
 }
 
 // ProviderPublisher contains common fields and optional version-specific details.

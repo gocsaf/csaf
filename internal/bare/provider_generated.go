@@ -6,13 +6,17 @@
 
 package bare
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/gocsaf/csaf/v3/csaf/v21"
+)
 
 type Provider struct {
 	Schema                  json.RawMessage                 `json:"$schema,omitempty"`
 	CanonicalURL            string                          `json:"canonical_url"`
 	Distributions           []ProviderDistributionsElem     `json:"distributions,omitempty"`
-	LastUpdated             json.RawMessage                 `json:"last_updated,omitempty"`
+	LastUpdated             v21.DateTime                    `json:"last_updated"`
 	ListOnCSAFAggregators   bool                            `json:"list_on_CSAF_aggregators"`
 	MaintainedFrom          json.RawMessage                 `json:"maintained_from,omitempty"`
 	MaintainedUntil         json.RawMessage                 `json:"maintained_until,omitempty"`
@@ -43,8 +47,8 @@ type ProviderDistributionsElemRolieFeedsElem struct {
 }
 
 type ProviderPublicOpenpgpKeysElem struct {
-	Fingerprint json.RawMessage `json:"fingerprint,omitempty"`
-	URL         string          `json:"url"`
+	Fingerprint *string `json:"fingerprint,omitempty"`
+	URL         string  `json:"url"`
 }
 
 type ProviderPublisher struct {

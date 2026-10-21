@@ -49,6 +49,7 @@ type CSAFDocument struct {
 	AggregateSeverity *CSAFDocumentAggregateSeverity    `json:"aggregate_severity,omitempty"`
 	Category          string                            `json:"category"`
 	CSAFVersion       string                            `json:"csaf_version"`
+	Distribution      *CSAFDocumentDistribution         `json:"distribution,omitempty"`
 	Lang              *string                           `json:"lang,omitempty"`
 	Notes             []CSAFDocumentNotesElem           `json:"notes,omitempty"`
 	Publisher         CSAFDocumentPublisher             `json:"publisher"`
@@ -56,39 +57,14 @@ type CSAFDocument struct {
 	SourceLang        *string                           `json:"source_lang,omitempty"`
 	Title             string                            `json:"title"`
 	Tracking          CSAFDocumentTracking              `json:"tracking"`
-	*CSAFDocument20Details
 	*CSAFDocument21Details
-}
-
-// CSAFDocument20Details contains fields specific to CSAF 2.0.
-type CSAFDocument20Details struct {
-	Distribution *v20.CSAFDocumentDistribution `json:"distribution,omitempty"`
-}
-
-// GetDistribution20 reports whether the matching version details are present.
-func (v *CSAFDocument) GetDistribution20() (*v20.CSAFDocumentDistribution, bool) {
-	if v == nil || v.CSAFDocument20Details == nil {
-		var zero *v20.CSAFDocumentDistribution
-		return zero, false
-	}
-	return v.CSAFDocument20Details.Distribution, true
 }
 
 // CSAFDocument21Details contains fields specific to CSAF 2.1.
 type CSAFDocument21Details struct {
-	Distribution      v21.CSAFDocumentDistribution `json:"distribution"`
 	Involvement       *v21.CSAFDocumentInvolvement `json:"involvement,omitempty"`
 	LicenseExpression *string                      `json:"license_expression,omitempty"`
 	XExtensions       v21.ExtensionsT              `json:"x_extensions,omitempty"`
-}
-
-// GetDistribution21 reports whether the matching version details are present.
-func (v *CSAFDocument) GetDistribution21() (v21.CSAFDocumentDistribution, bool) {
-	if v == nil || v.CSAFDocument21Details == nil {
-		var zero v21.CSAFDocumentDistribution
-		return zero, false
-	}
-	return v.CSAFDocument21Details.Distribution, true
 }
 
 // GetInvolvement reports whether the matching version details are present.
@@ -130,6 +106,33 @@ type CSAFDocumentAcknowledgmentsElem struct {
 type CSAFDocumentAggregateSeverity struct {
 	Namespace *string `json:"namespace,omitempty"`
 	Text      string  `json:"text"`
+}
+
+// CSAFDocumentDistribution contains common fields and optional version-specific details.
+type CSAFDocumentDistribution struct {
+	Text *string                      `json:"text,omitempty"`
+	TLP  *CSAFDocumentDistributionTLP `json:"tlp,omitempty"`
+	*CSAFDocumentDistribution21Details
+}
+
+// CSAFDocumentDistribution21Details contains fields specific to CSAF 2.1.
+type CSAFDocumentDistribution21Details struct {
+	SharingGroup *v21.CSAFDocumentDistributionSharingGroup `json:"sharing_group,omitempty"`
+}
+
+// GetSharingGroup reports whether the matching version details are present.
+func (v *CSAFDocumentDistribution) GetSharingGroup() (*v21.CSAFDocumentDistributionSharingGroup, bool) {
+	if v == nil || v.CSAFDocumentDistribution21Details == nil {
+		var zero *v21.CSAFDocumentDistributionSharingGroup
+		return zero, false
+	}
+	return v.CSAFDocumentDistribution21Details.SharingGroup, true
+}
+
+// CSAFDocumentDistributionTLP contains common fields and optional version-specific details.
+type CSAFDocumentDistributionTLP struct {
+	Label string `json:"label"`
+	URL   string `json:"url,omitempty"`
 }
 
 // CSAFDocumentNotesElem contains common fields and optional version-specific details.

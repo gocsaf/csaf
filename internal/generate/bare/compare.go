@@ -74,6 +74,23 @@ func (m *model) resolve(expr ast.Expr) (ast.Expr, bool) {
 }
 
 func (c *comparison) compare(left, right ast.Expr, name string) (*match, error) {
+	if compatible, err := compatibleDateTime(left, right, [2]*model{c.left, c.right}); err != nil {
+		return nil, err
+	} else if compatible {
+		return &match{shape: "v21.DateTime"}, nil
+	}
+
+	if !separateOptionalityDifferences && left != nil && right != nil {
+		a, leftPointer := left.(*ast.StarExpr)
+		b, rightPointer := right.(*ast.StarExpr)
+		if leftPointer != rightPointer {
+			if leftPointer {
+				return c.compareElem(&match{}, "pointer", a.X, right, name)
+			}
+			return c.compareElem(&match{}, "pointer", left, b.X, name)
+		}
+	}
+
 	left, leftRaw := c.left.resolve(left)
 	right, rightRaw := c.right.resolve(right)
 	pair := typePair{left, right}
@@ -161,9 +178,13 @@ func (c *comparison) compareStruct(node *match, left, right *ast.StructType, nam
 			goName += "Alt"
 		}
 		goNames[goName] = true
-		typ, err := c.compare(first.typ, second.typ, node.name+goName)
-		if err != nil {
-			return nil, err
+		versions := [2]jsonField{first, second}
+		typ := &match{raw: true}
+		if !separateOptionalityDifferences || !optionalityDiffers(versions, [2]*model{c.left, c.right}) {
+			typ, err = c.compare(first.typ, second.typ, node.name+goName)
+			if err != nil {
+				return nil, err
+			}
 		}
 		omitEmpty := typ.raw || first.omitEmpty || second.omitEmpty
 		node.fields = append(node.fields, fieldMatch{

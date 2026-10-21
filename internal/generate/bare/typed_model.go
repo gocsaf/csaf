@@ -13,10 +13,6 @@ import (
 	"strings"
 )
 
-// When true, fields with different omitempty settings or outer pointer/value
-// shapes remain in version details instead of becoming shared optional fields.
-const separateOptionalityDifferences = true
-
 // typedType describes a common representation
 type typedType struct {
 	shape  string       // primitive, "pointer", "slice", "struct"
@@ -55,18 +51,19 @@ func (m *typedModel) common(left, right ast.Expr, name string, bare *match) (*ty
 	if left == nil || right == nil {
 		return nil, nil
 	}
-
-	// DateTime compatibility rule
-	if a, ok := left.(*ast.Ident); ok && a.Name == "DateTime" {
-		if b, ok := right.(*ast.Ident); ok && b.Name == "DateTime" {
-			for _, source := range m.models {
-				underlying, ok := source.types["DateTime"].(*ast.Ident)
-				if !ok || underlying.Name != "string" || !source.custom["DateTime"] {
-					return nil, fmt.Errorf("DateTime compatibility rule requires custom string types in both versions")
-				}
-			}
-			return &typedType{shape: "v21.DateTime"}, nil
+	// Keep custom type names intact until the contained types are compared.
+	if a, ok := left.(*ast.StarExpr); ok {
+		if _, rightPointer := right.(*ast.StarExpr); !rightPointer {
+			return m.common(a, &ast.StarExpr{X: right}, name, bare)
 		}
+	} else if b, ok := right.(*ast.StarExpr); ok {
+		return m.common(&ast.StarExpr{X: left}, b, name, bare)
+	}
+
+	if compatible, err := compatibleDateTime(left, right, m.models); err != nil {
+		return nil, err
+	} else if compatible {
+		return &typedType{shape: "v21.DateTime"}, nil
 	}
 	left, leftRaw := m.models[0].resolve(left)
 	right, rightRaw := m.models[1].resolve(right)

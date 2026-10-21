@@ -6,7 +6,11 @@
 
 package bare
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/gocsaf/csaf/v3/csaf/v21"
+)
 
 type CSAF struct {
 	Schema          json.RawMessage           `json:"$schema,omitempty"`
@@ -21,7 +25,7 @@ type CSAFDocument struct {
 	AggregateSeverity *CSAFDocumentAggregateSeverity    `json:"aggregate_severity,omitempty"`
 	Category          string                            `json:"category"`
 	CSAFVersion       string                            `json:"csaf_version"`
-	Distribution      json.RawMessage                   `json:"distribution,omitempty"`
+	Distribution      *CSAFDocumentDistribution         `json:"distribution,omitempty"`
 	Involvement       json.RawMessage                   `json:"involvement,omitempty"`
 	Lang              *string                           `json:"lang,omitempty"`
 	LicenseExpression json.RawMessage                   `json:"license_expression,omitempty"`
@@ -44,6 +48,17 @@ type CSAFDocumentAcknowledgmentsElem struct {
 type CSAFDocumentAggregateSeverity struct {
 	Namespace *string `json:"namespace,omitempty"`
 	Text      string  `json:"text"`
+}
+
+type CSAFDocumentDistribution struct {
+	SharingGroup json.RawMessage              `json:"sharing_group,omitempty"`
+	Text         *string                      `json:"text,omitempty"`
+	TLP          *CSAFDocumentDistributionTLP `json:"tlp,omitempty"`
+}
+
+type CSAFDocumentDistributionTLP struct {
+	Label string `json:"label"`
+	URL   string `json:"url,omitempty"`
 }
 
 type CSAFDocumentNotesElem struct {
@@ -72,17 +87,17 @@ type CSAFDocumentReferencesElem struct {
 
 type CSAFDocumentTracking struct {
 	Aliases            []string                                  `json:"aliases,omitempty"`
-	CurrentReleaseDate json.RawMessage                           `json:"current_release_date,omitempty"`
+	CurrentReleaseDate v21.DateTime                              `json:"current_release_date"`
 	Generator          *CSAFDocumentTrackingGenerator            `json:"generator,omitempty"`
 	ID                 string                                    `json:"id"`
-	InitialReleaseDate json.RawMessage                           `json:"initial_release_date,omitempty"`
+	InitialReleaseDate v21.DateTime                              `json:"initial_release_date"`
 	RevisionHistory    []CSAFDocumentTrackingRevisionHistoryElem `json:"revision_history"`
 	Status             string                                    `json:"status"`
 	Version            string                                    `json:"version"`
 }
 
 type CSAFDocumentTrackingGenerator struct {
-	Date   json.RawMessage                     `json:"date,omitempty"`
+	Date   *v21.DateTime                       `json:"date,omitempty"`
 	Engine CSAFDocumentTrackingGeneratorEngine `json:"engine"`
 }
 
@@ -92,10 +107,10 @@ type CSAFDocumentTrackingGeneratorEngine struct {
 }
 
 type CSAFDocumentTrackingRevisionHistoryElem struct {
-	Date          json.RawMessage `json:"date,omitempty"`
-	LegacyVersion *string         `json:"legacy_version,omitempty"`
-	Number        string          `json:"number"`
-	Summary       string          `json:"summary"`
+	Date          v21.DateTime `json:"date"`
+	LegacyVersion *string      `json:"legacy_version,omitempty"`
+	Number        string       `json:"number"`
+	Summary       string       `json:"summary"`
 }
 
 type CSAFProductTree struct {
@@ -159,7 +174,7 @@ type CSAFVulnerabilitiesElem struct {
 	CWE                         json.RawMessage                           `json:"cwe,omitempty"`
 	Cwes                        json.RawMessage                           `json:"cwes,omitempty"`
 	DisclosureDate              json.RawMessage                           `json:"disclosure_date,omitempty"`
-	DiscoveryDate               json.RawMessage                           `json:"discovery_date,omitempty"`
+	DiscoveryDate               *v21.DateTime                             `json:"discovery_date,omitempty"`
 	DlVulnID                    json.RawMessage                           `json:"dl_vuln_id,omitempty"`
 	FirstKnownExploitationDates json.RawMessage                           `json:"first_known_exploitation_dates,omitempty"`
 	Flags                       []CSAFVulnerabilitiesElemFlagsElem        `json:"flags,omitempty"`
@@ -178,10 +193,10 @@ type CSAFVulnerabilitiesElem struct {
 }
 
 type CSAFVulnerabilitiesElemFlagsElem struct {
-	Date       json.RawMessage `json:"date,omitempty"`
-	GroupIds   []string        `json:"group_ids,omitempty"`
-	Label      string          `json:"label"`
-	ProductIds []string        `json:"product_ids,omitempty"`
+	Date       *v21.DateTime `json:"date,omitempty"`
+	GroupIds   []string      `json:"group_ids,omitempty"`
+	Label      string        `json:"label"`
+	ProductIds []string      `json:"product_ids,omitempty"`
 }
 
 type CSAFVulnerabilitiesElemIdsElem struct {
@@ -205,7 +220,7 @@ type CSAFVulnerabilitiesElemProductStatus struct {
 
 type CSAFVulnerabilitiesElemRemediationsElem struct {
 	Category        string                                                  `json:"category"`
-	Date            json.RawMessage                                         `json:"date,omitempty"`
+	Date            *v21.DateTime                                           `json:"date,omitempty"`
 	Details         string                                                  `json:"details"`
 	Entitlements    []string                                                `json:"entitlements,omitempty"`
 	GroupIds        []string                                                `json:"group_ids,omitempty"`
@@ -220,9 +235,9 @@ type CSAFVulnerabilitiesElemRemediationsElemRestartRequired struct {
 }
 
 type CSAFVulnerabilitiesElemThreatsElem struct {
-	Category   string          `json:"category"`
-	Date       json.RawMessage `json:"date,omitempty"`
-	Details    string          `json:"details"`
-	GroupIds   []string        `json:"group_ids,omitempty"`
-	ProductIds []string        `json:"product_ids,omitempty"`
+	Category   string        `json:"category"`
+	Date       *v21.DateTime `json:"date,omitempty"`
+	Details    string        `json:"details"`
+	GroupIds   []string      `json:"group_ids,omitempty"`
+	ProductIds []string      `json:"product_ids,omitempty"`
 }

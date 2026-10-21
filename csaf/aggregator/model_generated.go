@@ -7,7 +7,6 @@
 package aggregator
 
 import (
-	"github.com/gocsaf/csaf/v3/csaf/v20"
 	"github.com/gocsaf/csaf/v3/csaf/v21"
 )
 
@@ -75,37 +74,8 @@ type AggregatorCSAFProvidersElem struct {
 type AggregatorCSAFProvidersElemMetadata struct {
 	LastUpdated v21.DateTime                                 `json:"last_updated"`
 	Publisher   AggregatorCSAFProvidersElemMetadataPublisher `json:"publisher"`
+	Role        *string                                      `json:"role,omitempty"`
 	URL         string                                       `json:"url"`
-	*AggregatorCSAFProvidersElemMetadata20Details
-	*AggregatorCSAFProvidersElemMetadata21Details
-}
-
-// AggregatorCSAFProvidersElemMetadata20Details contains fields specific to CSAF 2.0.
-type AggregatorCSAFProvidersElemMetadata20Details struct {
-	Role *v20.RoleT `json:"role,omitempty"`
-}
-
-// GetRole20 reports whether the matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadata) GetRole20() (*v20.RoleT, bool) {
-	if v == nil || v.AggregatorCSAFProvidersElemMetadata20Details == nil {
-		var zero *v20.RoleT
-		return zero, false
-	}
-	return v.AggregatorCSAFProvidersElemMetadata20Details.Role, true
-}
-
-// AggregatorCSAFProvidersElemMetadata21Details contains fields specific to CSAF 2.1.
-type AggregatorCSAFProvidersElemMetadata21Details struct {
-	Role v21.RoleT `json:"role"`
-}
-
-// GetRole21 reports whether the matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadata) GetRole21() (v21.RoleT, bool) {
-	if v == nil || v.AggregatorCSAFProvidersElemMetadata21Details == nil {
-		var zero v21.RoleT
-		return zero, false
-	}
-	return v.AggregatorCSAFProvidersElemMetadata21Details.Role, true
 }
 
 // AggregatorCSAFProvidersElemMetadataPublisher contains common fields and optional version-specific details.
