@@ -12,13 +12,17 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
+	"github.com/gocsaf/csaf/v3/csaf/provider"
+	"github.com/gocsaf/csaf/v3/internal/bare"
 	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
@@ -26,9 +30,12 @@ import (
 // ProviderMetadataLoader helps load provider-metadata.json from
 // the various locations.
 type ProviderMetadataLoader struct {
-	client   util.Client
-	already  map[string]*LoadedProviderMetadata
-	messages ProviderMetadataLoadMessages
+	client            util.Client
+	already           map[string]*LoadedProviderMetadata
+	messages          ProviderMetadataLoadMessages
+	Version           SpecVersion
+	AllowUnmaintained bool
+	now               func() time.Time
 }
 
 // ProviderMetadataLoadMessageType is the type of the message.
@@ -50,6 +57,10 @@ const (
 	WellknownSecurityMismatch
 	// IgnoreProviderMetadata indicates that an extra PMD was ignored.
 	IgnoreProviderMetadata
+	// MaintenanceExpired indicates the PMD maintained_until date has passed
+	MaintenanceExpired
+	// VersionMismatch indicates a mismatch in PMD metadata_version
+	VersionMismatch
 )
 
 // ProviderMetadataLoadMessage is a message generated while loading
@@ -72,6 +83,8 @@ type LoadedProviderMetadata struct {
 	Hash []byte
 	// Messages are the error message happened while loading.
 	Messages ProviderMetadataLoadMessages
+	// Model is CSAF v2.0 or v2.1 typed pmd
+	Model *provider.Provider
 }
 
 // Add appends a message to the list of loading messages.
@@ -96,7 +109,7 @@ func (pmlm *ProviderMetadataLoadMessages) AppendUnique(other ProviderMetadataLoa
 
 // Valid returns true if the loaded document is valid.
 func (lpm *LoadedProviderMetadata) Valid() bool {
-	return lpm != nil && lpm.Document != nil && lpm.Hash != nil
+	return lpm != nil && lpm.Document != nil && lpm.Hash != nil && lpm.Model != nil
 }
 
 // NewProviderMetadataLoader create a new loader.
@@ -104,6 +117,7 @@ func NewProviderMetadataLoader(client util.Client) *ProviderMetadataLoader {
 	return &ProviderMetadataLoader{
 		client:  client,
 		already: map[string]*LoadedProviderMetadata{},
+		now:     time.Now,
 	}
 }
 
@@ -339,14 +353,17 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string
 
 	// TODO: Check for application/json and log it.
 
-	// Calculate checksum for later comparison.
-	hash := sha256.New()
-
-	tee := io.TeeReader(res.Body, hash)
+	raw, err := io.ReadAll(res.Body)
+	if err != nil {
+		result.Messages.Add(
+			HTTPFailed,
+			fmt.Sprintf("reading %q failed: %v", path, err))
+		return &result
+	}
 
 	var doc any
 
-	if err := misc.StrictJSONParse(tee, &doc); err != nil {
+	if err := misc.StrictJSONParse(bytes.NewReader(raw), &doc); err != nil {
 		result.Messages.Add(
 			JSONDecodingFailed,
 			fmt.Sprintf("JSON decoding failed: %v", err))
@@ -356,7 +373,9 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string
 	// Before checking the err lets check if we had the same
 	// document before. If so it will have failed parsing before.
 
-	sum := hash.Sum(nil)
+	// Calculate checksum for later comparison.
+	sum32 := sha256.Sum256(raw)
+	sum := sum32[:]
 	key := string(sum)
 
 	// If we already have loaded it return the cached result.
@@ -383,11 +402,66 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string
 				strings.ReplaceAll(msg, `%`, `%%`))
 		}
 	default:
-		// Only store in result if validation passed.
+		pmd, err := decodePMD(raw)
+		if err != nil {
+			result.Messages.Add(
+				JSONDecodingFailed,
+				fmt.Sprintf("%s: Decoding pmd model failed: %v", path, err))
+			break
+		}
+		if pmd.MetadataVersion != string(pmdl.Version) && pmdl.Version != "" {
+			result.Messages.Add(
+				VersionMismatch,
+				fmt.Sprintf("%s: requested metadata_version %q, got %q", path, pmdl.Version, pmd.MetadataVersion))
+			break
+		}
+		if err := checkMaintenanceWindow(pmd, path, pmdl.now()); err != nil && !pmdl.AllowUnmaintained {
+			result.Messages.Add(MaintenanceExpired, err.Error())
+			break
+		}
 		result.Document = doc
+		result.Model = pmd
 		result.Hash = sum
 	}
 
 	pmdl.already[key] = &result
 	return &result
+}
+
+// decodePMD decodes raw bytes into a typed pmd model after successful validation.
+func decodePMD(raw []byte) (*provider.Provider, error) {
+	var bpmd bare.Provider
+	if err := json.Unmarshal(raw, &bpmd); err != nil {
+		return nil, err
+	}
+	return provider.FromBare(&bpmd)
+}
+
+// maintenanceWarningWindow is the time window for warning about maintaned_until deadline being reached
+const maintenanceWarningWindow = 90 * 24 * time.Hour
+
+// checkMaintenanceWindow makes a v2.1 PMD check on the maintenance window defined by maintained_from/maintained_until fields.
+func checkMaintenanceWindow(pmd *provider.Provider, path string, now time.Time) error {
+	if from, _ := pmd.GetMaintainedFrom(); from != nil {
+		t, err := from.Time()
+		if err != nil {
+			return fmt.Errorf("%s: invalid maintained_from: %w", path, err)
+		}
+		if now.Before(t) {
+			slog.Warn("PMD not maintaned yet", "url", path, "maintained_from", *from)
+		}
+	}
+	if until, _ := pmd.GetMaintainedUntil(); until != nil {
+		t, err := until.Time()
+		if err != nil {
+			return fmt.Errorf("%s: invalid maintained_until: %w", path, err)
+		}
+		if now.After(t) {
+			return fmt.Errorf("%s: mainted_until deadline %s exceeded", path, *until)
+		}
+		if t.Sub(now) < maintenanceWarningWindow {
+			slog.Warn("PMD maintenance window closes in less than 90 days", "url", path, "maintained_until", *until)
+		}
+	}
+	return nil
 }
