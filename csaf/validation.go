@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	v21 "github.com/gocsaf/csaf/v3/csaf/v21"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
@@ -190,23 +191,48 @@ func (cs *compiledSchema) validate(doc any) ([]string, error) {
 // ValidateCSAF validates the document doc against the JSON schema
 // of CSAF.
 func ValidateCSAF(doc any) ([]string, error) {
-	return compiledCSAFSchema.validate(doc)
+	m, _ := doc.(map[string]any)
+	d, _ := m["document"].(map[string]any)
+	switch v, _ := d["csaf_version"].(string); v {
+	case "2.0":
+		return compiledCSAFSchema.validate(doc)
+	case "2.1":
+		return v21.ValidateCSAF(doc)
+	default:
+		return []string{fmt.Sprintf("unsupported document version %q", v)}, nil
+	}
 }
 
 // ValidateProviderMetadata validates the document doc against the JSON schema
 // of provider metadata.
 func ValidateProviderMetadata(doc any) ([]string, error) {
-	return compiledProviderSchema.validate(doc)
+	m, _ := doc.(map[string]any)
+	switch v, _ := m["metadata_version"].(string); v {
+	case "2.0":
+		return compiledProviderSchema.validate(doc)
+	case "2.1":
+		return v21.ValidateProviderMetadata(doc)
+	default:
+		return []string{fmt.Sprintf("unsupported provider metadata version %q", v)}, nil
+	}
 }
 
 // ValidateAggregator validates the document doc against the JSON schema
 // of aggregator.
 func ValidateAggregator(doc any) ([]string, error) {
-	return compiledAggregatorSchema.validate(doc)
+	m, _ := doc.(map[string]any)
+	switch v, _ := m["aggregator_version"].(string); v {
+	case "2.0":
+		return compiledAggregatorSchema.validate(doc)
+	case "2.1":
+		return v21.ValidateAggregator(doc)
+	default:
+		return []string{fmt.Sprintf("unsupported aggregator version %q", v)}, nil
+	}
 }
 
 // ValidateROLIE validates the ROLIE feed against the JSON schema
-// of ROLIE
+// of ROLIE.
 func ValidateROLIE(doc any) ([]string, error) {
-	return compiledRolieSchema.validate(doc)
+		return compiledRolieSchema.validate(doc)
 }
