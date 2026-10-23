@@ -15,6 +15,7 @@ type stats struct {
 	downloadFailed  int
 	filenameFailed  int
 	schemaFailed    int
+	versionFailed   int
 	remoteFailed    int
 	sha256Failed    int
 	sha512Failed    int
@@ -27,6 +28,7 @@ func (st *stats) add(o *stats) {
 	st.downloadFailed += o.downloadFailed
 	st.filenameFailed += o.filenameFailed
 	st.schemaFailed += o.schemaFailed
+	st.versionFailed += o.versionFailed
 	st.remoteFailed += o.remoteFailed
 	st.sha256Failed += o.sha256Failed
 	st.sha512Failed += o.sha512Failed
@@ -38,6 +40,7 @@ func (st *stats) totalFailed() int {
 	return st.downloadFailed +
 		st.filenameFailed +
 		st.schemaFailed +
+		st.versionFailed +
 		st.remoteFailed +
 		st.sha256Failed +
 		st.sha512Failed +
@@ -52,6 +55,7 @@ func (st *stats) log() {
 		"filename_failed", st.filenameFailed,
 		"download_failed", st.downloadFailed,
 		"schema_failed", st.schemaFailed,
+		"version_failed", st.versionFailed,
 		"remote_failed", st.remoteFailed,
 		"sha256_failed", st.sha256Failed,
 		"sha512_failed", st.sha512Failed,

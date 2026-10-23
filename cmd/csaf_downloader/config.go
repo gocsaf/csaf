@@ -89,8 +89,12 @@ type config struct {
 	clientCerts   []tls.Certificate
 	ignorePattern filter.PatternMatcher
 
-	//lint:ignore SA5008 We are using choice or than once: sha256, sha512
+	//lint:ignore SA5008 We are using choice more than once: sha256, sha512
 	PreferredHash hashAlgorithm `long:"preferred_hash" choice:"sha256" choice:"sha512" value-name:"HASH" description:"HASH to prefer" toml:"preferred_hash"`
+
+	//lint:ignore SA5008 We are using choice more than once: 2.0, 2.1.
+	CSAFVersion       string `long:"csaf_version" choice:"2.0" choice:"2.1" value-name:"VERSION" description:"Use PMD of CSAF VERSION only (default: first one found)" toml:"csaf_version"`
+	AllowUnmaintained bool   `long:"allow_unmaintained" description:"Use CSAF 2.1 PMDs whose maintained_until deadline has been exceeded" toml:"allow_unmaintained"`
 }
 
 // configPaths are the potential file locations of the config file.
