@@ -37,6 +37,8 @@ Application Options:
   -c, --config=TOML-FILE                         Path to config TOML file
       --preferred_hash=HASH[sha256|sha512]       HASH to prefer
       --streaming_rolie_parser                   If flag is set, uses the experimental streaming ROLIE parser
+      --csaf_version=VERSION[2.0|2.1]            Use PMD of CSAF VERSION only (default: first one found)
+      --allow_unmaintained                       Use CSAF 2.1 PMDs whose maintained_until deadline has been exceeded
 
 Help Options:
   -h, --help                                     Show this help message
@@ -44,7 +46,7 @@ Help Options:
 
 Will download all CSAF documents for the given _domains_, by trying each as a CSAF provider.
 
-If no user agent is specified with `--header=user-agent:custom-agent/1.0` then the default agent in the form of `csaf_distribution/VERSION` is sent.
+If no user agent is specified with `--header=user-agent:custom-agent/1.0` then the default agent in the form of `csaf_downloader/VERSION` is sent.
 
 If a _domain_ starts with `https://` it is instead considered a direct URL to the `provider-metadata.json` and downloading procedes from there.
 
@@ -94,6 +96,8 @@ validation_mode        = "strict"
 forward_queue          = 5
 forward_insecure       = false
 streaming_rolie_parser = false
+# csaf_version         # not set by default
+allow_unmaintained     = false
 ```
 
 If the `folder` option is given all the advisories are stored in a subfolder
@@ -162,6 +166,21 @@ The details of the implemented API are described [here](https://github.com/mfd20
 **Attention** This is a work in progress. There is
 no production ready server which implements this protocol.
 The server in the linked repository is currently for development and testing only.
+
+#### CSAF versions
+The downloader supports CSAF 2.0 and 2.1 providers and uses the first valid
+`provider-metadata.json` that is found from well-known URL, security.txt or DNS
+in that order without version specificity.
+During the transition to CSAF version 2.1 a provider may still serve 2.0 documents,
+in which case the `csaf_version` parameter can be used to target the desired
+version for downloading.
+By default, documents which `csaf_version` doesn't match the `metadata_version` of the
+used `provider-metadata.json` are not accepted.
+A CSAF 2.1 provider has new `maintained_from` and `maintained_until` fields.
+The downloader performs a check on the used PMD and gives notification when the maintenance
+period has not yet started or will expire within the next 90 days.
+Should one want to download from a CSAF 2.1 provider after `maintained_until` expired, 
+the `allow_unmaintained` option can be selected.
 
 #### beware of client cert passphrase
 
