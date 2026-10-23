@@ -36,6 +36,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/csaf/provider"
 	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
@@ -146,6 +147,13 @@ func (d *downloader) httpClient() util.ClientWithContext {
 	var cwc util.ClientWithContext
 
 	// Add extra headers.
+	header := d.cfg.ExtraHeader.Clone()
+	if header == nil {
+		header = http.Header{}
+	}
+	if header.Get("User-Agent") == "" {
+		header.Set("User-Agent", "csaf_downloader/"+util.SemVersion)
+	}
 	cwc = &util.HeaderClient{
 		Client: client,
 		Header: d.cfg.ExtraHeader,
@@ -180,10 +188,18 @@ func httpLog(who string) func(string, string) {
 	}
 }
 
+// newProviderMetadataLoader creates a configured loader
+func (d *downloader) newProviderMetadataLoader(client util.Client) *csaf.ProviderMetadataLoader {
+	loader := csaf.NewProviderMetadataLoader(client)
+	loader.Version = csaf.SpecVersion(d.cfg.CSAFVersion)
+	loader.AllowUnmaintained = d.cfg.AllowUnmaintained
+	return loader
+}
+
 func (d *downloader) enumerate(ctx context.Context, domain string) error {
 	client := d.httpClient()
 
-	loader := csaf.NewProviderMetadataLoader(client)
+	loader := d.newProviderMetadataLoader(client)
 	lpmd := loader.EnumerateWithContext(ctx, domain)
 
 	docs := []any{}
@@ -213,7 +229,7 @@ func (d *downloader) enumerate(ctx context.Context, domain string) error {
 func (d *downloader) download(ctx context.Context, domain string) error {
 	client := d.httpClient()
 
-	loader := csaf.NewProviderMetadataLoader(client)
+	loader := d.newProviderMetadataLoader(client)
 
 	lpmd := loader.LoadWithContext(ctx, domain)
 
@@ -236,23 +252,20 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 	if err != nil {
 		return fmt.Errorf("invalid URL '%s': %v", lpmd.URL, err)
 	}
-	slog.Info("PMD used", "PMD", pmdURL.String())
-
-	expr := util.NewPathEval()
+	version := csaf.SpecVersion(lpmd.Model.MetadataVersion)
+	slog.Info("PMD used", "PMD", pmdURL.String(), "metadata_version", version)
 
 	if err := d.loadOpenPGPKeys(
 		ctx,
 		client,
-		lpmd.Document,
-		expr,
+		lpmd.Model.PublicOpenpgpKeys,
 	); err != nil {
 		return err
 	}
 
 	afp := csaf.NewAdvisoryFileProcessor(
 		client,
-		expr,
-		lpmd.Document,
+		lpmd.Model,
 		pmdURL)
 
 	// Do we need time range based filtering?
@@ -265,13 +278,14 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 	afp.StreamingROLIEParser = d.cfg.StreamingROLIEParser
 
 	return afp.ProcessWithContext(ctx, func(label csaf.TLPLabel, files []csaf.AdvisoryFile) error {
-		return d.downloadFiles(ctx, label, files)
+		return d.downloadFiles(ctx, label, version, files)
 	})
 }
 
 func (d *downloader) downloadFiles(
 	ctx context.Context,
 	label csaf.TLPLabel,
+	version csaf.SpecVersion,
 	files []csaf.AdvisoryFile,
 ) error {
 	var (
@@ -295,7 +309,7 @@ func (d *downloader) downloadFiles(
 
 	for range n {
 		wg.Add(1)
-		go d.downloadWorker(ctx, &wg, label, advisoryCh, errorCh, pool)
+		go d.downloadWorker(ctx, &wg, label, version, advisoryCh, errorCh, pool)
 	}
 
 allFiles:
@@ -318,35 +332,19 @@ allFiles:
 func (d *downloader) loadOpenPGPKeys(
 	ctx context.Context,
 	client util.ClientWithContext,
-	doc any,
-	expr *util.PathEval,
+	keys []provider.ProviderPublicOpenpgpKeysElem,
 ) error {
-	src, err := expr.Eval("$.public_openpgp_keys", doc)
-	if err != nil {
-		// no keys.
-		return nil
-	}
-
-	var keys []csaf.PGPKey
-	if err := util.ReMarshalJSON(&keys, src); err != nil {
-		return err
-	}
-
-	if len(keys) == 0 {
-		return nil
-	}
-
 	// Try to load
 
 	for i := range keys {
 		key := &keys[i]
-		if key.URL == nil {
+		if key.URL == "" {
 			continue
 		}
-		u, err := url.Parse(*key.URL)
+		u, err := url.Parse(key.URL)
 		if err != nil {
 			slog.Warn("Invalid URL",
-				"url", *key.URL,
+				"url", key.URL,
 				"error", err)
 			continue
 		}
@@ -381,10 +379,14 @@ func (d *downloader) loadOpenPGPKeys(
 			continue
 		}
 
-		if !strings.EqualFold(ckey.GetFingerprint(), string(key.Fingerprint)) {
+		var fingerprint string
+		if key.Fingerprint != nil {
+			fingerprint = *key.Fingerprint
+		}
+		if !strings.EqualFold(ckey.GetFingerprint(), fingerprint) {
 			slog.Warn(
 				"Fingerprint of public OpenPGP key does not match remotely loaded",
-				"url", u, "fingerprint", key.Fingerprint, "remote-fingerprint", ckey.GetFingerprint())
+				"url", u, "fingerprint", fingerprint, "remote-fingerprint", ckey.GetFingerprint())
 			continue
 		}
 		if d.keys == nil {
@@ -435,19 +437,22 @@ type downloadContext struct {
 	lower              string
 	stats              stats
 	expr               *util.PathEval
+	version            csaf.SpecVersion
 }
 
 func newDownloadContext(
 	d *downloader,
 	label csaf.TLPLabel,
+	version csaf.SpecVersion,
 	pool misc.BufferPool,
 ) *downloadContext {
 	dc := &downloadContext{
-		d:      d,
-		client: d.httpClient(),
-		pool:   pool,
-		lower:  strings.ToLower(string(label)),
-		expr:   util.NewPathEval(),
+		d:       d,
+		client:  d.httpClient(),
+		pool:    pool,
+		lower:   strings.ToLower(string(label)),
+		expr:    util.NewPathEval(),
+		version: version,
 	}
 	dc.dateExtract = util.TimeMatcher(&dc.initialReleaseDate, time.RFC3339)
 	return dc
@@ -596,8 +601,8 @@ func (dc *downloadContext) downloadAdvisory(
 
 	// Validate OpenPGP signature.
 	keysCheck := func() error {
-		// Only check signature if we have loaded keys.
-		if dc.d.keys == nil {
+		// Only check signature if present and we have loaded keys.
+		if file.SignURL() == "" || dc.d.keys == nil {
 			return nil
 		}
 		var sign *crypto.PGPSignature
@@ -624,6 +629,18 @@ func (dc *downloadContext) downloadAdvisory(
 			dc.stats.schemaFailed++
 			dc.d.logValidationIssues(file.URL(), errors, err)
 			return fmt.Errorf("schema validation for %q failed", file.URL())
+		}
+		return nil
+	}
+
+	// Validate the doc has PMD version
+	versionCheck := func() error {
+		var csafVersion string
+		if err := dc.expr.Extract(
+			`$.document.csaf_version`, util.StringMatcher(&csafVersion), false, doc,
+		); err != nil || csafVersion != string(dc.version) {
+			dc.stats.versionFailed++
+			return fmt.Errorf("document %s csaf_version %q has mismatch with metadata_version %q", file.URL(), csafVersion, dc.version)
 		}
 		return nil
 	}
@@ -663,6 +680,7 @@ func (dc *downloadContext) downloadAdvisory(
 		s512Check,
 		keysCheck,
 		schemaCheck,
+		versionCheck,
 		filenameCheck,
 		remoteValidatorCheck,
 	} {
@@ -756,13 +774,14 @@ func (d *downloader) downloadWorker(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	label csaf.TLPLabel,
+	version csaf.SpecVersion,
 	files <-chan csaf.AdvisoryFile,
 	errorCh chan<- error,
 	pool misc.BufferPool,
 ) {
 	defer wg.Done()
 
-	dc := newDownloadContext(d, label, pool)
+	dc := newDownloadContext(d, label, version, pool)
 
 	// Add collected stats back to total.
 	defer d.addStats(&dc.stats)
