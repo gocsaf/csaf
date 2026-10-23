@@ -78,8 +78,7 @@ func (w *worker) mirrorInternal(
 
 	afp := csaf.NewAdvisoryFileProcessor(
 		w.client,
-		w.expr,
-		w.metadataProvider,
+		w.metadataModel,
 		pmdURL)
 
 	afp.AgeAccept = w.provider.ageAccept(w.processor.cfg)
