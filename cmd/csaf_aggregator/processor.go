@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	csafprovider "github.com/gocsaf/csaf/v3/csaf/provider"
 	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 
@@ -51,6 +52,7 @@ type worker struct {
 	client           util.ClientWithContext      // client per provider
 	provider         *provider                   // current provider
 	metadataProvider any                         // current metadata provider
+	metadataModel    *csafprovider.Provider      // typed metadata provider model
 	loc              string                      // URL of current provider-metadata.json
 	dir              string                      // Directory to store data to.
 	summaries        map[string][]summary        // the summaries of the advisories.
@@ -113,6 +115,7 @@ func (w *worker) locateProviderMetadata(ctx context.Context, domain string) erro
 	}
 
 	w.metadataProvider = lpmd.Document
+	w.metadataModel = lpmd.Model
 	w.loc = lpmd.URL
 
 	return nil
