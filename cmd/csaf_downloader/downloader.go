@@ -156,7 +156,7 @@ func (d *downloader) httpClient() util.ClientWithContext {
 	}
 	cwc = &util.HeaderClient{
 		Client: client,
-		Header: d.cfg.ExtraHeader,
+		Header: header,
 	}
 
 	// Add optional URL logging.
