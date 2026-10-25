@@ -31,8 +31,7 @@ type Aggregator21Details struct {
 // GetSchema reports whether the matching version details are present.
 func (v *Aggregator) GetSchema() (v21.AggregatorSchema, bool) {
 	if v == nil || v.Aggregator21Details == nil {
-		var zero v21.AggregatorSchema
-		return zero, false
+		return v21.AggregatorSchema(""), false
 	}
 	return v.Aggregator21Details.Schema, true
 }
@@ -40,8 +39,7 @@ func (v *Aggregator) GetSchema() (v21.AggregatorSchema, bool) {
 // GetMaintainedFrom reports whether the matching version details are present.
 func (v *Aggregator) GetMaintainedFrom() (*v21.DateTime, bool) {
 	if v == nil || v.Aggregator21Details == nil {
-		var zero *v21.DateTime
-		return zero, false
+		return nil, false
 	}
 	return v.Aggregator21Details.MaintainedFrom, true
 }
@@ -49,8 +47,7 @@ func (v *Aggregator) GetMaintainedFrom() (*v21.DateTime, bool) {
 // GetMaintainedUntil reports whether the matching version details are present.
 func (v *Aggregator) GetMaintainedUntil() (*v21.DateTime, bool) {
 	if v == nil || v.Aggregator21Details == nil {
-		var zero *v21.DateTime
-		return zero, false
+		return nil, false
 	}
 	return v.Aggregator21Details.MaintainedUntil, true
 }
@@ -96,8 +93,7 @@ type AggregatorCSAFProvidersElemMetadataPublisher20Details struct {
 // GetContactDetails reports whether the matching version details are present.
 func (v *AggregatorCSAFProvidersElemMetadataPublisher) GetContactDetails() (*string, bool) {
 	if v == nil || v.AggregatorCSAFProvidersElemMetadataPublisher20Details == nil {
-		var zero *string
-		return zero, false
+		return nil, false
 	}
 	return v.AggregatorCSAFProvidersElemMetadataPublisher20Details.ContactDetails, true
 }
@@ -110,8 +106,7 @@ type AggregatorCSAFProvidersElemMetadataPublisher21Details struct {
 // GetContact reports whether the matching version details are present.
 func (v *AggregatorCSAFProvidersElemMetadataPublisher) GetContact() (*v21.ContactT, bool) {
 	if v == nil || v.AggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
-		var zero *v21.ContactT
-		return zero, false
+		return nil, false
 	}
 	return v.AggregatorCSAFProvidersElemMetadataPublisher21Details.Contact, true
 }

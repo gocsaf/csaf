@@ -35,8 +35,7 @@ type Provider21Details struct {
 // GetSchema reports whether the matching version details are present.
 func (v *Provider) GetSchema() (v21.ProviderSchema, bool) {
 	if v == nil || v.Provider21Details == nil {
-		var zero v21.ProviderSchema
-		return zero, false
+		return v21.ProviderSchema(""), false
 	}
 	return v.Provider21Details.Schema, true
 }
@@ -44,8 +43,7 @@ func (v *Provider) GetSchema() (v21.ProviderSchema, bool) {
 // GetMaintainedFrom reports whether the matching version details are present.
 func (v *Provider) GetMaintainedFrom() (*v21.DateTime, bool) {
 	if v == nil || v.Provider21Details == nil {
-		var zero *v21.DateTime
-		return zero, false
+		return nil, false
 	}
 	return v.Provider21Details.MaintainedFrom, true
 }
@@ -53,8 +51,7 @@ func (v *Provider) GetMaintainedFrom() (*v21.DateTime, bool) {
 // GetMaintainedUntil reports whether the matching version details are present.
 func (v *Provider) GetMaintainedUntil() (*v21.DateTime, bool) {
 	if v == nil || v.Provider21Details == nil {
-		var zero *v21.DateTime
-		return zero, false
+		return nil, false
 	}
 	return v.Provider21Details.MaintainedUntil, true
 }
@@ -74,8 +71,7 @@ type ProviderDistributionsElem20Details struct {
 // GetDirectoryURL reports whether the matching version details are present.
 func (v *ProviderDistributionsElem) GetDirectoryURL() (*v20.URLT, bool) {
 	if v == nil || v.ProviderDistributionsElem20Details == nil {
-		var zero *v20.URLT
-		return zero, false
+		return nil, false
 	}
 	return v.ProviderDistributionsElem20Details.DirectoryURL, true
 }
@@ -88,8 +84,7 @@ type ProviderDistributionsElem21Details struct {
 // GetDirectory reports whether the matching version details are present.
 func (v *ProviderDistributionsElem) GetDirectory() (*v21.ProviderDistributionsElemDirectory, bool) {
 	if v == nil || v.ProviderDistributionsElem21Details == nil {
-		var zero *v21.ProviderDistributionsElemDirectory
-		return zero, false
+		return nil, false
 	}
 	return v.ProviderDistributionsElem21Details.Directory, true
 }
@@ -117,8 +112,7 @@ type ProviderDistributionsElemRolieFeedsElem21Details struct {
 // GetLastUpdated reports whether the matching version details are present.
 func (v *ProviderDistributionsElemRolieFeedsElem) GetLastUpdated() (v21.DateTime, bool) {
 	if v == nil || v.ProviderDistributionsElemRolieFeedsElem21Details == nil {
-		var zero v21.DateTime
-		return zero, false
+		return v21.DateTime(""), false
 	}
 	return v.ProviderDistributionsElemRolieFeedsElem21Details.LastUpdated, true
 }
@@ -147,8 +141,7 @@ type ProviderPublisher20Details struct {
 // GetContactDetails reports whether the matching version details are present.
 func (v *ProviderPublisher) GetContactDetails() (*string, bool) {
 	if v == nil || v.ProviderPublisher20Details == nil {
-		var zero *string
-		return zero, false
+		return nil, false
 	}
 	return v.ProviderPublisher20Details.ContactDetails, true
 }
@@ -161,8 +154,7 @@ type ProviderPublisher21Details struct {
 // GetContact reports whether the matching version details are present.
 func (v *ProviderPublisher) GetContact() (*v21.ContactT, bool) {
 	if v == nil || v.ProviderPublisher21Details == nil {
-		var zero *v21.ContactT
-		return zero, false
+		return nil, false
 	}
 	return v.ProviderPublisher21Details.Contact, true
 }

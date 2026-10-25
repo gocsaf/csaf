@@ -28,8 +28,7 @@ type CSAF21Details struct {
 // GetSchema reports whether the matching version details are present.
 func (v *CSAF) GetSchema() (v21.CSAFSchema, bool) {
 	if v == nil || v.CSAF21Details == nil {
-		var zero v21.CSAFSchema
-		return zero, false
+		return v21.CSAFSchema(""), false
 	}
 	return v.CSAF21Details.Schema, true
 }
@@ -37,8 +36,7 @@ func (v *CSAF) GetSchema() (v21.CSAFSchema, bool) {
 // GetXExtensions reports whether the matching version details are present.
 func (v *CSAF) GetXExtensions() (v21.ExtensionsT, bool) {
 	if v == nil || v.CSAF21Details == nil {
-		var zero v21.ExtensionsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAF21Details.XExtensions, true
 }
@@ -70,8 +68,7 @@ type CSAFDocument21Details struct {
 // GetInvolvement reports whether the matching version details are present.
 func (v *CSAFDocument) GetInvolvement() (*v21.CSAFDocumentInvolvement, bool) {
 	if v == nil || v.CSAFDocument21Details == nil {
-		var zero *v21.CSAFDocumentInvolvement
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFDocument21Details.Involvement, true
 }
@@ -79,8 +76,7 @@ func (v *CSAFDocument) GetInvolvement() (*v21.CSAFDocumentInvolvement, bool) {
 // GetLicenseExpression reports whether the matching version details are present.
 func (v *CSAFDocument) GetLicenseExpression() (*string, bool) {
 	if v == nil || v.CSAFDocument21Details == nil {
-		var zero *string
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFDocument21Details.LicenseExpression, true
 }
@@ -88,8 +84,7 @@ func (v *CSAFDocument) GetLicenseExpression() (*string, bool) {
 // GetXExtensions reports whether the matching version details are present.
 func (v *CSAFDocument) GetXExtensions() (v21.ExtensionsT, bool) {
 	if v == nil || v.CSAFDocument21Details == nil {
-		var zero v21.ExtensionsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFDocument21Details.XExtensions, true
 }
@@ -123,8 +118,7 @@ type CSAFDocumentDistribution21Details struct {
 // GetSharingGroup reports whether the matching version details are present.
 func (v *CSAFDocumentDistribution) GetSharingGroup() (*v21.CSAFDocumentDistributionSharingGroup, bool) {
 	if v == nil || v.CSAFDocumentDistribution21Details == nil {
-		var zero *v21.CSAFDocumentDistributionSharingGroup
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFDocumentDistribution21Details.SharingGroup, true
 }
@@ -153,8 +147,7 @@ type CSAFDocumentNotesElem21Details struct {
 // GetGroupIds reports whether the matching version details are present.
 func (v *CSAFDocumentNotesElem) GetGroupIds() (v21.ProductGroupsT, bool) {
 	if v == nil || v.CSAFDocumentNotesElem21Details == nil {
-		var zero v21.ProductGroupsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFDocumentNotesElem21Details.GroupIds, true
 }
@@ -162,8 +155,7 @@ func (v *CSAFDocumentNotesElem) GetGroupIds() (v21.ProductGroupsT, bool) {
 // GetProductIds reports whether the matching version details are present.
 func (v *CSAFDocumentNotesElem) GetProductIds() (v21.ProductsT, bool) {
 	if v == nil || v.CSAFDocumentNotesElem21Details == nil {
-		var zero v21.ProductsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFDocumentNotesElem21Details.ProductIds, true
 }
@@ -186,8 +178,7 @@ type CSAFDocumentPublisher20Details struct {
 // GetContactDetails reports whether the matching version details are present.
 func (v *CSAFDocumentPublisher) GetContactDetails() (*string, bool) {
 	if v == nil || v.CSAFDocumentPublisher20Details == nil {
-		var zero *string
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFDocumentPublisher20Details.ContactDetails, true
 }
@@ -200,8 +191,7 @@ type CSAFDocumentPublisher21Details struct {
 // GetContact reports whether the matching version details are present.
 func (v *CSAFDocumentPublisher) GetContact() (*v21.ContactT, bool) {
 	if v == nil || v.CSAFDocumentPublisher21Details == nil {
-		var zero *v21.ContactT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFDocumentPublisher21Details.Contact, true
 }
@@ -262,8 +252,7 @@ type CSAFProductTree20Details struct {
 // GetRelationships reports whether the matching version details are present.
 func (v *CSAFProductTree) GetRelationships() ([]v20.CSAFProductTreeRelationshipsElem, bool) {
 	if v == nil || v.CSAFProductTree20Details == nil {
-		var zero []v20.CSAFProductTreeRelationshipsElem
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFProductTree20Details.Relationships, true
 }
@@ -276,8 +265,7 @@ type CSAFProductTree21Details struct {
 // GetProductPaths reports whether the matching version details are present.
 func (v *CSAFProductTree) GetProductPaths() ([]v21.CSAFProductTreeProductPathsElem, bool) {
 	if v == nil || v.CSAFProductTree21Details == nil {
-		var zero []v21.CSAFProductTreeProductPathsElem
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFProductTree21Details.ProductPaths, true
 }
@@ -306,8 +294,7 @@ type CSAFProductTreeBranchesElemProduct21Details struct {
 // GetXExtensions reports whether the matching version details are present.
 func (v *CSAFProductTreeBranchesElemProduct) GetXExtensions() (v21.ExtensionsT, bool) {
 	if v == nil || v.CSAFProductTreeBranchesElemProduct21Details == nil {
-		var zero v21.ExtensionsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFProductTreeBranchesElemProduct21Details.XExtensions, true
 }
@@ -333,8 +320,7 @@ type CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details stru
 // GetPurl reports whether the matching version details are present.
 func (v *CSAFProductTreeBranchesElemProductProductIdentificationHelper) GetPurl() (*string, bool) {
 	if v == nil || v.CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details == nil {
-		var zero *string
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details.Purl, true
 }
@@ -347,8 +333,7 @@ type CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details stru
 // GetPurls reports whether the matching version details are present.
 func (v *CSAFProductTreeBranchesElemProductProductIdentificationHelper) GetPurls() ([]string, bool) {
 	if v == nil || v.CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details == nil {
-		var zero []string
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details.Purls, true
 }
@@ -406,8 +391,7 @@ type CSAFVulnerabilitiesElem20Details struct {
 // GetCWE reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetCWE() (*v20.CSAFVulnerabilitiesElemCWE, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem20Details == nil {
-		var zero *v20.CSAFVulnerabilitiesElemCWE
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem20Details.CWE, true
 }
@@ -415,8 +399,7 @@ func (v *CSAFVulnerabilitiesElem) GetCWE() (*v20.CSAFVulnerabilitiesElemCWE, boo
 // GetInvolvements reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetInvolvements() ([]v20.CSAFVulnerabilitiesElemInvolvementsElem, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem20Details == nil {
-		var zero []v20.CSAFVulnerabilitiesElemInvolvementsElem
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem20Details.Involvements, true
 }
@@ -424,8 +407,7 @@ func (v *CSAFVulnerabilitiesElem) GetInvolvements() ([]v20.CSAFVulnerabilitiesEl
 // GetReleaseDate reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetReleaseDate() (*v20.DateTime, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem20Details == nil {
-		var zero *v20.DateTime
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem20Details.ReleaseDate, true
 }
@@ -433,8 +415,7 @@ func (v *CSAFVulnerabilitiesElem) GetReleaseDate() (*v20.DateTime, bool) {
 // GetScores reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetScores() ([]v20.CSAFVulnerabilitiesElemScoresElem, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem20Details == nil {
-		var zero []v20.CSAFVulnerabilitiesElemScoresElem
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem20Details.Scores, true
 }
@@ -452,8 +433,7 @@ type CSAFVulnerabilitiesElem21Details struct {
 // GetCwes reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetCwes() ([]v21.CSAFVulnerabilitiesElemCwesElem, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem21Details == nil {
-		var zero []v21.CSAFVulnerabilitiesElemCwesElem
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem21Details.Cwes, true
 }
@@ -461,8 +441,7 @@ func (v *CSAFVulnerabilitiesElem) GetCwes() ([]v21.CSAFVulnerabilitiesElemCwesEl
 // GetDisclosureDate reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetDisclosureDate() (*v21.DateTime, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem21Details == nil {
-		var zero *v21.DateTime
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem21Details.DisclosureDate, true
 }
@@ -470,8 +449,7 @@ func (v *CSAFVulnerabilitiesElem) GetDisclosureDate() (*v21.DateTime, bool) {
 // GetDlVulnID reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetDlVulnID() (*v21.DlVulnIDT, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem21Details == nil {
-		var zero *v21.DlVulnIDT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem21Details.DlVulnID, true
 }
@@ -479,8 +457,7 @@ func (v *CSAFVulnerabilitiesElem) GetDlVulnID() (*v21.DlVulnIDT, bool) {
 // GetFirstKnownExploitationDates reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetFirstKnownExploitationDates() ([]v21.CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem21Details == nil {
-		var zero []v21.CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem21Details.FirstKnownExploitationDates, true
 }
@@ -488,8 +465,7 @@ func (v *CSAFVulnerabilitiesElem) GetFirstKnownExploitationDates() ([]v21.CSAFVu
 // GetMetrics reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetMetrics() ([]v21.CSAFVulnerabilitiesElemMetricsElem, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem21Details == nil {
-		var zero []v21.CSAFVulnerabilitiesElemMetricsElem
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem21Details.Metrics, true
 }
@@ -497,8 +473,7 @@ func (v *CSAFVulnerabilitiesElem) GetMetrics() ([]v21.CSAFVulnerabilitiesElemMet
 // GetXExtensions reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElem) GetXExtensions() (v21.ExtensionsT, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElem21Details == nil {
-		var zero v21.ExtensionsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElem21Details.XExtensions, true
 }
@@ -527,8 +502,7 @@ type CSAFVulnerabilitiesElemIdsElem21Details struct {
 // GetGroupIds reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElemIdsElem) GetGroupIds() (v21.ProductGroupsT, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElemIdsElem21Details == nil {
-		var zero v21.ProductGroupsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElemIdsElem21Details.GroupIds, true
 }
@@ -536,8 +510,7 @@ func (v *CSAFVulnerabilitiesElemIdsElem) GetGroupIds() (v21.ProductGroupsT, bool
 // GetProductIds reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElemIdsElem) GetProductIds() (v21.ProductsT, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElemIdsElem21Details == nil {
-		var zero v21.ProductsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElemIdsElem21Details.ProductIds, true
 }
@@ -563,8 +536,7 @@ type CSAFVulnerabilitiesElemProductStatus21Details struct {
 // GetUnknown reports whether the matching version details are present.
 func (v *CSAFVulnerabilitiesElemProductStatus) GetUnknown() (v21.ProductsT, bool) {
 	if v == nil || v.CSAFVulnerabilitiesElemProductStatus21Details == nil {
-		var zero v21.ProductsT
-		return zero, false
+		return nil, false
 	}
 	return v.CSAFVulnerabilitiesElemProductStatus21Details.Unknown, true
 }

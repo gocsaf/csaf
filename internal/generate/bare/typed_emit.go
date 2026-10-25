@@ -7,7 +7,9 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"go/ast"
 	"go/format"
+	"slices"
 	"strings"
 )
 
@@ -21,7 +23,7 @@ const generatedHeader = `// SPDX-License-Identifier: Apache-2.0
 
 func typedSource(packageName, body string) ([]byte, error) {
 	var imports []string
-	for _, pkg := range []string{"encoding/json", "fmt"} {
+	for _, pkg := range []string{"encoding/json", "errors", "fmt"} {
 		qualifier := pkg
 		if pkg == "encoding/json" {
 			qualifier = "json"
@@ -29,6 +31,9 @@ func typedSource(packageName, body string) ([]byte, error) {
 		if strings.Contains(body, qualifier+".") {
 			imports = append(imports, fmt.Sprintf("%q", pkg))
 		}
+	}
+	if len(imports) > 0 {
+		imports = append(imports, "")
 	}
 	if strings.Contains(body, "bare.") {
 		imports = append(imports, `"github.com/gocsaf/csaf/v3/internal/bare"`)
@@ -85,9 +90,82 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 				if err != nil {
 					return nil, err
 				}
-				fmt.Fprintf(&out, "// Get%s%s reports whether the matching version details are present.\nfunc (v *%s) Get%s%s() (%s,bool) {\n if v == nil || v.%s == nil { var zero %s; return zero,false }; return v.%s.%s,true\n}\n", f.name, suffix, node.name, f.name, suffix, typ, detail.name, typ, detail.name, f.name)
+				zero := wireZeroValue(f.versions[version].typ, m.models[version], typ)
+				fmt.Fprintf(&out, "// Get%s%s reports whether the matching version details are present.\nfunc (v *%s) Get%s%s() (%s,bool) {\n if v == nil || v.%s == nil { return %s,false }; return v.%s.%s,true\n}\n\n", f.name, suffix, node.name, f.name, suffix, typ, detail.name, zero, detail.name, f.name)
 			}
 		}
 	}
 	return typedSource(packageName, out.String())
+}
+
+// addressExpression cancels a dereference when passing a value to a helper.
+func addressExpression(value string) string {
+	if pointer, ok := strings.CutPrefix(value, "*"); ok {
+		return pointer
+	}
+	return "&" + value
+}
+
+func indexExpression(value, index string) string {
+	if strings.HasPrefix(value, "*") {
+		value = "(" + value + ")"
+	}
+	return value + "[" + index + "]"
+}
+
+func wireZeroValue(expr ast.Expr, m *model, typ string) string {
+	for {
+		ident, ok := expr.(*ast.Ident)
+		if !ok || m.types[ident.Name] == nil {
+			break
+		}
+		expr = m.types[ident.Name]
+	}
+	switch t := expr.(type) {
+	case *ast.StarExpr, *ast.MapType, *ast.InterfaceType:
+		return "nil"
+	case *ast.ArrayType:
+		if t.Len == nil {
+			return "nil"
+		}
+	case *ast.Ident:
+		value := "0"
+		switch t.Name {
+		case "string":
+			value = `""`
+		case "bool":
+			value = "false"
+		}
+		if typ == t.Name {
+			return value
+		}
+		return typ + "(" + value + ")"
+	}
+	return typ + "{}"
+}
+
+type errorPath struct {
+	format  string
+	indices []string
+}
+
+func fieldErrorPath(name string) errorPath {
+	return errorPath{format: strings.ReplaceAll(name, "%", "%%")}
+}
+
+func (p errorPath) indexed(index string) errorPath {
+	return errorPath{format: p.format + "[%d]", indices: append(slices.Clone(p.indices), index)}
+}
+
+func (p errorPath) wrap(separator string) string {
+	args := append(slices.Clone(p.indices), "err")
+	return fmt.Sprintf("fmt.Errorf(%q, %s)", p.format+separator+"%w", strings.Join(args, ", "))
+}
+
+func loopIndex(depth int) string {
+	names := []string{"i", "j", "k"}
+	if depth < len(names) {
+		return names[depth]
+	}
+	return fmt.Sprintf("i%d", depth)
 }

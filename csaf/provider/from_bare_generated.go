@@ -8,7 +8,9 @@ package provider
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+
 	"github.com/gocsaf/csaf/v3/internal/bare"
 )
 
@@ -25,7 +27,7 @@ const (
 // On error it may be partially consumed and must not be reused.
 func FromBare(source *bare.Provider) (*Provider, error) {
 	if source == nil {
-		return nil, fmt.Errorf("nil source")
+		return nil, errors.New("nil source")
 	}
 	var v version
 	switch source.MetadataVersion {
@@ -42,98 +44,71 @@ func FromBare(source *bare.Provider) (*Provider, error) {
 	}
 	return &result, nil
 }
+
 func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
 	var target Provider
+	var err error
 	target.CanonicalURL = source.CanonicalURL
-	source.CanonicalURL = ""
 	if source.Distributions != nil {
 		target.Distributions = make([]ProviderDistributionsElem, len(source.Distributions))
-		for value1 := range source.Distributions {
-			{
-				converted, err := fromBareProviderDistributionsElem(&((source.Distributions)[value1]), v)
-				if err != nil {
-					return target, fmt.Errorf("%s.%w", fmt.Sprintf("%s[%d]", "distributions", value1), err)
-				}
-				(target.Distributions)[value1] = converted
+		for i := range source.Distributions {
+			target.Distributions[i], err = fromBareProviderDistributionsElem(&source.Distributions[i], v)
+			if err != nil {
+				return target, fmt.Errorf("distributions[%d].%w", i, err)
 			}
-			(source.Distributions)[value1] = bare.ProviderDistributionsElem{}
 		}
 	}
-	source.Distributions = nil
 	target.LastUpdated = source.LastUpdated
-	source.LastUpdated = ""
 	target.ListOnCSAFAggregators = source.ListOnCSAFAggregators
-	source.ListOnCSAFAggregators = false
 	target.MetadataVersion = source.MetadataVersion
-	source.MetadataVersion = ""
 	target.MirrorOnCSAFAggregators = source.MirrorOnCSAFAggregators
-	source.MirrorOnCSAFAggregators = false
 	if source.PublicOpenpgpKeys != nil {
 		target.PublicOpenpgpKeys = make([]ProviderPublicOpenpgpKeysElem, len(source.PublicOpenpgpKeys))
-		for value2 := range source.PublicOpenpgpKeys {
-			{
-				converted, err := fromBareProviderPublicOpenpgpKeysElem(&((source.PublicOpenpgpKeys)[value2]), v)
-				if err != nil {
-					return target, fmt.Errorf("%s.%w", fmt.Sprintf("%s[%d]", "public_openpgp_keys", value2), err)
-				}
-				(target.PublicOpenpgpKeys)[value2] = converted
+		for i := range source.PublicOpenpgpKeys {
+			target.PublicOpenpgpKeys[i], err = fromBareProviderPublicOpenpgpKeysElem(&source.PublicOpenpgpKeys[i], v)
+			if err != nil {
+				return target, fmt.Errorf("public_openpgp_keys[%d].%w", i, err)
 			}
-			(source.PublicOpenpgpKeys)[value2] = bare.ProviderPublicOpenpgpKeysElem{}
 		}
 	}
-	source.PublicOpenpgpKeys = nil
-	{
-		converted, err := fromBareProviderPublisher(&(source.Publisher), v)
-		if err != nil {
-			return target, fmt.Errorf("%s.%w", "publisher", err)
-		}
-		target.Publisher = converted
+	target.Publisher, err = fromBareProviderPublisher(&source.Publisher, v)
+	if err != nil {
+		return target, fmt.Errorf("publisher.%w", err)
 	}
-	source.Publisher = bare.ProviderPublisher{}
 	target.Role = source.Role
-	source.Role = ""
-	switch v {
-	case version20:
-	// No version details for version 20
-	case version21:
+	if v == version21 {
 		details := &Provider21Details{}
 		if len(source.Schema) > 0 {
 			if err := json.Unmarshal(source.Schema, &details.Schema); err != nil {
 				return target, fmt.Errorf("$schema: %w", err)
 			}
 		}
-		source.Schema = nil
 		if len(source.MaintainedFrom) > 0 {
 			if err := json.Unmarshal(source.MaintainedFrom, &details.MaintainedFrom); err != nil {
 				return target, fmt.Errorf("maintained_from: %w", err)
 			}
 		}
-		source.MaintainedFrom = nil
 		if len(source.MaintainedUntil) > 0 {
 			if err := json.Unmarshal(source.MaintainedUntil, &details.MaintainedUntil); err != nil {
 				return target, fmt.Errorf("maintained_until: %w", err)
 			}
 		}
-		source.MaintainedUntil = nil
 		target.Provider21Details = details
 	}
 	*source = bare.Provider{}
 	return target, nil
 }
+
 func fromBareProviderDistributionsElem(source *bare.ProviderDistributionsElem, v version) (ProviderDistributionsElem, error) {
 	var target ProviderDistributionsElem
+	var err error
 	if source.Rolie != nil {
 		target.Rolie = new(ProviderDistributionsElemRolie)
-		{
-			converted, err := fromBareProviderDistributionsElemRolie(&(*(source.Rolie)), v)
-			if err != nil {
-				return target, fmt.Errorf("%s.%w", "rolie", err)
-			}
-			*(target.Rolie) = converted
+		*target.Rolie, err = fromBareProviderDistributionsElemRolie(source.Rolie, v)
+		if err != nil {
+			return target, fmt.Errorf("rolie.%w", err)
 		}
-		*(source.Rolie) = bare.ProviderDistributionsElemRolie{}
 	}
-	source.Rolie = nil
 	switch v {
 	case version20:
 		details := &ProviderDistributionsElem20Details{}
@@ -142,7 +117,6 @@ func fromBareProviderDistributionsElem(source *bare.ProviderDistributionsElem, v
 				return target, fmt.Errorf("directory_url: %w", err)
 			}
 		}
-		source.DirectoryURL = nil
 		target.ProviderDistributionsElem20Details = details
 	case version21:
 		details := &ProviderDistributionsElem21Details{}
@@ -151,78 +125,62 @@ func fromBareProviderDistributionsElem(source *bare.ProviderDistributionsElem, v
 				return target, fmt.Errorf("directory: %w", err)
 			}
 		}
-		source.Directory = nil
 		target.ProviderDistributionsElem21Details = details
 	}
 	*source = bare.ProviderDistributionsElem{}
 	return target, nil
 }
+
 func fromBareProviderDistributionsElemRolie(source *bare.ProviderDistributionsElemRolie, v version) (ProviderDistributionsElemRolie, error) {
 	var target ProviderDistributionsElemRolie
+	var err error
 	target.Categories = source.Categories
-	source.Categories = nil
 	if source.Feeds != nil {
 		target.Feeds = make([]ProviderDistributionsElemRolieFeedsElem, len(source.Feeds))
-		for value3 := range source.Feeds {
-			{
-				converted, err := fromBareProviderDistributionsElemRolieFeedsElem(&((source.Feeds)[value3]), v)
-				if err != nil {
-					return target, fmt.Errorf("%s.%w", fmt.Sprintf("%s[%d]", "feeds", value3), err)
-				}
-				(target.Feeds)[value3] = converted
+		for i := range source.Feeds {
+			target.Feeds[i], err = fromBareProviderDistributionsElemRolieFeedsElem(&source.Feeds[i], v)
+			if err != nil {
+				return target, fmt.Errorf("feeds[%d].%w", i, err)
 			}
-			(source.Feeds)[value3] = bare.ProviderDistributionsElemRolieFeedsElem{}
 		}
 	}
-	source.Feeds = nil
 	target.Services = source.Services
-	source.Services = nil
 	*source = bare.ProviderDistributionsElemRolie{}
 	return target, nil
 }
+
 func fromBareProviderDistributionsElemRolieFeedsElem(source *bare.ProviderDistributionsElemRolieFeedsElem, v version) (ProviderDistributionsElemRolieFeedsElem, error) {
 	var target ProviderDistributionsElemRolieFeedsElem
 	target.Summary = source.Summary
-	source.Summary = nil
 	target.TLPLabel = source.TLPLabel
-	source.TLPLabel = ""
 	target.URL = source.URL
-	source.URL = ""
-	switch v {
-	case version20:
-	// No version details for version 20
-	case version21:
+	if v == version21 {
 		details := &ProviderDistributionsElemRolieFeedsElem21Details{}
 		if len(source.LastUpdated) > 0 {
 			if err := json.Unmarshal(source.LastUpdated, &details.LastUpdated); err != nil {
 				return target, fmt.Errorf("last_updated: %w", err)
 			}
 		}
-		source.LastUpdated = nil
 		target.ProviderDistributionsElemRolieFeedsElem21Details = details
 	}
 	*source = bare.ProviderDistributionsElemRolieFeedsElem{}
 	return target, nil
 }
+
 func fromBareProviderPublicOpenpgpKeysElem(source *bare.ProviderPublicOpenpgpKeysElem, v version) (ProviderPublicOpenpgpKeysElem, error) {
 	var target ProviderPublicOpenpgpKeysElem
 	target.Fingerprint = source.Fingerprint
-	source.Fingerprint = nil
 	target.URL = source.URL
-	source.URL = ""
 	*source = bare.ProviderPublicOpenpgpKeysElem{}
 	return target, nil
 }
+
 func fromBareProviderPublisher(source *bare.ProviderPublisher, v version) (ProviderPublisher, error) {
 	var target ProviderPublisher
 	target.Category = source.Category
-	source.Category = ""
 	target.IssuingAuthority = source.IssuingAuthority
-	source.IssuingAuthority = nil
 	target.Name = source.Name
-	source.Name = ""
 	target.Namespace = source.Namespace
-	source.Namespace = ""
 	switch v {
 	case version20:
 		details := &ProviderPublisher20Details{}
@@ -231,7 +189,6 @@ func fromBareProviderPublisher(source *bare.ProviderPublisher, v version) (Provi
 				return target, fmt.Errorf("contact_details: %w", err)
 			}
 		}
-		source.ContactDetails = nil
 		target.ProviderPublisher20Details = details
 	case version21:
 		details := &ProviderPublisher21Details{}
@@ -240,7 +197,6 @@ func fromBareProviderPublisher(source *bare.ProviderPublisher, v version) (Provi
 				return target, fmt.Errorf("contact: %w", err)
 			}
 		}
-		source.Contact = nil
 		target.ProviderPublisher21Details = details
 	}
 	*source = bare.ProviderPublisher{}

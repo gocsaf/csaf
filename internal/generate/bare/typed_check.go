@@ -6,11 +6,11 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"go/ast"
 	"maps"
 	"slices"
-	"strconv"
 )
 
 type checkType struct {
@@ -40,7 +40,7 @@ type checkEmitter struct {
 	shared     map[*typedType]*checkType
 	originals  map[checkTypeKey]*checkType
 	structures []*checkType
-	serial     int
+	loopDepth  int
 }
 
 func (e *checkEmitter) write(format string, args ...any) {
@@ -95,7 +95,7 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int) (*checkType, err
 		node.elem, err = e.originalType(t.X, version)
 	case *ast.ArrayType:
 		if t.Len != nil {
-			return nil, fmt.Errorf("fixed arrays are unsupported in checks")
+			return nil, errors.New("fixed arrays are unsupported in checks")
 		}
 		node.shape = "slice"
 		node.elem, err = e.originalType(t.Elt, version)
@@ -125,12 +125,17 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int) (*checkType, err
 	return node, err
 }
 
-// presence is a deliberately simplified model check. In the reviewed CSAF
+type presenceCheck struct {
+	condition string
+	message   string
+}
+
+// presenceChecks implements a deliberately simplified model check. In the reviewed CSAF
 // schemas required strings exclude empty values through minLength, enum, pattern
 // or asserted format constraints and all required arrays have minItems >= 1.
 // Neither follows from required alone. Assumptions should be rechecked on schema
 // updates.
-func (e *checkEmitter) presence(value string, t *checkType, path string) {
+func presenceChecks(value string, t *checkType, path string) []presenceCheck {
 	condition := ""
 	switch t.shape {
 	case "string", "v21.DateTime":
@@ -140,19 +145,27 @@ func (e *checkEmitter) presence(value string, t *checkType, path string) {
 	case "pointer", "map", "interface":
 		condition = value + " == nil"
 	}
+	var checks []presenceCheck
 	if condition != "" {
-		e.write("if %s { return fmt.Errorf(%q) }\n", condition, path+": required value is missing or empty")
+		checks = append(checks, presenceCheck{condition, path + ": required value is missing or empty"})
 	}
 	if t.shape == "pointer" {
-		// The nil check above returns before dereferencing a required pointer.
-		e.presence("*("+value+")", t.elem, path)
+		// Check nil before dereferencing a required pointer.
+		checks = append(checks, presenceChecks("*"+value, t.elem, path)...)
+	}
+	return checks
+}
+
+func (e *checkEmitter) presence(value string, t *checkType, path string) {
+	for _, check := range presenceChecks(value, t, path) {
+		e.write("if %s { return errors.New(%q) }\n", check.condition, check.message)
 	}
 }
 
-func (e *checkEmitter) contents(value string, t *checkType, path string) {
+func (e *checkEmitter) contents(value string, t *checkType, path errorPath) {
 	switch t.shape {
 	case "struct":
-		e.write("if err := %s(&(%s), v); err != nil { return fmt.Errorf(\"%%s.%%w\", %s, err) }\n", t.helper, value, path)
+		e.write("if err := %s(%s, v); err != nil { return %s }\n", t.helper, addressExpression(value), path.wrap("."))
 	case "pointer", "slice":
 		leaf := t.elem
 		for leaf.shape == "pointer" || leaf.shape == "slice" {
@@ -165,12 +178,13 @@ func (e *checkEmitter) contents(value string, t *checkType, path string) {
 
 		if t.shape == "pointer" {
 			e.write("if %s != nil {\n", value)
-			e.contents("*("+value+")", t.elem, path)
+			e.contents("*"+value, t.elem, path)
 		} else {
-			e.serial++
-			index := fmt.Sprintf("index%d", e.serial)
+			index := loopIndex(e.loopDepth)
+			e.loopDepth++
 			e.write("for %s := range %s {\n", index, value)
-			e.contents("("+value+")["+index+"]", t.elem, fmt.Sprintf("fmt.Sprintf(\"%%s[%%d]\", %s, %s)", path, index))
+			e.contents(indexExpression(value, index), t.elem, path.indexed(index))
+			e.loopDepth--
 		}
 		e.write("}\n")
 	}
@@ -181,32 +195,46 @@ func (e *checkEmitter) emitStruct(node *checkType) error {
 	if t := node.shared; t != nil {
 		has := [2]bool{t.details[0] != nil, t.details[1] != nil}
 		if has[0] && has[1] {
-			e.write("if source.%s != nil && source.%s != nil { return fmt.Errorf(\"both version details are present\") }\n", t.details[0].name, t.details[1].name)
+			e.write("if source.%s != nil && source.%s != nil { return errors.New(\"both version details are present\") }\n", t.details[0].name, t.details[1].name)
 		}
-		needsSwitch := has[0] || has[1]
-		// Check if field is required in one version but not the other.
-		for _, f := range t.fields {
-			if f.common != nil && f.versions[0].required() != f.versions[1].required() {
-				needsSwitch = true
+		var versionChecks [2][]presenceCheck
+		for i := range 2 {
+			if has[1-i] {
+				versionChecks[i] = append(versionChecks[i], presenceCheck{
+					"source." + t.details[1-i].name + " != nil",
+					fmt.Sprintf("version 2.%d details are present in version 2.%d", 1-i, i),
+				})
+			}
+			// Details identify the version even if all their fields are optional.
+			if has[i] {
+				versionChecks[i] = append(versionChecks[i], presenceCheck{
+					"source." + t.details[i].name + " == nil",
+					fmt.Sprintf("version 2.%d details are missing", i),
+				})
+			}
+			for _, f := range t.fields {
+				if f.common != nil && f.versions[i].required() && !f.versions[1-i].required() {
+					versionChecks[i] = append(versionChecks[i], presenceChecks("source."+f.name, e.sharedType(f.common), f.jsonName)...)
+				}
 			}
 		}
-
-		if needsSwitch {
-			e.write("switch v {\n")
-			for i := range 2 {
-				e.write("case version%d:\n", 20+i)
-				if has[1-i] {
-					e.write("if source.%s != nil { return fmt.Errorf(%q) }\n", t.details[1-i].name, fmt.Sprintf("version 2.%d details are present in version 2.%d", 1-i, i))
+		if len(versionChecks[0]) > 0 || len(versionChecks[1]) > 0 {
+			// Fold single-condition branches into the case.
+			simple := len(versionChecks[0]) <= 1 && len(versionChecks[1]) <= 1
+			if simple {
+				e.write("switch {\n")
+			} else {
+				e.write("switch v {\n")
+			}
+			for i, checks := range versionChecks {
+				if !simple && len(checks) > 0 {
+					e.write("case version%d:\n", 20+i)
 				}
-				// Existing details identify the object's version, even when all
-				// contained fields are optional. Their contents are checked later.
-				if has[i] {
-					e.write("if source.%s == nil { return fmt.Errorf(%q) }\n", t.details[i].name, fmt.Sprintf("version 2.%d details are missing", i))
-				}
-				// Check if field is required in one version but not the other and emit presence checks for the required version.
-				for _, f := range t.fields {
-					if f.common != nil && f.versions[i].required() && !f.versions[1-i].required() {
-						e.presence("source."+f.name, e.sharedType(f.common), f.jsonName)
+				for _, check := range checks {
+					if simple {
+						e.write("case v == version%d && %s: return errors.New(%q)\n", 20+i, check.condition, check.message)
+					} else {
+						e.write("if %s { return errors.New(%q) }\n", check.condition, check.message)
 					}
 				}
 			}
@@ -221,7 +249,7 @@ func (e *checkEmitter) emitStruct(node *checkType) error {
 	}
 
 	for _, f := range node.fields {
-		e.contents("source."+f.name, f.typ, strconv.Quote(f.jsonName))
+		e.contents("source."+f.name, f.typ, fieldErrorPath(f.jsonName))
 	}
 
 	if t := node.shared; t != nil {
@@ -236,7 +264,7 @@ func (e *checkEmitter) emitStruct(node *checkType) error {
 			e.write("if source.%s != nil {\nif err := %s(source.%s, v); err != nil { return err }\n}\n", d.name, d.helper, d.name)
 		}
 	}
-	e.write("return nil\n}\n")
+	e.write("return nil\n}\n\n")
 	return nil
 }
 
@@ -263,7 +291,7 @@ func (m *typedModel) emitCheck(packageName string) ([]byte, error) {
 		return nil, fmt.Errorf("no check version field for %s", root.name)
 	}
 	e.write("// Checks version consistency and required model values.  It rejects missing\n// required pointers, empty required strings and empty required slices. It does\n// not validate schema formats, enums, exact lengths or conditional constraints.\n// Zero-valued numbers and booleans are accepted.\n")
-	e.write("func (source *%s) Check() error {\nif source == nil { return fmt.Errorf(\"nil document\") }\nvar v version\nswitch source.%s {\ncase \"2.0\": v = version20\ncase \"2.1\": v = version21\ndefault: return fmt.Errorf(\"unsupported version %%q\", source.%s)\n}\nreturn check%s(source,v)\n}\n", root.name, versionField, versionField, root.name)
+	e.write("func (source *%s) Check() error {\nif source == nil { return errors.New(\"nil document\") }\nvar v version\nswitch source.%s {\ncase \"2.0\": v = version20\ncase \"2.1\": v = version21\ndefault: return fmt.Errorf(\"unsupported version %%q\", source.%s)\n}\nreturn check%s(source,v)\n}\n\n", root.name, versionField, versionField, root.name)
 	for i := 0; i < len(e.structures); i++ {
 		if err := e.emitStruct(e.structures[i]); err != nil {
 			return nil, err
