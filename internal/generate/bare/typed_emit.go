@@ -63,7 +63,7 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 		}
 		for _, detail := range node.details {
 			if detail != nil {
-				fmt.Fprintf(&out, "*%s\n", detail.name)
+				fmt.Fprintf(&out, "*%s\n", detail.privateName())
 			}
 		}
 		out.WriteString("}\n")
@@ -72,7 +72,7 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 				continue
 			}
 			version := detail.version
-			fmt.Fprintf(&out, "// %s contains fields specific to CSAF 2.%d.\ntype %s struct {\n", detail.name, version, detail.name)
+			fmt.Fprintf(&out, "// %s contains fields specific to CSAF 2.%d.\ntype %s struct {\n", detail.privateName(), version, detail.privateName())
 			for _, f := range detail.fields {
 				typ, err := wireType(f.versions[version].typ, 20+version, m.models[version])
 				if err != nil {
@@ -91,7 +91,8 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 					return nil, err
 				}
 				zero := wireZeroValue(f.versions[version].typ, m.models[version], typ)
-				fmt.Fprintf(&out, "// Get%s%s reports whether the matching version details are present.\nfunc (v *%s) Get%s%s() (%s,bool) {\n if v == nil || v.%s == nil { return %s,false }; return v.%s.%s,true\n}\n\n", f.name, suffix, node.name, f.name, suffix, typ, detail.name, zero, detail.name, f.name)
+				fmt.Fprintf(&out, "// %s%s reports whether the matching version details are present.\nfunc (v *%s) %s%s() (%s,bool) {\n if v == nil || v.%s == nil { return %s,false }; return v.%s.%s,true\n}\n\n", f.name, suffix, node.name, f.name, suffix, typ, detail.privateName(), zero, detail.privateName(), f.name)
+				fmt.Fprintf(&out, "// Set%s%s updates the value if matching version details are present.\nfunc (v *%s) Set%s%s(value %s) bool {\nif v == nil || v.%s == nil { return false }\nv.%s.%s = value\nreturn true\n}\n\n", f.name, suffix, node.name, f.name, suffix, typ, detail.privateName(), detail.privateName(), f.name)
 			}
 		}
 	}

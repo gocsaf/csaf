@@ -195,20 +195,20 @@ func (e *checkEmitter) emitStruct(node *checkType) error {
 	if t := node.shared; t != nil {
 		has := [2]bool{t.details[0] != nil, t.details[1] != nil}
 		if has[0] && has[1] {
-			e.write("if source.%s != nil && source.%s != nil { return errors.New(\"both version details are present\") }\n", t.details[0].name, t.details[1].name)
+			e.write("if source.%s != nil && source.%s != nil { return errors.New(\"both version details are present\") }\n", t.details[0].privateName(), t.details[1].privateName())
 		}
 		var versionChecks [2][]presenceCheck
 		for i := range 2 {
 			if has[1-i] {
 				versionChecks[i] = append(versionChecks[i], presenceCheck{
-					"source." + t.details[1-i].name + " != nil",
+					"source." + t.details[1-i].privateName() + " != nil",
 					fmt.Sprintf("version 2.%d details are present in version 2.%d", 1-i, i),
 				})
 			}
 			// Details identify the version even if all their fields are optional.
 			if has[i] {
 				versionChecks[i] = append(versionChecks[i], presenceCheck{
-					"source." + t.details[i].name + " == nil",
+					"source." + t.details[i].privateName() + " == nil",
 					fmt.Sprintf("version 2.%d details are missing", i),
 				})
 			}
@@ -269,7 +269,7 @@ func (e *checkEmitter) emitStruct(node *checkType) error {
 }
 
 func (e *checkEmitter) detailsType(detail *typedDetails) (*checkType, error) {
-	node := &checkType{name: detail.name, shape: "struct", helper: "check" + detail.name}
+	node := &checkType{name: detail.privateName(), shape: "struct", helper: "check" + detail.name}
 	for _, f := range detail.fields {
 		original := f.versions[detail.version]
 		child, err := e.originalType(original.typ, detail.version)

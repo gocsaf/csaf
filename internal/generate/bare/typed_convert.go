@@ -150,7 +150,7 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 				} else {
 					c.write("if v == version%d {\n", 20+i)
 				}
-				c.write("details := &%s{}\n", detail.name)
+				c.write("details := &%s{}\n", detail.privateName())
 				for _, f := range detail.fields {
 					original := fields[f.jsonName]
 					if original.typ == nil || !original.typ.raw {
@@ -159,7 +159,7 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 					source := "source." + original.goName
 					c.write("if len(%s) > 0 {\nif err := json.Unmarshal(%s, &details.%s); err != nil { return target, fmt.Errorf(%q, err) }\n}\n", source, source, f.name, f.jsonName+": %w")
 				}
-				c.write("target.%s = details\n", detail.name)
+				c.write("target.%s = details\n", detail.privateName())
 			}
 			c.write("}\n")
 		}

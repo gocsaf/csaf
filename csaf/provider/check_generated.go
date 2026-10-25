@@ -35,9 +35,9 @@ func (source *Provider) Check() error {
 
 func checkProvider(source *Provider, v version) error {
 	switch {
-	case v == version20 && source.Provider21Details != nil:
+	case v == version20 && source.provider21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
-	case v == version21 && source.Provider21Details == nil:
+	case v == version21 && source.provider21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
 	if source.CanonicalURL == "" {
@@ -65,8 +65,8 @@ func checkProvider(source *Provider, v version) error {
 	if err := checkProviderPublisher(&source.Publisher, v); err != nil {
 		return fmt.Errorf("publisher.%w", err)
 	}
-	if source.Provider21Details != nil {
-		if err := checkProvider21Details(source.Provider21Details, v); err != nil {
+	if source.provider21Details != nil {
+		if err := checkProvider21Details(source.provider21Details, v); err != nil {
 			return err
 		}
 	}
@@ -74,22 +74,22 @@ func checkProvider(source *Provider, v version) error {
 }
 
 func checkProviderDistributionsElem(source *ProviderDistributionsElem, v version) error {
-	if source.ProviderDistributionsElem20Details != nil && source.ProviderDistributionsElem21Details != nil {
+	if source.providerDistributionsElem20Details != nil && source.providerDistributionsElem21Details != nil {
 		return errors.New("both version details are present")
 	}
 	switch v {
 	case version20:
-		if source.ProviderDistributionsElem21Details != nil {
+		if source.providerDistributionsElem21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
-		if source.ProviderDistributionsElem20Details == nil {
+		if source.providerDistributionsElem20Details == nil {
 			return errors.New("version 2.0 details are missing")
 		}
 	case version21:
-		if source.ProviderDistributionsElem20Details != nil {
+		if source.providerDistributionsElem20Details != nil {
 			return errors.New("version 2.0 details are present in version 2.1")
 		}
-		if source.ProviderDistributionsElem21Details == nil {
+		if source.providerDistributionsElem21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 	}
@@ -98,13 +98,13 @@ func checkProviderDistributionsElem(source *ProviderDistributionsElem, v version
 			return fmt.Errorf("rolie.%w", err)
 		}
 	}
-	if source.ProviderDistributionsElem20Details != nil {
-		if err := checkProviderDistributionsElem20Details(source.ProviderDistributionsElem20Details, v); err != nil {
+	if source.providerDistributionsElem20Details != nil {
+		if err := checkProviderDistributionsElem20Details(source.providerDistributionsElem20Details, v); err != nil {
 			return err
 		}
 	}
-	if source.ProviderDistributionsElem21Details != nil {
-		if err := checkProviderDistributionsElem21Details(source.ProviderDistributionsElem21Details, v); err != nil {
+	if source.providerDistributionsElem21Details != nil {
+		if err := checkProviderDistributionsElem21Details(source.providerDistributionsElem21Details, v); err != nil {
 			return err
 		}
 	}
@@ -125,9 +125,9 @@ func checkProviderDistributionsElemRolie(source *ProviderDistributionsElemRolie,
 
 func checkProviderDistributionsElemRolieFeedsElem(source *ProviderDistributionsElemRolieFeedsElem, v version) error {
 	switch {
-	case v == version20 && source.ProviderDistributionsElemRolieFeedsElem21Details != nil:
+	case v == version20 && source.providerDistributionsElemRolieFeedsElem21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
-	case v == version21 && source.ProviderDistributionsElemRolieFeedsElem21Details == nil:
+	case v == version21 && source.providerDistributionsElemRolieFeedsElem21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
 	if source.TLPLabel == "" {
@@ -136,8 +136,8 @@ func checkProviderDistributionsElemRolieFeedsElem(source *ProviderDistributionsE
 	if source.URL == "" {
 		return errors.New("url: required value is missing or empty")
 	}
-	if source.ProviderDistributionsElemRolieFeedsElem21Details != nil {
-		if err := checkProviderDistributionsElemRolieFeedsElem21Details(source.ProviderDistributionsElemRolieFeedsElem21Details, v); err != nil {
+	if source.providerDistributionsElemRolieFeedsElem21Details != nil {
+		if err := checkProviderDistributionsElemRolieFeedsElem21Details(source.providerDistributionsElemRolieFeedsElem21Details, v); err != nil {
 			return err
 		}
 	}
@@ -161,22 +161,22 @@ func checkProviderPublicOpenpgpKeysElem(source *ProviderPublicOpenpgpKeysElem, v
 }
 
 func checkProviderPublisher(source *ProviderPublisher, v version) error {
-	if source.ProviderPublisher20Details != nil && source.ProviderPublisher21Details != nil {
+	if source.providerPublisher20Details != nil && source.providerPublisher21Details != nil {
 		return errors.New("both version details are present")
 	}
 	switch v {
 	case version20:
-		if source.ProviderPublisher21Details != nil {
+		if source.providerPublisher21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
-		if source.ProviderPublisher20Details == nil {
+		if source.providerPublisher20Details == nil {
 			return errors.New("version 2.0 details are missing")
 		}
 	case version21:
-		if source.ProviderPublisher20Details != nil {
+		if source.providerPublisher20Details != nil {
 			return errors.New("version 2.0 details are present in version 2.1")
 		}
-		if source.ProviderPublisher21Details == nil {
+		if source.providerPublisher21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 	}
@@ -189,27 +189,27 @@ func checkProviderPublisher(source *ProviderPublisher, v version) error {
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
-	if source.ProviderPublisher20Details != nil {
-		if err := checkProviderPublisher20Details(source.ProviderPublisher20Details, v); err != nil {
+	if source.providerPublisher20Details != nil {
+		if err := checkProviderPublisher20Details(source.providerPublisher20Details, v); err != nil {
 			return err
 		}
 	}
-	if source.ProviderPublisher21Details != nil {
-		if err := checkProviderPublisher21Details(source.ProviderPublisher21Details, v); err != nil {
+	if source.providerPublisher21Details != nil {
+		if err := checkProviderPublisher21Details(source.providerPublisher21Details, v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkProvider21Details(source *Provider21Details, v version) error {
+func checkProvider21Details(source *provider21Details, v version) error {
 	if source.Schema == "" {
 		return errors.New("$schema: required value is missing or empty")
 	}
 	return nil
 }
 
-func checkProviderDistributionsElem20Details(source *ProviderDistributionsElem20Details, v version) error {
+func checkProviderDistributionsElem20Details(source *providerDistributionsElem20Details, v version) error {
 	return nil
 }
 
@@ -223,7 +223,7 @@ func checkVersion21Struct8(source *v21.ProviderDistributionsElemDirectory, v ver
 	return nil
 }
 
-func checkProviderDistributionsElem21Details(source *ProviderDistributionsElem21Details, v version) error {
+func checkProviderDistributionsElem21Details(source *providerDistributionsElem21Details, v version) error {
 	if source.Directory != nil {
 		if err := checkVersion21Struct8(source.Directory, v); err != nil {
 			return fmt.Errorf("directory.%w", err)
@@ -232,14 +232,14 @@ func checkProviderDistributionsElem21Details(source *ProviderDistributionsElem21
 	return nil
 }
 
-func checkProviderDistributionsElemRolieFeedsElem21Details(source *ProviderDistributionsElemRolieFeedsElem21Details, v version) error {
+func checkProviderDistributionsElemRolieFeedsElem21Details(source *providerDistributionsElemRolieFeedsElem21Details, v version) error {
 	if source.LastUpdated == "" {
 		return errors.New("last_updated: required value is missing or empty")
 	}
 	return nil
 }
 
-func checkProviderPublisher20Details(source *ProviderPublisher20Details, v version) error {
+func checkProviderPublisher20Details(source *providerPublisher20Details, v version) error {
 	return nil
 }
 
@@ -247,7 +247,7 @@ func checkVersion21Struct12(source *v21.ContactT, v version) error {
 	return nil
 }
 
-func checkProviderPublisher21Details(source *ProviderPublisher21Details, v version) error {
+func checkProviderPublisher21Details(source *providerPublisher21Details, v version) error {
 	if source.Contact != nil {
 		if err := checkVersion21Struct12(source.Contact, v); err != nil {
 			return fmt.Errorf("contact.%w", err)

@@ -77,7 +77,7 @@ func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
 	}
 	target.Role = source.Role
 	if v == version21 {
-		details := &Provider21Details{}
+		details := &provider21Details{}
 		if len(source.Schema) > 0 {
 			if err := json.Unmarshal(source.Schema, &details.Schema); err != nil {
 				return target, fmt.Errorf("$schema: %w", err)
@@ -93,7 +93,7 @@ func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
 				return target, fmt.Errorf("maintained_until: %w", err)
 			}
 		}
-		target.Provider21Details = details
+		target.provider21Details = details
 	}
 	*source = bare.Provider{}
 	return target, nil
@@ -111,21 +111,21 @@ func fromBareProviderDistributionsElem(source *bare.ProviderDistributionsElem, v
 	}
 	switch v {
 	case version20:
-		details := &ProviderDistributionsElem20Details{}
+		details := &providerDistributionsElem20Details{}
 		if len(source.DirectoryURL) > 0 {
 			if err := json.Unmarshal(source.DirectoryURL, &details.DirectoryURL); err != nil {
 				return target, fmt.Errorf("directory_url: %w", err)
 			}
 		}
-		target.ProviderDistributionsElem20Details = details
+		target.providerDistributionsElem20Details = details
 	case version21:
-		details := &ProviderDistributionsElem21Details{}
+		details := &providerDistributionsElem21Details{}
 		if len(source.Directory) > 0 {
 			if err := json.Unmarshal(source.Directory, &details.Directory); err != nil {
 				return target, fmt.Errorf("directory: %w", err)
 			}
 		}
-		target.ProviderDistributionsElem21Details = details
+		target.providerDistributionsElem21Details = details
 	}
 	*source = bare.ProviderDistributionsElem{}
 	return target, nil
@@ -155,13 +155,13 @@ func fromBareProviderDistributionsElemRolieFeedsElem(source *bare.ProviderDistri
 	target.TLPLabel = source.TLPLabel
 	target.URL = source.URL
 	if v == version21 {
-		details := &ProviderDistributionsElemRolieFeedsElem21Details{}
+		details := &providerDistributionsElemRolieFeedsElem21Details{}
 		if len(source.LastUpdated) > 0 {
 			if err := json.Unmarshal(source.LastUpdated, &details.LastUpdated); err != nil {
 				return target, fmt.Errorf("last_updated: %w", err)
 			}
 		}
-		target.ProviderDistributionsElemRolieFeedsElem21Details = details
+		target.providerDistributionsElemRolieFeedsElem21Details = details
 	}
 	*source = bare.ProviderDistributionsElemRolieFeedsElem{}
 	return target, nil
@@ -183,21 +183,21 @@ func fromBareProviderPublisher(source *bare.ProviderPublisher, v version) (Provi
 	target.Namespace = source.Namespace
 	switch v {
 	case version20:
-		details := &ProviderPublisher20Details{}
+		details := &providerPublisher20Details{}
 		if len(source.ContactDetails) > 0 {
 			if err := json.Unmarshal(source.ContactDetails, &details.ContactDetails); err != nil {
 				return target, fmt.Errorf("contact_details: %w", err)
 			}
 		}
-		target.ProviderPublisher20Details = details
+		target.providerPublisher20Details = details
 	case version21:
-		details := &ProviderPublisher21Details{}
+		details := &providerPublisher21Details{}
 		if len(source.Contact) > 0 {
 			if err := json.Unmarshal(source.Contact, &details.Contact); err != nil {
 				return target, fmt.Errorf("contact: %w", err)
 			}
 		}
-		target.ProviderPublisher21Details = details
+		target.providerPublisher21Details = details
 	}
 	*source = bare.ProviderPublisher{}
 	return target, nil

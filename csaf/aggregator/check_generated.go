@@ -35,9 +35,9 @@ func (source *Aggregator) Check() error {
 
 func checkAggregator(source *Aggregator, v version) error {
 	switch {
-	case v == version20 && source.Aggregator21Details != nil:
+	case v == version20 && source.aggregator21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
-	case v == version21 && source.Aggregator21Details == nil:
+	case v == version21 && source.aggregator21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
 	if source.AggregatorVersion == "" {
@@ -65,8 +65,8 @@ func checkAggregator(source *Aggregator, v version) error {
 			return fmt.Errorf("csaf_publishers[%d].%w", i, err)
 		}
 	}
-	if source.Aggregator21Details != nil {
-		if err := checkAggregator21Details(source.Aggregator21Details, v); err != nil {
+	if source.aggregator21Details != nil {
+		if err := checkAggregator21Details(source.aggregator21Details, v); err != nil {
 			return err
 		}
 	}
@@ -116,22 +116,22 @@ func checkAggregatorCSAFProvidersElemMetadata(source *AggregatorCSAFProvidersEle
 }
 
 func checkAggregatorCSAFProvidersElemMetadataPublisher(source *AggregatorCSAFProvidersElemMetadataPublisher, v version) error {
-	if source.AggregatorCSAFProvidersElemMetadataPublisher20Details != nil && source.AggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
+	if source.aggregatorCSAFProvidersElemMetadataPublisher20Details != nil && source.aggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
 		return errors.New("both version details are present")
 	}
 	switch v {
 	case version20:
-		if source.AggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
+		if source.aggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
-		if source.AggregatorCSAFProvidersElemMetadataPublisher20Details == nil {
+		if source.aggregatorCSAFProvidersElemMetadataPublisher20Details == nil {
 			return errors.New("version 2.0 details are missing")
 		}
 	case version21:
-		if source.AggregatorCSAFProvidersElemMetadataPublisher20Details != nil {
+		if source.aggregatorCSAFProvidersElemMetadataPublisher20Details != nil {
 			return errors.New("version 2.0 details are present in version 2.1")
 		}
-		if source.AggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
+		if source.aggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 	}
@@ -144,13 +144,13 @@ func checkAggregatorCSAFProvidersElemMetadataPublisher(source *AggregatorCSAFPro
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
-	if source.AggregatorCSAFProvidersElemMetadataPublisher20Details != nil {
-		if err := checkAggregatorCSAFProvidersElemMetadataPublisher20Details(source.AggregatorCSAFProvidersElemMetadataPublisher20Details, v); err != nil {
+	if source.aggregatorCSAFProvidersElemMetadataPublisher20Details != nil {
+		if err := checkAggregatorCSAFProvidersElemMetadataPublisher20Details(source.aggregatorCSAFProvidersElemMetadataPublisher20Details, v); err != nil {
 			return err
 		}
 	}
-	if source.AggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
-		if err := checkAggregatorCSAFProvidersElemMetadataPublisher21Details(source.AggregatorCSAFProvidersElemMetadataPublisher21Details, v); err != nil {
+	if source.aggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
+		if err := checkAggregatorCSAFProvidersElemMetadataPublisher21Details(source.aggregatorCSAFProvidersElemMetadataPublisher21Details, v); err != nil {
 			return err
 		}
 	}
@@ -170,14 +170,14 @@ func checkAggregatorCSAFPublishersElem(source *AggregatorCSAFPublishersElem, v v
 	return nil
 }
 
-func checkAggregator21Details(source *Aggregator21Details, v version) error {
+func checkAggregator21Details(source *aggregator21Details, v version) error {
 	if source.Schema == "" {
 		return errors.New("$schema: required value is missing or empty")
 	}
 	return nil
 }
 
-func checkAggregatorCSAFProvidersElemMetadataPublisher20Details(source *AggregatorCSAFProvidersElemMetadataPublisher20Details, v version) error {
+func checkAggregatorCSAFProvidersElemMetadataPublisher20Details(source *aggregatorCSAFProvidersElemMetadataPublisher20Details, v version) error {
 	return nil
 }
 
@@ -185,7 +185,7 @@ func checkVersion21Struct8(source *v21.ContactT, v version) error {
 	return nil
 }
 
-func checkAggregatorCSAFProvidersElemMetadataPublisher21Details(source *AggregatorCSAFProvidersElemMetadataPublisher21Details, v version) error {
+func checkAggregatorCSAFProvidersElemMetadataPublisher21Details(source *aggregatorCSAFProvidersElemMetadataPublisher21Details, v version) error {
 	if source.Contact != nil {
 		if err := checkVersion21Struct8(source.Contact, v); err != nil {
 			return fmt.Errorf("contact.%w", err)

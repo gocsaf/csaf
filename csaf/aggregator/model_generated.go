@@ -18,38 +18,65 @@ type Aggregator struct {
 	CSAFProviders     []AggregatorCSAFProvidersElem  `json:"csaf_providers"`
 	CSAFPublishers    []AggregatorCSAFPublishersElem `json:"csaf_publishers,omitempty"`
 	LastUpdated       v21.DateTime                   `json:"last_updated"`
-	*Aggregator21Details
+	*aggregator21Details
 }
 
-// Aggregator21Details contains fields specific to CSAF 2.1.
-type Aggregator21Details struct {
+// aggregator21Details contains fields specific to CSAF 2.1.
+type aggregator21Details struct {
 	Schema          v21.AggregatorSchema `json:"$schema"`
 	MaintainedFrom  *v21.DateTime        `json:"maintained_from,omitempty"`
 	MaintainedUntil *v21.DateTime        `json:"maintained_until,omitempty"`
 }
 
-// GetSchema reports whether the matching version details are present.
-func (v *Aggregator) GetSchema() (v21.AggregatorSchema, bool) {
-	if v == nil || v.Aggregator21Details == nil {
+// Schema reports whether the matching version details are present.
+func (v *Aggregator) Schema() (v21.AggregatorSchema, bool) {
+	if v == nil || v.aggregator21Details == nil {
 		return v21.AggregatorSchema(""), false
 	}
-	return v.Aggregator21Details.Schema, true
+	return v.aggregator21Details.Schema, true
 }
 
-// GetMaintainedFrom reports whether the matching version details are present.
-func (v *Aggregator) GetMaintainedFrom() (*v21.DateTime, bool) {
-	if v == nil || v.Aggregator21Details == nil {
-		return nil, false
+// SetSchema updates the value if matching version details are present.
+func (v *Aggregator) SetSchema(value v21.AggregatorSchema) bool {
+	if v == nil || v.aggregator21Details == nil {
+		return false
 	}
-	return v.Aggregator21Details.MaintainedFrom, true
+	v.aggregator21Details.Schema = value
+	return true
 }
 
-// GetMaintainedUntil reports whether the matching version details are present.
-func (v *Aggregator) GetMaintainedUntil() (*v21.DateTime, bool) {
-	if v == nil || v.Aggregator21Details == nil {
+// MaintainedFrom reports whether the matching version details are present.
+func (v *Aggregator) MaintainedFrom() (*v21.DateTime, bool) {
+	if v == nil || v.aggregator21Details == nil {
 		return nil, false
 	}
-	return v.Aggregator21Details.MaintainedUntil, true
+	return v.aggregator21Details.MaintainedFrom, true
+}
+
+// SetMaintainedFrom updates the value if matching version details are present.
+func (v *Aggregator) SetMaintainedFrom(value *v21.DateTime) bool {
+	if v == nil || v.aggregator21Details == nil {
+		return false
+	}
+	v.aggregator21Details.MaintainedFrom = value
+	return true
+}
+
+// MaintainedUntil reports whether the matching version details are present.
+func (v *Aggregator) MaintainedUntil() (*v21.DateTime, bool) {
+	if v == nil || v.aggregator21Details == nil {
+		return nil, false
+	}
+	return v.aggregator21Details.MaintainedUntil, true
+}
+
+// SetMaintainedUntil updates the value if matching version details are present.
+func (v *Aggregator) SetMaintainedUntil(value *v21.DateTime) bool {
+	if v == nil || v.aggregator21Details == nil {
+		return false
+	}
+	v.aggregator21Details.MaintainedUntil = value
+	return true
 }
 
 // AggregatorAggregator contains common fields and optional version-specific details.
@@ -81,34 +108,52 @@ type AggregatorCSAFProvidersElemMetadataPublisher struct {
 	IssuingAuthority *string `json:"issuing_authority,omitempty"`
 	Name             string  `json:"name"`
 	Namespace        string  `json:"namespace"`
-	*AggregatorCSAFProvidersElemMetadataPublisher20Details
-	*AggregatorCSAFProvidersElemMetadataPublisher21Details
+	*aggregatorCSAFProvidersElemMetadataPublisher20Details
+	*aggregatorCSAFProvidersElemMetadataPublisher21Details
 }
 
-// AggregatorCSAFProvidersElemMetadataPublisher20Details contains fields specific to CSAF 2.0.
-type AggregatorCSAFProvidersElemMetadataPublisher20Details struct {
+// aggregatorCSAFProvidersElemMetadataPublisher20Details contains fields specific to CSAF 2.0.
+type aggregatorCSAFProvidersElemMetadataPublisher20Details struct {
 	ContactDetails *string `json:"contact_details,omitempty"`
 }
 
-// GetContactDetails reports whether the matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadataPublisher) GetContactDetails() (*string, bool) {
-	if v == nil || v.AggregatorCSAFProvidersElemMetadataPublisher20Details == nil {
+// ContactDetails reports whether the matching version details are present.
+func (v *AggregatorCSAFProvidersElemMetadataPublisher) ContactDetails() (*string, bool) {
+	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher20Details == nil {
 		return nil, false
 	}
-	return v.AggregatorCSAFProvidersElemMetadataPublisher20Details.ContactDetails, true
+	return v.aggregatorCSAFProvidersElemMetadataPublisher20Details.ContactDetails, true
 }
 
-// AggregatorCSAFProvidersElemMetadataPublisher21Details contains fields specific to CSAF 2.1.
-type AggregatorCSAFProvidersElemMetadataPublisher21Details struct {
+// SetContactDetails updates the value if matching version details are present.
+func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContactDetails(value *string) bool {
+	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher20Details == nil {
+		return false
+	}
+	v.aggregatorCSAFProvidersElemMetadataPublisher20Details.ContactDetails = value
+	return true
+}
+
+// aggregatorCSAFProvidersElemMetadataPublisher21Details contains fields specific to CSAF 2.1.
+type aggregatorCSAFProvidersElemMetadataPublisher21Details struct {
 	Contact *v21.ContactT `json:"contact,omitempty"`
 }
 
-// GetContact reports whether the matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadataPublisher) GetContact() (*v21.ContactT, bool) {
-	if v == nil || v.AggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
+// Contact reports whether the matching version details are present.
+func (v *AggregatorCSAFProvidersElemMetadataPublisher) Contact() (*v21.ContactT, bool) {
+	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
 		return nil, false
 	}
-	return v.AggregatorCSAFProvidersElemMetadataPublisher21Details.Contact, true
+	return v.aggregatorCSAFProvidersElemMetadataPublisher21Details.Contact, true
+}
+
+// SetContact updates the value if matching version details are present.
+func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContact(value *v21.ContactT) bool {
+	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
+		return false
+	}
+	v.aggregatorCSAFProvidersElemMetadataPublisher21Details.Contact = value
+	return true
 }
 
 // AggregatorCSAFPublishersElem contains common fields and optional version-specific details.

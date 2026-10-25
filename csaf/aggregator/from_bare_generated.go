@@ -74,7 +74,7 @@ func fromBareAggregator(source *bare.Aggregator, v version) (Aggregator, error) 
 	}
 	target.LastUpdated = source.LastUpdated
 	if v == version21 {
-		details := &Aggregator21Details{}
+		details := &aggregator21Details{}
 		if len(source.Schema) > 0 {
 			if err := json.Unmarshal(source.Schema, &details.Schema); err != nil {
 				return target, fmt.Errorf("$schema: %w", err)
@@ -90,7 +90,7 @@ func fromBareAggregator(source *bare.Aggregator, v version) (Aggregator, error) 
 				return target, fmt.Errorf("maintained_until: %w", err)
 			}
 		}
-		target.Aggregator21Details = details
+		target.aggregator21Details = details
 	}
 	*source = bare.Aggregator{}
 	return target, nil
@@ -141,21 +141,21 @@ func fromBareAggregatorCSAFProvidersElemMetadataPublisher(source *bare.Aggregato
 	target.Namespace = source.Namespace
 	switch v {
 	case version20:
-		details := &AggregatorCSAFProvidersElemMetadataPublisher20Details{}
+		details := &aggregatorCSAFProvidersElemMetadataPublisher20Details{}
 		if len(source.ContactDetails) > 0 {
 			if err := json.Unmarshal(source.ContactDetails, &details.ContactDetails); err != nil {
 				return target, fmt.Errorf("contact_details: %w", err)
 			}
 		}
-		target.AggregatorCSAFProvidersElemMetadataPublisher20Details = details
+		target.aggregatorCSAFProvidersElemMetadataPublisher20Details = details
 	case version21:
-		details := &AggregatorCSAFProvidersElemMetadataPublisher21Details{}
+		details := &aggregatorCSAFProvidersElemMetadataPublisher21Details{}
 		if len(source.Contact) > 0 {
 			if err := json.Unmarshal(source.Contact, &details.Contact); err != nil {
 				return target, fmt.Errorf("contact: %w", err)
 			}
 		}
-		target.AggregatorCSAFProvidersElemMetadataPublisher21Details = details
+		target.aggregatorCSAFProvidersElemMetadataPublisher21Details = details
 	}
 	*source = bare.AggregatorCSAFProvidersElemMetadataPublisher{}
 	return target, nil

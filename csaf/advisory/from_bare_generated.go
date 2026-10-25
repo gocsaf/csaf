@@ -69,7 +69,7 @@ func fromBareCSAF(source *bare.CSAF, v version) (CSAF, error) {
 		}
 	}
 	if v == version21 {
-		details := &CSAF21Details{}
+		details := &csaf21Details{}
 		if len(source.Schema) > 0 {
 			if err := json.Unmarshal(source.Schema, &details.Schema); err != nil {
 				return target, fmt.Errorf("$schema: %w", err)
@@ -80,7 +80,7 @@ func fromBareCSAF(source *bare.CSAF, v version) (CSAF, error) {
 				return target, fmt.Errorf("x_extensions: %w", err)
 			}
 		}
-		target.CSAF21Details = details
+		target.csaf21Details = details
 	}
 	*source = bare.CSAF{}
 	return target, nil
@@ -144,7 +144,7 @@ func fromBareCSAFDocument(source *bare.CSAFDocument, v version) (CSAFDocument, e
 		return target, fmt.Errorf("tracking.%w", err)
 	}
 	if v == version21 {
-		details := &CSAFDocument21Details{}
+		details := &csafDocument21Details{}
 		if len(source.Involvement) > 0 {
 			if err := json.Unmarshal(source.Involvement, &details.Involvement); err != nil {
 				return target, fmt.Errorf("involvement: %w", err)
@@ -160,7 +160,7 @@ func fromBareCSAFDocument(source *bare.CSAFDocument, v version) (CSAFDocument, e
 				return target, fmt.Errorf("x_extensions: %w", err)
 			}
 		}
-		target.CSAFDocument21Details = details
+		target.csafDocument21Details = details
 	}
 	*source = bare.CSAFDocument{}
 	return target, nil
@@ -196,13 +196,13 @@ func fromBareCSAFDocumentDistribution(source *bare.CSAFDocumentDistribution, v v
 		}
 	}
 	if v == version21 {
-		details := &CSAFDocumentDistribution21Details{}
+		details := &csafDocumentDistribution21Details{}
 		if len(source.SharingGroup) > 0 {
 			if err := json.Unmarshal(source.SharingGroup, &details.SharingGroup); err != nil {
 				return target, fmt.Errorf("sharing_group: %w", err)
 			}
 		}
-		target.CSAFDocumentDistribution21Details = details
+		target.csafDocumentDistribution21Details = details
 	}
 	*source = bare.CSAFDocumentDistribution{}
 	return target, nil
@@ -223,7 +223,7 @@ func fromBareCSAFDocumentNotesElem(source *bare.CSAFDocumentNotesElem, v version
 	target.Text = source.Text
 	target.Title = source.Title
 	if v == version21 {
-		details := &CSAFDocumentNotesElem21Details{}
+		details := &csafDocumentNotesElem21Details{}
 		if len(source.GroupIds) > 0 {
 			if err := json.Unmarshal(source.GroupIds, &details.GroupIds); err != nil {
 				return target, fmt.Errorf("group_ids: %w", err)
@@ -234,7 +234,7 @@ func fromBareCSAFDocumentNotesElem(source *bare.CSAFDocumentNotesElem, v version
 				return target, fmt.Errorf("product_ids: %w", err)
 			}
 		}
-		target.CSAFDocumentNotesElem21Details = details
+		target.csafDocumentNotesElem21Details = details
 	}
 	*source = bare.CSAFDocumentNotesElem{}
 	return target, nil
@@ -248,21 +248,21 @@ func fromBareCSAFDocumentPublisher(source *bare.CSAFDocumentPublisher, v version
 	target.Namespace = source.Namespace
 	switch v {
 	case version20:
-		details := &CSAFDocumentPublisher20Details{}
+		details := &csafDocumentPublisher20Details{}
 		if len(source.ContactDetails) > 0 {
 			if err := json.Unmarshal(source.ContactDetails, &details.ContactDetails); err != nil {
 				return target, fmt.Errorf("contact_details: %w", err)
 			}
 		}
-		target.CSAFDocumentPublisher20Details = details
+		target.csafDocumentPublisher20Details = details
 	case version21:
-		details := &CSAFDocumentPublisher21Details{}
+		details := &csafDocumentPublisher21Details{}
 		if len(source.Contact) > 0 {
 			if err := json.Unmarshal(source.Contact, &details.Contact); err != nil {
 				return target, fmt.Errorf("contact: %w", err)
 			}
 		}
-		target.CSAFDocumentPublisher21Details = details
+		target.csafDocumentPublisher21Details = details
 	}
 	*source = bare.CSAFDocumentPublisher{}
 	return target, nil
@@ -368,21 +368,21 @@ func fromBareCSAFProductTree(source *bare.CSAFProductTree, v version) (CSAFProdu
 	}
 	switch v {
 	case version20:
-		details := &CSAFProductTree20Details{}
+		details := &csafProductTree20Details{}
 		if len(source.Relationships) > 0 {
 			if err := json.Unmarshal(source.Relationships, &details.Relationships); err != nil {
 				return target, fmt.Errorf("relationships: %w", err)
 			}
 		}
-		target.CSAFProductTree20Details = details
+		target.csafProductTree20Details = details
 	case version21:
-		details := &CSAFProductTree21Details{}
+		details := &csafProductTree21Details{}
 		if len(source.ProductPaths) > 0 {
 			if err := json.Unmarshal(source.ProductPaths, &details.ProductPaths); err != nil {
 				return target, fmt.Errorf("product_paths: %w", err)
 			}
 		}
-		target.CSAFProductTree21Details = details
+		target.csafProductTree21Details = details
 	}
 	*source = bare.CSAFProductTree{}
 	return target, nil
@@ -429,13 +429,13 @@ func fromBareCSAFProductTreeBranchesElemProduct(source *bare.CSAFProductTreeBran
 		}
 	}
 	if v == version21 {
-		details := &CSAFProductTreeBranchesElemProduct21Details{}
+		details := &csafProductTreeBranchesElemProduct21Details{}
 		if len(source.XExtensions) > 0 {
 			if err := json.Unmarshal(source.XExtensions, &details.XExtensions); err != nil {
 				return target, fmt.Errorf("x_extensions: %w", err)
 			}
 		}
-		target.CSAFProductTreeBranchesElemProduct21Details = details
+		target.csafProductTreeBranchesElemProduct21Details = details
 	}
 	*source = bare.CSAFProductTreeBranchesElemProduct{}
 	return target, nil
@@ -469,21 +469,21 @@ func fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelper(sourc
 	}
 	switch v {
 	case version20:
-		details := &CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details{}
+		details := &csafProductTreeBranchesElemProductProductIdentificationHelper20Details{}
 		if len(source.Purl) > 0 {
 			if err := json.Unmarshal(source.Purl, &details.Purl); err != nil {
 				return target, fmt.Errorf("purl: %w", err)
 			}
 		}
-		target.CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details = details
+		target.csafProductTreeBranchesElemProductProductIdentificationHelper20Details = details
 	case version21:
-		details := &CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details{}
+		details := &csafProductTreeBranchesElemProductProductIdentificationHelper21Details{}
 		if len(source.Purls) > 0 {
 			if err := json.Unmarshal(source.Purls, &details.Purls); err != nil {
 				return target, fmt.Errorf("purls: %w", err)
 			}
 		}
-		target.CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details = details
+		target.csafProductTreeBranchesElemProductProductIdentificationHelper21Details = details
 	}
 	*source = bare.CSAFProductTreeBranchesElemProductProductIdentificationHelper{}
 	return target, nil
@@ -609,7 +609,7 @@ func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v ver
 	target.Title = source.Title
 	switch v {
 	case version20:
-		details := &CSAFVulnerabilitiesElem20Details{}
+		details := &csafVulnerabilitiesElem20Details{}
 		if len(source.CWE) > 0 {
 			if err := json.Unmarshal(source.CWE, &details.CWE); err != nil {
 				return target, fmt.Errorf("cwe: %w", err)
@@ -630,9 +630,9 @@ func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v ver
 				return target, fmt.Errorf("scores: %w", err)
 			}
 		}
-		target.CSAFVulnerabilitiesElem20Details = details
+		target.csafVulnerabilitiesElem20Details = details
 	case version21:
-		details := &CSAFVulnerabilitiesElem21Details{}
+		details := &csafVulnerabilitiesElem21Details{}
 		if len(source.Cwes) > 0 {
 			if err := json.Unmarshal(source.Cwes, &details.Cwes); err != nil {
 				return target, fmt.Errorf("cwes: %w", err)
@@ -663,7 +663,7 @@ func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v ver
 				return target, fmt.Errorf("x_extensions: %w", err)
 			}
 		}
-		target.CSAFVulnerabilitiesElem21Details = details
+		target.csafVulnerabilitiesElem21Details = details
 	}
 	*source = bare.CSAFVulnerabilitiesElem{}
 	return target, nil
@@ -684,7 +684,7 @@ func fromBareCSAFVulnerabilitiesElemIdsElem(source *bare.CSAFVulnerabilitiesElem
 	target.SystemName = source.SystemName
 	target.Text = source.Text
 	if v == version21 {
-		details := &CSAFVulnerabilitiesElemIdsElem21Details{}
+		details := &csafVulnerabilitiesElemIdsElem21Details{}
 		if len(source.GroupIds) > 0 {
 			if err := json.Unmarshal(source.GroupIds, &details.GroupIds); err != nil {
 				return target, fmt.Errorf("group_ids: %w", err)
@@ -695,7 +695,7 @@ func fromBareCSAFVulnerabilitiesElemIdsElem(source *bare.CSAFVulnerabilitiesElem
 				return target, fmt.Errorf("product_ids: %w", err)
 			}
 		}
-		target.CSAFVulnerabilitiesElemIdsElem21Details = details
+		target.csafVulnerabilitiesElemIdsElem21Details = details
 	}
 	*source = bare.CSAFVulnerabilitiesElemIdsElem{}
 	return target, nil
@@ -712,13 +712,13 @@ func fromBareCSAFVulnerabilitiesElemProductStatus(source *bare.CSAFVulnerabiliti
 	target.Recommended = source.Recommended
 	target.UnderInvestigation = source.UnderInvestigation
 	if v == version21 {
-		details := &CSAFVulnerabilitiesElemProductStatus21Details{}
+		details := &csafVulnerabilitiesElemProductStatus21Details{}
 		if len(source.Unknown) > 0 {
 			if err := json.Unmarshal(source.Unknown, &details.Unknown); err != nil {
 				return target, fmt.Errorf("unknown: %w", err)
 			}
 		}
-		target.CSAFVulnerabilitiesElemProductStatus21Details = details
+		target.csafVulnerabilitiesElemProductStatus21Details = details
 	}
 	*source = bare.CSAFVulnerabilitiesElemProductStatus{}
 	return target, nil

@@ -36,9 +36,9 @@ func (source *CSAF) Check() error {
 
 func checkCSAF(source *CSAF, v version) error {
 	switch {
-	case v == version20 && source.CSAF21Details != nil:
+	case v == version20 && source.csaf21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
-	case v == version21 && source.CSAF21Details == nil:
+	case v == version21 && source.csaf21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
 	if err := checkCSAFDocument(&source.Document, v); err != nil {
@@ -54,8 +54,8 @@ func checkCSAF(source *CSAF, v version) error {
 			return fmt.Errorf("vulnerabilities[%d].%w", i, err)
 		}
 	}
-	if source.CSAF21Details != nil {
-		if err := checkCSAF21Details(source.CSAF21Details, v); err != nil {
+	if source.csaf21Details != nil {
+		if err := checkCSAF21Details(source.csaf21Details, v); err != nil {
 			return err
 		}
 	}
@@ -65,11 +65,11 @@ func checkCSAF(source *CSAF, v version) error {
 func checkCSAFDocument(source *CSAFDocument, v version) error {
 	switch v {
 	case version20:
-		if source.CSAFDocument21Details != nil {
+		if source.csafDocument21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
 	case version21:
-		if source.CSAFDocument21Details == nil {
+		if source.csafDocument21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 		if source.Distribution == nil {
@@ -116,8 +116,8 @@ func checkCSAFDocument(source *CSAFDocument, v version) error {
 	if err := checkCSAFDocumentTracking(&source.Tracking, v); err != nil {
 		return fmt.Errorf("tracking.%w", err)
 	}
-	if source.CSAFDocument21Details != nil {
-		if err := checkCSAFDocument21Details(source.CSAFDocument21Details, v); err != nil {
+	if source.csafDocument21Details != nil {
+		if err := checkCSAFDocument21Details(source.csafDocument21Details, v); err != nil {
 			return err
 		}
 	}
@@ -138,11 +138,11 @@ func checkCSAFDocumentAggregateSeverity(source *CSAFDocumentAggregateSeverity, v
 func checkCSAFDocumentDistribution(source *CSAFDocumentDistribution, v version) error {
 	switch v {
 	case version20:
-		if source.CSAFDocumentDistribution21Details != nil {
+		if source.csafDocumentDistribution21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
 	case version21:
-		if source.CSAFDocumentDistribution21Details == nil {
+		if source.csafDocumentDistribution21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 		if source.TLP == nil {
@@ -154,8 +154,8 @@ func checkCSAFDocumentDistribution(source *CSAFDocumentDistribution, v version) 
 			return fmt.Errorf("tlp.%w", err)
 		}
 	}
-	if source.CSAFDocumentDistribution21Details != nil {
-		if err := checkCSAFDocumentDistribution21Details(source.CSAFDocumentDistribution21Details, v); err != nil {
+	if source.csafDocumentDistribution21Details != nil {
+		if err := checkCSAFDocumentDistribution21Details(source.csafDocumentDistribution21Details, v); err != nil {
 			return err
 		}
 	}
@@ -171,9 +171,9 @@ func checkCSAFDocumentDistributionTLP(source *CSAFDocumentDistributionTLP, v ver
 
 func checkCSAFDocumentNotesElem(source *CSAFDocumentNotesElem, v version) error {
 	switch {
-	case v == version20 && source.CSAFDocumentNotesElem21Details != nil:
+	case v == version20 && source.csafDocumentNotesElem21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
-	case v == version21 && source.CSAFDocumentNotesElem21Details == nil:
+	case v == version21 && source.csafDocumentNotesElem21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
 	if source.Category == "" {
@@ -182,8 +182,8 @@ func checkCSAFDocumentNotesElem(source *CSAFDocumentNotesElem, v version) error 
 	if source.Text == "" {
 		return errors.New("text: required value is missing or empty")
 	}
-	if source.CSAFDocumentNotesElem21Details != nil {
-		if err := checkCSAFDocumentNotesElem21Details(source.CSAFDocumentNotesElem21Details, v); err != nil {
+	if source.csafDocumentNotesElem21Details != nil {
+		if err := checkCSAFDocumentNotesElem21Details(source.csafDocumentNotesElem21Details, v); err != nil {
 			return err
 		}
 	}
@@ -191,22 +191,22 @@ func checkCSAFDocumentNotesElem(source *CSAFDocumentNotesElem, v version) error 
 }
 
 func checkCSAFDocumentPublisher(source *CSAFDocumentPublisher, v version) error {
-	if source.CSAFDocumentPublisher20Details != nil && source.CSAFDocumentPublisher21Details != nil {
+	if source.csafDocumentPublisher20Details != nil && source.csafDocumentPublisher21Details != nil {
 		return errors.New("both version details are present")
 	}
 	switch v {
 	case version20:
-		if source.CSAFDocumentPublisher21Details != nil {
+		if source.csafDocumentPublisher21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
-		if source.CSAFDocumentPublisher20Details == nil {
+		if source.csafDocumentPublisher20Details == nil {
 			return errors.New("version 2.0 details are missing")
 		}
 	case version21:
-		if source.CSAFDocumentPublisher20Details != nil {
+		if source.csafDocumentPublisher20Details != nil {
 			return errors.New("version 2.0 details are present in version 2.1")
 		}
-		if source.CSAFDocumentPublisher21Details == nil {
+		if source.csafDocumentPublisher21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 	}
@@ -219,13 +219,13 @@ func checkCSAFDocumentPublisher(source *CSAFDocumentPublisher, v version) error 
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
-	if source.CSAFDocumentPublisher20Details != nil {
-		if err := checkCSAFDocumentPublisher20Details(source.CSAFDocumentPublisher20Details, v); err != nil {
+	if source.csafDocumentPublisher20Details != nil {
+		if err := checkCSAFDocumentPublisher20Details(source.csafDocumentPublisher20Details, v); err != nil {
 			return err
 		}
 	}
-	if source.CSAFDocumentPublisher21Details != nil {
-		if err := checkCSAFDocumentPublisher21Details(source.CSAFDocumentPublisher21Details, v); err != nil {
+	if source.csafDocumentPublisher21Details != nil {
+		if err := checkCSAFDocumentPublisher21Details(source.csafDocumentPublisher21Details, v); err != nil {
 			return err
 		}
 	}
@@ -302,22 +302,22 @@ func checkCSAFDocumentTrackingRevisionHistoryElem(source *CSAFDocumentTrackingRe
 }
 
 func checkCSAFProductTree(source *CSAFProductTree, v version) error {
-	if source.CSAFProductTree20Details != nil && source.CSAFProductTree21Details != nil {
+	if source.csafProductTree20Details != nil && source.csafProductTree21Details != nil {
 		return errors.New("both version details are present")
 	}
 	switch v {
 	case version20:
-		if source.CSAFProductTree21Details != nil {
+		if source.csafProductTree21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
-		if source.CSAFProductTree20Details == nil {
+		if source.csafProductTree20Details == nil {
 			return errors.New("version 2.0 details are missing")
 		}
 	case version21:
-		if source.CSAFProductTree20Details != nil {
+		if source.csafProductTree20Details != nil {
 			return errors.New("version 2.0 details are present in version 2.1")
 		}
-		if source.CSAFProductTree21Details == nil {
+		if source.csafProductTree21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 	}
@@ -336,13 +336,13 @@ func checkCSAFProductTree(source *CSAFProductTree, v version) error {
 			return fmt.Errorf("product_groups[%d].%w", i, err)
 		}
 	}
-	if source.CSAFProductTree20Details != nil {
-		if err := checkCSAFProductTree20Details(source.CSAFProductTree20Details, v); err != nil {
+	if source.csafProductTree20Details != nil {
+		if err := checkCSAFProductTree20Details(source.csafProductTree20Details, v); err != nil {
 			return err
 		}
 	}
-	if source.CSAFProductTree21Details != nil {
-		if err := checkCSAFProductTree21Details(source.CSAFProductTree21Details, v); err != nil {
+	if source.csafProductTree21Details != nil {
+		if err := checkCSAFProductTree21Details(source.csafProductTree21Details, v); err != nil {
 			return err
 		}
 	}
@@ -373,9 +373,9 @@ func checkCSAFProductTreeBranchesElem(source *CSAFProductTreeBranchesElem, v ver
 
 func checkCSAFProductTreeBranchesElemProduct(source *CSAFProductTreeBranchesElemProduct, v version) error {
 	switch {
-	case v == version20 && source.CSAFProductTreeBranchesElemProduct21Details != nil:
+	case v == version20 && source.csafProductTreeBranchesElemProduct21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
-	case v == version21 && source.CSAFProductTreeBranchesElemProduct21Details == nil:
+	case v == version21 && source.csafProductTreeBranchesElemProduct21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
 	if source.Name == "" {
@@ -389,8 +389,8 @@ func checkCSAFProductTreeBranchesElemProduct(source *CSAFProductTreeBranchesElem
 			return fmt.Errorf("product_identification_helper.%w", err)
 		}
 	}
-	if source.CSAFProductTreeBranchesElemProduct21Details != nil {
-		if err := checkCSAFProductTreeBranchesElemProduct21Details(source.CSAFProductTreeBranchesElemProduct21Details, v); err != nil {
+	if source.csafProductTreeBranchesElemProduct21Details != nil {
+		if err := checkCSAFProductTreeBranchesElemProduct21Details(source.csafProductTreeBranchesElemProduct21Details, v); err != nil {
 			return err
 		}
 	}
@@ -398,22 +398,22 @@ func checkCSAFProductTreeBranchesElemProduct(source *CSAFProductTreeBranchesElem
 }
 
 func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper(source *CSAFProductTreeBranchesElemProductProductIdentificationHelper, v version) error {
-	if source.CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details != nil && source.CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details != nil {
+	if source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details != nil && source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details != nil {
 		return errors.New("both version details are present")
 	}
 	switch v {
 	case version20:
-		if source.CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details != nil {
+		if source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
-		if source.CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details == nil {
+		if source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details == nil {
 			return errors.New("version 2.0 details are missing")
 		}
 	case version21:
-		if source.CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details != nil {
+		if source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details != nil {
 			return errors.New("version 2.0 details are present in version 2.1")
 		}
-		if source.CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details == nil {
+		if source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 	}
@@ -427,13 +427,13 @@ func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper(source *
 			return fmt.Errorf("x_generic_uris[%d].%w", i, err)
 		}
 	}
-	if source.CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details != nil {
-		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelper20Details(source.CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details, v); err != nil {
+	if source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details != nil {
+		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelper20Details(source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details, v); err != nil {
 			return err
 		}
 	}
-	if source.CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details != nil {
-		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelper21Details(source.CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details, v); err != nil {
+	if source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details != nil {
+		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelper21Details(source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details, v); err != nil {
 			return err
 		}
 	}
@@ -486,22 +486,22 @@ func checkCSAFProductTreeProductGroupsElem(source *CSAFProductTreeProductGroupsE
 }
 
 func checkCSAFVulnerabilitiesElem(source *CSAFVulnerabilitiesElem, v version) error {
-	if source.CSAFVulnerabilitiesElem20Details != nil && source.CSAFVulnerabilitiesElem21Details != nil {
+	if source.csafVulnerabilitiesElem20Details != nil && source.csafVulnerabilitiesElem21Details != nil {
 		return errors.New("both version details are present")
 	}
 	switch v {
 	case version20:
-		if source.CSAFVulnerabilitiesElem21Details != nil {
+		if source.csafVulnerabilitiesElem21Details != nil {
 			return errors.New("version 2.1 details are present in version 2.0")
 		}
-		if source.CSAFVulnerabilitiesElem20Details == nil {
+		if source.csafVulnerabilitiesElem20Details == nil {
 			return errors.New("version 2.0 details are missing")
 		}
 	case version21:
-		if source.CSAFVulnerabilitiesElem20Details != nil {
+		if source.csafVulnerabilitiesElem20Details != nil {
 			return errors.New("version 2.0 details are present in version 2.1")
 		}
-		if source.CSAFVulnerabilitiesElem21Details == nil {
+		if source.csafVulnerabilitiesElem21Details == nil {
 			return errors.New("version 2.1 details are missing")
 		}
 	}
@@ -545,13 +545,13 @@ func checkCSAFVulnerabilitiesElem(source *CSAFVulnerabilitiesElem, v version) er
 			return fmt.Errorf("threats[%d].%w", i, err)
 		}
 	}
-	if source.CSAFVulnerabilitiesElem20Details != nil {
-		if err := checkCSAFVulnerabilitiesElem20Details(source.CSAFVulnerabilitiesElem20Details, v); err != nil {
+	if source.csafVulnerabilitiesElem20Details != nil {
+		if err := checkCSAFVulnerabilitiesElem20Details(source.csafVulnerabilitiesElem20Details, v); err != nil {
 			return err
 		}
 	}
-	if source.CSAFVulnerabilitiesElem21Details != nil {
-		if err := checkCSAFVulnerabilitiesElem21Details(source.CSAFVulnerabilitiesElem21Details, v); err != nil {
+	if source.csafVulnerabilitiesElem21Details != nil {
+		if err := checkCSAFVulnerabilitiesElem21Details(source.csafVulnerabilitiesElem21Details, v); err != nil {
 			return err
 		}
 	}
@@ -567,9 +567,9 @@ func checkCSAFVulnerabilitiesElemFlagsElem(source *CSAFVulnerabilitiesElemFlagsE
 
 func checkCSAFVulnerabilitiesElemIdsElem(source *CSAFVulnerabilitiesElemIdsElem, v version) error {
 	switch {
-	case v == version20 && source.CSAFVulnerabilitiesElemIdsElem21Details != nil:
+	case v == version20 && source.csafVulnerabilitiesElemIdsElem21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
-	case v == version21 && source.CSAFVulnerabilitiesElemIdsElem21Details == nil:
+	case v == version21 && source.csafVulnerabilitiesElemIdsElem21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
 	if source.SystemName == "" {
@@ -578,8 +578,8 @@ func checkCSAFVulnerabilitiesElemIdsElem(source *CSAFVulnerabilitiesElemIdsElem,
 	if source.Text == "" {
 		return errors.New("text: required value is missing or empty")
 	}
-	if source.CSAFVulnerabilitiesElemIdsElem21Details != nil {
-		if err := checkCSAFVulnerabilitiesElemIdsElem21Details(source.CSAFVulnerabilitiesElemIdsElem21Details, v); err != nil {
+	if source.csafVulnerabilitiesElemIdsElem21Details != nil {
+		if err := checkCSAFVulnerabilitiesElemIdsElem21Details(source.csafVulnerabilitiesElemIdsElem21Details, v); err != nil {
 			return err
 		}
 	}
@@ -588,13 +588,13 @@ func checkCSAFVulnerabilitiesElemIdsElem(source *CSAFVulnerabilitiesElemIdsElem,
 
 func checkCSAFVulnerabilitiesElemProductStatus(source *CSAFVulnerabilitiesElemProductStatus, v version) error {
 	switch {
-	case v == version20 && source.CSAFVulnerabilitiesElemProductStatus21Details != nil:
+	case v == version20 && source.csafVulnerabilitiesElemProductStatus21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
-	case v == version21 && source.CSAFVulnerabilitiesElemProductStatus21Details == nil:
+	case v == version21 && source.csafVulnerabilitiesElemProductStatus21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
-	if source.CSAFVulnerabilitiesElemProductStatus21Details != nil {
-		if err := checkCSAFVulnerabilitiesElemProductStatus21Details(source.CSAFVulnerabilitiesElemProductStatus21Details, v); err != nil {
+	if source.csafVulnerabilitiesElemProductStatus21Details != nil {
+		if err := checkCSAFVulnerabilitiesElemProductStatus21Details(source.csafVulnerabilitiesElemProductStatus21Details, v); err != nil {
 			return err
 		}
 	}
@@ -646,7 +646,7 @@ func checkVersion21Struct28(source *v21.ExtensionContentJson, v version) error {
 	return nil
 }
 
-func checkCSAF21Details(source *CSAF21Details, v version) error {
+func checkCSAF21Details(source *csaf21Details, v version) error {
 	if source.Schema == "" {
 		return errors.New("$schema: required value is missing or empty")
 	}
@@ -734,7 +734,7 @@ func checkVersion21Struct34(source *v21.CSAFDocumentInvolvementEntityGroupsElem,
 	return nil
 }
 
-func checkCSAFDocument21Details(source *CSAFDocument21Details, v version) error {
+func checkCSAFDocument21Details(source *csafDocument21Details, v version) error {
 	if source.Involvement != nil {
 		if err := checkVersion21Struct30(source.Involvement, v); err != nil {
 			return fmt.Errorf("involvement.%w", err)
@@ -755,7 +755,7 @@ func checkVersion21Struct36(source *v21.CSAFDocumentDistributionSharingGroup, v 
 	return nil
 }
 
-func checkCSAFDocumentDistribution21Details(source *CSAFDocumentDistribution21Details, v version) error {
+func checkCSAFDocumentDistribution21Details(source *csafDocumentDistribution21Details, v version) error {
 	if source.SharingGroup != nil {
 		if err := checkVersion21Struct36(source.SharingGroup, v); err != nil {
 			return fmt.Errorf("sharing_group.%w", err)
@@ -764,11 +764,11 @@ func checkCSAFDocumentDistribution21Details(source *CSAFDocumentDistribution21De
 	return nil
 }
 
-func checkCSAFDocumentNotesElem21Details(source *CSAFDocumentNotesElem21Details, v version) error {
+func checkCSAFDocumentNotesElem21Details(source *csafDocumentNotesElem21Details, v version) error {
 	return nil
 }
 
-func checkCSAFDocumentPublisher20Details(source *CSAFDocumentPublisher20Details, v version) error {
+func checkCSAFDocumentPublisher20Details(source *csafDocumentPublisher20Details, v version) error {
 	return nil
 }
 
@@ -776,7 +776,7 @@ func checkVersion21Struct40(source *v21.ContactT, v version) error {
 	return nil
 }
 
-func checkCSAFDocumentPublisher21Details(source *CSAFDocumentPublisher21Details, v version) error {
+func checkCSAFDocumentPublisher21Details(source *csafDocumentPublisher21Details, v version) error {
 	if source.Contact != nil {
 		if err := checkVersion21Struct40(source.Contact, v); err != nil {
 			return fmt.Errorf("contact.%w", err)
@@ -865,7 +865,7 @@ func checkVersion20Struct47(source *v20.FullProductNameTProductIdentificationHel
 	return nil
 }
 
-func checkCSAFProductTree20Details(source *CSAFProductTree20Details, v version) error {
+func checkCSAFProductTree20Details(source *csafProductTree20Details, v version) error {
 	for i := range source.Relationships {
 		if err := checkVersion20Struct42(&source.Relationships[i], v); err != nil {
 			return fmt.Errorf("relationships[%d].%w", i, err)
@@ -971,7 +971,7 @@ func checkVersion21Struct55(source *v21.SubpathT, v version) error {
 	return nil
 }
 
-func checkCSAFProductTree21Details(source *CSAFProductTree21Details, v version) error {
+func checkCSAFProductTree21Details(source *csafProductTree21Details, v version) error {
 	for i := range source.ProductPaths {
 		if err := checkVersion21Struct49(&source.ProductPaths[i], v); err != nil {
 			return fmt.Errorf("product_paths[%d].%w", i, err)
@@ -980,7 +980,7 @@ func checkCSAFProductTree21Details(source *CSAFProductTree21Details, v version) 
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProduct21Details(source *CSAFProductTreeBranchesElemProduct21Details, v version) error {
+func checkCSAFProductTreeBranchesElemProduct21Details(source *csafProductTreeBranchesElemProduct21Details, v version) error {
 	for i := range source.XExtensions {
 		if err := checkVersion21Struct28(&source.XExtensions[i], v); err != nil {
 			return fmt.Errorf("x_extensions[%d].%w", i, err)
@@ -989,11 +989,11 @@ func checkCSAFProductTreeBranchesElemProduct21Details(source *CSAFProductTreeBra
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper20Details(source *CSAFProductTreeBranchesElemProductProductIdentificationHelper20Details, v version) error {
+func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper20Details(source *csafProductTreeBranchesElemProductProductIdentificationHelper20Details, v version) error {
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper21Details(source *CSAFProductTreeBranchesElemProductProductIdentificationHelper21Details, v version) error {
+func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper21Details(source *csafProductTreeBranchesElemProductProductIdentificationHelper21Details, v version) error {
 	return nil
 }
 
@@ -1039,7 +1039,7 @@ func checkVersion20Struct63(source *v20.CVSSV20, v version) error {
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElem20Details(source *CSAFVulnerabilitiesElem20Details, v version) error {
+func checkCSAFVulnerabilitiesElem20Details(source *csafVulnerabilitiesElem20Details, v version) error {
 	if source.CWE != nil {
 		if err := checkVersion20Struct60(source.CWE, v); err != nil {
 			return fmt.Errorf("cwe.%w", err)
@@ -1232,7 +1232,7 @@ func checkVersion21Struct76(source *v21.MinimalDecisionPointValue, v version) er
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElem21Details(source *CSAFVulnerabilitiesElem21Details, v version) error {
+func checkCSAFVulnerabilitiesElem21Details(source *csafVulnerabilitiesElem21Details, v version) error {
 	for i := range source.Cwes {
 		if err := checkVersion21Struct65(&source.Cwes[i], v); err != nil {
 			return fmt.Errorf("cwes[%d].%w", i, err)
@@ -1256,10 +1256,10 @@ func checkCSAFVulnerabilitiesElem21Details(source *CSAFVulnerabilitiesElem21Deta
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemIdsElem21Details(source *CSAFVulnerabilitiesElemIdsElem21Details, v version) error {
+func checkCSAFVulnerabilitiesElemIdsElem21Details(source *csafVulnerabilitiesElemIdsElem21Details, v version) error {
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemProductStatus21Details(source *CSAFVulnerabilitiesElemProductStatus21Details, v version) error {
+func checkCSAFVulnerabilitiesElemProductStatus21Details(source *csafVulnerabilitiesElemProductStatus21Details, v version) error {
 	return nil
 }

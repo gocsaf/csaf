@@ -22,71 +22,116 @@ type Provider struct {
 	PublicOpenpgpKeys       []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty"`
 	Publisher               ProviderPublisher               `json:"publisher"`
 	Role                    string                          `json:"role"`
-	*Provider21Details
+	*provider21Details
 }
 
-// Provider21Details contains fields specific to CSAF 2.1.
-type Provider21Details struct {
+// provider21Details contains fields specific to CSAF 2.1.
+type provider21Details struct {
 	Schema          v21.ProviderSchema `json:"$schema"`
 	MaintainedFrom  *v21.DateTime      `json:"maintained_from,omitempty"`
 	MaintainedUntil *v21.DateTime      `json:"maintained_until,omitempty"`
 }
 
-// GetSchema reports whether the matching version details are present.
-func (v *Provider) GetSchema() (v21.ProviderSchema, bool) {
-	if v == nil || v.Provider21Details == nil {
+// Schema reports whether the matching version details are present.
+func (v *Provider) Schema() (v21.ProviderSchema, bool) {
+	if v == nil || v.provider21Details == nil {
 		return v21.ProviderSchema(""), false
 	}
-	return v.Provider21Details.Schema, true
+	return v.provider21Details.Schema, true
 }
 
-// GetMaintainedFrom reports whether the matching version details are present.
-func (v *Provider) GetMaintainedFrom() (*v21.DateTime, bool) {
-	if v == nil || v.Provider21Details == nil {
-		return nil, false
+// SetSchema updates the value if matching version details are present.
+func (v *Provider) SetSchema(value v21.ProviderSchema) bool {
+	if v == nil || v.provider21Details == nil {
+		return false
 	}
-	return v.Provider21Details.MaintainedFrom, true
+	v.provider21Details.Schema = value
+	return true
 }
 
-// GetMaintainedUntil reports whether the matching version details are present.
-func (v *Provider) GetMaintainedUntil() (*v21.DateTime, bool) {
-	if v == nil || v.Provider21Details == nil {
+// MaintainedFrom reports whether the matching version details are present.
+func (v *Provider) MaintainedFrom() (*v21.DateTime, bool) {
+	if v == nil || v.provider21Details == nil {
 		return nil, false
 	}
-	return v.Provider21Details.MaintainedUntil, true
+	return v.provider21Details.MaintainedFrom, true
+}
+
+// SetMaintainedFrom updates the value if matching version details are present.
+func (v *Provider) SetMaintainedFrom(value *v21.DateTime) bool {
+	if v == nil || v.provider21Details == nil {
+		return false
+	}
+	v.provider21Details.MaintainedFrom = value
+	return true
+}
+
+// MaintainedUntil reports whether the matching version details are present.
+func (v *Provider) MaintainedUntil() (*v21.DateTime, bool) {
+	if v == nil || v.provider21Details == nil {
+		return nil, false
+	}
+	return v.provider21Details.MaintainedUntil, true
+}
+
+// SetMaintainedUntil updates the value if matching version details are present.
+func (v *Provider) SetMaintainedUntil(value *v21.DateTime) bool {
+	if v == nil || v.provider21Details == nil {
+		return false
+	}
+	v.provider21Details.MaintainedUntil = value
+	return true
 }
 
 // ProviderDistributionsElem contains common fields and optional version-specific details.
 type ProviderDistributionsElem struct {
 	Rolie *ProviderDistributionsElemRolie `json:"rolie,omitempty"`
-	*ProviderDistributionsElem20Details
-	*ProviderDistributionsElem21Details
+	*providerDistributionsElem20Details
+	*providerDistributionsElem21Details
 }
 
-// ProviderDistributionsElem20Details contains fields specific to CSAF 2.0.
-type ProviderDistributionsElem20Details struct {
+// providerDistributionsElem20Details contains fields specific to CSAF 2.0.
+type providerDistributionsElem20Details struct {
 	DirectoryURL *v20.URLT `json:"directory_url,omitempty"`
 }
 
-// GetDirectoryURL reports whether the matching version details are present.
-func (v *ProviderDistributionsElem) GetDirectoryURL() (*v20.URLT, bool) {
-	if v == nil || v.ProviderDistributionsElem20Details == nil {
+// DirectoryURL reports whether the matching version details are present.
+func (v *ProviderDistributionsElem) DirectoryURL() (*v20.URLT, bool) {
+	if v == nil || v.providerDistributionsElem20Details == nil {
 		return nil, false
 	}
-	return v.ProviderDistributionsElem20Details.DirectoryURL, true
+	return v.providerDistributionsElem20Details.DirectoryURL, true
 }
 
-// ProviderDistributionsElem21Details contains fields specific to CSAF 2.1.
-type ProviderDistributionsElem21Details struct {
+// SetDirectoryURL updates the value if matching version details are present.
+func (v *ProviderDistributionsElem) SetDirectoryURL(value *v20.URLT) bool {
+	if v == nil || v.providerDistributionsElem20Details == nil {
+		return false
+	}
+	v.providerDistributionsElem20Details.DirectoryURL = value
+	return true
+}
+
+// providerDistributionsElem21Details contains fields specific to CSAF 2.1.
+type providerDistributionsElem21Details struct {
 	Directory *v21.ProviderDistributionsElemDirectory `json:"directory,omitempty"`
 }
 
-// GetDirectory reports whether the matching version details are present.
-func (v *ProviderDistributionsElem) GetDirectory() (*v21.ProviderDistributionsElemDirectory, bool) {
-	if v == nil || v.ProviderDistributionsElem21Details == nil {
+// Directory reports whether the matching version details are present.
+func (v *ProviderDistributionsElem) Directory() (*v21.ProviderDistributionsElemDirectory, bool) {
+	if v == nil || v.providerDistributionsElem21Details == nil {
 		return nil, false
 	}
-	return v.ProviderDistributionsElem21Details.Directory, true
+	return v.providerDistributionsElem21Details.Directory, true
+}
+
+// SetDirectory updates the value if matching version details are present.
+func (v *ProviderDistributionsElem) SetDirectory(value *v21.ProviderDistributionsElemDirectory) bool {
+	if v == nil || v.providerDistributionsElem21Details == nil {
+		return false
+	}
+	v.providerDistributionsElem21Details.Directory = value
+	return true
 }
 
 // ProviderDistributionsElemRolie contains common fields and optional version-specific details.
@@ -101,20 +146,29 @@ type ProviderDistributionsElemRolieFeedsElem struct {
 	Summary  *string `json:"summary,omitempty"`
 	TLPLabel string  `json:"tlp_label"`
 	URL      string  `json:"url"`
-	*ProviderDistributionsElemRolieFeedsElem21Details
+	*providerDistributionsElemRolieFeedsElem21Details
 }
 
-// ProviderDistributionsElemRolieFeedsElem21Details contains fields specific to CSAF 2.1.
-type ProviderDistributionsElemRolieFeedsElem21Details struct {
+// providerDistributionsElemRolieFeedsElem21Details contains fields specific to CSAF 2.1.
+type providerDistributionsElemRolieFeedsElem21Details struct {
 	LastUpdated v21.DateTime `json:"last_updated"`
 }
 
-// GetLastUpdated reports whether the matching version details are present.
-func (v *ProviderDistributionsElemRolieFeedsElem) GetLastUpdated() (v21.DateTime, bool) {
-	if v == nil || v.ProviderDistributionsElemRolieFeedsElem21Details == nil {
+// LastUpdated reports whether the matching version details are present.
+func (v *ProviderDistributionsElemRolieFeedsElem) LastUpdated() (v21.DateTime, bool) {
+	if v == nil || v.providerDistributionsElemRolieFeedsElem21Details == nil {
 		return v21.DateTime(""), false
 	}
-	return v.ProviderDistributionsElemRolieFeedsElem21Details.LastUpdated, true
+	return v.providerDistributionsElemRolieFeedsElem21Details.LastUpdated, true
+}
+
+// SetLastUpdated updates the value if matching version details are present.
+func (v *ProviderDistributionsElemRolieFeedsElem) SetLastUpdated(value v21.DateTime) bool {
+	if v == nil || v.providerDistributionsElemRolieFeedsElem21Details == nil {
+		return false
+	}
+	v.providerDistributionsElemRolieFeedsElem21Details.LastUpdated = value
+	return true
 }
 
 // ProviderPublicOpenpgpKeysElem contains common fields and optional version-specific details.
@@ -129,32 +183,50 @@ type ProviderPublisher struct {
 	IssuingAuthority *string `json:"issuing_authority,omitempty"`
 	Name             string  `json:"name"`
 	Namespace        string  `json:"namespace"`
-	*ProviderPublisher20Details
-	*ProviderPublisher21Details
+	*providerPublisher20Details
+	*providerPublisher21Details
 }
 
-// ProviderPublisher20Details contains fields specific to CSAF 2.0.
-type ProviderPublisher20Details struct {
+// providerPublisher20Details contains fields specific to CSAF 2.0.
+type providerPublisher20Details struct {
 	ContactDetails *string `json:"contact_details,omitempty"`
 }
 
-// GetContactDetails reports whether the matching version details are present.
-func (v *ProviderPublisher) GetContactDetails() (*string, bool) {
-	if v == nil || v.ProviderPublisher20Details == nil {
+// ContactDetails reports whether the matching version details are present.
+func (v *ProviderPublisher) ContactDetails() (*string, bool) {
+	if v == nil || v.providerPublisher20Details == nil {
 		return nil, false
 	}
-	return v.ProviderPublisher20Details.ContactDetails, true
+	return v.providerPublisher20Details.ContactDetails, true
 }
 
-// ProviderPublisher21Details contains fields specific to CSAF 2.1.
-type ProviderPublisher21Details struct {
+// SetContactDetails updates the value if matching version details are present.
+func (v *ProviderPublisher) SetContactDetails(value *string) bool {
+	if v == nil || v.providerPublisher20Details == nil {
+		return false
+	}
+	v.providerPublisher20Details.ContactDetails = value
+	return true
+}
+
+// providerPublisher21Details contains fields specific to CSAF 2.1.
+type providerPublisher21Details struct {
 	Contact *v21.ContactT `json:"contact,omitempty"`
 }
 
-// GetContact reports whether the matching version details are present.
-func (v *ProviderPublisher) GetContact() (*v21.ContactT, bool) {
-	if v == nil || v.ProviderPublisher21Details == nil {
+// Contact reports whether the matching version details are present.
+func (v *ProviderPublisher) Contact() (*v21.ContactT, bool) {
+	if v == nil || v.providerPublisher21Details == nil {
 		return nil, false
 	}
-	return v.ProviderPublisher21Details.Contact, true
+	return v.providerPublisher21Details.Contact, true
+}
+
+// SetContact updates the value if matching version details are present.
+func (v *ProviderPublisher) SetContact(value *v21.ContactT) bool {
+	if v == nil || v.providerPublisher21Details == nil {
+		return false
+	}
+	v.providerPublisher21Details.Contact = value
+	return true
 }

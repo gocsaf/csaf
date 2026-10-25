@@ -31,6 +31,21 @@ type typedDetails struct {
 	fields  []typedField
 }
 
+// Lowercases the leading run of ASCII uppercase letters, keeping the last
+// uppercase letter if it starts a word followed by lowercase letters.
+// The first letter is always lowercased, so Provider becomes provider and
+// CSAFDocument becomes csafDocument.
+func (d *typedDetails) privateName() string {
+	end := 0
+	for end < len(d.name) && d.name[end] >= 'A' && d.name[end] <= 'Z' {
+		if end > 0 && end+1 < len(d.name) && d.name[end+1] >= 'a' && d.name[end+1] <= 'z' {
+			break
+		}
+		end++
+	}
+	return strings.ToLower(d.name[:end]) + d.name[end:]
+}
+
 type typedField struct {
 	name     string       // Go name of the field
 	jsonName string       // JSON name of the field
