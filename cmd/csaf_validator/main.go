@@ -24,6 +24,7 @@ import (
 	"github.com/jessevdk/go-flags"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/internal/manpage"
 	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
 )
@@ -48,8 +49,17 @@ func main() {
 
 	parser := flags.NewParser(opts, flags.Default)
 	parser.Usage = "[OPTIONS] files..."
+	parser.ShortDescription = "validate local CSAF advisory files"
+	parser.LongDescription = "Validates each file against the CSAF 2.0 JSON " +
+		"schema and, if one is configured, against a remote validation service."
+	var man manpage.Flag
+	errCheck(man.AddTo(parser))
 	files, err := parser.Parse()
 	errCheck(err)
+
+	if man.WriteIfAsked(parser) {
+		return
+	}
 
 	if opts.Version {
 		fmt.Println(util.SemVersion)

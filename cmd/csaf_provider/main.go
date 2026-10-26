@@ -18,6 +18,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 
+	"github.com/gocsaf/csaf/v3/internal/manpage"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -38,7 +39,20 @@ func ensureCGI() {
 func main() {
 	var opts options
 	parser := flags.NewParser(&opts, flags.Default)
+	parser.ShortDescription = "CGI program that serves and receives CSAF advisories"
+	parser.LongDescription = "Implements the upload and management interface " +
+		"of a CSAF trusted provider as a CGI program. A web server runs it per " +
+		"request, and csaf_uploader is the client that talks to it. It keeps " +
+		"the provider metadata, the ROLIE feeds and the index files in step as " +
+		"advisories arrive, and signs them with the configured OpenPGP key."
+	var man manpage.Flag
+	if err := man.AddTo(parser); err != nil {
+		log.Fatalf("error: %v\n", err)
+	}
 	parser.Parse()
+	if man.WriteIfAsked(parser) {
+		return
+	}
 	if opts.Version {
 		fmt.Println(util.SemVersion)
 		return
