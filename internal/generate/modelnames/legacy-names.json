@@ -1,0 +1,953 @@
+{
+  "advisory": {
+    "": {
+      "struct_name": "Advisory"
+    },
+    "/document": {
+      "name": "Document",
+      "struct_name": "Document"
+    },
+    "/document/acknowledgements": {
+      "name": "Acknowledgements",
+      "struct_name": "Acknowledgement"
+    },
+    "/document/acknowledgements/*/names": {
+      "name": "Names",
+      "type": "[]*string"
+    },
+    "/document/acknowledgements/*/organization": {
+      "name": "Organization",
+      "type": "*string"
+    },
+    "/document/acknowledgements/*/summary": {
+      "name": "Summary",
+      "type": "*string"
+    },
+    "/document/acknowledgements/*/urls": {
+      "name": "URLs",
+      "type": "[]*string"
+    },
+    "/document/aggregate_severity": {
+      "name": "AggregateSeverity",
+      "struct_name": "AggregateSeverity"
+    },
+    "/document/aggregate_severity/namespace": {
+      "name": "Namespace",
+      "type": "*string"
+    },
+    "/document/aggregate_severity/text": {
+      "name": "Text",
+      "type": "*string"
+    },
+    "/document/category": {
+      "name": "Category",
+      "type": "*DocumentCategory"
+    },
+    "/document/csaf_version": {
+      "name": "CSAFVersion",
+      "type": "*Version"
+    },
+    "/document/distribution": {
+      "name": "Distribution",
+      "struct_name": "DocumentDistribution"
+    },
+    "/document/distribution/text": {
+      "name": "Text",
+      "type": "*string"
+    },
+    "/document/distribution/tlp": {
+      "name": "TLP",
+      "struct_name": "TLP"
+    },
+    "/document/distribution/tlp/label": {
+      "name": "DocumentTLPLabel",
+      "type": "*TLPLabel"
+    },
+    "/document/distribution/tlp/url": {
+      "name": "URL",
+      "type": "*string"
+    },
+    "/document/lang": {
+      "name": "Lang",
+      "type": "*Lang"
+    },
+    "/document/notes": {
+      "name": "Notes",
+      "struct_name": "Note"
+    },
+    "/document/notes/*/audience": {
+      "name": "Audience",
+      "type": "*string"
+    },
+    "/document/notes/*/category": {
+      "name": "NoteCategory",
+      "type": "*NoteCategory"
+    },
+    "/document/notes/*/text": {
+      "name": "Text",
+      "type": "*string"
+    },
+    "/document/notes/*/title": {
+      "name": "Title",
+      "type": "*string"
+    },
+    "/document/publisher": {
+      "name": "Publisher",
+      "struct_name": "DocumentPublisher"
+    },
+    "/document/publisher/category": {
+      "name": "Category",
+      "type": "*Category"
+    },
+    "/document/publisher/contact_details": {
+      "name": "ContactDetails",
+      "type": "*string"
+    },
+    "/document/publisher/issuing_authority": {
+      "name": "IssuingAuthority",
+      "type": "*string"
+    },
+    "/document/publisher/name": {
+      "name": "Name",
+      "type": "*string"
+    },
+    "/document/publisher/namespace": {
+      "name": "Namespace",
+      "type": "*string"
+    },
+    "/document/references": {
+      "name": "References",
+      "struct_name": "Reference"
+    },
+    "/document/references/*/category": {
+      "name": "ReferenceCategory",
+      "type": "*string"
+    },
+    "/document/references/*/summary": {
+      "name": "Summary",
+      "type": "*string"
+    },
+    "/document/references/*/url": {
+      "name": "URL",
+      "type": "*string"
+    },
+    "/document/source_lang": {
+      "name": "SourceLang",
+      "type": "*Lang"
+    },
+    "/document/title": {
+      "name": "Title",
+      "type": "*string"
+    },
+    "/document/tracking": {
+      "name": "Tracking",
+      "struct_name": "Tracking"
+    },
+    "/document/tracking/aliases": {
+      "name": "Aliases",
+      "type": "[]*string"
+    },
+    "/document/tracking/current_release_date": {
+      "name": "CurrentReleaseDate",
+      "type": "*string"
+    },
+    "/document/tracking/generator": {
+      "name": "Generator",
+      "struct_name": "Generator"
+    },
+    "/document/tracking/generator/date": {
+      "name": "Date",
+      "type": "*string"
+    },
+    "/document/tracking/generator/engine": {
+      "name": "Engine",
+      "struct_name": "Engine"
+    },
+    "/document/tracking/generator/engine/name": {
+      "name": "Name",
+      "type": "*string"
+    },
+    "/document/tracking/generator/engine/version": {
+      "name": "Version",
+      "type": "*string"
+    },
+    "/document/tracking/id": {
+      "name": "ID",
+      "type": "*TrackingID"
+    },
+    "/document/tracking/initial_release_date": {
+      "name": "InitialReleaseDate",
+      "type": "*string"
+    },
+    "/document/tracking/revision_history": {
+      "name": "RevisionHistory",
+      "struct_name": "Revision"
+    },
+    "/document/tracking/revision_history/*/date": {
+      "name": "Date",
+      "type": "*string"
+    },
+    "/document/tracking/revision_history/*/legacy_version": {
+      "name": "LegacyVersion",
+      "type": "*string"
+    },
+    "/document/tracking/revision_history/*/number": {
+      "name": "Number",
+      "type": "*RevisionNumber"
+    },
+    "/document/tracking/revision_history/*/summary": {
+      "name": "Summary",
+      "type": "*string"
+    },
+    "/document/tracking/status": {
+      "name": "Status",
+      "type": "*TrackingStatus"
+    },
+    "/document/tracking/version": {
+      "name": "Version",
+      "type": "*RevisionNumber"
+    },
+    "/product_tree": {
+      "name": "ProductTree",
+      "struct_name": "ProductTree"
+    },
+    "/product_tree/branches": {
+      "name": "Branches",
+      "struct_name": "Branch"
+    },
+    "/product_tree/branches/*/branches": {
+      "name": "Branches",
+      "struct_name": "Branch"
+    },
+    "/product_tree/branches/*/category": {
+      "name": "Category",
+      "type": "*BranchCategory"
+    },
+    "/product_tree/branches/*/name": {
+      "name": "Name",
+      "type": "*string"
+    },
+    "/product_tree/branches/*/product": {
+      "name": "Product",
+      "struct_name": "FullProductName"
+    },
+    "/product_tree/branches/*/product/name": {
+      "name": "Name",
+      "type": "*string"
+    },
+    "/product_tree/branches/*/product/product_id": {
+      "name": "ProductID",
+      "type": "*ProductID"
+    },
+    "/product_tree/branches/*/product/product_identification_helper": {
+      "name": "ProductIdentificationHelper",
+      "struct_name": "ProductIdentificationHelper"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/cpe": {
+      "name": "CPE",
+      "type": "*CPE"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/hashes": {
+      "name": "Hashes",
+      "struct_name": "Hashes"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/hashes/file_hashes": {
+      "name": "FileHashes",
+      "struct_name": "FileHash"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/hashes/file_hashes/*/algorithm": {
+      "name": "Algorithm",
+      "type": "*string"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/hashes/file_hashes/*/value": {
+      "name": "Value",
+      "type": "*FileHashValue"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/hashes/filename": {
+      "name": "FileName",
+      "type": "*string"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/model_numbers": {
+      "name": "ModelNumbers",
+      "type": "[]*string"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/purl": {
+      "name": "PURL",
+      "type": "*PURL"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/sbom_urls": {
+      "name": "SBOMURLs",
+      "type": "[]*string"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/serial_numbers": {
+      "name": "SerialNumbers",
+      "type": "[]*string"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/skus": {
+      "name": "SKUs",
+      "type": "[]*string"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/x_generic_uris": {
+      "name": "XGenericURIs",
+      "struct_name": "XGenericURI"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/x_generic_uris/*/namespace": {
+      "name": "Namespace",
+      "type": "*string"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/x_generic_uris/*/uri": {
+      "name": "URI",
+      "type": "*string"
+    },
+    "/product_tree/full_product_names": {
+      "name": "FullProductNames",
+      "struct_name": "FullProductName"
+    },
+    "/product_tree/product_groups": {
+      "name": "ProductGroups",
+      "struct_name": "ProductGroups"
+    },
+    "/product_tree/product_groups/product_group_ids": {
+      "name": "ProductGroupIDs",
+      "type": "[]*ProductGroupID"
+    },
+    "/product_tree/relationships": {
+      "name": "RelationShips",
+      "struct_name": "Relationship"
+    },
+    "/product_tree/relationships/*/category": {
+      "name": "Category",
+      "type": "*RelationshipCategory"
+    },
+    "/product_tree/relationships/*/full_product_name": {
+      "name": "FullProductName",
+      "struct_name": "FullProductName"
+    },
+    "/product_tree/relationships/*/product_reference": {
+      "name": "ProductReference",
+      "type": "*ProductID"
+    },
+    "/product_tree/relationships/*/relates_to_product_reference": {
+      "name": "RelatesToProductReference",
+      "type": "*ProductID"
+    },
+    "/vulnerabilities": {
+      "name": "Vulnerabilities",
+      "struct_name": "Vulnerability"
+    },
+    "/vulnerabilities/*/acknowledgements": {
+      "name": "Acknowledgements",
+      "struct_name": "Acknowledgement"
+    },
+    "/vulnerabilities/*/cve": {
+      "name": "CVE",
+      "type": "*CVE"
+    },
+    "/vulnerabilities/*/cwe": {
+      "name": "CWE",
+      "struct_name": "CWE"
+    },
+    "/vulnerabilities/*/cwe/id": {
+      "name": "ID",
+      "type": "*WeaknessID"
+    },
+    "/vulnerabilities/*/cwe/name": {
+      "name": "Name",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/discovery_date": {
+      "name": "DiscoveryDate",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/flags": {
+      "name": "Flags",
+      "struct_name": "Flag"
+    },
+    "/vulnerabilities/*/flags/*/date": {
+      "name": "Date",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/flags/*/group_ids": {
+      "name": "GroupIDs",
+      "struct_name": "ProductGroups"
+    },
+    "/vulnerabilities/*/flags/*/label": {
+      "name": "Label",
+      "type": "*FlagLabel"
+    },
+    "/vulnerabilities/*/flags/*/product_ids": {
+      "name": "ProductIds",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/ids": {
+      "name": "IDs",
+      "struct_name": "VulnerabilityID"
+    },
+    "/vulnerabilities/*/ids/*/system_name": {
+      "name": "SystemName",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/ids/*/text": {
+      "name": "Text",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/involvements": {
+      "name": "Involvements",
+      "struct_name": "Involvement"
+    },
+    "/vulnerabilities/*/involvements/*/date": {
+      "name": "Date",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/involvements/*/party": {
+      "name": "Party",
+      "type": "*InvolvementParty"
+    },
+    "/vulnerabilities/*/involvements/*/status": {
+      "name": "Status",
+      "type": "*InvolvementStatus"
+    },
+    "/vulnerabilities/*/involvements/*/summary": {
+      "name": "Summary",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/notes": {
+      "name": "Notes",
+      "struct_name": "Note"
+    },
+    "/vulnerabilities/*/product_status": {
+      "name": "ProductStatus",
+      "struct_name": "ProductStatus"
+    },
+    "/vulnerabilities/*/product_status/first_affected": {
+      "name": "FirstAffected",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/product_status/first_fixed": {
+      "name": "FirstFixed",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/product_status/fixed": {
+      "name": "Fixed",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/product_status/known_affected": {
+      "name": "KnownAffected",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/product_status/known_not_affected": {
+      "name": "KnownNotAffected",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/product_status/last_affected": {
+      "name": "LastAffected",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/product_status/recommended": {
+      "name": "Recommended",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/product_status/under_investigation": {
+      "name": "UnderInvestigation",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/references": {
+      "name": "References",
+      "struct_name": "Reference"
+    },
+    "/vulnerabilities/*/release_date": {
+      "name": "ReleaseDate",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/remediations": {
+      "name": "Remediations",
+      "struct_name": "Remediation"
+    },
+    "/vulnerabilities/*/remediations/*/category": {
+      "name": "Category",
+      "type": "*RemediationCategory"
+    },
+    "/vulnerabilities/*/remediations/*/date": {
+      "name": "Date",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/remediations/*/details": {
+      "name": "Details",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/remediations/*/entitlements": {
+      "name": "Entitlements",
+      "type": "[]*string"
+    },
+    "/vulnerabilities/*/remediations/*/group_ids": {
+      "name": "GroupIds",
+      "struct_name": "ProductGroups"
+    },
+    "/vulnerabilities/*/remediations/*/product_ids": {
+      "name": "ProductIds",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/remediations/*/restart_required": {
+      "name": "RestartRequired",
+      "struct_name": "RestartRequired"
+    },
+    "/vulnerabilities/*/remediations/*/restart_required/category": {
+      "name": "Category",
+      "type": "*RestartRequiredCategory"
+    },
+    "/vulnerabilities/*/remediations/*/restart_required/details": {
+      "name": "Details",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/remediations/*/url": {
+      "name": "URL",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/scores": {
+      "name": "Scores",
+      "struct_name": "Score"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2": {
+      "name": "CVSS2",
+      "struct_name": "CVSS2"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/accessComplexity": {
+      "name": "AccessComplexity",
+      "type": "*CVSS20AccessComplexity"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/accessVector": {
+      "name": "AccessVector",
+      "type": "*CVSS20AccessVector"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/authentication": {
+      "name": "Authentication",
+      "type": "*CVSS20Authentication"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/availabilityImpact": {
+      "name": "AvailabilityImpact",
+      "type": "*CVSS20Cia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/availabilityRequirement": {
+      "name": "AvailabilityRequirement",
+      "type": "*CVSS20CiaRequirement"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/baseScore": {
+      "name": "BaseScore",
+      "type": "*float64"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/collateralDamagePotential": {
+      "name": "CollateralDamagePotential",
+      "type": "*CVSS20CollateralDamagePotential"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/confidentialityImpact": {
+      "name": "ConfidentialityImpact",
+      "type": "*CVSS20Cia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/confidentialityRequirement": {
+      "name": "ConfidentialityRequirement",
+      "type": "*CVSS20CiaRequirement"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/environmentalScore": {
+      "name": "EnvironmentalScore",
+      "type": "*float64"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/exploitability": {
+      "name": "Exploitability",
+      "type": "*CVSS20Exploitability"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/integrityImpact": {
+      "name": "IntegrityImpact",
+      "type": "*CVSS20Cia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/integrityRequirement": {
+      "name": "IntegrityRequirement",
+      "type": "*CVSS20CiaRequirement"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/remediationLevel": {
+      "name": "RemediationLevel",
+      "type": "*CVSS20RemediationLevel"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/reportConfidence": {
+      "name": "ReportConfidence",
+      "type": "*CVSS20ReportConfidence"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/targetDistribution": {
+      "name": "TargetDistribution",
+      "type": "*CVSS20TargetDistribution"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/temporalScore": {
+      "name": "TemporalScore",
+      "type": "*float64"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/vectorString": {
+      "name": "VectorString",
+      "type": "*CVSS2VectorString"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v2/version": {
+      "name": "Version",
+      "type": "*CVSSVersion2"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3": {
+      "name": "CVSS3",
+      "struct_name": "CVSS3"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/attackComplexity": {
+      "name": "AttackComplexity",
+      "type": "*CVSS3AttackComplexity"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/attackVector": {
+      "name": "AttackVector",
+      "type": "*CVSS3AttackVector"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/availabilityImpact": {
+      "name": "AvailabilityImpact",
+      "type": "*CVSS3Cia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/availabilityRequirement": {
+      "name": "AvailabilityRequirement",
+      "type": "*CVSS3CiaRequirement"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/baseScore": {
+      "name": "BaseScore",
+      "type": "*float64"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/baseSeverity": {
+      "name": "BaseSeverity",
+      "type": "*CVSS3Severity"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/confidentialityImpact": {
+      "name": "ConfidentialityImpact",
+      "type": "*CVSS3Cia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/confidentialityRequirement": {
+      "name": "ConfidentialityRequirement",
+      "type": "*CVSS3CiaRequirement"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/environmentalScore": {
+      "name": "EenvironmentalScore",
+      "type": "*float64"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/environmentalSeverity": {
+      "name": "EnvironmentalSeverity",
+      "type": "*CVSS3Severity"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/exploitCodeMaturity": {
+      "name": "ExploitCodeMaturity",
+      "type": "*CVSS3ExploitCodeMaturity"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/integrityImpact": {
+      "name": "IntegrityImpact",
+      "type": "CVSS3Cia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/integrityRequirement": {
+      "name": "IntegrityRequirement",
+      "type": "*CVSS3CiaRequirement"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/modifiedAttackComplexity": {
+      "name": "ModifiedAttackComplexity",
+      "type": "*CVSS3ModifiedAttackComplexity"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/modifiedAttackVector": {
+      "name": "ModifiedAttackVector",
+      "type": "*CVSS3ModifiedAttackVector"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/modifiedAvailabilityImpact": {
+      "name": "ModifiedAvailabilityImpact",
+      "type": "*CVSS3ModifiedCia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/modifiedConfidentialityImpact": {
+      "name": "ModifiedConfidentialityImpact",
+      "type": "*CVSS3ModifiedCia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/modifiedIntegrityImpact": {
+      "name": "ModifiedIntegrityImpact",
+      "type": "*CVSS3ModifiedCia"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/modifiedPrivilegesRequired": {
+      "name": "ModifiedPrivilegesRequired",
+      "type": "*CVSS3ModifiedPrivilegesRequired"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/modifiedScope": {
+      "name": "ModifiedScope",
+      "type": "*CVSS3ModifiedScope"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/modifiedUserInteraction": {
+      "name": "ModifiedUserInteraction",
+      "type": "*CVSS3ModifiedUserInteraction"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/privilegesRequired": {
+      "name": "PrivilegesRequired",
+      "type": "*CVSS3PrivilegesRequired"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/remediationLevel": {
+      "name": "RemediationLevel",
+      "type": "*CVSS3RemediationLevel"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/reportConfidence": {
+      "name": "ReportConfidence",
+      "type": "*CVSS3Confidence"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/scope": {
+      "name": "Scope",
+      "type": "*CVSS3Scope"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/temporalScore": {
+      "name": "TemporalScore",
+      "type": "*float64"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/temporalSeverity": {
+      "name": "TemporalSeverity",
+      "type": "*CVSS3Severity"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/userInteraction": {
+      "name": "UserInteraction",
+      "type": "*CVSS3UserInteraction"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/vectorString": {
+      "name": "VectorString",
+      "type": "*CVSS3VectorString"
+    },
+    "/vulnerabilities/*/scores/*/cvss_v3/version": {
+      "name": "Version",
+      "type": "*CVSSVersion3"
+    },
+    "/vulnerabilities/*/scores/*/products": {
+      "name": "Products",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/threats": {
+      "name": "Threats",
+      "struct_name": "Threat"
+    },
+    "/vulnerabilities/*/threats/*/category": {
+      "name": "Category",
+      "type": "*ThreatCategory"
+    },
+    "/vulnerabilities/*/threats/*/date": {
+      "name": "Date",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/threats/*/details": {
+      "name": "Details",
+      "type": "*string"
+    },
+    "/vulnerabilities/*/threats/*/group_ids": {
+      "name": "GroupIds",
+      "struct_name": "ProductGroups"
+    },
+    "/vulnerabilities/*/threats/*/product_ids": {
+      "name": "ProductIds",
+      "type": "*Products"
+    },
+    "/vulnerabilities/*/title": {
+      "name": "Title",
+      "type": "*string"
+    }
+  },
+  "provider": {
+    "": {
+      "struct_name": "ProviderMetadata"
+    },
+    "/canonical_url": {
+      "name": "CanonicalURL",
+      "type": "*ProviderURL"
+    },
+    "/distributions": {
+      "name": "Distributions",
+      "struct_name": "Distribution"
+    },
+    "/distributions/*/directory_url": {
+      "name": "DirectoryURL",
+      "type": "string"
+    },
+    "/distributions/*/rolie": {
+      "name": "Rolie",
+      "struct_name": "ROLIE"
+    },
+    "/distributions/*/rolie/categories": {
+      "name": "Categories",
+      "type": "[]JSONURL"
+    },
+    "/distributions/*/rolie/feeds": {
+      "name": "Feeds",
+      "struct_name": "Feed"
+    },
+    "/distributions/*/rolie/feeds/*/summary": {
+      "name": "Summary",
+      "type": "string"
+    },
+    "/distributions/*/rolie/feeds/*/tlp_label": {
+      "name": "TLPLabel",
+      "type": "*TLPLabel"
+    },
+    "/distributions/*/rolie/feeds/*/url": {
+      "name": "URL",
+      "type": "*JSONURL"
+    },
+    "/distributions/*/rolie/services": {
+      "name": "Services",
+      "type": "[]JSONURL"
+    },
+    "/last_updated": {
+      "name": "LastUpdated",
+      "type": "*TimeStamp"
+    },
+    "/list_on_CSAF_aggregators": {
+      "name": "ListOnCSAFAggregators",
+      "type": "*bool"
+    },
+    "/metadata_version": {
+      "name": "MetadataVersion",
+      "type": "*MetadataVersion"
+    },
+    "/mirror_on_CSAF_aggregators": {
+      "name": "MirrorOnCSAFAggregators",
+      "type": "*bool"
+    },
+    "/public_openpgp_keys": {
+      "name": "PGPKeys",
+      "struct_name": "PGPKey"
+    },
+    "/public_openpgp_keys/*/fingerprint": {
+      "name": "Fingerprint",
+      "type": "Fingerprint"
+    },
+    "/public_openpgp_keys/*/url": {
+      "name": "URL",
+      "type": "*string"
+    },
+    "/publisher": {
+      "name": "Publisher",
+      "struct_name": "Publisher"
+    },
+    "/publisher/category": {
+      "name": "Category",
+      "type": "*Category"
+    },
+    "/publisher/contact_details": {
+      "name": "ContactDetails",
+      "type": "string"
+    },
+    "/publisher/issuing_authority": {
+      "name": "IssuingAuthority",
+      "type": "string"
+    },
+    "/publisher/name": {
+      "name": "Name",
+      "type": "*string"
+    },
+    "/publisher/namespace": {
+      "name": "Namespace",
+      "type": "*string"
+    },
+    "/role": {
+      "name": "Role",
+      "type": "*MetadataRole"
+    }
+  },
+  "aggregator": {
+    "": {
+      "struct_name": "Aggregator"
+    },
+    "/aggregator": {
+      "name": "Aggregator",
+      "struct_name": "AggregatorInfo"
+    },
+    "/aggregator/category": {
+      "name": "Category",
+      "type": "*AggregatorCategory"
+    },
+    "/aggregator/contact_details": {
+      "name": "ContactDetails",
+      "type": "string"
+    },
+    "/aggregator/issuing_authority": {
+      "name": "IssuingAuthority",
+      "type": "string"
+    },
+    "/aggregator/name": {
+      "name": "Name",
+      "type": "string"
+    },
+    "/aggregator/namespace": {
+      "name": "Namespace",
+      "type": "string"
+    },
+    "/aggregator_version": {
+      "name": "Version",
+      "type": "*AggregatorVersion"
+    },
+    "/canonical_url": {
+      "name": "CanonicalURL",
+      "type": "*AggregatorURL"
+    },
+    "/csaf_providers": {
+      "name": "CSAFProviders",
+      "struct_name": "AggregatorCSAFProvider"
+    },
+    "/csaf_providers/*/metadata": {
+      "name": "Metadata",
+      "struct_name": "AggregatorCSAFProviderMetadata"
+    },
+    "/csaf_providers/*/metadata/last_updated": {
+      "name": "LastUpdated",
+      "type": "*TimeStamp"
+    },
+    "/csaf_providers/*/metadata/publisher": {
+      "name": "Publisher",
+      "struct_name": "Publisher"
+    },
+    "/csaf_providers/*/metadata/publisher/category": {
+      "name": "Category",
+      "type": "*Category"
+    },
+    "/csaf_providers/*/metadata/publisher/contact_details": {
+      "name": "ContactDetails",
+      "type": "string"
+    },
+    "/csaf_providers/*/metadata/publisher/issuing_authority": {
+      "name": "IssuingAuthority",
+      "type": "string"
+    },
+    "/csaf_providers/*/metadata/publisher/name": {
+      "name": "Name",
+      "type": "*string"
+    },
+    "/csaf_providers/*/metadata/publisher/namespace": {
+      "name": "Namespace",
+      "type": "*string"
+    },
+    "/csaf_providers/*/metadata/role": {
+      "name": "Role",
+      "type": "*MetadataRole"
+    },
+    "/csaf_providers/*/metadata/url": {
+      "name": "URL",
+      "type": "*ProviderURL"
+    },
+    "/csaf_providers/*/mirrors": {
+      "name": "Mirrors",
+      "type": "[]ProviderURL"
+    },
+    "/csaf_publishers": {
+      "name": "CSAFPublishers",
+      "struct_name": "AggregatorCSAFPublisher"
+    },
+    "/csaf_publishers/*/metadata": {
+      "name": "Metadata",
+      "struct_name": "AggregatorCSAFProviderMetadata"
+    },
+    "/csaf_publishers/*/mirrors": {
+      "name": "Mirrors",
+      "type": "[]ProviderURL"
+    },
+    "/csaf_publishers/*/update_interval": {
+      "name": "UpdateInterval",
+      "type": "string"
+    },
+    "/last_updated": {
+      "name": "LastUpdated",
+      "type": "*TimeStamp"
+    }
+  }
+}
