@@ -1,0 +1,67 @@
+.TH csaf_uploader 1 "23 October 2026"
+.SH NAME
+csaf_uploader \- upload advisories to a CSAF trusted provider
+.SH SYNOPSIS
+\fBcsaf_uploader\fP [OPTIONS] advisories...
+.SH DESCRIPTION
+Sends each advisory file to the upload interface of a CSAF trusted provider, the one csaf_provider implements. The advisory is validated against the CSAF JSON schema before it is sent.
+.SH OPTIONS
+.SS Application Options
+.TP
+\fB\fB\-a\fR, \fB\-\-action\fR\fP
+Action to perform
+.TP
+\fB\fB\-u\fR, \fB\-\-url\fR \fIURL\fR\fP
+URL of the CSAF provider
+.TP
+\fB\fB\-t\fR, \fB\-\-tlp\fR\fP
+TLP of the feed
+.TP
+\fB\fB\-x\fR, \fB\-\-external_signed\fR\fP
+CSAF files are signed externally. Assumes .asc files beside CSAF files.
+.TP
+\fB\fB\-X\fR, \fB\-\-signing_tool\fR\fP
+Tool to sign a file externally
+.TP
+\fB\fB\-\-signing_tool_timeout\fR\fP
+Timeout for the external signing tool
+.TP
+\fB\fB\-s\fR, \fB\-\-no_schema_check\fR\fP
+Do not check files against CSAF JSON schema locally.
+.TP
+\fB\fB\-k\fR, \fB\-\-key\fR \fIKEY-FILE\fR\fP
+OpenPGP key to sign the CSAF files
+.TP
+\fB\fB\-p\fR, \fB\-\-password\fR \fIPASSWORD\fR\fP
+Authentication password for accessing the CSAF provider
+.TP
+\fB\fB\-P\fR, \fB\-\-passphrase\fR \fIPASSPHRASE\fR\fP
+Passphrase to unlock the OpenPGP key
+.TP
+\fB\fB\-\-client_cert\fR \fICERT-FILE.crt\fR\fP
+TLS client certificate file (PEM encoded data)
+.TP
+\fB\fB\-\-client_key\fR \fIKEY-FILE.pem\fR\fP
+TLS client private key file (PEM encoded data)
+.TP
+\fB\fB\-\-client_passphrase\fR \fIPASSPHRASE\fR\fP
+Optional passphrase for the client cert (limited, experimental, see downloader doc)
+.TP
+\fB\fB\-i\fR, \fB\-\-password_interactive\fR\fP
+Enter password interactively
+.TP
+\fB\fB\-I\fR, \fB\-\-passphrase_interactive\fR\fP
+Enter OpenPGP key passphrase interactively
+.TP
+\fB\fB\-\-insecure\fR\fP
+Do not check TLS certificates from provider
+.TP
+\fB\fB\-c\fR, \fB\-\-config\fR \fITOML-FILE\fR\fP
+Path to config TOML file
+.TP
+\fB\fB\-\-version\fR\fP
+Display version of the binary
+.SS Help Options
+.TP
+\fB\fB\-h\fR, \fB\-\-help\fR\fP
+Show this help message

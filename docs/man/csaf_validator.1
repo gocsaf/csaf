@@ -1,0 +1,28 @@
+.TH csaf_validator 1 "23 October 2026"
+.SH NAME
+csaf_validator \- validate local CSAF advisory files
+.SH SYNOPSIS
+\fBcsaf_validator\fP [OPTIONS] files...
+.SH DESCRIPTION
+Validates each file against the CSAF 2.0 JSON schema and, if one is configured, against a remote validation service.
+.SH OPTIONS
+.SS Application Options
+.TP
+\fB\fB\-\-version\fR\fP
+Display version of the binary
+.TP
+\fB\fB\-\-validator\fR \fIURL\fR\fP
+URL to validate documents remotely
+.TP
+\fB\fB\-\-validator_cache\fR \fIFILE\fR\fP
+FILE to cache remote validations
+.TP
+\fB\fB\-\-validator_preset\fR <default: \fI"mandatory"\fR>\fP
+One or more presets to validate remotely
+.TP
+\fB\fB\-o\fR, \fB\-\-output\fR \fIAMOUNT\fR\fP
+If a remote validator was used, display AMOUNT ('all', 'important' or 'short') results
+.SS Help Options
+.TP
+\fB\fB\-h\fR, \fB\-\-help\fR\fP
+Show this help message

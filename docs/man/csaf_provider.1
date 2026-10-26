@@ -1,0 +1,16 @@
+.TH csaf_provider 1 "23 October 2026"
+.SH NAME
+csaf_provider \- CGI program that serves and receives CSAF advisories
+.SH SYNOPSIS
+\fBcsaf_provider\fP [OPTIONS]
+.SH DESCRIPTION
+Implements the upload and management interface of a CSAF trusted provider as a CGI program. A web server runs it per request, and csaf_uploader is the client that talks to it. It keeps the provider metadata, the ROLIE feeds and the index files in step as advisories arrive, and signs them with the configured OpenPGP key.
+.SH OPTIONS
+.SS Application Options
+.TP
+\fB\fB\-\-version\fR\fP
+Display version of the binary
+.SS Help Options
+.TP
+\fB\fB\-h\fR, \fB\-\-help\fR\fP
+Show this help message
