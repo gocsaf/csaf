@@ -442,7 +442,7 @@ const maintenanceWarningWindow = 90 * 24 * time.Hour
 
 // checkMaintenanceWindow makes a v2.1 PMD check on the maintenance window defined by maintained_from/maintained_until fields.
 func checkMaintenanceWindow(pmd *provider.Provider, path string, now time.Time) error {
-	if from, _ := pmd.GetMaintainedFrom(); from != nil {
+	if from, _ := pmd.MaintainedFrom(); from != nil {
 		t, err := from.Time()
 		if err != nil {
 			return fmt.Errorf("%s: invalid maintained_from: %w", path, err)
@@ -451,7 +451,7 @@ func checkMaintenanceWindow(pmd *provider.Provider, path string, now time.Time) 
 			slog.Warn("PMD not maintaned yet", "url", path, "maintained_from", *from)
 		}
 	}
-	if until, _ := pmd.GetMaintainedUntil(); until != nil {
+	if until, _ := pmd.MaintainedUntil(); until != nil {
 		t, err := until.Time()
 		if err != nil {
 			return fmt.Errorf("%s: invalid maintained_until: %w", path, err)

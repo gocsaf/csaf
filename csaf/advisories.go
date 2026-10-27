@@ -127,14 +127,14 @@ func getAdvisoryDirs(pmd *provider.Provider) []advisoryDir {
 	var dirs []advisoryDir
 	for i := range pmd.Distributions {
 		dist := &pmd.Distributions[i]
-		if u, _ := dist.GetDirectoryURL(); u != nil && *u != "" {
+		if u, _ := dist.DirectoryURL(); u != nil && *u != "" {
 			// XXX: Is treating as white okay? better look into the advisories?
 			dirs = append(dirs, advisoryDir{
 				url:   string(*u),
 				label: TLPLabelDefault(Version20),
 			})
 		}
-		if dir, _ := dist.GetDirectory(); dir != nil && dir.URL != "" {
+		if dir, _ := dist.Directory(); dir != nil && dir.URL != "" {
 			dirs = append(dirs, advisoryDir{
 				url:   string(dir.URL),
 				label: TLPLabel(dir.TLPLabel),
