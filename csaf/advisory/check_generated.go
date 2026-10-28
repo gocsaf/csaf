@@ -633,7 +633,7 @@ func checkCSAFVulnerabilitiesElemThreatsElem(source *CSAFVulnerabilitiesElemThre
 	return nil
 }
 
-func checkVersion21Struct28(source *v21.ExtensionContentJson, v version) error {
+func checkVersion21Struct28(source *ExtensionContentJson, v version) error {
 	if source.Schema == "" {
 		return errors.New("$schema: required value is missing or empty")
 	}
@@ -658,7 +658,7 @@ func checkCSAF21Details(source *csaf21Details, v version) error {
 	return nil
 }
 
-func checkVersion21Struct30(source *v21.CSAFDocumentInvolvement, v version) error {
+func checkVersion21Struct30(source *CSAFDocumentInvolvement, v version) error {
 	if len(source.Actions) == 0 {
 		return errors.New("actions: required value is missing or empty")
 	}
@@ -683,7 +683,7 @@ func checkVersion21Struct30(source *v21.CSAFDocumentInvolvement, v version) erro
 	return nil
 }
 
-func checkVersion21Struct31(source *v21.CSAFDocumentInvolvementActionsElem, v version) error {
+func checkVersion21Struct31(source *CSAFDocumentInvolvementActionsElem, v version) error {
 	if len(source.ActingEntityRefs) == 0 {
 		return errors.New("acting_entity_refs: required value is missing or empty")
 	}
@@ -702,7 +702,7 @@ func checkVersion21Struct31(source *v21.CSAFDocumentInvolvementActionsElem, v ve
 	return nil
 }
 
-func checkVersion21Struct32(source *v21.CSAFDocumentInvolvementEntitiesElem, v version) error {
+func checkVersion21Struct32(source *CSAFDocumentInvolvementEntitiesElem, v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
@@ -717,11 +717,11 @@ func checkVersion21Struct32(source *v21.CSAFDocumentInvolvementEntitiesElem, v v
 	return nil
 }
 
-func checkVersion21Struct33(source *v21.ContactT, v version) error {
+func checkVersion21Struct33(source *ContactT, v version) error {
 	return nil
 }
 
-func checkVersion21Struct34(source *v21.CSAFDocumentInvolvementEntityGroupsElem, v version) error {
+func checkVersion21Struct34(source *CSAFDocumentInvolvementEntityGroupsElem, v version) error {
 	if source.EntityGroupID == "" {
 		return errors.New("entity_group_id: required value is missing or empty")
 	}
@@ -748,7 +748,7 @@ func checkCSAFDocument21Details(source *csafDocument21Details, v version) error 
 	return nil
 }
 
-func checkVersion21Struct36(source *v21.CSAFDocumentDistributionSharingGroup, v version) error {
+func checkVersion21Struct36(source *CSAFDocumentDistributionSharingGroup, v version) error {
 	if source.ID == "" {
 		return errors.New("id: required value is missing or empty")
 	}
@@ -772,7 +772,7 @@ func checkCSAFDocumentPublisher20Details(source *csafDocumentPublisher20Details,
 	return nil
 }
 
-func checkVersion21Struct40(source *v21.ContactT, v version) error {
+func checkVersion21Struct40(source *ContactT, v version) error {
 	return nil
 }
 
@@ -785,7 +785,7 @@ func checkCSAFDocumentPublisher21Details(source *csafDocumentPublisher21Details,
 	return nil
 }
 
-func checkVersion20Struct42(source *v20.CSAFProductTreeRelationshipsElem, v version) error {
+func checkVersion20Struct42(source *CSAFProductTreeRelationshipsElem, v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
@@ -801,7 +801,7 @@ func checkVersion20Struct42(source *v20.CSAFProductTreeRelationshipsElem, v vers
 	return nil
 }
 
-func checkVersion20Struct43(source *v20.FullProductNameT, v version) error {
+func checkVersion20Struct43(source *FullProductNameT, v version) error {
 	if source.Name == "" {
 		return errors.New("name: required value is missing or empty")
 	}
@@ -816,7 +816,7 @@ func checkVersion20Struct43(source *v20.FullProductNameT, v version) error {
 	return nil
 }
 
-func checkVersion20Struct44(source *v20.FullProductNameTProductIdentificationHelper, v version) error {
+func checkVersion20Struct44(source *FullProductNameTProductIdentificationHelper, v version) error {
 	for i := range source.Hashes {
 		if err := checkVersion20Struct45(&source.Hashes[i], v); err != nil {
 			return fmt.Errorf("hashes[%d].%w", i, err)
@@ -830,7 +830,7 @@ func checkVersion20Struct44(source *v20.FullProductNameTProductIdentificationHel
 	return nil
 }
 
-func checkVersion20Struct45(source *v20.FullProductNameTProductIdentificationHelperHashesElem, v version) error {
+func checkVersion20Struct45(source *FullProductNameTProductIdentificationHelperHashesElem, v version) error {
 	if len(source.FileHashes) == 0 {
 		return errors.New("file_hashes: required value is missing or empty")
 	}
@@ -845,7 +845,7 @@ func checkVersion20Struct45(source *v20.FullProductNameTProductIdentificationHel
 	return nil
 }
 
-func checkVersion20Struct46(source *v20.FullProductNameTProductIdentificationHelperHashesElemFileHashesElem, v version) error {
+func checkVersion20Struct46(source *FullProductNameTProductIdentificationHelperHashesElemFileHashesElem, v version) error {
 	if source.Algorithm == "" {
 		return errors.New("algorithm: required value is missing or empty")
 	}
@@ -855,7 +855,7 @@ func checkVersion20Struct46(source *v20.FullProductNameTProductIdentificationHel
 	return nil
 }
 
-func checkVersion20Struct47(source *v20.FullProductNameTProductIdentificationHelperXGenericUrisElem, v version) error {
+func checkVersion20Struct47(source *FullProductNameTProductIdentificationHelperXGenericUrisElem, v version) error {
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
@@ -874,7 +874,7 @@ func checkCSAFProductTree20Details(source *csafProductTree20Details, v version) 
 	return nil
 }
 
-func checkVersion21Struct49(source *v21.CSAFProductTreeProductPathsElem, v version) error {
+func checkVersion21Struct49(source *CSAFProductTreeProductPathsElem, v version) error {
 	if source.BeginningProductReference == "" {
 		return errors.New("beginning_product_reference: required value is missing or empty")
 	}
@@ -892,7 +892,7 @@ func checkVersion21Struct49(source *v21.CSAFProductTreeProductPathsElem, v versi
 	return nil
 }
 
-func checkVersion21Struct50(source *v21.FullProductNameT, v version) error {
+func checkVersion21Struct50(source *FullProductNameT21, v version) error {
 	if source.Name == "" {
 		return errors.New("name: required value is missing or empty")
 	}
@@ -912,7 +912,7 @@ func checkVersion21Struct50(source *v21.FullProductNameT, v version) error {
 	return nil
 }
 
-func checkVersion21Struct51(source *v21.FullProductNameTProductIdentificationHelper, v version) error {
+func checkVersion21Struct51(source *FullProductNameTProductIdentificationHelper21, v version) error {
 	for i := range source.Hashes {
 		if err := checkVersion21Struct52(&source.Hashes[i], v); err != nil {
 			return fmt.Errorf("hashes[%d].%w", i, err)
@@ -926,7 +926,7 @@ func checkVersion21Struct51(source *v21.FullProductNameTProductIdentificationHel
 	return nil
 }
 
-func checkVersion21Struct52(source *v21.FullProductNameTProductIdentificationHelperHashesElem, v version) error {
+func checkVersion21Struct52(source *FullProductNameTProductIdentificationHelperHashesElem21, v version) error {
 	if len(source.FileHashes) == 0 {
 		return errors.New("file_hashes: required value is missing or empty")
 	}
@@ -941,7 +941,7 @@ func checkVersion21Struct52(source *v21.FullProductNameTProductIdentificationHel
 	return nil
 }
 
-func checkVersion21Struct53(source *v21.FullProductNameTProductIdentificationHelperHashesElemFileHashesElem, v version) error {
+func checkVersion21Struct53(source *FullProductNameTProductIdentificationHelperHashesElemFileHashesElem21, v version) error {
 	if source.Algorithm == "" {
 		return errors.New("algorithm: required value is missing or empty")
 	}
@@ -951,7 +951,7 @@ func checkVersion21Struct53(source *v21.FullProductNameTProductIdentificationHel
 	return nil
 }
 
-func checkVersion21Struct54(source *v21.FullProductNameTProductIdentificationHelperXGenericUrisElem, v version) error {
+func checkVersion21Struct54(source *FullProductNameTProductIdentificationHelperXGenericUrisElem21, v version) error {
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
@@ -961,7 +961,7 @@ func checkVersion21Struct54(source *v21.FullProductNameTProductIdentificationHel
 	return nil
 }
 
-func checkVersion21Struct55(source *v21.SubpathT, v version) error {
+func checkVersion21Struct55(source *SubpathT, v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
@@ -997,7 +997,7 @@ func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper21Details
 	return nil
 }
 
-func checkVersion20Struct60(source *v20.CSAFVulnerabilitiesElemCWE, v version) error {
+func checkVersion20Struct60(source *CSAFVulnerabilitiesElemCWE, v version) error {
 	if source.ID == "" {
 		return errors.New("id: required value is missing or empty")
 	}
@@ -1007,7 +1007,7 @@ func checkVersion20Struct60(source *v20.CSAFVulnerabilitiesElemCWE, v version) e
 	return nil
 }
 
-func checkVersion20Struct61(source *v20.CSAFVulnerabilitiesElemInvolvementsElem, v version) error {
+func checkVersion20Struct61(source *CSAFVulnerabilitiesElemInvolvementsElem, v version) error {
 	if source.Party == "" {
 		return errors.New("party: required value is missing or empty")
 	}
@@ -1058,7 +1058,7 @@ func checkCSAFVulnerabilitiesElem20Details(source *csafVulnerabilitiesElem20Deta
 	return nil
 }
 
-func checkVersion21Struct65(source *v21.CSAFVulnerabilitiesElemCwesElem, v version) error {
+func checkVersion21Struct65(source *CSAFVulnerabilitiesElemCwesElem, v version) error {
 	if source.ID == "" {
 		return errors.New("id: required value is missing or empty")
 	}
@@ -1071,7 +1071,7 @@ func checkVersion21Struct65(source *v21.CSAFVulnerabilitiesElemCwesElem, v versi
 	return nil
 }
 
-func checkVersion21Struct66(source *v21.CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem, v version) error {
+func checkVersion21Struct66(source *CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem, v version) error {
 	if source.Date == "" {
 		return errors.New("date: required value is missing or empty")
 	}
@@ -1081,7 +1081,7 @@ func checkVersion21Struct66(source *v21.CSAFVulnerabilitiesElemFirstKnownExploit
 	return nil
 }
 
-func checkVersion21Struct67(source *v21.CSAFVulnerabilitiesElemMetricsElem, v version) error {
+func checkVersion21Struct67(source *CSAFVulnerabilitiesElemMetricsElem, v version) error {
 	if len(source.Products) == 0 {
 		return errors.New("products: required value is missing or empty")
 	}
@@ -1113,7 +1113,7 @@ func checkVersion21Struct68(source *v21.CSAFVulnerabilitiesElemMetricsElemConten
 		}
 	}
 	for i := range source.XExtensions {
-		if err := checkVersion21Struct28(&source.XExtensions[i], v); err != nil {
+		if err := checkVersion21Struct77(&source.XExtensions[i], v); err != nil {
 			return fmt.Errorf("x_extensions[%d].%w", i, err)
 		}
 	}
@@ -1228,6 +1228,19 @@ func checkVersion21Struct75(source *v21.Selection, v version) error {
 func checkVersion21Struct76(source *v21.MinimalDecisionPointValue, v version) error {
 	if source.Key == "" {
 		return errors.New("key: required value is missing or empty")
+	}
+	return nil
+}
+
+func checkVersion21Struct77(source *v21.ExtensionContentJson, v version) error {
+	if source.Schema == "" {
+		return errors.New("$schema: required value is missing or empty")
+	}
+	if source.Category == "" {
+		return errors.New("category: required value is missing or empty")
+	}
+	if source.Content == nil {
+		return errors.New("content: required value is missing or empty")
 	}
 	return nil
 }

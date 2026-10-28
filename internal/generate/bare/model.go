@@ -16,8 +16,10 @@ import (
 )
 
 type model struct {
-	types  map[string]ast.Expr
-	custom map[string]bool
+	types     map[string]ast.Expr
+	custom    map[string]bool
+	aliases   map[string]bool
+	constants map[string][]*ast.ValueSpec // enum constants by their named type
 }
 
 func loadModel(dir string) (*model, error) {
@@ -25,7 +27,10 @@ func loadModel(dir string) (*model, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := &model{types: make(map[string]ast.Expr), custom: make(map[string]bool)}
+	result := &model{
+		types: make(map[string]ast.Expr), custom: make(map[string]bool),
+		aliases: make(map[string]bool), constants: make(map[string][]*ast.ValueSpec),
+	}
 	for _, path := range paths {
 		if strings.HasSuffix(path, "_test.go") {
 			continue
@@ -38,12 +43,23 @@ func loadModel(dir string) (*model, error) {
 		for _, declaration := range file.Decls {
 			switch node := declaration.(type) {
 			case *ast.GenDecl:
-				if node.Tok != token.TYPE {
-					continue
-				}
-				for _, specification := range node.Specs {
-					spec := specification.(*ast.TypeSpec)
-					result.types[spec.Name.Name] = spec.Type
+				switch node.Tok {
+				case token.TYPE:
+					for _, specification := range node.Specs {
+						spec := specification.(*ast.TypeSpec)
+						result.types[spec.Name.Name] = spec.Type
+						result.aliases[spec.Name.Name] = spec.Assign.IsValid()
+					}
+				case token.CONST:
+					for _, specification := range node.Specs {
+						spec := specification.(*ast.ValueSpec)
+						if len(spec.Values) != len(spec.Names) {
+							return nil, fmt.Errorf("%s: implicit constant values are unsupported", path)
+						}
+						if typ, ok := spec.Type.(*ast.Ident); ok {
+							result.constants[typ.Name] = append(result.constants[typ.Name], spec)
+						}
+					}
 				}
 			case *ast.FuncDecl:
 				if node.Recv != nil && node.Name.Name == "UnmarshalJSON" {

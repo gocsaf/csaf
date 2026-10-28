@@ -21,20 +21,20 @@ type CSAF struct {
 
 // csaf21Details contains fields specific to CSAF 2.1.
 type csaf21Details struct {
-	Schema      v21.CSAFSchema  `json:"$schema"`
-	XExtensions v21.ExtensionsT `json:"x_extensions,omitempty"`
+	Schema      CSAFSchema  `json:"$schema"`
+	XExtensions ExtensionsT `json:"x_extensions,omitempty"`
 }
 
 // Schema reports whether the matching version details are present.
-func (v *CSAF) Schema() (v21.CSAFSchema, bool) {
+func (v *CSAF) Schema() (CSAFSchema, bool) {
 	if v == nil || v.csaf21Details == nil {
-		return v21.CSAFSchema(""), false
+		return CSAFSchema(""), false
 	}
 	return v.csaf21Details.Schema, true
 }
 
 // SetSchema updates the value if matching version details are present.
-func (v *CSAF) SetSchema(value v21.CSAFSchema) bool {
+func (v *CSAF) SetSchema(value CSAFSchema) bool {
 	if v == nil || v.csaf21Details == nil {
 		return false
 	}
@@ -43,7 +43,7 @@ func (v *CSAF) SetSchema(value v21.CSAFSchema) bool {
 }
 
 // XExtensions reports whether the matching version details are present.
-func (v *CSAF) XExtensions() (v21.ExtensionsT, bool) {
+func (v *CSAF) XExtensions() (ExtensionsT, bool) {
 	if v == nil || v.csaf21Details == nil {
 		return nil, false
 	}
@@ -51,7 +51,7 @@ func (v *CSAF) XExtensions() (v21.ExtensionsT, bool) {
 }
 
 // SetXExtensions updates the value if matching version details are present.
-func (v *CSAF) SetXExtensions(value v21.ExtensionsT) bool {
+func (v *CSAF) SetXExtensions(value ExtensionsT) bool {
 	if v == nil || v.csaf21Details == nil {
 		return false
 	}
@@ -78,13 +78,13 @@ type CSAFDocument struct {
 
 // csafDocument21Details contains fields specific to CSAF 2.1.
 type csafDocument21Details struct {
-	Involvement       *v21.CSAFDocumentInvolvement `json:"involvement,omitempty"`
-	LicenseExpression *string                      `json:"license_expression,omitempty"`
-	XExtensions       v21.ExtensionsT              `json:"x_extensions,omitempty"`
+	Involvement       *CSAFDocumentInvolvement `json:"involvement,omitempty"`
+	LicenseExpression *string                  `json:"license_expression,omitempty"`
+	XExtensions       ExtensionsT              `json:"x_extensions,omitempty"`
 }
 
 // Involvement reports whether the matching version details are present.
-func (v *CSAFDocument) Involvement() (*v21.CSAFDocumentInvolvement, bool) {
+func (v *CSAFDocument) Involvement() (*CSAFDocumentInvolvement, bool) {
 	if v == nil || v.csafDocument21Details == nil {
 		return nil, false
 	}
@@ -92,7 +92,7 @@ func (v *CSAFDocument) Involvement() (*v21.CSAFDocumentInvolvement, bool) {
 }
 
 // SetInvolvement updates the value if matching version details are present.
-func (v *CSAFDocument) SetInvolvement(value *v21.CSAFDocumentInvolvement) bool {
+func (v *CSAFDocument) SetInvolvement(value *CSAFDocumentInvolvement) bool {
 	if v == nil || v.csafDocument21Details == nil {
 		return false
 	}
@@ -118,7 +118,7 @@ func (v *CSAFDocument) SetLicenseExpression(value *string) bool {
 }
 
 // XExtensions reports whether the matching version details are present.
-func (v *CSAFDocument) XExtensions() (v21.ExtensionsT, bool) {
+func (v *CSAFDocument) XExtensions() (ExtensionsT, bool) {
 	if v == nil || v.csafDocument21Details == nil {
 		return nil, false
 	}
@@ -126,7 +126,7 @@ func (v *CSAFDocument) XExtensions() (v21.ExtensionsT, bool) {
 }
 
 // SetXExtensions updates the value if matching version details are present.
-func (v *CSAFDocument) SetXExtensions(value v21.ExtensionsT) bool {
+func (v *CSAFDocument) SetXExtensions(value ExtensionsT) bool {
 	if v == nil || v.csafDocument21Details == nil {
 		return false
 	}
@@ -157,11 +157,11 @@ type CSAFDocumentDistribution struct {
 
 // csafDocumentDistribution21Details contains fields specific to CSAF 2.1.
 type csafDocumentDistribution21Details struct {
-	SharingGroup *v21.CSAFDocumentDistributionSharingGroup `json:"sharing_group,omitempty"`
+	SharingGroup *CSAFDocumentDistributionSharingGroup `json:"sharing_group,omitempty"`
 }
 
 // SharingGroup reports whether the matching version details are present.
-func (v *CSAFDocumentDistribution) SharingGroup() (*v21.CSAFDocumentDistributionSharingGroup, bool) {
+func (v *CSAFDocumentDistribution) SharingGroup() (*CSAFDocumentDistributionSharingGroup, bool) {
 	if v == nil || v.csafDocumentDistribution21Details == nil {
 		return nil, false
 	}
@@ -169,7 +169,7 @@ func (v *CSAFDocumentDistribution) SharingGroup() (*v21.CSAFDocumentDistribution
 }
 
 // SetSharingGroup updates the value if matching version details are present.
-func (v *CSAFDocumentDistribution) SetSharingGroup(value *v21.CSAFDocumentDistributionSharingGroup) bool {
+func (v *CSAFDocumentDistribution) SetSharingGroup(value *CSAFDocumentDistributionSharingGroup) bool {
 	if v == nil || v.csafDocumentDistribution21Details == nil {
 		return false
 	}
@@ -194,12 +194,12 @@ type CSAFDocumentNotesElem struct {
 
 // csafDocumentNotesElem21Details contains fields specific to CSAF 2.1.
 type csafDocumentNotesElem21Details struct {
-	GroupIds   v21.ProductGroupsT `json:"group_ids,omitempty"`
-	ProductIds v21.ProductsT      `json:"product_ids,omitempty"`
+	GroupIds   ProductGroupsT `json:"group_ids,omitempty"`
+	ProductIds ProductsT      `json:"product_ids,omitempty"`
 }
 
 // GroupIds reports whether the matching version details are present.
-func (v *CSAFDocumentNotesElem) GroupIds() (v21.ProductGroupsT, bool) {
+func (v *CSAFDocumentNotesElem) GroupIds() (ProductGroupsT, bool) {
 	if v == nil || v.csafDocumentNotesElem21Details == nil {
 		return nil, false
 	}
@@ -207,7 +207,7 @@ func (v *CSAFDocumentNotesElem) GroupIds() (v21.ProductGroupsT, bool) {
 }
 
 // SetGroupIds updates the value if matching version details are present.
-func (v *CSAFDocumentNotesElem) SetGroupIds(value v21.ProductGroupsT) bool {
+func (v *CSAFDocumentNotesElem) SetGroupIds(value ProductGroupsT) bool {
 	if v == nil || v.csafDocumentNotesElem21Details == nil {
 		return false
 	}
@@ -216,7 +216,7 @@ func (v *CSAFDocumentNotesElem) SetGroupIds(value v21.ProductGroupsT) bool {
 }
 
 // ProductIds reports whether the matching version details are present.
-func (v *CSAFDocumentNotesElem) ProductIds() (v21.ProductsT, bool) {
+func (v *CSAFDocumentNotesElem) ProductIds() (ProductsT, bool) {
 	if v == nil || v.csafDocumentNotesElem21Details == nil {
 		return nil, false
 	}
@@ -224,7 +224,7 @@ func (v *CSAFDocumentNotesElem) ProductIds() (v21.ProductsT, bool) {
 }
 
 // SetProductIds updates the value if matching version details are present.
-func (v *CSAFDocumentNotesElem) SetProductIds(value v21.ProductsT) bool {
+func (v *CSAFDocumentNotesElem) SetProductIds(value ProductsT) bool {
 	if v == nil || v.csafDocumentNotesElem21Details == nil {
 		return false
 	}
@@ -266,11 +266,11 @@ func (v *CSAFDocumentPublisher) SetContactDetails(value *string) bool {
 
 // csafDocumentPublisher21Details contains fields specific to CSAF 2.1.
 type csafDocumentPublisher21Details struct {
-	Contact *v21.ContactT `json:"contact,omitempty"`
+	Contact *ContactT `json:"contact,omitempty"`
 }
 
 // Contact reports whether the matching version details are present.
-func (v *CSAFDocumentPublisher) Contact() (*v21.ContactT, bool) {
+func (v *CSAFDocumentPublisher) Contact() (*ContactT, bool) {
 	if v == nil || v.csafDocumentPublisher21Details == nil {
 		return nil, false
 	}
@@ -278,7 +278,7 @@ func (v *CSAFDocumentPublisher) Contact() (*v21.ContactT, bool) {
 }
 
 // SetContact updates the value if matching version details are present.
-func (v *CSAFDocumentPublisher) SetContact(value *v21.ContactT) bool {
+func (v *CSAFDocumentPublisher) SetContact(value *ContactT) bool {
 	if v == nil || v.csafDocumentPublisher21Details == nil {
 		return false
 	}
@@ -336,11 +336,11 @@ type CSAFProductTree struct {
 
 // csafProductTree20Details contains fields specific to CSAF 2.0.
 type csafProductTree20Details struct {
-	Relationships []v20.CSAFProductTreeRelationshipsElem `json:"relationships,omitempty"`
+	Relationships []CSAFProductTreeRelationshipsElem `json:"relationships,omitempty"`
 }
 
 // Relationships reports whether the matching version details are present.
-func (v *CSAFProductTree) Relationships() ([]v20.CSAFProductTreeRelationshipsElem, bool) {
+func (v *CSAFProductTree) Relationships() ([]CSAFProductTreeRelationshipsElem, bool) {
 	if v == nil || v.csafProductTree20Details == nil {
 		return nil, false
 	}
@@ -348,7 +348,7 @@ func (v *CSAFProductTree) Relationships() ([]v20.CSAFProductTreeRelationshipsEle
 }
 
 // SetRelationships updates the value if matching version details are present.
-func (v *CSAFProductTree) SetRelationships(value []v20.CSAFProductTreeRelationshipsElem) bool {
+func (v *CSAFProductTree) SetRelationships(value []CSAFProductTreeRelationshipsElem) bool {
 	if v == nil || v.csafProductTree20Details == nil {
 		return false
 	}
@@ -358,11 +358,11 @@ func (v *CSAFProductTree) SetRelationships(value []v20.CSAFProductTreeRelationsh
 
 // csafProductTree21Details contains fields specific to CSAF 2.1.
 type csafProductTree21Details struct {
-	ProductPaths []v21.CSAFProductTreeProductPathsElem `json:"product_paths,omitempty"`
+	ProductPaths []CSAFProductTreeProductPathsElem `json:"product_paths,omitempty"`
 }
 
 // ProductPaths reports whether the matching version details are present.
-func (v *CSAFProductTree) ProductPaths() ([]v21.CSAFProductTreeProductPathsElem, bool) {
+func (v *CSAFProductTree) ProductPaths() ([]CSAFProductTreeProductPathsElem, bool) {
 	if v == nil || v.csafProductTree21Details == nil {
 		return nil, false
 	}
@@ -370,7 +370,7 @@ func (v *CSAFProductTree) ProductPaths() ([]v21.CSAFProductTreeProductPathsElem,
 }
 
 // SetProductPaths updates the value if matching version details are present.
-func (v *CSAFProductTree) SetProductPaths(value []v21.CSAFProductTreeProductPathsElem) bool {
+func (v *CSAFProductTree) SetProductPaths(value []CSAFProductTreeProductPathsElem) bool {
 	if v == nil || v.csafProductTree21Details == nil {
 		return false
 	}
@@ -396,11 +396,11 @@ type CSAFProductTreeBranchesElemProduct struct {
 
 // csafProductTreeBranchesElemProduct21Details contains fields specific to CSAF 2.1.
 type csafProductTreeBranchesElemProduct21Details struct {
-	XExtensions v21.ExtensionsT `json:"x_extensions,omitempty"`
+	XExtensions ExtensionsT `json:"x_extensions,omitempty"`
 }
 
 // XExtensions reports whether the matching version details are present.
-func (v *CSAFProductTreeBranchesElemProduct) XExtensions() (v21.ExtensionsT, bool) {
+func (v *CSAFProductTreeBranchesElemProduct) XExtensions() (ExtensionsT, bool) {
 	if v == nil || v.csafProductTreeBranchesElemProduct21Details == nil {
 		return nil, false
 	}
@@ -408,7 +408,7 @@ func (v *CSAFProductTreeBranchesElemProduct) XExtensions() (v21.ExtensionsT, boo
 }
 
 // SetXExtensions updates the value if matching version details are present.
-func (v *CSAFProductTreeBranchesElemProduct) SetXExtensions(value v21.ExtensionsT) bool {
+func (v *CSAFProductTreeBranchesElemProduct) SetXExtensions(value ExtensionsT) bool {
 	if v == nil || v.csafProductTreeBranchesElemProduct21Details == nil {
 		return false
 	}
@@ -517,14 +517,14 @@ type CSAFVulnerabilitiesElem struct {
 
 // csafVulnerabilitiesElem20Details contains fields specific to CSAF 2.0.
 type csafVulnerabilitiesElem20Details struct {
-	CWE          *v20.CSAFVulnerabilitiesElemCWE               `json:"cwe,omitempty"`
-	Involvements []v20.CSAFVulnerabilitiesElemInvolvementsElem `json:"involvements,omitempty"`
-	ReleaseDate  *v20.DateTime                                 `json:"release_date,omitempty"`
-	Scores       []v20.CSAFVulnerabilitiesElemScoresElem       `json:"scores,omitempty"`
+	CWE          *CSAFVulnerabilitiesElemCWE               `json:"cwe,omitempty"`
+	Involvements []CSAFVulnerabilitiesElemInvolvementsElem `json:"involvements,omitempty"`
+	ReleaseDate  *v20.DateTime                             `json:"release_date,omitempty"`
+	Scores       []v20.CSAFVulnerabilitiesElemScoresElem   `json:"scores,omitempty"`
 }
 
 // CWE reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) CWE() (*v20.CSAFVulnerabilitiesElemCWE, bool) {
+func (v *CSAFVulnerabilitiesElem) CWE() (*CSAFVulnerabilitiesElemCWE, bool) {
 	if v == nil || v.csafVulnerabilitiesElem20Details == nil {
 		return nil, false
 	}
@@ -532,7 +532,7 @@ func (v *CSAFVulnerabilitiesElem) CWE() (*v20.CSAFVulnerabilitiesElemCWE, bool) 
 }
 
 // SetCWE updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetCWE(value *v20.CSAFVulnerabilitiesElemCWE) bool {
+func (v *CSAFVulnerabilitiesElem) SetCWE(value *CSAFVulnerabilitiesElemCWE) bool {
 	if v == nil || v.csafVulnerabilitiesElem20Details == nil {
 		return false
 	}
@@ -541,7 +541,7 @@ func (v *CSAFVulnerabilitiesElem) SetCWE(value *v20.CSAFVulnerabilitiesElemCWE) 
 }
 
 // Involvements reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) Involvements() ([]v20.CSAFVulnerabilitiesElemInvolvementsElem, bool) {
+func (v *CSAFVulnerabilitiesElem) Involvements() ([]CSAFVulnerabilitiesElemInvolvementsElem, bool) {
 	if v == nil || v.csafVulnerabilitiesElem20Details == nil {
 		return nil, false
 	}
@@ -549,7 +549,7 @@ func (v *CSAFVulnerabilitiesElem) Involvements() ([]v20.CSAFVulnerabilitiesElemI
 }
 
 // SetInvolvements updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetInvolvements(value []v20.CSAFVulnerabilitiesElemInvolvementsElem) bool {
+func (v *CSAFVulnerabilitiesElem) SetInvolvements(value []CSAFVulnerabilitiesElemInvolvementsElem) bool {
 	if v == nil || v.csafVulnerabilitiesElem20Details == nil {
 		return false
 	}
@@ -593,16 +593,16 @@ func (v *CSAFVulnerabilitiesElem) SetScores(value []v20.CSAFVulnerabilitiesElemS
 
 // csafVulnerabilitiesElem21Details contains fields specific to CSAF 2.1.
 type csafVulnerabilitiesElem21Details struct {
-	Cwes                        []v21.CSAFVulnerabilitiesElemCwesElem                        `json:"cwes,omitempty"`
-	DisclosureDate              *v21.DateTime                                                `json:"disclosure_date,omitempty"`
-	DlVulnID                    *v21.DlVulnIDT                                               `json:"dl_vuln_id,omitempty"`
-	FirstKnownExploitationDates []v21.CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem `json:"first_known_exploitation_dates,omitempty"`
-	Metrics                     []v21.CSAFVulnerabilitiesElemMetricsElem                     `json:"metrics,omitempty"`
-	XExtensions                 v21.ExtensionsT                                              `json:"x_extensions,omitempty"`
+	Cwes                        []CSAFVulnerabilitiesElemCwesElem                        `json:"cwes,omitempty"`
+	DisclosureDate              *v21.DateTime                                            `json:"disclosure_date,omitempty"`
+	DlVulnID                    *DlVulnIDT                                               `json:"dl_vuln_id,omitempty"`
+	FirstKnownExploitationDates []CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem `json:"first_known_exploitation_dates,omitempty"`
+	Metrics                     []CSAFVulnerabilitiesElemMetricsElem                     `json:"metrics,omitempty"`
+	XExtensions                 ExtensionsT                                              `json:"x_extensions,omitempty"`
 }
 
 // Cwes reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) Cwes() ([]v21.CSAFVulnerabilitiesElemCwesElem, bool) {
+func (v *CSAFVulnerabilitiesElem) Cwes() ([]CSAFVulnerabilitiesElemCwesElem, bool) {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return nil, false
 	}
@@ -610,7 +610,7 @@ func (v *CSAFVulnerabilitiesElem) Cwes() ([]v21.CSAFVulnerabilitiesElemCwesElem,
 }
 
 // SetCwes updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetCwes(value []v21.CSAFVulnerabilitiesElemCwesElem) bool {
+func (v *CSAFVulnerabilitiesElem) SetCwes(value []CSAFVulnerabilitiesElemCwesElem) bool {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return false
 	}
@@ -636,7 +636,7 @@ func (v *CSAFVulnerabilitiesElem) SetDisclosureDate(value *v21.DateTime) bool {
 }
 
 // DlVulnID reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) DlVulnID() (*v21.DlVulnIDT, bool) {
+func (v *CSAFVulnerabilitiesElem) DlVulnID() (*DlVulnIDT, bool) {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return nil, false
 	}
@@ -644,7 +644,7 @@ func (v *CSAFVulnerabilitiesElem) DlVulnID() (*v21.DlVulnIDT, bool) {
 }
 
 // SetDlVulnID updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetDlVulnID(value *v21.DlVulnIDT) bool {
+func (v *CSAFVulnerabilitiesElem) SetDlVulnID(value *DlVulnIDT) bool {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return false
 	}
@@ -653,7 +653,7 @@ func (v *CSAFVulnerabilitiesElem) SetDlVulnID(value *v21.DlVulnIDT) bool {
 }
 
 // FirstKnownExploitationDates reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) FirstKnownExploitationDates() ([]v21.CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem, bool) {
+func (v *CSAFVulnerabilitiesElem) FirstKnownExploitationDates() ([]CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem, bool) {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return nil, false
 	}
@@ -661,7 +661,7 @@ func (v *CSAFVulnerabilitiesElem) FirstKnownExploitationDates() ([]v21.CSAFVulne
 }
 
 // SetFirstKnownExploitationDates updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetFirstKnownExploitationDates(value []v21.CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem) bool {
+func (v *CSAFVulnerabilitiesElem) SetFirstKnownExploitationDates(value []CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem) bool {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return false
 	}
@@ -670,7 +670,7 @@ func (v *CSAFVulnerabilitiesElem) SetFirstKnownExploitationDates(value []v21.CSA
 }
 
 // Metrics reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) Metrics() ([]v21.CSAFVulnerabilitiesElemMetricsElem, bool) {
+func (v *CSAFVulnerabilitiesElem) Metrics() ([]CSAFVulnerabilitiesElemMetricsElem, bool) {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return nil, false
 	}
@@ -678,7 +678,7 @@ func (v *CSAFVulnerabilitiesElem) Metrics() ([]v21.CSAFVulnerabilitiesElemMetric
 }
 
 // SetMetrics updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetMetrics(value []v21.CSAFVulnerabilitiesElemMetricsElem) bool {
+func (v *CSAFVulnerabilitiesElem) SetMetrics(value []CSAFVulnerabilitiesElemMetricsElem) bool {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return false
 	}
@@ -687,7 +687,7 @@ func (v *CSAFVulnerabilitiesElem) SetMetrics(value []v21.CSAFVulnerabilitiesElem
 }
 
 // XExtensions reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) XExtensions() (v21.ExtensionsT, bool) {
+func (v *CSAFVulnerabilitiesElem) XExtensions() (ExtensionsT, bool) {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return nil, false
 	}
@@ -695,7 +695,7 @@ func (v *CSAFVulnerabilitiesElem) XExtensions() (v21.ExtensionsT, bool) {
 }
 
 // SetXExtensions updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetXExtensions(value v21.ExtensionsT) bool {
+func (v *CSAFVulnerabilitiesElem) SetXExtensions(value ExtensionsT) bool {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return false
 	}
@@ -720,12 +720,12 @@ type CSAFVulnerabilitiesElemIdsElem struct {
 
 // csafVulnerabilitiesElemIdsElem21Details contains fields specific to CSAF 2.1.
 type csafVulnerabilitiesElemIdsElem21Details struct {
-	GroupIds   v21.ProductGroupsT `json:"group_ids,omitempty"`
-	ProductIds v21.ProductsT      `json:"product_ids,omitempty"`
+	GroupIds   ProductGroupsT `json:"group_ids,omitempty"`
+	ProductIds ProductsT      `json:"product_ids,omitempty"`
 }
 
 // GroupIds reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElemIdsElem) GroupIds() (v21.ProductGroupsT, bool) {
+func (v *CSAFVulnerabilitiesElemIdsElem) GroupIds() (ProductGroupsT, bool) {
 	if v == nil || v.csafVulnerabilitiesElemIdsElem21Details == nil {
 		return nil, false
 	}
@@ -733,7 +733,7 @@ func (v *CSAFVulnerabilitiesElemIdsElem) GroupIds() (v21.ProductGroupsT, bool) {
 }
 
 // SetGroupIds updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElemIdsElem) SetGroupIds(value v21.ProductGroupsT) bool {
+func (v *CSAFVulnerabilitiesElemIdsElem) SetGroupIds(value ProductGroupsT) bool {
 	if v == nil || v.csafVulnerabilitiesElemIdsElem21Details == nil {
 		return false
 	}
@@ -742,7 +742,7 @@ func (v *CSAFVulnerabilitiesElemIdsElem) SetGroupIds(value v21.ProductGroupsT) b
 }
 
 // ProductIds reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElemIdsElem) ProductIds() (v21.ProductsT, bool) {
+func (v *CSAFVulnerabilitiesElemIdsElem) ProductIds() (ProductsT, bool) {
 	if v == nil || v.csafVulnerabilitiesElemIdsElem21Details == nil {
 		return nil, false
 	}
@@ -750,7 +750,7 @@ func (v *CSAFVulnerabilitiesElemIdsElem) ProductIds() (v21.ProductsT, bool) {
 }
 
 // SetProductIds updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElemIdsElem) SetProductIds(value v21.ProductsT) bool {
+func (v *CSAFVulnerabilitiesElemIdsElem) SetProductIds(value ProductsT) bool {
 	if v == nil || v.csafVulnerabilitiesElemIdsElem21Details == nil {
 		return false
 	}
@@ -773,11 +773,11 @@ type CSAFVulnerabilitiesElemProductStatus struct {
 
 // csafVulnerabilitiesElemProductStatus21Details contains fields specific to CSAF 2.1.
 type csafVulnerabilitiesElemProductStatus21Details struct {
-	Unknown v21.ProductsT `json:"unknown,omitempty"`
+	Unknown ProductsT `json:"unknown,omitempty"`
 }
 
 // Unknown reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElemProductStatus) Unknown() (v21.ProductsT, bool) {
+func (v *CSAFVulnerabilitiesElemProductStatus) Unknown() (ProductsT, bool) {
 	if v == nil || v.csafVulnerabilitiesElemProductStatus21Details == nil {
 		return nil, false
 	}
@@ -785,7 +785,7 @@ func (v *CSAFVulnerabilitiesElemProductStatus) Unknown() (v21.ProductsT, bool) {
 }
 
 // SetUnknown updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElemProductStatus) SetUnknown(value v21.ProductsT) bool {
+func (v *CSAFVulnerabilitiesElemProductStatus) SetUnknown(value ProductsT) bool {
 	if v == nil || v.csafVulnerabilitiesElemProductStatus21Details == nil {
 		return false
 	}
@@ -818,4 +818,273 @@ type CSAFVulnerabilitiesElemThreatsElem struct {
 	Details    string        `json:"details"`
 	GroupIds   []string      `json:"group_ids,omitempty"`
 	ProductIds []string      `json:"product_ids,omitempty"`
+}
+type CSAFSchema string
+
+const CSAFSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaCSAFJson CSAFSchema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
+
+type ContentSchemaT string
+
+type ExtensionContentJsonCategory string
+
+const ExtensionContentJsonCategoryEssential ExtensionContentJsonCategory = "essential"
+const ExtensionContentJsonCategorySignificant ExtensionContentJsonCategory = "significant"
+const ExtensionContentJsonCategorySupplementary ExtensionContentJsonCategory = "supplementary"
+
+type ExtensionContentJsonContent map[string]any
+
+type ExtensionContentJson struct {
+	Schema   ContentSchemaT               `json:"$schema"`
+	Category ExtensionContentJsonCategory `json:"category"`
+	Content  ExtensionContentJsonContent  `json:"content"`
+	Critical bool                         `json:"critical"`
+}
+
+type ExtensionsT []ExtensionContentJson
+
+type EntityRefsT []any
+
+type ActionIDT string
+
+type CSAFDocumentInvolvementActionsElemCategory string
+
+const CSAFDocumentInvolvementActionsElemCategoryConfirmation CSAFDocumentInvolvementActionsElemCategory = "confirmation"
+const CSAFDocumentInvolvementActionsElemCategoryCoordination CSAFDocumentInvolvementActionsElemCategory = "coordination"
+const CSAFDocumentInvolvementActionsElemCategoryDiscovery CSAFDocumentInvolvementActionsElemCategory = "discovery"
+const CSAFDocumentInvolvementActionsElemCategoryDispute CSAFDocumentInvolvementActionsElemCategory = "dispute"
+const CSAFDocumentInvolvementActionsElemCategoryExploitation CSAFDocumentInvolvementActionsElemCategory = "exploitation"
+const CSAFDocumentInvolvementActionsElemCategoryFixDeployment CSAFDocumentInvolvementActionsElemCategory = "fix_deployment"
+const CSAFDocumentInvolvementActionsElemCategoryFixRelease CSAFDocumentInvolvementActionsElemCategory = "fix_release"
+const CSAFDocumentInvolvementActionsElemCategoryNotification CSAFDocumentInvolvementActionsElemCategory = "notification"
+const CSAFDocumentInvolvementActionsElemCategoryTriage CSAFDocumentInvolvementActionsElemCategory = "triage"
+
+type DlVulnIDT string
+
+type ProductGroupIDT string
+
+type ProductGroupsT []ProductGroupIDT
+
+type ProductIDT string
+
+type ProductsT []ProductIDT
+
+type CSAFDocumentInvolvementActionsElemStatus string
+
+const CSAFDocumentInvolvementActionsElemStatusAttempted CSAFDocumentInvolvementActionsElemStatus = "attempted"
+const CSAFDocumentInvolvementActionsElemStatusCompleted CSAFDocumentInvolvementActionsElemStatus = "completed"
+const CSAFDocumentInvolvementActionsElemStatusDeferred CSAFDocumentInvolvementActionsElemStatus = "deferred"
+const CSAFDocumentInvolvementActionsElemStatusDiscontinued CSAFDocumentInvolvementActionsElemStatus = "discontinued"
+const CSAFDocumentInvolvementActionsElemStatusInProgress CSAFDocumentInvolvementActionsElemStatus = "in_progress"
+const CSAFDocumentInvolvementActionsElemStatusOutstanding CSAFDocumentInvolvementActionsElemStatus = "outstanding"
+const CSAFDocumentInvolvementActionsElemStatusPlanned CSAFDocumentInvolvementActionsElemStatus = "planned"
+
+type CSAFDocumentInvolvementActionsElem struct {
+	ActingEntityRefs    EntityRefsT                                `json:"acting_entity_refs"`
+	ActionID            ActionIDT                                  `json:"action_id"`
+	Category            CSAFDocumentInvolvementActionsElemCategory `json:"category"`
+	Date                v21.DateTime                               `json:"date"`
+	DlVulnIds           []DlVulnIDT                                `json:"dl_vuln_ids,omitempty,omitzero"`
+	GroupIds            ProductGroupsT                             `json:"group_ids,omitempty,omitzero"`
+	ProductIds          ProductsT                                  `json:"product_ids,omitempty,omitzero"`
+	ReceivingEntityRefs EntityRefsT                                `json:"receiving_entity_refs,omitempty,omitzero"`
+	ReferencedActionIds []ActionIDT                                `json:"referenced_action_ids,omitempty,omitzero"`
+	Status              CSAFDocumentInvolvementActionsElemStatus   `json:"status"`
+	Summary             *string                                    `json:"summary,omitempty,omitzero"`
+}
+
+type CSAFDocumentInvolvementEntitiesElemCategory string
+
+const CSAFDocumentInvolvementEntitiesElemCategoryAdversary CSAFDocumentInvolvementEntitiesElemCategory = "adversary"
+const CSAFDocumentInvolvementEntitiesElemCategoryCoordinator CSAFDocumentInvolvementEntitiesElemCategory = "coordinator"
+const CSAFDocumentInvolvementEntitiesElemCategoryDiscoverer CSAFDocumentInvolvementEntitiesElemCategory = "discoverer"
+const CSAFDocumentInvolvementEntitiesElemCategoryMultiplier CSAFDocumentInvolvementEntitiesElemCategory = "multiplier"
+const CSAFDocumentInvolvementEntitiesElemCategoryOther CSAFDocumentInvolvementEntitiesElemCategory = "other"
+const CSAFDocumentInvolvementEntitiesElemCategoryPublic CSAFDocumentInvolvementEntitiesElemCategory = "public"
+const CSAFDocumentInvolvementEntitiesElemCategoryReportingAuthority CSAFDocumentInvolvementEntitiesElemCategory = "reporting_authority"
+const CSAFDocumentInvolvementEntitiesElemCategoryUser CSAFDocumentInvolvementEntitiesElemCategory = "user"
+const CSAFDocumentInvolvementEntitiesElemCategoryVendor CSAFDocumentInvolvementEntitiesElemCategory = "vendor"
+
+type ContactT struct {
+	Details             *string `json:"details,omitempty,omitzero"`
+	Email               *string `json:"email,omitempty,omitzero"`
+	PublicOpenpgpKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`
+	URL                 *string `json:"url,omitempty,omitzero"`
+}
+
+type EntityIDT string
+
+type CSAFDocumentInvolvementEntitiesElem struct {
+	Category CSAFDocumentInvolvementEntitiesElemCategory `json:"category"`
+	Contact  *ContactT                                   `json:"contact,omitempty,omitzero"`
+	EntityID EntityIDT                                   `json:"entity_id"`
+	Name     *string                                     `json:"name,omitempty,omitzero"`
+}
+
+type EntityGroupIDT string
+
+type CSAFDocumentInvolvementEntityGroupsElem struct {
+	EntityGroupID EntityGroupIDT `json:"entity_group_id"`
+	EntityIds     []EntityIDT    `json:"entity_ids"`
+	Name          string         `json:"name"`
+	Summary       *string        `json:"summary,omitempty,omitzero"`
+}
+
+type CSAFDocumentInvolvement struct {
+	Actions      []CSAFDocumentInvolvementActionsElem      `json:"actions"`
+	Entities     []CSAFDocumentInvolvementEntitiesElem     `json:"entities"`
+	EntityGroups []CSAFDocumentInvolvementEntityGroupsElem `json:"entity_groups,omitempty,omitzero"`
+}
+
+type CSAFDocumentDistributionSharingGroup struct {
+	ID   string  `json:"id"`
+	Name *string `json:"name,omitempty,omitzero"`
+}
+
+type CSAFProductTreeRelationshipsElemCategory string
+
+const CSAFProductTreeRelationshipsElemCategoryDefaultComponentOf CSAFProductTreeRelationshipsElemCategory = "default_component_of"
+const CSAFProductTreeRelationshipsElemCategoryExternalComponentOf CSAFProductTreeRelationshipsElemCategory = "external_component_of"
+const CSAFProductTreeRelationshipsElemCategoryInstalledOn CSAFProductTreeRelationshipsElemCategory = "installed_on"
+const CSAFProductTreeRelationshipsElemCategoryInstalledWith CSAFProductTreeRelationshipsElemCategory = "installed_with"
+const CSAFProductTreeRelationshipsElemCategoryOptionalComponentOf CSAFProductTreeRelationshipsElemCategory = "optional_component_of"
+
+type ProductIDT20 string
+
+type FullProductNameTProductIdentificationHelperHashesElemFileHashesElem struct {
+	Algorithm string `json:"algorithm"`
+	Value     string `json:"value"`
+}
+
+type FullProductNameTProductIdentificationHelperHashesElem struct {
+	FileHashes []FullProductNameTProductIdentificationHelperHashesElemFileHashesElem `json:"file_hashes"`
+	Filename   string                                                                `json:"filename"`
+}
+
+type FullProductNameTProductIdentificationHelperXGenericUrisElem struct {
+	Namespace string `json:"namespace"`
+	URI       string `json:"uri"`
+}
+
+type FullProductNameTProductIdentificationHelper struct {
+	CPE           *string                                                       `json:"cpe,omitempty,omitzero"`
+	Hashes        []FullProductNameTProductIdentificationHelperHashesElem       `json:"hashes,omitempty,omitzero"`
+	ModelNumbers  []string                                                      `json:"model_numbers,omitempty,omitzero"`
+	Purl          *string                                                       `json:"purl,omitempty,omitzero"`
+	SbomUrls      []string                                                      `json:"sbom_urls,omitempty,omitzero"`
+	SerialNumbers []string                                                      `json:"serial_numbers,omitempty,omitzero"`
+	Skus          []string                                                      `json:"skus,omitempty,omitzero"`
+	XGenericUris  []FullProductNameTProductIdentificationHelperXGenericUrisElem `json:"x_generic_uris,omitempty,omitzero"`
+}
+
+type FullProductNameT struct {
+	Name                        string                                       `json:"name"`
+	ProductID                   ProductIDT20                                 `json:"product_id"`
+	ProductIdentificationHelper *FullProductNameTProductIdentificationHelper `json:"product_identification_helper,omitempty,omitzero"`
+}
+
+type CSAFProductTreeRelationshipsElem struct {
+	Category                  CSAFProductTreeRelationshipsElemCategory `json:"category"`
+	FullProductName           FullProductNameT                         `json:"full_product_name"`
+	ProductReference          ProductIDT20                             `json:"product_reference"`
+	RelatesToProductReference ProductIDT20                             `json:"relates_to_product_reference"`
+}
+
+type FullProductNameTProductIdentificationHelperHashesElemFileHashesElem21 struct {
+	Algorithm string `json:"algorithm"`
+	Value     string `json:"value"`
+}
+
+type FullProductNameTProductIdentificationHelperHashesElem21 struct {
+	FileHashes []FullProductNameTProductIdentificationHelperHashesElemFileHashesElem21 `json:"file_hashes"`
+	Filename   string                                                                  `json:"filename"`
+}
+
+type FullProductNameTProductIdentificationHelperXGenericUrisElem21 struct {
+	Namespace string `json:"namespace"`
+	URI       string `json:"uri"`
+}
+
+type FullProductNameTProductIdentificationHelper21 struct {
+	CPE           *string                                                         `json:"cpe,omitempty,omitzero"`
+	Hashes        []FullProductNameTProductIdentificationHelperHashesElem21       `json:"hashes,omitempty,omitzero"`
+	ModelNumbers  []string                                                        `json:"model_numbers,omitempty,omitzero"`
+	Purls         []string                                                        `json:"purls,omitempty,omitzero"`
+	SBOMUrls      []string                                                        `json:"sbom_urls,omitempty,omitzero"`
+	SerialNumbers []string                                                        `json:"serial_numbers,omitempty,omitzero"`
+	Skus          []string                                                        `json:"skus,omitempty,omitzero"`
+	XGenericUris  []FullProductNameTProductIdentificationHelperXGenericUrisElem21 `json:"x_generic_uris,omitempty,omitzero"`
+}
+
+type FullProductNameT21 struct {
+	Name                        string                                         `json:"name"`
+	ProductID                   ProductIDT                                     `json:"product_id"`
+	ProductIdentificationHelper *FullProductNameTProductIdentificationHelper21 `json:"product_identification_helper,omitempty,omitzero"`
+	XExtensions                 ExtensionsT                                    `json:"x_extensions,omitempty,omitzero"`
+}
+
+type SubpathTCategory string
+
+const SubpathTCategoryDefaultComponentOf SubpathTCategory = "default_component_of"
+const SubpathTCategoryExternalComponentOf SubpathTCategory = "external_component_of"
+const SubpathTCategoryInstalledOn SubpathTCategory = "installed_on"
+const SubpathTCategoryInstalledWith SubpathTCategory = "installed_with"
+const SubpathTCategoryOptionalComponentOf SubpathTCategory = "optional_component_of"
+
+type SubpathT struct {
+	Category             SubpathTCategory `json:"category"`
+	NextProductReference ProductIDT       `json:"next_product_reference"`
+}
+
+type CSAFProductTreeProductPathsElem struct {
+	BeginningProductReference ProductIDT         `json:"beginning_product_reference"`
+	FullProductName           FullProductNameT21 `json:"full_product_name"`
+	Subpaths                  []SubpathT         `json:"subpaths"`
+}
+
+type CSAFVulnerabilitiesElemCWE struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type CSAFVulnerabilitiesElemInvolvementsElemParty string
+
+const CSAFVulnerabilitiesElemInvolvementsElemPartyCoordinator CSAFVulnerabilitiesElemInvolvementsElemParty = "coordinator"
+const CSAFVulnerabilitiesElemInvolvementsElemPartyDiscoverer CSAFVulnerabilitiesElemInvolvementsElemParty = "discoverer"
+const CSAFVulnerabilitiesElemInvolvementsElemPartyOther CSAFVulnerabilitiesElemInvolvementsElemParty = "other"
+const CSAFVulnerabilitiesElemInvolvementsElemPartyUser CSAFVulnerabilitiesElemInvolvementsElemParty = "user"
+const CSAFVulnerabilitiesElemInvolvementsElemPartyVendor CSAFVulnerabilitiesElemInvolvementsElemParty = "vendor"
+
+type CSAFVulnerabilitiesElemInvolvementsElemStatus string
+
+const CSAFVulnerabilitiesElemInvolvementsElemStatusCompleted CSAFVulnerabilitiesElemInvolvementsElemStatus = "completed"
+const CSAFVulnerabilitiesElemInvolvementsElemStatusContactAttempted CSAFVulnerabilitiesElemInvolvementsElemStatus = "contact_attempted"
+const CSAFVulnerabilitiesElemInvolvementsElemStatusDisputed CSAFVulnerabilitiesElemInvolvementsElemStatus = "disputed"
+const CSAFVulnerabilitiesElemInvolvementsElemStatusInProgress CSAFVulnerabilitiesElemInvolvementsElemStatus = "in_progress"
+const CSAFVulnerabilitiesElemInvolvementsElemStatusNotContacted CSAFVulnerabilitiesElemInvolvementsElemStatus = "not_contacted"
+const CSAFVulnerabilitiesElemInvolvementsElemStatusOpen CSAFVulnerabilitiesElemInvolvementsElemStatus = "open"
+
+type CSAFVulnerabilitiesElemInvolvementsElem struct {
+	Date    *v20.DateTime                                 `json:"date,omitempty,omitzero"`
+	Party   CSAFVulnerabilitiesElemInvolvementsElemParty  `json:"party"`
+	Status  CSAFVulnerabilitiesElemInvolvementsElemStatus `json:"status"`
+	Summary *string                                       `json:"summary,omitempty,omitzero"`
+}
+
+type CSAFVulnerabilitiesElemCwesElem struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+type CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem struct {
+	Date             v21.DateTime   `json:"date"`
+	ExploitationDate v21.DateTime   `json:"exploitation_date"`
+	GroupIds         ProductGroupsT `json:"group_ids,omitempty,omitzero"`
+	ProductIds       ProductsT      `json:"product_ids,omitempty,omitzero"`
+}
+
+type CSAFVulnerabilitiesElemMetricsElem struct {
+	Content  v21.CSAFVulnerabilitiesElemMetricsElemContent `json:"content"`
+	Products ProductsT                                     `json:"products"`
+	Source   *string                                       `json:"source,omitempty,omitzero"`
 }

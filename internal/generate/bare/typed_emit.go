@@ -74,7 +74,7 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 			version := detail.version
 			fmt.Fprintf(&out, "// %s contains fields specific to CSAF 2.%d.\ntype %s struct {\n", detail.privateName(), version, detail.privateName())
 			for _, f := range detail.fields {
-				typ, err := wireType(f.versions[version].typ, 20+version, m.models[version])
+				typ, err := m.localType(f.versions[version].typ, version)
 				if err != nil {
 					return nil, err
 				}
@@ -86,7 +86,7 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 				if f.versions[1-version].typ != nil {
 					suffix = fmt.Sprint(20 + version)
 				}
-				typ, err := wireType(f.versions[version].typ, 20+version, m.models[version])
+				typ, err := m.localType(f.versions[version].typ, version)
 				if err != nil {
 					return nil, err
 				}
@@ -95,6 +95,10 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 				fmt.Fprintf(&out, "// Set%s%s updates the value if matching version details are present.\nfunc (v *%s) Set%s%s(value %s) bool {\nif v == nil || v.%s == nil { return false }\nv.%s.%s = value\nreturn true\n}\n\n", f.name, suffix, node.name, f.name, suffix, typ, detail.privateName(), detail.privateName(), f.name)
 			}
 		}
+	}
+	for _, declaration := range m.localDeclarations {
+		out.WriteString(declaration)
+		out.WriteString("\n")
 	}
 	return typedSource(packageName, out.String())
 }

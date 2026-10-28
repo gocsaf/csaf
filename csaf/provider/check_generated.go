@@ -9,8 +9,6 @@ package provider
 import (
 	"errors"
 	"fmt"
-
-	"github.com/gocsaf/csaf/v3/csaf/v21"
 )
 
 // Checks version consistency and required model values.  It rejects missing
@@ -213,7 +211,7 @@ func checkProviderDistributionsElem20Details(source *providerDistributionsElem20
 	return nil
 }
 
-func checkVersion21Struct8(source *v21.ProviderDistributionsElemDirectory, v version) error {
+func checkVersion21Struct8(source *ProviderDistributionsElemDirectory, v version) error {
 	if source.TLPLabel == "" {
 		return errors.New("tlp_label: required value is missing or empty")
 	}
@@ -243,7 +241,7 @@ func checkProviderPublisher20Details(source *providerPublisher20Details, v versi
 	return nil
 }
 
-func checkVersion21Struct12(source *v21.ContactT, v version) error {
+func checkVersion21Struct12(source *ContactT, v version) error {
 	return nil
 }
 

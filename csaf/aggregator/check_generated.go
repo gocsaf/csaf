@@ -9,8 +9,6 @@ package aggregator
 import (
 	"errors"
 	"fmt"
-
-	"github.com/gocsaf/csaf/v3/csaf/v21"
 )
 
 // Checks version consistency and required model values.  It rejects missing
@@ -181,7 +179,7 @@ func checkAggregatorCSAFProvidersElemMetadataPublisher20Details(source *aggregat
 	return nil
 }
 
-func checkVersion21Struct8(source *v21.ContactT, v version) error {
+func checkVersion21Struct8(source *ContactT, v version) error {
 	return nil
 }
 

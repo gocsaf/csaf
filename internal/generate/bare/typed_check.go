@@ -30,8 +30,9 @@ type checkField struct {
 }
 
 type checkTypeKey struct {
-	expr    ast.Expr
-	version int
+	expr             ast.Expr
+	version          int
+	keepVersionTypes bool
 }
 
 type checkEmitter struct {
@@ -68,22 +69,33 @@ func (e *checkEmitter) sharedType(t *typedType) *checkType {
 	return node
 }
 
-func (e *checkEmitter) originalType(expr ast.Expr, version int) (*checkType, error) {
-	key := checkTypeKey{expr, version}
-	if known := e.originals[key]; known != nil {
-		return known, nil
-	}
-	name, err := wireType(expr, 20+version, e.model.models[version])
-	if err != nil {
-		return nil, err
-	}
+// Inside a retained custom-decoder type, its children also keep versioned types.
+func (e *checkEmitter) originalType(expr ast.Expr, version int, keepVersionTypes bool) (*checkType, error) {
 	resolved := expr
 	for {
 		ident, ok := resolved.(*ast.Ident)
 		if !ok || e.model.models[version].types[ident.Name] == nil {
 			break
 		}
+		// Keep types with custom decoders.
+		if e.model.models[version].custom[ident.Name] {
+			keepVersionTypes = true
+		}
 		resolved = e.model.models[version].types[ident.Name]
+	}
+	key := checkTypeKey{expr, version, keepVersionTypes}
+	if known := e.originals[key]; known != nil {
+		return known, nil
+	}
+	var name string
+	var err error
+	if keepVersionTypes {
+		name, err = wireType(expr, 20+version, e.model.models[version])
+	} else {
+		name, err = e.model.localType(expr, version)
+	}
+	if err != nil {
+		return nil, err
 	}
 	node := &checkType{name: name}
 	e.originals[key] = node
@@ -92,13 +104,13 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int) (*checkType, err
 		node.shape = t.Name
 	case *ast.StarExpr:
 		node.shape = "pointer"
-		node.elem, err = e.originalType(t.X, version)
+		node.elem, err = e.originalType(t.X, version, keepVersionTypes)
 	case *ast.ArrayType:
 		if t.Len != nil {
 			return nil, errors.New("fixed arrays are unsupported in checks")
 		}
 		node.shape = "slice"
-		node.elem, err = e.originalType(t.Elt, version)
+		node.elem, err = e.originalType(t.Elt, version, keepVersionTypes)
 	case *ast.MapType:
 		node.shape = "map"
 	case *ast.InterfaceType:
@@ -113,7 +125,7 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int) (*checkType, err
 		}
 		for _, jsonName := range slices.Sorted(maps.Keys(fields)) {
 			f := fields[jsonName]
-			child, fieldErr := e.originalType(f.typ, version)
+			child, fieldErr := e.originalType(f.typ, version, keepVersionTypes)
 			if fieldErr != nil {
 				return nil, fieldErr
 			}
@@ -272,7 +284,7 @@ func (e *checkEmitter) detailsType(detail *typedDetails) (*checkType, error) {
 	node := &checkType{name: detail.privateName(), shape: "struct", helper: "check" + detail.name}
 	for _, f := range detail.fields {
 		original := f.versions[detail.version]
-		child, err := e.originalType(original.typ, detail.version)
+		child, err := e.originalType(original.typ, detail.version, false)
 		if err != nil {
 			return nil, err
 		}

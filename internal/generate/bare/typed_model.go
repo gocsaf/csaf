@@ -59,10 +59,16 @@ type typedModel struct {
 	cache      map[typePair]*typedType
 	structures []*typedType // shared structs in generation order. Each owns its details
 	names      map[string]bool
+
+	localTypes        map[localTypeKey]string // source version/name -> generated local name
+	localDeclarations []string                // completed type and enum declarations for emitModel
 }
 
 func newTypedModel(left, right *model, rootName string, root *match) (*typedModel, error) {
-	m := &typedModel{models: [2]*model{left, right}, cache: make(map[typePair]*typedType), names: make(map[string]bool)}
+	m := &typedModel{
+		models: [2]*model{left, right}, cache: make(map[typePair]*typedType),
+		names: make(map[string]bool), localTypes: make(map[localTypeKey]string),
+	}
 	if _, err := m.common(left.types[rootName], right.types[rootName], rootName, root); err != nil {
 		return nil, err
 	}
@@ -277,13 +283,19 @@ func typedName(t *typedType) string {
 }
 
 func wireType(expr ast.Expr, version int, m *model) (string, error) {
-	child := func(expr ast.Expr) (string, error) { return wireType(expr, version, m) }
+	return renderType(expr, func(name string) (string, error) {
+		if m.types[name] != nil {
+			return fmt.Sprintf("v%d.%s", version, name), nil
+		}
+		return name, nil
+	})
+}
+
+func renderType(expr ast.Expr, namedType func(string) (string, error)) (string, error) {
+	child := func(expr ast.Expr) (string, error) { return renderType(expr, namedType) }
 	switch t := expr.(type) {
 	case *ast.Ident:
-		if m.types[t.Name] != nil {
-			return fmt.Sprintf("v%d.%s", version, t.Name), nil
-		}
-		return t.Name, nil
+		return namedType(t.Name)
 	case *ast.StarExpr:
 		value, err := child(t.X)
 		return "*" + value, err

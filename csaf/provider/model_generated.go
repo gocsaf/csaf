@@ -7,7 +7,6 @@
 package provider
 
 import (
-	"github.com/gocsaf/csaf/v3/csaf/v20"
 	"github.com/gocsaf/csaf/v3/csaf/v21"
 )
 
@@ -27,21 +26,21 @@ type Provider struct {
 
 // provider21Details contains fields specific to CSAF 2.1.
 type provider21Details struct {
-	Schema          v21.ProviderSchema `json:"$schema"`
-	MaintainedFrom  *v21.DateTime      `json:"maintained_from,omitempty"`
-	MaintainedUntil *v21.DateTime      `json:"maintained_until,omitempty"`
+	Schema          ProviderSchema `json:"$schema"`
+	MaintainedFrom  *v21.DateTime  `json:"maintained_from,omitempty"`
+	MaintainedUntil *v21.DateTime  `json:"maintained_until,omitempty"`
 }
 
 // Schema reports whether the matching version details are present.
-func (v *Provider) Schema() (v21.ProviderSchema, bool) {
+func (v *Provider) Schema() (ProviderSchema, bool) {
 	if v == nil || v.provider21Details == nil {
-		return v21.ProviderSchema(""), false
+		return ProviderSchema(""), false
 	}
 	return v.provider21Details.Schema, true
 }
 
 // SetSchema updates the value if matching version details are present.
-func (v *Provider) SetSchema(value v21.ProviderSchema) bool {
+func (v *Provider) SetSchema(value ProviderSchema) bool {
 	if v == nil || v.provider21Details == nil {
 		return false
 	}
@@ -92,11 +91,11 @@ type ProviderDistributionsElem struct {
 
 // providerDistributionsElem20Details contains fields specific to CSAF 2.0.
 type providerDistributionsElem20Details struct {
-	DirectoryURL *v20.URLT `json:"directory_url,omitempty"`
+	DirectoryURL *URLT `json:"directory_url,omitempty"`
 }
 
 // DirectoryURL reports whether the matching version details are present.
-func (v *ProviderDistributionsElem) DirectoryURL() (*v20.URLT, bool) {
+func (v *ProviderDistributionsElem) DirectoryURL() (*URLT, bool) {
 	if v == nil || v.providerDistributionsElem20Details == nil {
 		return nil, false
 	}
@@ -104,7 +103,7 @@ func (v *ProviderDistributionsElem) DirectoryURL() (*v20.URLT, bool) {
 }
 
 // SetDirectoryURL updates the value if matching version details are present.
-func (v *ProviderDistributionsElem) SetDirectoryURL(value *v20.URLT) bool {
+func (v *ProviderDistributionsElem) SetDirectoryURL(value *URLT) bool {
 	if v == nil || v.providerDistributionsElem20Details == nil {
 		return false
 	}
@@ -114,11 +113,11 @@ func (v *ProviderDistributionsElem) SetDirectoryURL(value *v20.URLT) bool {
 
 // providerDistributionsElem21Details contains fields specific to CSAF 2.1.
 type providerDistributionsElem21Details struct {
-	Directory *v21.ProviderDistributionsElemDirectory `json:"directory,omitempty"`
+	Directory *ProviderDistributionsElemDirectory `json:"directory,omitempty"`
 }
 
 // Directory reports whether the matching version details are present.
-func (v *ProviderDistributionsElem) Directory() (*v21.ProviderDistributionsElemDirectory, bool) {
+func (v *ProviderDistributionsElem) Directory() (*ProviderDistributionsElemDirectory, bool) {
 	if v == nil || v.providerDistributionsElem21Details == nil {
 		return nil, false
 	}
@@ -126,7 +125,7 @@ func (v *ProviderDistributionsElem) Directory() (*v21.ProviderDistributionsElemD
 }
 
 // SetDirectory updates the value if matching version details are present.
-func (v *ProviderDistributionsElem) SetDirectory(value *v21.ProviderDistributionsElemDirectory) bool {
+func (v *ProviderDistributionsElem) SetDirectory(value *ProviderDistributionsElemDirectory) bool {
 	if v == nil || v.providerDistributionsElem21Details == nil {
 		return false
 	}
@@ -211,11 +210,11 @@ func (v *ProviderPublisher) SetContactDetails(value *string) bool {
 
 // providerPublisher21Details contains fields specific to CSAF 2.1.
 type providerPublisher21Details struct {
-	Contact *v21.ContactT `json:"contact,omitempty"`
+	Contact *ContactT `json:"contact,omitempty"`
 }
 
 // Contact reports whether the matching version details are present.
-func (v *ProviderPublisher) Contact() (*v21.ContactT, bool) {
+func (v *ProviderPublisher) Contact() (*ContactT, bool) {
 	if v == nil || v.providerPublisher21Details == nil {
 		return nil, false
 	}
@@ -223,10 +222,38 @@ func (v *ProviderPublisher) Contact() (*v21.ContactT, bool) {
 }
 
 // SetContact updates the value if matching version details are present.
-func (v *ProviderPublisher) SetContact(value *v21.ContactT) bool {
+func (v *ProviderPublisher) SetContact(value *ContactT) bool {
 	if v == nil || v.providerPublisher21Details == nil {
 		return false
 	}
 	v.providerPublisher21Details.Contact = value
 	return true
+}
+
+type ProviderSchema string
+
+const ProviderSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaProviderJson ProviderSchema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json"
+
+type URLT string
+
+type TLPLabelT string
+
+const TLPLabelTAMBER TLPLabelT = "AMBER"
+const TLPLabelTAMBERSTRICT TLPLabelT = "AMBER+STRICT"
+const TLPLabelTCLEAR TLPLabelT = "CLEAR"
+const TLPLabelTGREEN TLPLabelT = "GREEN"
+const TLPLabelTRED TLPLabelT = "RED"
+
+type URLT21 string
+
+type ProviderDistributionsElemDirectory struct {
+	TLPLabel TLPLabelT `json:"tlp_label"`
+	URL      URLT21    `json:"url"`
+}
+
+type ContactT struct {
+	Details             *string `json:"details,omitempty,omitzero"`
+	Email               *string `json:"email,omitempty,omitzero"`
+	PublicOpenpgpKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`
+	URL                 *string `json:"url,omitempty,omitzero"`
 }

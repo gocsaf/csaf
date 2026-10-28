@@ -23,21 +23,21 @@ type Aggregator struct {
 
 // aggregator21Details contains fields specific to CSAF 2.1.
 type aggregator21Details struct {
-	Schema          v21.AggregatorSchema `json:"$schema"`
-	MaintainedFrom  *v21.DateTime        `json:"maintained_from,omitempty"`
-	MaintainedUntil *v21.DateTime        `json:"maintained_until,omitempty"`
+	Schema          AggregatorSchema `json:"$schema"`
+	MaintainedFrom  *v21.DateTime    `json:"maintained_from,omitempty"`
+	MaintainedUntil *v21.DateTime    `json:"maintained_until,omitempty"`
 }
 
 // Schema reports whether the matching version details are present.
-func (v *Aggregator) Schema() (v21.AggregatorSchema, bool) {
+func (v *Aggregator) Schema() (AggregatorSchema, bool) {
 	if v == nil || v.aggregator21Details == nil {
-		return v21.AggregatorSchema(""), false
+		return AggregatorSchema(""), false
 	}
 	return v.aggregator21Details.Schema, true
 }
 
 // SetSchema updates the value if matching version details are present.
-func (v *Aggregator) SetSchema(value v21.AggregatorSchema) bool {
+func (v *Aggregator) SetSchema(value AggregatorSchema) bool {
 	if v == nil || v.aggregator21Details == nil {
 		return false
 	}
@@ -136,11 +136,11 @@ func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContactDetails(value *
 
 // aggregatorCSAFProvidersElemMetadataPublisher21Details contains fields specific to CSAF 2.1.
 type aggregatorCSAFProvidersElemMetadataPublisher21Details struct {
-	Contact *v21.ContactT `json:"contact,omitempty"`
+	Contact *ContactT `json:"contact,omitempty"`
 }
 
 // Contact reports whether the matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadataPublisher) Contact() (*v21.ContactT, bool) {
+func (v *AggregatorCSAFProvidersElemMetadataPublisher) Contact() (*ContactT, bool) {
 	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
 		return nil, false
 	}
@@ -148,7 +148,7 @@ func (v *AggregatorCSAFProvidersElemMetadataPublisher) Contact() (*v21.ContactT,
 }
 
 // SetContact updates the value if matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContact(value *v21.ContactT) bool {
+func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContact(value *ContactT) bool {
 	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
 		return false
 	}
@@ -161,4 +161,14 @@ type AggregatorCSAFPublishersElem struct {
 	Metadata       AggregatorCSAFProvidersElemMetadata `json:"metadata"`
 	Mirrors        []string                            `json:"mirrors"`
 	UpdateInterval string                              `json:"update_interval"`
+}
+type AggregatorSchema string
+
+const AggregatorSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaAggregatorJson AggregatorSchema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json"
+
+type ContactT struct {
+	Details             *string `json:"details,omitempty,omitzero"`
+	Email               *string `json:"email,omitempty,omitzero"`
+	PublicOpenpgpKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`
+	URL                 *string `json:"url,omitempty,omitzero"`
 }
