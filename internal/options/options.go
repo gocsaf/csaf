@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/gocsaf/csaf/v3/internal/manpage"
 	"github.com/gocsaf/csaf/v3/util"
 
 	"github.com/BurntSushi/toml"
@@ -30,6 +31,10 @@ type Parser[C any] struct {
 	DefaultConfigLocations []string
 	// Usage is the usage prefix for written help.
 	Usage string
+	// ShortDescription is the one line summary used in the manual page.
+	ShortDescription string
+	// LongDescription is the prose used in the manual page.
+	LongDescription string
 
 	// SetDefaults pre-inits a configuration.
 	SetDefaults func(*C)
@@ -55,12 +60,23 @@ func (p *Parser[C]) Parse() ([]string, *C, error) {
 	if p.Usage != "" {
 		parser.Usage = p.Usage
 	}
+	parser.ShortDescription = p.ShortDescription
+	parser.LongDescription = p.LongDescription
+	var man manpage.Flag
+	if err := man.AddTo(parser); err != nil {
+		return nil, nil, err
+	}
 	args, err := parser.Parse()
 	if err != nil {
 		if flags.WroteHelp(err) {
 			os.Exit(0)
 		}
 		return nil, nil, err
+	}
+
+	// Directly quit if the manual page was requested.
+	if man.WriteIfAsked(parser) {
+		os.Exit(0)
 	}
 
 	// Directly quit if the version flag was set.

@@ -77,6 +77,13 @@ func (of *outputFormat) UnmarshalText(text []byte) error {
 // from a configuration file.
 func parseArgsConfig() ([]string, *config, error) {
 	p := options.Parser[config]{
+		ShortDescription: "check whether a CSAF provider meets the standard",
+		LongDescription: "Runs the conformance checks of the CSAF 2.0 standard against each " +
+			"domain given and reports which requirements the provider meets. It " +
+			"looks at the provider metadata, the ROLIE feeds, the index and " +
+			"changes files, the integrity and signature files and the " +
+			"advisories themselves, and writes the result as text, JSON, HTML " +
+			"or Markdown.",
 		DefaultConfigLocations: configPaths,
 		ConfigLocation: func(cfg *config) string {
 			return cfg.Config

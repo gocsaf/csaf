@@ -1,0 +1,103 @@
+.TH csaf_downloader 1 "23 October 2026"
+.SH NAME
+csaf_downloader \- download CSAF advisories from a provider
+.SH SYNOPSIS
+\fBcsaf_downloader\fP [OPTIONS] domain...
+.SH DESCRIPTION
+Finds the provider metadata of each domain given, walks the advisories it lists and writes them to disk. Each advisory is checked before it is stored: the SHA256 and SHA512 sums, the OpenPGP signature, the CSAF JSON schema and the file name rule. In the default strict validation mode an advisory that fails any of these is not stored.
+.SH OPTIONS
+.SS Application Options
+.TP
+\fB\fB\-d\fR, \fB\-\-directory\fR \fIDIR\fR\fP
+DIRectory to store the downloaded files in
+.TP
+\fB\fB\-\-insecure\fR\fP
+Do not check TLS certificates from provider
+.TP
+\fB\fB\-\-ignore_sigcheck\fR\fP
+Ignore signature check results, just warn on mismatch
+.TP
+\fB\fB\-\-client_cert\fR \fICERT-FILE\fR\fP
+TLS client certificate file (PEM encoded data)
+.TP
+\fB\fB\-\-client_key\fR \fIKEY-FILE\fR\fP
+TLS client private key file (PEM encoded data)
+.TP
+\fB\fB\-\-client_passphrase\fR \fIPASSPHRASE\fR\fP
+Optional passphrase for the client cert (limited, experimental, see doc)
+.TP
+\fB\fB\-\-client_timeout\fR \fIDURATION\fR\fP
+DURATION for HTTP Client timeouts
+.TP
+\fB\fB\-\-version\fR\fP
+Display version of the binary
+.TP
+\fB\fB\-n\fR, \fB\-\-no_store\fR\fP
+Do not store files
+.TP
+\fB\fB\-r\fR, \fB\-\-rate\fR\fP
+The average upper limit of https operations per second (defaults to unlimited)
+.TP
+\fB\fB\-w\fR, \fB\-\-worker\fR \fINUM\fR\fP
+NUMber of concurrent downloads
+.TP
+\fB\fB\-t\fR, \fB\-\-time_range\fR \fIRANGE\fR\fP
+RANGE of time from which advisories to download
+.TP
+\fB\fB\-f\fR, \fB\-\-folder\fR \fIFOLDER\fR\fP
+Download into a given subFOLDER
+.TP
+\fB\fB\-i\fR, \fB\-\-ignore_pattern\fR \fIPATTERN\fR\fP
+Do not download files if their URLs match any of the given PATTERNs
+.TP
+\fB\fB\-H\fR, \fB\-\-header\fR\fP
+One or more extra HTTP header fields
+.TP
+\fB\fB\-\-streaming_rolie_parser\fR\fP
+Use the streaming ROLIE feed parser (experimental)
+.TP
+\fB\fB\-\-enumerate_pmd_only\fR\fP
+If this flag is set to true, the downloader will only enumerate valid provider metadata files, but not download documents
+.TP
+\fB\fB\-\-validator\fR \fIURL\fR\fP
+URL to validate documents remotely
+.TP
+\fB\fB\-\-validator_cache\fR \fIFILE\fR\fP
+FILE to cache remote validations
+.TP
+\fB\fB\-\-validator_preset\fR \fIPRESETS\fR\fP
+One or more PRESETS to validate remotely
+.TP
+\fB\fB\-m\fR, \fB\-\-validation_mode\fR \fIMODE\fR\fP
+MODE how strict the validation is
+.TP
+\fB\fB\-\-forward_url\fR \fIURL\fR\fP
+URL of HTTP endpoint to forward downloads to
+.TP
+\fB\fB\-\-forward_header\fR\fP
+One or more extra HTTP header fields used by forwarding
+.TP
+\fB\fB\-\-forward_queue\fR \fILENGTH\fR\fP
+Maximal queue LENGTH before forwarder
+.TP
+\fB\fB\-\-forward_insecure\fR\fP
+Do not check TLS certificates from forward endpoint
+.TP
+\fB\fB\-\-log_file\fR \fIFILE\fR\fP
+FILE to log downloading to
+.TP
+\fB\fB\-\-log_level\fR \fILEVEL\fR\fP
+LEVEL of logging details
+.TP
+\fB\fB\-c\fR, \fB\-\-config\fR \fITOML-FILE\fR\fP
+Path to config TOML file
+.TP
+\fB\fB\-\-preferred_hash\fR \fIHASH\fR\fP
+HASH to prefer
+.TP
+\fB\fB\-\-trusted_only\fR\fP
+Only download from trusted providers; only write or forward documents with valid signatures
+.SS Help Options
+.TP
+\fB\fB\-h\fR, \fB\-\-help\fR\fP
+Show this help message
