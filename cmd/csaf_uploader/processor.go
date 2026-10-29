@@ -107,6 +107,31 @@ func (p *processor) create() error {
 	return createError
 }
 
+// checkFile runs validations if enabled in the config file
+func (p *processor) checkFile(filename string, data []byte) error {
+	var err error
+	if !p.cfg.NoSchemaCheck {
+		var doc any
+		if err := misc.StrictJSONParse(bytes.NewReader(data), &doc); err != nil {
+			return err
+		}
+		errs, err := csaf.ValidateCSAF(doc)
+		if err != nil {
+			return err
+		}
+		if len(errs) > 0 {
+			writeStrings("Errors:", errs)
+			return errors.New("local schema check failed")
+		}
+
+		eval := util.NewPathEval()
+		if err := util.IDMatchesFilename(eval, doc, filepath.Base(filename)); err != nil {
+			return err
+		}
+	}
+	return err
+}
+
 // uploadRequest creates the request for uploading a csaf document by passing the filename.
 // According to the flags values the multipart sections of the request are established.
 // It returns the created http request.
@@ -116,24 +141,8 @@ func (p *processor) uploadRequest(filename string) (*http.Request, error) {
 		return nil, err
 	}
 
-	if !p.cfg.NoSchemaCheck {
-		var doc any
-		if err := misc.StrictJSONParse(bytes.NewReader(data), &doc); err != nil {
-			return nil, err
-		}
-		errs, err := csaf.ValidateCSAF(doc)
-		if err != nil {
-			return nil, err
-		}
-		if len(errs) > 0 {
-			writeStrings("Errors:", errs)
-			return nil, errors.New("local schema check failed")
-		}
-
-		eval := util.NewPathEval()
-		if err := util.IDMatchesFilename(eval, doc, filepath.Base(filename)); err != nil {
-			return nil, err
-		}
+	if err = p.checkFile(filename, data); err != nil {
+		return nil, err
 	}
 
 	body := new(bytes.Buffer)
