@@ -15,6 +15,29 @@
 # Specify the web folder.
 #web = "/var/www/html"
 
+# CSAF versions served by this provider: "2.0", "2.1", or both.
+# Each version has its own provider-metadata.json, ROLIE feeds, and TLP folders.
+# Uploaded documents are stored in the tree for their CSAF version.
+# Documents with any other version are rejected.
+#csaf_versions = ["2.0"]
+
+# Store each CSAF version's tree in a "v2.0" or "v2.1" folder under csaf_path.
+# This is required when serving multiple versions.
+# The provider-metadata.json at csaf_path becomes a symlink to the authoritative
+# version's file (CSAF 2.1, section 7.4.2).
+# Move any existing tree directly under csaf_path into its version folder first.
+#version_folders = false
+
+# Version whose provider-metadata.json is served at csaf_path, usually the
+# well-known URL. Defaults to the lowest configured version.
+# Set this to "2.1" on the rollover date.
+# When write_security is enabled, this version's entry appears first in
+# security.txt. Entries for versions removed from csaf_versions are also removed.
+#authoritative_version = "2.0"
+
+# URL path, relative to the web folder, where the provider is served.
+#csaf_path = "/.well-known/csaf"
+
 # Allow sending a signature with the request.
 # An additional input-field in the web interface will be shown
 # to let user enter an ascii armored OpenPGP signature.
@@ -60,11 +83,15 @@
 # Make the provider write a `CSAF:` entry into `security.txt`.
 #write_security = false
 
-# Set the TLP allowed to be send with the upload request
-# (one or more of "csaf", "white", "amber", "green", "red").
+# Set the TLP allowed to be send with the upload request.
+# CSAF 2.0: one or more of "csaf", "white", "green", "amber", "red".
+# CSAF 2.1: one or more of "csaf", "clear", "green", "amber", "amber+strict", "red".
 # The "csaf" entry lets the provider take the value from the CSAF document.
 # These affect the list items in the web interface.
-#tlps = ["csaf", "white", "amber", "green", "red"]
+# Every CSAF version only uses the TLPs existing in it, so "white"
+# only applies to CSAF 2.0 and "clear" and "amber+strict" to CSAF 2.1.
+# The default are all TLPs of the configured CSAF versions.
+#tlps = ["csaf", "white", "clear", "green", "amber", "amber+strict", "red"]
 
 # Make the provider create a ROLIE service document.
 #create_service_document = false
@@ -92,6 +119,10 @@
 list_on_CSAF_aggregators = true
 # Indicate that aggregators can mirror us.
 mirror_on_CSAF_aggregators = true
+# Set the maintenance window of the distributions.
+# Only written into the CSAF 2.1 provider-metadata.json.
+#maintained_from = 2026-01-01T00:00:00Z
+#maintained_until = 2027-01-01T00:00:00Z
 
 # Set the publisher details.
 [provider_metadata.publisher]
@@ -99,4 +130,10 @@ category = "vendor"
 name = "Example Company"
 namespace = "https://example.com"
 issuing_authority = "We at Example Company are responsible for publishing and maintaining Product Y."
+# Only written into the CSAF 2.0 provider-metadata.json:
 contact_details = "Example Company can be reached at contact_us@example.com, or via our website at https://www.example.com/contact."
+# Only written into the CSAF 2.1 provider-metadata.json,
+# CSAF 2.1 replaces contact_details by contact:
+#[provider_metadata.publisher.contact]
+#email = "contact_us@example.com"
+#url = "https://www.example.com/contact"
