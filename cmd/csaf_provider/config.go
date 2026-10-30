@@ -9,17 +9,22 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
 	"os"
+	"path"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/csaf/provider"
 )
 
 const (
@@ -34,12 +39,31 @@ const (
 	defaultNoWebUI           = true
 	defaultUploadLimit       = 50 * 1024 * 1024 // Default limit size of the uploaded file.
 	defaultServiceDocument   = true
+	defaultCSAFVersion       = csafVersion20
+	defaultCSAFPath          = "/.well-known/csaf"
+)
+
+// supported CSAF versions
+const (
+	csafVersion20 = "2.0"
+	csafVersion21 = "2.1"
 )
 
 type providerMetadataConfig struct {
-	ListOnCSAFAggregators   *bool           `toml:"list_on_CSAF_aggregators"`
-	MirrorOnCSAFAggregators *bool           `toml:"mirror_on_CSAF_aggregators"`
-	Publisher               *csaf.Publisher `toml:"publisher"`
+	ListOnCSAFAggregators   *bool            `toml:"list_on_CSAF_aggregators"`
+	MirrorOnCSAFAggregators *bool            `toml:"mirror_on_CSAF_aggregators"`
+	MaintainedFrom          *time.Time       `toml:"maintained_from"`
+	MaintainedUntil         *time.Time       `toml:"maintained_until"`
+	Publisher               *publisherConfig `toml:"publisher"`
+}
+
+type publisherConfig struct {
+	Category         string             `toml:"category"`
+	Name             string             `toml:"name"`
+	Namespace        string             `toml:"namespace"`
+	Contact          *provider.ContactT `toml:"contact"`
+	ContactDetails   *string            `toml:"contact_details"`
+	IssuingAuthority *string            `toml:"issuing_authority"`
 }
 
 // configs contains the config values for the provider.
@@ -65,41 +89,57 @@ type config struct {
 	ServiceDocument         bool                         `toml:"create_service_document"`
 	WriteIndices            bool                         `toml:"write_indices"`
 	WriteSecurity           bool                         `toml:"write_security"`
-}
-
-func (pmdc *providerMetadataConfig) apply(pmd *csaf.ProviderMetadata) {
-	if pmdc == nil {
-		return
-	}
-	if pmdc.ListOnCSAFAggregators != nil {
-		pmd.ListOnCSAFAggregators = pmdc.ListOnCSAFAggregators
-	}
-	if pmdc.MirrorOnCSAFAggregators != nil {
-		pmd.MirrorOnCSAFAggregators = pmdc.MirrorOnCSAFAggregators
-	}
-	if pmdc.Publisher != nil {
-		pmd.Publisher = pmdc.Publisher
-	}
+	AuthoritativeVersion    string                       `toml:"authoritative_version"`
+	CSAFPath                string                       `toml:"csaf_path"`
+	CSAFVersions            []string                     `toml:"csaf_versions"`
+	VersionFolders          bool                         `toml:"version_folders"`
 }
 
 type tlp string
 
 const (
-	tlpCSAF  tlp = "csaf"
-	tlpWhite tlp = "white"
-	tlpGreen tlp = "green"
-	tlpAmber tlp = "amber"
-	tlpRed   tlp = "red"
+	tlpCSAF        tlp = "csaf"
+	tlpWhite       tlp = "white"
+	tlpClear       tlp = "clear"
+	tlpGreen       tlp = "green"
+	tlpAmber       tlp = "amber"
+	tlpAmberStrict tlp = "amber+strict"
+	tlpRed         tlp = "red"
 )
+
+var allTLPs = []tlp{
+	tlpCSAF, tlpWhite, tlpClear, tlpGreen, tlpAmber, tlpAmberStrict, tlpRed,
+}
+
+// subsets of TLPs allowed either in CSAF version 2.0 or 2.1
+// TODO: do we keep [tlpCSAF] ?
+var versionedTLPs = map[string][]tlp{
+	csafVersion20: {tlpCSAF, tlpWhite, tlpGreen, tlpAmber, tlpRed},
+	csafVersion21: {tlpCSAF, tlpClear, tlpGreen, tlpAmber, tlpAmberStrict, tlpRed},
+}
 
 // valid returns true if the checked tlp matches one of the defined tlps.
 func (t tlp) valid() bool {
 	switch t {
-	case tlpCSAF, tlpWhite, tlpGreen, tlpAmber, tlpRed:
+	case tlpCSAF, tlpWhite, tlpClear, tlpGreen, tlpAmber, tlpAmberStrict, tlpRed:
 		return true
 	default:
 		return false
 	}
+}
+
+// validForVersion returns true if TLP is valid for given CSAF version
+func (t tlp) validForVersion(version string) bool {
+	return slices.Contains(versionedTLPs[version], t)
+}
+
+// label returns TLP label used in documents, i.e.: "amber+strict" -> "AMBER+STRICT"
+func (t tlp) label() string {
+	return strings.ToUpper(string(t))
+}
+
+func feedName(t tlp) string {
+	return "csaf-feed-tlp-" + string(t) + ".json"
 }
 
 func (t *tlp) UnmarshalText(text []byte) error {
@@ -120,16 +160,6 @@ func (cfg *config) uploadLimiter(r io.Reader) io.Reader {
 	return io.LimitReader(r, *cfg.UploadLimit)
 }
 
-func (cfg *config) modelTLPs() []csaf.TLPLabel {
-	tlps := make([]csaf.TLPLabel, 0, len(cfg.TLPs))
-	for _, t := range cfg.TLPs {
-		if t != tlpCSAF {
-			tlps = append(tlps, csaf.TLPLabel(strings.ToUpper(string(t))))
-		}
-	}
-	return tlps
-}
-
 // loadCryptoKeyFromFile loads an armored key from file.
 func loadCryptoKeyFromFile(filename string) (*crypto.Key, error) {
 	f, err := os.Open(filename)
@@ -138,13 +168,6 @@ func loadCryptoKeyFromFile(filename string) (*crypto.Key, error) {
 	}
 	defer f.Close()
 	return crypto.NewKeyFromArmoredReader(f)
-}
-
-// openPGPPublicURL constructs the public OpenPGP key URL for a given key.
-func (cfg *config) openPGPPublicURL(fingerprint string) string {
-	return fmt.Sprintf(
-		"%s/.well-known/csaf/openpgp/%s.asc",
-		cfg.CanonicalURLPrefix, fingerprint)
 }
 
 // checkPassword compares the given hashed password with the plaintext in the "password" config value.
@@ -263,29 +286,43 @@ func loadConfig() (*config, error) {
 	if cfg.CanonicalURLPrefix == "" {
 		cfg.CanonicalURLPrefix = "https://" + os.Getenv("SERVER_NAME")
 	}
+
 	// Check if canonical url prefix is invalid
 	parsedURL, err := url.ParseRequestURI(cfg.CanonicalURLPrefix)
 	if err != nil {
 		return nil, err
 	}
+
 	if parsedURL.Scheme != "https" && parsedURL.Scheme != "http" {
 		return nil, fmt.Errorf("invalid canonical URL: %q", cfg.CanonicalURLPrefix)
 	}
 
-	if cfg.TLPs == nil {
-		cfg.TLPs = []tlp{tlpCSAF, tlpWhite, tlpGreen, tlpAmber, tlpRed}
+	if len(cfg.CSAFVersions) == 0 {
+		cfg.CSAFVersions = []string{defaultCSAFVersion}
 	}
 
-	if cfg.ProviderMetaData == nil {
-		cfg.ProviderMetaData = &providerMetadataConfig{}
+	if cfg.AuthoritativeVersion == "" {
+		cfg.AuthoritativeVersion = defaultCSAFVersion
+	}
+
+	if cfg.CSAFPath == "" {
+		cfg.CSAFPath = defaultCSAFPath
+	}
+
+	if cfg.TLPs == nil {
+		cfg.TLPs = cfg.defaultTLPs()
 	}
 
 	if cfg.ProviderMetaData.Publisher == nil {
-		cfg.ProviderMetaData.Publisher = &csaf.Publisher{
-			Category:  func(c csaf.Category) *csaf.Category { return &c }(csaf.CSAFCategoryVendor),
-			Name:      func(s string) *string { return &s }("Example Company"),
-			Namespace: func(s string) *string { return &s }("https://example.com"),
+		cfg.ProviderMetaData.Publisher = &publisherConfig{
+			Category:  string(csaf.CSAFCategoryVendor),
+			Name:      "Example Company",
+			Namespace: "https://example.com",
 		}
+	}
+
+	if err := cfg.check(); err != nil {
+		return nil, err
 	}
 
 	if cfg.UploadLimit == nil {
@@ -294,4 +331,78 @@ func loadConfig() (*config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// defaultTLPs returns list of TLPs for all configured CSAF versions.
+func (cfg *config) defaultTLPs() []tlp {
+	var tlps []tlp
+	for _, t := range allTLPs {
+		if cfg.servesTLP(t) {
+			tlps = append(tlps, t)
+		}
+	}
+	return tlps
+}
+
+// servesTLP returns true if given TLP is in at least one of the configured CSAF versions.
+func (cfg *config) servesTLP(t tlp) bool {
+	return slices.ContainsFunc(cfg.CSAFVersions, t.validForVersion)
+}
+
+// serves tells if the given CSAF version is configured.
+func (cfg *config) serves(version string) bool {
+	return slices.Contains(cfg.CSAFVersions, version)
+}
+
+// check checks CSAF version specific settings.
+func (cfg *config) check() error {
+	if len(cfg.CSAFVersions) == 0 {
+		return errors.New("csaf_versions needs at least one entry")
+	}
+	for i, version := range cfg.CSAFVersions {
+		if _, ok := versionedTLPs[version]; !ok {
+			return fmt.Errorf("Unknown CSAF version %q in csaf_versions", version)
+		}
+		if slices.Contains(cfg.CSAFVersions[:i], version) {
+			return fmt.Errorf("Duplicate CSAF version %q in csaf_versions", version)
+		}
+	}
+	if len(cfg.CSAFVersions) > 1 && !cfg.VersionFolders {
+		return errors.New("Need version_folders when serving multiple CSAF versions")
+	}
+	if !cfg.serves(cfg.AuthoritativeVersion) {
+		return fmt.Errorf("authoritative_version %q not in csaf_versions", cfg.AuthoritativeVersion)
+	}
+
+	for _, t := range cfg.TLPs {
+		if !cfg.servesTLP(t) {
+			return fmt.Errorf("tlp %q not available in CSAF %s",
+				t, strings.Join(cfg.CSAFVersions, " or "))
+		}
+	}
+	for _, vtr := range cfg.versionTrees() {
+		if len(vtr.feedTLPs()) == 0 {
+			return fmt.Errorf("no tlp of CSAF %s is configured", vtr.version)
+		}
+	}
+
+	if p := cfg.CSAFPath; !strings.HasPrefix(p, "/") || p == "/" || path.Clean(p) != p {
+		return fmt.Errorf(
+			"invalid csaf_path %q: expected an absolute path without trailing slash", p)
+	}
+
+	// The version specific PMD values
+	pmdc := cfg.ProviderMetaData
+	switch {
+	case !cfg.serves(csafVersion20) && pmdc.Publisher.ContactDetails != nil:
+		return fmt.Errorf("publisher.contact_details needs %q in csaf_versions, use contact", csafVersion20)
+	case !cfg.serves(csafVersion21) && pmdc.Publisher.Contact != nil:
+		return fmt.Errorf("publisher.contact needs %q in csaf_versions, use contact_details", csafVersion21)
+	case !cfg.serves(csafVersion21) && (pmdc.MaintainedFrom != nil || pmdc.MaintainedUntil != nil):
+		return fmt.Errorf("maintained_from and maintained_until need %q in csaf_versions", csafVersion21)
+	}
+	if from, until := pmdc.MaintainedFrom, pmdc.MaintainedUntil; from != nil && until != nil && until.Before(*from) {
+		return fmt.Errorf("maintained_until is before maintained_from")
+	}
+	return nil
 }
