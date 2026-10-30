@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +27,7 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/csaf/provider"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -127,12 +127,14 @@ func (c *controller) handleSignature(
 	return armored, key, err
 }
 
-func (c *controller) tlpParam(r *http.Request) (tlp, error) {
+// tlpParam returns TLP of upload form, if it is configured
+// for the [versionTree] of the uploaded doc.
+func tlpParam(r *http.Request, vtr *versionTree) (tlp, error) {
 	t := tlp(strings.ToLower(r.FormValue("tlp")))
-	if slices.Contains(c.cfg.TLPs, t) {
+	if vtr.hasTLP(t) {
 		return t, nil
 	}
-	return "", fmt.Errorf("unsupported TLP type '%s'", t)
+	return "", fmt.Errorf("unsupported TLP type '%s' for CSAF %s", t, vtr.version)
 }
 
 // create calls the "ensureFolders" functions to create the directories and files.
@@ -196,6 +198,11 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		return nil, err
 	}
 
+	vtr, err := c.cfg.treeForVersion(ex.CSAFVersion)
+	if err != nil {
+		return nil, err
+	}
+
 	if util.CleanFileName(ex.ID) != newCSAF {
 		return nil, fmt.Errorf("ID %q does not match filename %s",
 			ex.ID, newCSAF)
@@ -218,14 +225,14 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		}
 	}
 
-	t, err := c.tlpParam(r)
+	t, err := tlpParam(r, vtr)
 	if err != nil {
 		return nil, err
 	}
 
 	// Extract real TLP from document.
 	if t == tlpCSAF {
-		if t = tlp(strings.ToLower(ex.TLPLabel)); !t.valid() || t == tlpCSAF {
+		if t = tlp(strings.ToLower(ex.TLPLabel)); !t.validForVersion(vtr.version) || t == tlpCSAF {
 			return nil, fmt.Errorf(
 				"valid TLP label missing in document (found '%s')", t)
 		}
@@ -240,18 +247,18 @@ func (c *controller) upload(r *http.Request) (any, error) {
 	warn := func(msg string) { warnings = append(warnings, msg) }
 
 	if err := doTransaction(
-		c.cfg, t,
-		func(folder string, pmd *csaf.ProviderMetadata) error {
+		vtr, t,
+		func(folder string, pmd *provider.Provider) error {
 
 			// extend the ROLIE feed.
-			if err := c.extendROLIE(folder, newCSAF, t, ex); err != nil {
+			if err := c.extendROLIE(folder, newCSAF, t, ex, pmd, vtr); err != nil {
 				return err
 			}
 
 			// if we have found dynamic categories merge them into
 			// the existing once.
 			if len(dynamicCategories) > 0 {
-				if err := c.mergeCategories(folder, t, dynamicCategories); err != nil {
+				if err := mergeCategories(folder, t, dynamicCategories); err != nil {
 					return err
 				}
 			}
@@ -283,6 +290,7 @@ func (c *controller) upload(r *http.Request) (any, error) {
 				if err := updateIndices(
 					folder, filepath.Join(year, newCSAF),
 					ex.CurrentReleaseDate,
+					vtr.version == csafVersion20,
 				); err != nil {
 					return err
 				}
@@ -290,18 +298,20 @@ func (c *controller) upload(r *http.Request) (any, error) {
 
 			// Take over publisher
 			switch {
-			case pmd.Publisher == nil:
+			case pmd.Publisher.Name == "":
 				warn("Publisher in provider metadata is not initialized. Forgot to configure?")
 				if c.cfg.DynamicProviderMetaData {
 					warn("Taking publisher from CSAF")
 					pmd.Publisher = ex.Publisher
 				}
-			case !pmd.Publisher.Equals(ex.Publisher):
+			case !pmd.Publisher.Equal(&ex.Publisher):
 				warn("Publishers in provider metadata and CSAF do not match.")
 			}
 
-			fingerprint := strings.ToUpper(key.GetFingerprint())
-			pmd.SetPGP(fingerprint, c.cfg.openPGPPublicURL(fingerprint))
+			if c.cfg.DynamicProviderMetaData {
+				fingerprint := strings.ToUpper(key.GetFingerprint())
+				pmd.SetPGP(fingerprint, vtr.openPGPPublicURL(fingerprint))
+			}
 
 			return nil
 		},
