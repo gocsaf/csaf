@@ -12,15 +12,27 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/csaf/provider"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
+// rolieFormats are the formats of ROLIE entries per CSAF version.
+var rolieFormats = map[string]csaf.Format{
+	csafVersion20: {
+		Schema:  "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf_json_schema.json",
+		Version: csafVersion20,
+	},
+	csafVersion21: {
+		Schema:  "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json",
+		Version: csafVersion21,
+	},
+}
+
 // mergeCategories merges the given categories into the old ones.
-func (c *controller) mergeCategories(
+func mergeCategories(
 	folder string,
 	t tlp,
 	categories []string,
@@ -71,40 +83,35 @@ func (c *controller) extendROLIE(
 	newCSAF string,
 	t tlp,
 	ex *csaf.AdvisorySummary,
+	pmd *provider.Provider,
+	vtr *versionTree,
 ) error {
 	// Load the feed
-	ts := string(t)
-	feedName := "csaf-feed-tlp-" + ts + ".json"
-
-	feed := filepath.Join(folder, feedName)
+	feed := filepath.Join(folder, feedName(t))
 	rolie, err := loadROLIEFeed(feed)
 	if err != nil {
 		return err
 	}
 
-	feedURL := csaf.JSONURL(
-		c.cfg.CanonicalURLPrefix +
-			"/.well-known/csaf/" + ts + "/" + feedName)
-
-	tlpLabel := csaf.TLPLabel(strings.ToUpper(ts))
+	feedURL := vtr.feedURL(t)
 
 	// Create new if does not exists.
 	if rolie == nil {
 		links := []csaf.Link{{
 			Rel:  "self",
-			HRef: string(feedURL),
+			HRef: feedURL,
 		}}
 		// If we have a service document we need to link it.
-		if c.cfg.ServiceDocument {
+		if vtr.cfg.ServiceDocument {
 			links = append(links, csaf.Link{
 				Rel:  "service",
-				HRef: c.cfg.CanonicalURLPrefix + "/.well-known/csaf/service.json",
+				HRef: vtr.url("service.json"),
 			})
 		}
 		rolie = &csaf.ROLIEFeed{
 			Feed: csaf.FeedData{
-				ID:    "csaf-feed-tlp-" + ts,
-				Title: "CSAF feed (TLP:" + string(tlpLabel) + ")",
+				ID:    "csaf-feed-tlp-" + string(t),
+				Title: "CSAF feed (TLP:" + t.label() + ")",
 				Link:  links,
 				Category: []csaf.ROLIECategory{{
 					Scheme: "urn:ietf:params:rolie:category:information-type",
@@ -115,12 +122,12 @@ func (c *controller) extendROLIE(
 		}
 	}
 
-	rolie.Feed.Updated = csaf.TimeStamp(time.Now().UTC())
+	updated := time.Now().UTC()
+	rolie.Feed.Updated = csaf.TimeStamp(updated)
 
 	year := strconv.Itoa(ex.InitialReleaseDate.Year())
 
-	csafURL := c.cfg.CanonicalURLPrefix +
-		"/.well-known/csaf/" + ts + "/" + year + "/" + newCSAF
+	csafURL := vtr.url(string(t), year, newCSAF)
 
 	e := rolie.EntryByID(ex.ID)
 	if e == nil {
@@ -137,10 +144,7 @@ func (c *controller) extendROLIE(
 		{Rel: "hash", HRef: csafURL + ".sha512"},
 		{Rel: "signature", HRef: csafURL + ".asc"},
 	}
-	e.Format = csaf.Format{
-		Schema:  "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf_json_schema.json",
-		Version: "2.0",
-	}
+	e.Format = rolieFormats[vtr.version]
 	e.Content = csaf.Content{
 		Type: "application/json",
 		Src:  csafURL,
@@ -153,6 +157,10 @@ func (c *controller) extendROLIE(
 
 	// Sort by descending updated order.
 	rolie.SortEntriesByUpdated()
+
+	if err := setLastUpdated(pmd, feedURL, timestamp(updated)); err != nil {
+		return err
+	}
 
 	// Store the feed
 	return util.WriteToFile(feed, rolie)
