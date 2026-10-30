@@ -9,12 +9,15 @@
 package csaf
 
 import (
+	"encoding/json"
 	"time"
 
+	"github.com/gocsaf/csaf/v3/csaf/provider"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
 const (
+	csafVersionExpr        = `$.document.csaf_version`
 	idExpr                 = `$.document.tracking.id`
 	titleExpr              = `$.document.title`
 	publisherExpr          = `$.document.publisher`
@@ -27,9 +30,10 @@ const (
 
 // AdvisorySummary is a summary of some essentials of an CSAF advisory.
 type AdvisorySummary struct {
+	CSAFVersion        string
 	ID                 string
 	Title              string
-	Publisher          *Publisher
+	Publisher          provider.ProviderPublisher
 	InitialReleaseDate time.Time
 	CurrentReleaseDate time.Time
 	Summary            string
@@ -44,22 +48,29 @@ func NewAdvisorySummary(
 	doc any,
 ) (*AdvisorySummary, error) {
 
-	e := &AdvisorySummary{
-		Publisher: new(Publisher),
-	}
+	var (
+		e         AdvisorySummary
+		publisher json.RawMessage
+	)
 
 	if err := pe.Match([]util.PathEvalMatcher{
+		{Expr: csafVersionExpr, Action: util.StringMatcher(&e.CSAFVersion)},
 		{Expr: idExpr, Action: util.StringMatcher(&e.ID)},
 		{Expr: titleExpr, Action: util.StringMatcher(&e.Title)},
 		{Expr: currentReleaseDateExpr, Action: util.TimeMatcher(&e.CurrentReleaseDate, time.RFC3339)},
 		{Expr: initialReleaseDateExpr, Action: util.TimeMatcher(&e.InitialReleaseDate, time.RFC3339)},
 		{Expr: summaryExpr, Action: util.StringMatcher(&e.Summary), Optional: true},
 		{Expr: tlpLabelExpr, Action: util.StringMatcher(&e.TLPLabel), Optional: true},
-		{Expr: publisherExpr, Action: util.ReMarshalMatcher(e.Publisher)},
+		{Expr: publisherExpr, Action: util.ReMarshalMatcher(&publisher)},
 		{Expr: statusExpr, Action: util.StringMatcher(&e.Status)},
 	}, doc); err != nil {
 		return nil, err
 	}
 
-	return e, nil
+	var err error
+	if e.Publisher, err = provider.DecodePublisher(e.CSAFVersion, publisher); err != nil {
+		return nil, err
+	}
+
+	return &e, nil
 }
