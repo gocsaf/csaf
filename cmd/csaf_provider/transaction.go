@@ -9,35 +9,32 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
-	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v3/csaf/provider"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
 func doTransaction(
-	cfg *config,
+	vtr *versionTree,
 	t tlp,
-	fn func(string, *csaf.ProviderMetadata) error,
+	fn func(string, *provider.Provider) error,
 ) error {
 
-	wellknown := filepath.Join(cfg.Web, ".well-known", "csaf")
+	wellknown := vtr.dir()
 
-	metadata := filepath.Join(wellknown, "provider-metadata.json")
-
-	pmd, err := func() (*csaf.ProviderMetadata, error) {
-		f, err := os.Open(metadata)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return csaf.NewProviderMetadataDomain(cfg.CanonicalURLPrefix, cfg.modelTLPs()), nil
-			}
-			return nil, err
+	pmd, err := vtr.loadPMD()
+	if errors.Is(err, os.ErrNotExist) {
+		key, err2 := loadCryptoKeyFromFile(vtr.cfg.OpenPGPPublicKey)
+		if err2 != nil {
+			return err2
 		}
-		defer f.Close()
-		return csaf.LoadProviderMetadata(f)
-	}()
-
+		pmd, err = vtr.newProviderMetadata(strings.ToUpper(key.GetFingerprint()), time.Now())
+	}
 	if err != nil {
 		return err
 	}
@@ -49,7 +46,7 @@ func doTransaction(
 		return err
 	}
 
-	folderTLP := filepath.Join(cfg.Folder, string(t))
+	folderTLP := filepath.Join(vtr.folder, string(t))
 
 	newDir, err := util.MakeUniqDir(folderTLP)
 	if err != nil {
@@ -68,28 +65,10 @@ func doTransaction(
 		return err
 	}
 
-	// Write back provider metadata if its dynamic.
-	if cfg.DynamicProviderMetaData {
-		newMetaName, newMetaFile, err := util.MakeUniqFile(metadata)
-		if err != nil {
-			os.RemoveAll(newDir)
-			return err
-		}
-
-		if _, err := pmd.WriteTo(newMetaFile); err != nil {
-			newMetaFile.Close()
-			os.Remove(newMetaName)
-			os.RemoveAll(newDir)
-			return err
-		}
-
-		if err := newMetaFile.Close(); err != nil {
-			os.Remove(newMetaName)
-			os.RemoveAll(newDir)
-			return err
-		}
-
-		if err := os.Rename(newMetaName, metadata); err != nil {
+	// Write back provider metadata if its needed.
+	if vtr.updatesPMD() {
+		pmd.LastUpdated = timestamp(time.Now())
+		if err := writePMD(vtr.pmdPath(), pmd); err != nil {
 			os.RemoveAll(newDir)
 			return err
 		}
