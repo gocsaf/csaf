@@ -9,6 +9,7 @@
 package main
 
 import (
+	"archive/tar"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -16,7 +17,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
@@ -27,7 +27,6 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/armor"
 	"github.com/ProtonMail/gopenpgp/v2/constants"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-
 	"github.com/gocsaf/csaf/v3/csaf"
 	"github.com/gocsaf/csaf/v3/internal/misc"
 	"github.com/gocsaf/csaf/v3/util"
@@ -132,116 +131,169 @@ func (p *processor) checkFile(filename string, data []byte) error {
 	return err
 }
 
-// uploadRequest creates the request for uploading a csaf document by passing the filename.
-// According to the flags values the multipart sections of the request are established.
-// It returns the created http request.
-func (p *processor) uploadRequest(filename string) (*http.Request, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = p.checkFile(filename, data); err != nil {
-		return nil, err
-	}
-
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-
-	// As the csaf_provider only accepts uploads with mime type
-	// "application/json" we have to set this.
-	part, err := misc.CreateFormFile(
-		writer, "csaf", filepath.Base(filename), "application/json")
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := part.Write(data); err != nil {
-		return nil, err
-	}
-
-	if err := writer.WriteField("tlp", p.cfg.TLP); err != nil {
-		return nil, err
-	}
-
-	if p.cfg.keyRing == nil && p.cfg.Passphrase != nil {
-		if err := writer.WriteField("passphrase", *p.cfg.Passphrase); err != nil {
-			return nil, err
-		}
-	}
-
+// createSignature creates a signature if keyring or SigningTool are added in the config
+// or if ExternalSigned is set to true in the config.
+func (p *processor) createSignature(filename string, data []byte) (string, error) {
 	if p.cfg.keyRing != nil {
 		sig, err := p.cfg.keyRing.SignDetached(crypto.NewPlainMessage(data))
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		armored, err := armor.ArmorWithTypeAndCustomHeaders(
 			sig.Data, constants.PGPSignatureHeader, "", "")
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		if err := writer.WriteField("signature", armored); err != nil {
-			return nil, err
-		}
+		return armored, nil
 	}
 
 	switch {
 	case p.cfg.SigningTool != "":
 		signature, err := p.signExternally(data)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		if err := writer.WriteField("signature", signature); err != nil {
-			return nil, err
-		}
+		return signature, nil
 
 	case p.cfg.ExternalSigned:
 		signature, err := os.ReadFile(filename + ".asc")
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		if err := writer.WriteField("signature", string(signature)); err != nil {
-			return nil, err
-		}
+		return string(signature), nil
 	}
+	return "", nil
+}
 
-	if err := writer.Close(); err != nil {
-		return nil, err
+func (p *processor) createMetadata() ([]byte, error) {
+	var metadata []byte
+	metadata = append(metadata, []byte(p.cfg.TLP)...)
+	if p.cfg.keyRing == nil && p.cfg.Passphrase != nil {
+		passphrase := []byte(*p.cfg.Passphrase + "\n")
+		metadata = append(metadata, passphrase...)
 	}
+	return metadata, nil
+}
 
-	req, err := http.NewRequest(http.MethodPost, p.cfg.URL+"/api/upload", body)
+// process attemps to upload files to the server via tar stream.
+// It prints the response messages.
+func (p *processor) process(files []string) error {
+	pr, pw := io.Pipe()
+	metadata, err := p.createMetadata()
 	if err != nil {
-		return nil, err
+		log.Printf("failed to create metadata %v", err)
+		return err
+	}
+	header := &tar.Header{
+		Name: "metadata",
+		Size: int64(len(metadata)),
+	}
+
+	go func() {
+		tarWriter := tar.NewWriter(pw)
+		defer pw.Close()
+		defer tarWriter.Close()
+		if err := tarWriter.WriteHeader(header); err != nil {
+			log.Printf("failed to write metadata header to tar writer %v", err)
+			return
+		}
+		metadataReader := bytes.NewReader(metadata)
+
+		if _, err := io.Copy(tarWriter, metadataReader); err != nil {
+			log.Printf("failed to write metadata to tar writer %v", err)
+			return
+		}
+
+		for _, filename := range files {
+			// Check file name
+			if bn := filepath.Base(filename); !util.ConformingFileName(bn) {
+				err = fmt.Errorf("%q is not a conforming file name", bn)
+				return
+			}
+
+			file, err := os.Open(filename)
+			if err != nil {
+				log.Printf("failed to open file %v", err)
+				return
+			}
+			defer file.Close()
+
+			fileContent, err := os.ReadFile(filename)
+			if err != nil {
+				log.Printf("could not read file %v", err)
+				return
+			}
+
+			if err = p.checkFile(filename, fileContent); err != nil {
+				log.Printf("failed to check file %v", err)
+				return
+			}
+
+			fi, err := file.Stat()
+			if err != nil {
+				log.Printf("failed to read file information %v", err)
+				return
+			}
+
+			header := &tar.Header{
+				Name:    filename,
+				Size:    fi.Size(),
+				Mode:    int64(fi.Mode()),
+				ModTime: fi.ModTime(),
+			}
+			if err := tarWriter.WriteHeader(header); err != nil {
+				log.Printf("failed to write file header to tar writer %v", err)
+				return
+			}
+
+			if _, err := io.Copy(tarWriter, file); err != nil {
+				log.Printf("failed to write file to tar writer %v", err)
+				return
+			}
+
+			signature, err := p.createSignature(filename, fileContent)
+			if err != nil {
+				log.Printf("failed to create signature %v", err)
+				return
+			} else if signature != "" {
+				log.Printf("try to write signature")
+				header := &tar.Header{
+					Name: filename + ".asc",
+					Size: int64(len(signature)),
+				}
+
+				if err := tarWriter.WriteHeader(header); err != nil {
+					log.Printf("failed to write signature header to tar writer %v", err)
+					return
+				}
+
+				signatureReader := bytes.NewReader([]byte(signature))
+				if _, err := io.Copy(tarWriter, signatureReader); err != nil {
+					log.Printf("failed to write signature to tar writer %v", err)
+					return
+				}
+			}
+		}
+	}()
+
+	req, err := http.NewRequest("POST", p.cfg.URL+"/api/bulk_upload/", pr)
+	if err != nil {
+		log.Printf("failed to create request %v", err)
+		return err
 	}
 
 	req.Header.Set("X-CSAF-PROVIDER-AUTH", p.cfg.cachedAuth)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	return req, nil
-}
-
-// process attemps to upload a file to the server.
-// It prints the response messages.
-func (p *processor) process(filename string) error {
-
-	if bn := filepath.Base(filename); !util.ConformingFileName(bn) {
-		return fmt.Errorf("%q is not a conforming file name", bn)
-	}
-
-	req, err := p.uploadRequest(filename)
-	if err != nil {
-		return err
-	}
+	req.Header.Set("Content-Type", "application/x-tar")
 
 	resp, err := p.httpClient().Do(req)
 	if err != nil {
+		log.Printf("failed to send request %v", err)
 		return err
 	}
-	defer resp.Body.Close()
 
 	var uploadErr error
 	if resp.StatusCode != http.StatusOK {
-		uploadErr = fmt.Errorf("upload failed: %s", resp.Status)
+		uploadErr := fmt.Errorf("upload failed: %s", resp.Status)
 		fmt.Printf("HTTPS %s\n", uploadErr)
 	}
 
@@ -316,10 +368,9 @@ func (p *processor) run(args []string) error {
 		log.Println("No CSAF files given.")
 	}
 
-	for _, arg := range args {
-		if err := p.process(arg); err != nil {
-			return fmt.Errorf("processing %q failed: %v", arg, err)
-		}
+	if err := p.process(args); err != nil {
+		log.Print("process returned err")
+		return err
 	}
 
 	return nil
