@@ -21,6 +21,13 @@ import (
 	"github.com/gocsaf/csaf/v3/util"
 )
 
+// csvWriter is implemented by [csv.Writer] and [util.FullyQuotedCSVWriter]
+type csvWriter interface {
+	Write([]string) error
+	Flush()
+	Error() error
+}
+
 func updateIndex(dir, fname string) error {
 
 	index := filepath.Join(dir, "index.txt")
@@ -72,7 +79,9 @@ func updateIndex(dir, fname string) error {
 	return f.Close()
 }
 
-func updateChanges(dir, fname string, releaseDate time.Time) error {
+// updateChanges updates the changes.csv.
+// If quoted is true, entries are not double quoted (CSAF v2.1, 7.1.13)
+func updateChanges(dir, fname string, releaseDate time.Time, quoted bool) error {
 
 	type change struct {
 		time time.Time
@@ -146,7 +155,12 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 	if err != nil {
 		return err
 	}
-	c := util.NewFullyQuotedCSWWriter(o)
+	var c csvWriter
+	if quoted {
+		c = util.NewFullyQuotedCSWWriter(o)
+	} else {
+		c = csv.NewWriter(o)
+	}
 	record := make([]string, 2)
 	for _, ch := range chs {
 		record[timeColumn] = ch.time.Format(dateFormat)
@@ -165,11 +179,11 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 	return err2
 }
 
-func updateIndices(dir, fname string, releaseDate time.Time) error {
+func updateIndices(dir, fname string, releaseDate time.Time, quoted bool) error {
 
 	if err := updateIndex(dir, fname); err != nil {
 		return err
 	}
 
-	return updateChanges(dir, fname, releaseDate)
+	return updateChanges(dir, fname, releaseDate, quoted)
 }
