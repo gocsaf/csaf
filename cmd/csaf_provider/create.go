@@ -11,11 +11,11 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
+	"log"
 	"os"
-	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 	"unicode"
@@ -29,51 +29,130 @@ import (
 // ensureFolders initializes the paths and call functions to create
 // the directories and files.
 func ensureFolders(c *config) error {
+	if c.VersionFolders {
+		if err := checkWellknownPMD(c); err != nil {
+			return err
+		}
+	}
 
-	wellknown := filepath.Join(c.Web, ".well-known")
-	wellknownCSAF := filepath.Join(wellknown, "csaf")
+	for _, vtr := range c.versionTrees() {
+		for _, create := range []func(*versionTree) error{
+			createVersionDir,
+			createFeedFolders,
+			createService,
+			createOpenPGPFolder,
+			createProviderMetadata,
+		} {
+			if err := create(vtr); err != nil {
+				return err
+			}
+		}
+	}
 
-	for _, create := range []func(*config, string) error{
-		createWellknown,
-		createFeedFolders,
-		createService,
-		createOpenPGPFolder,
-		createProviderMetadata,
-	} {
-		if err := create(c, wellknownCSAF); err != nil {
+	if c.VersionFolders {
+		if err := linkAuthoritativeVersion(c); err != nil {
 			return err
 		}
 	}
 
 	// Only write/modify security.txt if configured.
 	if c.WriteSecurity {
-		if err := setupSecurity(c, wellknown); err != nil {
+		if err := setupSecurity(c, filepath.Join(c.Web, ".well-known")); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// createWellknown creates ".well-known" directory if not exist and returns nil.
+// urlsForSecurity returns PMD URLs for security.txt
+func urlsForSecurity(c *config) (wanted, stale []string) {
+	for _, vtr := range c.versionTrees() {
+		if vtr.version == c.AuthoritativeVersion {
+			wanted = slices.Insert(wanted, 0, vtr.pmdURL())
+		} else {
+			wanted = append(wanted, vtr.pmdURL())
+		}
+	}
+	if c.VersionFolders {
+		for version := range versionedTLPs {
+			if !c.serves(version) {
+				stale = append(stale, c.CanonicalURLPrefix+c.CSAFPath+"/"+versionFolder(version)+"/provider-metadata.json")
+			}
+		}
+	}
+	return wanted, stale
+}
+
+// linkAuthoritativeVersion symlinks the PMD of the authoritative CSAF version
+// to be available below csaf_path
+func linkAuthoritativeVersion(c *config) error {
+	link := wellknownPMD(c)
+	target := filepath.Join(versionFolder(c.AuthoritativeVersion), "provider-metadata.json")
+
+	switch current, err := os.Readlink(link); {
+	case os.IsNotExist(err):
+		return os.Symlink(target, link)
+	case err != nil:
+		return err
+	case current == target:
+		return nil
+	}
+	// atomic switch at roll-over date.
+	tmp := link + ".tmp"
+	os.Remove(tmp)
+	if err := os.Symlink(target, tmp); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp, link); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	return nil
+}
+
+// wellknownPMD returns the path to the PMD directly at csaf_path
+func wellknownPMD(c *config) string {
+	return filepath.Join(c.Web, c.CSAFPath, "provider-metadata.json")
+}
+
+// checkWellknownPMD fails when csaf_path contains PMD
+// that is not a symlink. This metadata belongs to a tree without
+// version folders and must be moved into the appropriate
+// version folder (e.g.: "v2.0", "v2.1").
+func checkWellknownPMD(c *config) error {
+	path := wellknownPMD(c)
+	switch st, err := os.Lstat(path); {
+	case os.IsNotExist(err):
+		return nil
+	case err != nil:
+		return err
+	case st.Mode()&os.ModeSymlink == 0:
+		return fmt.Errorf("%s not a symlink, move existing CSAF version tree into its respective folder", path)
+	}
+	return nil
+}
+
+// createVersionDir creates a directory of specified [versionTree] if not exist and returns nil.
 // An error is returned if the it is not a directory.
-func createWellknown(_ *config, wellknown string) error {
-	st, err := os.Stat(wellknown)
+func createVersionDir(vtr *versionTree) error {
+	dir := vtr.dir()
+	st, err := os.Stat(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return os.MkdirAll(wellknown, 0755)
+			return os.MkdirAll(dir, 0755)
 		}
 		return err
 	}
 	if !st.IsDir() {
-		return errors.New(".well-known/csaf is not a directory")
+		return fmt.Errorf("%s is not a directory", vtr.path)
 	}
 	return nil
 }
 
 // createService creates the ROLIE service document (if configured).
-func createService(c *config, wellknownCSAF string) error {
+func createService(vtr *versionTree) error {
 	// no service document needed.
-	if !c.ServiceDocument {
+	if !vtr.cfg.ServiceDocument {
 		return nil
 	}
 
@@ -86,18 +165,10 @@ func createService(c *config, wellknownCSAF string) error {
 
 	var collections []csaf.ROLIEServiceWorkspaceCollection
 
-	for _, t := range c.TLPs {
-		if t == tlpCSAF {
-			continue
-		}
-		ts := string(t)
-		feedName := "csaf-feed-tlp-" + ts + ".json"
-		href := c.CanonicalURLPrefix +
-			"/.well-known/csaf/" + ts + "/" + feedName
-
+	for _, t := range vtr.feedTLPs() {
 		collection := csaf.ROLIEServiceWorkspaceCollection{
-			Title:      "CSAF feed (TLP:" + strings.ToUpper(ts) + ")",
-			HRef:       href,
+			Title:      "CSAF feed (TLP:" + t.label() + ")",
+			HRef:       vtr.feedURL(t),
 			Categories: categories,
 		}
 		collections = append(collections, collection)
@@ -112,7 +183,7 @@ func createService(c *config, wellknownCSAF string) error {
 		},
 	}
 
-	path := filepath.Join(wellknownCSAF, "service.json")
+	path := filepath.Join(vtr.dir(), "service.json")
 	return util.WriteToFile(path, rsd)
 }
 
@@ -120,24 +191,21 @@ func createService(c *config, wellknownCSAF string) error {
 // in the "tlps" config option if they do not already exist.
 // No creation for the "csaf" option will be done.
 // It creates also symbolic links to feed folders.
-func createFeedFolders(c *config, wellknown string) error {
+func createFeedFolders(vtr *versionTree) error {
 
 	// If we have static configured categories we need to create
 	// the category documents.
-	var catDoc *csaf.ROLIECategoryDocument
+	categories := vtr.cfg.StaticCategories()
 
-	if categories := c.StaticCategories(); len(categories) > 0 {
-		catDoc = csaf.NewROLIECategoryDocument(categories...)
+	if err := os.MkdirAll(vtr.folder, 0755); err != nil {
+		return err
 	}
 
-	for _, t := range c.TLPs {
-		if t == tlpCSAF {
-			continue
-		}
-		tlpLink := filepath.Join(wellknown, string(t))
+	for _, t := range vtr.feedTLPs() {
+		tlpLink := filepath.Join(vtr.dir(), string(t))
 		if _, err := filepath.EvalSymlinks(tlpLink); err != nil {
 			if os.IsNotExist(err) {
-				tlpFolder := filepath.Join(c.Folder, string(t))
+				tlpFolder := filepath.Join(vtr.folder, string(t))
 				if tlpFolder, err = util.MakeUniqDir(tlpFolder); err != nil {
 					return err
 				}
@@ -149,14 +217,13 @@ func createFeedFolders(c *config, wellknown string) error {
 			}
 		}
 		// Store the category document.
-		if catDoc != nil {
-			catPath := path.Join(tlpLink, "category-"+string(t)+".json")
-			if err := util.WriteToFile(catPath, catDoc); err != nil {
+		if len(categories) > 0 {
+			if err := mergeCategories(tlpLink, t, categories); err != nil {
 				return err
 			}
 		}
 		// Create an empty ROLIE feed document
-		if err := createROLIEfeed(c, t, tlpLink); err != nil {
+		if err := createROLIEfeed(vtr, t, tlpLink); err != nil {
 			return err
 		}
 	}
@@ -164,33 +231,31 @@ func createFeedFolders(c *config, wellknown string) error {
 }
 
 // createROLIEfeed creates an empty ROLIE feed
-func createROLIEfeed(c *config, t tlp, folder string) error {
-	ts := string(t)
-	feedName := "csaf-feed-tlp-" + ts + ".json"
+func createROLIEfeed(vtr *versionTree, t tlp, folder string) error {
+	feed := filepath.Join(folder, feedName(t))
 
-	feed := filepath.Join(folder, feedName)
-
-	feedURL := csaf.JSONURL(
-		c.CanonicalURLPrefix +
-			"/.well-known/csaf/" + ts + "/" + feedName)
-
-	tlpLabel := csaf.TLPLabel(strings.ToUpper(ts))
+	switch _, err := os.Stat(feed); {
+	case err == nil:
+		return nil // Keep the entries of the existing feed.
+	case !os.IsNotExist(err):
+		return err
+	}
 
 	links := []csaf.Link{{
 		Rel:  "self",
-		HRef: string(feedURL),
+		HRef: vtr.feedURL(t),
 	}}
 	// If we have a service document we need to link it.
-	if c.ServiceDocument {
+	if vtr.cfg.ServiceDocument {
 		links = append(links, csaf.Link{
 			Rel:  "service",
-			HRef: c.CanonicalURLPrefix + "/.well-known/csaf/service.json",
+			HRef: vtr.url("service.json"),
 		})
 	}
 	rolie := &csaf.ROLIEFeed{
 		Feed: csaf.FeedData{
-			ID:    "csaf-feed-tlp-" + ts,
-			Title: "CSAF feed (TLP:" + string(tlpLabel) + ")",
+			ID:    "csaf-feed-tlp-" + string(t),
+			Title: "CSAF feed (TLP:" + t.label() + ")",
 			Link:  links,
 			Category: []csaf.ROLIECategory{{
 				Scheme: "urn:ietf:params:rolie:category:information-type",
@@ -207,9 +272,9 @@ func createROLIEfeed(c *config, t tlp, folder string) error {
 
 // createOpenPGPFolder creates an openpgp folder besides
 // the provider-metadata.json in the csaf folder.
-func createOpenPGPFolder(c *config, wellknown string) error {
+func createOpenPGPFolder(vtr *versionTree) error {
 
-	openPGPFolder := filepath.Join(wellknown, "openpgp")
+	openPGPFolder := filepath.Join(vtr.dir(), "openpgp")
 
 	if _, err := os.Stat(openPGPFolder); err != nil {
 		if os.IsNotExist(err) {
@@ -221,7 +286,7 @@ func createOpenPGPFolder(c *config, wellknown string) error {
 		}
 	}
 
-	keyData, err := os.ReadFile(c.OpenPGPPublicKey)
+	keyData, err := os.ReadFile(vtr.cfg.OpenPGPPublicKey)
 	if err != nil {
 		return fmt.Errorf("cannot load public OpenPGP key: %v", err)
 	}
@@ -247,15 +312,14 @@ func createOpenPGPFolder(c *config, wellknown string) error {
 
 // setupSecurity creates the "security.txt" file if does not exist
 // and writes the CSAF field inside the file. If the file exists
-// it checks ig the CSAF entry with the provider-metadata.json
-// path is already in. If its not it is added in front of all lines.
+// it checks if the CSAF entry with the provider-metadata.json
+// URLs are already in. Missing ones are added before all other lines.
+// No longer served CSAF version entries are removed.
 // Otherwise the file is left untouched.
 func setupSecurity(c *config, wellknown string) error {
 	security := filepath.Join(wellknown, "security.txt")
 
-	path := fmt.Sprintf(
-		"%s/.well-known/csaf/provider-metadata.json",
-		c.CanonicalURLPrefix)
+	wanted, stale := urlsForSecurity(c)
 
 	st, err := os.Stat(security)
 	if err != nil {
@@ -264,46 +328,59 @@ func setupSecurity(c *config, wellknown string) error {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(f, "CSAF: %s\n", path)
+			for _, url := range wanted {
+				fmt.Fprintf(f, "CSAF: %s\n", url)
+			}
 			return f.Close()
 		}
 		return err
 	}
 
 	// Load it line wise
-	found, lines, err := func() (bool, []string, error) {
+	found, lines, removed, err := func() (map[string]bool, []string, bool, error) {
 		f, err := os.Open(security)
 		if err != nil {
-			return false, nil, err
+			return nil, nil, false, err
 		}
 		defer f.Close()
+		found := map[string]bool{}
 		var lines []string
+		removed := false
 		sc := bufio.NewScanner(f)
 		for sc.Scan() {
 			line := sc.Text()
 			if s := strings.TrimLeftFunc(line, unicode.IsSpace); strings.HasPrefix(s, "CSAF:") {
-				// Check if we are already in.
-				if strings.TrimSpace(s[len("CSAF:"):]) == path {
-					return true, nil, nil
+				url := strings.TrimSpace(s[len("CSAF:"):])
+				if slices.Contains(stale, url) {
+					removed = true
+					continue
 				}
+				found[url] = true
 			}
 			lines = append(lines, line)
 		}
-		return false, lines, sc.Err()
+		return found, lines, removed, sc.Err()
 	}()
 	if err != nil {
 		return err
 	}
 
-	// we are already in the file.
-	if found {
+	// Insert our CSAF line at the beginning
+	// to get higher priority over possible existing CSAF lines.
+	var missing []string
+	for _, url := range wanted {
+		if !found[url] {
+			missing = append(missing, "CSAF: "+url)
+		}
+	}
+
+	if len(missing) == 0 && !removed {
 		return nil
 	}
 
-	// Insert our CSAF line at the beginning
-	// to get higher priority over possible existing CSAF lines.
-	csafLine := fmt.Sprintf("CSAF: %s", path)
-	lines = append([]string{csafLine, ""}, lines...)
+	if len(missing) > 0 {
+		lines = append(append(missing, ""), lines...)
+	}
 
 	// Write back to second file and switch over afterwards.
 	newSecurity, nf, err := util.MakeUniqFile(security + ".tmp")
@@ -333,37 +410,33 @@ func setupSecurity(c *config, wellknown string) error {
 	return os.Chmod(security, st.Mode().Perm())
 }
 
-// createProviderMetadata creates the provider-metadata.json file if does not exist.
-func createProviderMetadata(c *config, wellknownCSAF string) error {
-	path := filepath.Join(wellknownCSAF, "provider-metadata.json")
-	_, err := os.Stat(path)
-	if err == nil {
-		return nil
-	}
-	if !os.IsNotExist(err) {
+// createProviderMetadata creates the provider-metadata.json file for [versionTree]
+// specifc CSAF version if it does not exist. Keeps already existing one if
+// version and validation check out.
+func createProviderMetadata(vtr *versionTree) error {
+	path := vtr.pmdPath()
+	switch _, err := os.Stat(path); {
+	case err == nil:
+		_, err := vtr.loadPMD()
+		return err
+	case !os.IsNotExist(err):
 		return err
 	}
-	pm := csaf.NewProviderMetadataDomain(c.CanonicalURLPrefix, c.modelTLPs())
-	c.ProviderMetaData.apply(pm)
 
-	// We have directory based distributions.
-	if c.WriteIndices {
-		// Every TLP as a distribution?
-		for _, t := range c.TLPs {
-			if t != tlpCSAF {
-				pm.AddDirectoryDistribution(
-					c.CanonicalURLPrefix + "/.well-known/csaf/" + string(t))
-			}
-		}
-	}
-
-	key, err := loadCryptoKeyFromFile(c.OpenPGPPublicKey)
+	key, err := loadCryptoKeyFromFile(vtr.cfg.OpenPGPPublicKey)
 	if err != nil {
 		return fmt.Errorf("cannot load public key: %v", err)
 	}
 
 	fingerprint := strings.ToUpper(key.GetFingerprint())
-	pm.SetPGP(fingerprint, c.openPGPPublicURL(fingerprint))
 
-	return util.WriteToFile(path, pm)
+	pmd, err := vtr.newProviderMetadata(fingerprint, time.Now())
+	if err != nil {
+		return err
+	}
+	for _, warning := range checkMaintenanceWindow(pmd, time.Now()) {
+		log.Println(warning)
+	}
+
+	return writePMD(path, pmd)
 }
