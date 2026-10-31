@@ -135,6 +135,59 @@ func (c *controller) tlpParam(r *http.Request) (tlp, error) {
 	return "", fmt.Errorf("unsupported TLP type '%s'", t)
 }
 
+// getDynamicCategories returns dynamic categories of a CSAF doc
+func (c *controller) getDynamicCategories(content any, pe *util.PathEval) []string {
+	var dynamicCategories []string
+	if catExprs := c.cfg.DynamicCategories(); len(catExprs) > 0 {
+		matcher := util.StringTreeMatcher(&dynamicCategories)
+
+		for _, expr := range catExprs {
+			// Compile first to check that the expression is okay.
+			if _, err := pe.Compile(expr); err != nil {
+				log.Printf("Compiling category expression %q failed: %v\n",
+					expr, err)
+				continue
+			}
+			// Ignore errors here as they result from not matching.
+			pe.Extract(expr, matcher, true, content)
+		}
+	}
+	return dynamicCategories
+}
+
+// doLocalValidation validates a CSAF doc against the JSON schema.
+func (c *controller) doLocalValidation(content any) error {
+	if !c.cfg.NoValidation {
+		validationErrors, err := csaf.ValidateCSAF(content)
+		if err != nil {
+			return err
+		}
+
+		if len(validationErrors) > 0 {
+			return multiError(validationErrors)
+		}
+	}
+	return nil
+}
+
+// doRemoteValidation validates a CSAF doc against a remote validator.
+func (c *controller) doRemoteValidation(content any) error {
+	if c.cfg.RemoteValidator != nil {
+		validator, err := c.cfg.RemoteValidator.Open()
+		if err != nil {
+			return err
+		}
+		rvr, err := validator.Validate(content)
+		if err != nil {
+			return err
+		}
+		if !rvr.Valid {
+			return errors.New("does not validate against remote validator")
+		}
+	}
+	return nil
+}
+
 // create calls the "ensureFolders" functions to create the directories and files.
 // It returns a struct by success, otherwise an error.
 func (c *controller) create(*http.Request) (any, error) {
@@ -161,31 +214,12 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		return nil, err
 	}
 
-	// Validate against JSON schema.
-	if !c.cfg.NoValidation {
-		validationErrors, err := csaf.ValidateCSAF(content)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(validationErrors) > 0 {
-			return nil, multiError(validationErrors)
-		}
+	if err = c.doLocalValidation(content); err != nil {
+		return nil, err
 	}
 
-	// Validate against remote validator.
-	if c.cfg.RemoteValidator != nil {
-		validator, err := c.cfg.RemoteValidator.Open()
-		if err != nil {
-			return nil, err
-		}
-		rvr, err := validator.Validate(content)
-		if err != nil {
-			return nil, err
-		}
-		if !rvr.Valid {
-			return nil, errors.New("does not validate against remote validator")
-		}
+	if err = c.doRemoteValidation(content); err != nil {
+		return nil, err
 	}
 
 	// Extract informations from the document.
@@ -202,21 +236,7 @@ func (c *controller) upload(r *http.Request) (any, error) {
 	}
 
 	// Check if we have to search for dynamic categories.
-	var dynamicCategories []string
-	if catExprs := c.cfg.DynamicCategories(); len(catExprs) > 0 {
-		matcher := util.StringTreeMatcher(&dynamicCategories)
-
-		for _, expr := range catExprs {
-			// Compile first to check that the expression is okay.
-			if _, err := pe.Compile(expr); err != nil {
-				log.Printf("Compiling category expression %q failed: %v\n",
-					expr, err)
-				continue
-			}
-			// Ignore errors here as they result from not matching.
-			pe.Extract(expr, matcher, true, content)
-		}
-	}
+	dynamicCategories := c.getDynamicCategories(content, pe)
 
 	t, err := c.tlpParam(r)
 	if err != nil {
