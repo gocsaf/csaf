@@ -71,6 +71,10 @@ var configPaths = []string{
 // parseArgsConfig parses the command line and if need a config file.
 func parseArgsConfig() ([]string, *config, error) {
 	p := options.Parser[config]{
+		ShortDescription: "upload advisories to a CSAF trusted provider",
+		LongDescription: "Sends each advisory file to the upload interface of a CSAF trusted " +
+			"provider, the one csaf_provider implements. The advisory is " +
+			"validated against the CSAF JSON schema before it is sent.",
 		DefaultConfigLocations: configPaths,
 		ConfigLocation:         func(cfg *config) string { return cfg.Config },
 		Usage:                  "[OPTIONS] advisories...",

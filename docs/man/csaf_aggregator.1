@@ -1,0 +1,31 @@
+.TH csaf_aggregator 1 "23 October 2026"
+.SH NAME
+csaf_aggregator \- build a CSAF aggregator from other providers
+.SH SYNOPSIS
+\fBcsaf_aggregator\fP [OPTIONS]
+.SH DESCRIPTION
+Collects the advisories of the providers named in its configuration file and writes out the directory tree of a CSAF aggregator or of a lister, including the aggregator metadata, the ROLIE feeds and the index files. It takes no arguments: the list of providers comes from the configuration file.
+.SH OPTIONS
+.SS Application Options
+.TP
+\fB\fB\-\-streaming_rolie_parser\fR\fP
+Use the streaming ROLIE feed parser (experimental)
+.TP
+\fB\fB\-\-client_timeout\fR \fIDURATION\fR\fP
+DURATION for HTTP Client timeouts
+.TP
+\fB\fB\-t\fR, \fB\-\-time_range\fR \fIRANGE\fR\fP
+RANGE of time from which advisories to download
+.TP
+\fB\fB\-i\fR, \fB\-\-interim\fR\fP
+Perform an interim scan
+.TP
+\fB\fB\-\-version\fR\fP
+Display version of the binary
+.TP
+\fB\fB\-c\fR, \fB\-\-config\fR \fITOML-FILE\fR\fP
+Path to config TOML file
+.SS Help Options
+.TP
+\fB\fB\-h\fR, \fB\-\-help\fR\fP
+Show this help message

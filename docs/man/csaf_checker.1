@@ -1,0 +1,70 @@
+.TH csaf_checker 1 "23 October 2026"
+.SH NAME
+csaf_checker \- check whether a CSAF provider meets the standard
+.SH SYNOPSIS
+\fBcsaf_checker\fP [OPTIONS] domain...
+.SH DESCRIPTION
+Runs the conformance checks of the CSAF 2.0 standard against each domain given and reports which requirements the provider meets. It looks at the provider metadata, the ROLIE feeds, the index and changes files, the integrity and signature files and the advisories themselves, and writes the result as text, JSON, HTML or Markdown.
+.SH OPTIONS
+.SS Application Options
+.TP
+\fB\fB\-o\fR, \fB\-\-output\fR \fIREPORT-FILE\fR\fP
+File name of the generated report
+.TP
+\fB\fB\-f\fR, \fB\-\-format\fR\fP
+Format of report
+.TP
+\fB\fB\-\-insecure\fR\fP
+Do not check TLS certificates from provider
+.TP
+\fB\fB\-\-client_cert\fR \fICERT-FILE\fR\fP
+TLS client certificate file (PEM encoded data)
+.TP
+\fB\fB\-\-client_key\fR \fIKEY-FILE\fR\fP
+TLS client private key file (PEM encoded data)
+.TP
+\fB\fB\-\-client_passphrase\fR \fIPASSPHRASE\fR\fP
+Optional passphrase for the client cert (limited, experimental, see downloader doc)
+.TP
+\fB\fB\-\-version\fR\fP
+Display version of the binary
+.TP
+\fB\fB\-v\fR, \fB\-\-verbose\fR\fP
+Verbose output
+.TP
+\fB\fB\-r\fR, \fB\-\-rate\fR\fP
+The average upper limit of https operations per second (defaults to unlimited)
+.TP
+\fB\fB\-t\fR, \fB\-\-time_range\fR \fIRANGE\fR\fP
+RANGE of time from which advisories to download
+.TP
+\fB\fB\-\-client_timeout\fR \fIDURATION\fR\fP
+DURATION for HTTP Client timeouts
+.TP
+\fB\fB\-i\fR, \fB\-\-ignore_pattern\fR \fIPATTERN\fR\fP
+Do not download files if their URLs match any of the given PATTERNs
+.TP
+\fB\fB\-H\fR, \fB\-\-header\fR\fP
+One or more extra HTTP header fields
+.TP
+\fB\fB\-\-validator\fR \fIURL\fR\fP
+URL to validate documents remotely
+.TP
+\fB\fB\-\-validator_cache\fR \fIFILE\fR\fP
+FILE to cache remote validations
+.TP
+\fB\fB\-\-validator_preset\fR\fP
+One or more presets to validate remotely
+.TP
+\fB\fB\-\-pre_flight\fR\fP
+Check for valid provider-metadata.json and output domain and pmdURL if successful, skip further checks and report
+.TP
+\fB\fB\-c\fR, \fB\-\-config\fR \fITOML-FILE\fR\fP
+Path to config TOML file
+.TP
+\fB\fB\-\-streaming_rolie_parser\fR\fP
+Use the streaming ROLIE feed parser (experimental)
+.SS Help Options
+.TP
+\fB\fB\-h\fR, \fB\-\-help\fR\fP
+Show this help message

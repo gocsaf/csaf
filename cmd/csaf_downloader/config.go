@@ -109,6 +109,13 @@ func parseArgsConfig() ([]string, *config, error) {
 		logLevel = &options.LogLevel{Level: defaultLogLevel}
 	)
 	p := options.Parser[config]{
+		ShortDescription: "download CSAF advisories from a provider",
+		LongDescription: "Finds the provider metadata of each domain given, walks the " +
+			"advisories it lists and writes them to disk. Each advisory is " +
+			"checked before it is stored: the SHA256 and SHA512 sums, the " +
+			"OpenPGP signature, the CSAF JSON schema and the file name rule. In " +
+			"the default strict validation mode an advisory that fails any of " +
+			"these is not stored.",
 		DefaultConfigLocations: configPaths,
 		ConfigLocation:         func(cfg *config) string { return cfg.Config },
 		Usage:                  "[OPTIONS] domain...",
