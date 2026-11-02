@@ -264,9 +264,18 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		func(folder string, pmd *csaf.ProviderMetadata) error {
 
 			// extend the ROLIE feed.
-			if err := c.extendROLIE(folder, newCSAF, t, ex); err != nil {
+			ts := string(t)
+			feedName := "csaf-feed-tlp-" + ts + ".json"
+
+			feed := filepath.Join(folder, feedName)
+			rolie, err := c.getROLIE(folder, t, feedName, feed)
+			if err != nil {
 				return err
 			}
+			if err := c.extendROLIE(rolie, folder, newCSAF, t, ex); err != nil {
+				return err
+			}
+			c.finalizeROLIE(rolie, feed)
 
 			// if we have found dynamic categories merge them into
 			// the existing once.
