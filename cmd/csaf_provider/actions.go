@@ -63,15 +63,11 @@ func (c *controller) loadCSAF(r *http.Request) (string, []byte, error) {
 func (c *controller) handleSignature(
 	r *http.Request,
 	data []byte,
+	sigText string,
 ) (string, *crypto.Key, error) {
 
 	// Was the signature given via request?
 	if c.cfg.UploadSignature {
-		sigText := r.FormValue("signature")
-		if sigText == "" {
-			return "", nil, errors.New("missing signature in request")
-		}
-
 		pgpSig, err := crypto.NewPGPSignatureFromArmored(sigText)
 		if err != nil {
 			return "", nil, err
@@ -251,7 +247,11 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		}
 	}
 
-	armored, key, err := c.handleSignature(r, data)
+	sigText := r.FormValue("signature")
+	if sigText == "" {
+		return nil, errors.New("missing signature in request")
+	}
+	armored, key, err := c.handleSignature(r, data, sigText)
 	if err != nil {
 		return nil, err
 	}
