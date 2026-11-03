@@ -2,22 +2,37 @@
   "advisory": {
     "/document/csaf_version": {
       "name": "CSAFVersion",
-      "type": "Version"
+      "type_name": "Version",
+      "constants": {
+        "2.0": "CSAFVersion20",
+        "2.1": "CSAFVersion21"
+      }
     },
-    "/product_tree/relationships/*/product_reference": {
-      "type": "ProductReference"
+    "/vulnerabilities/*/scores": {
+      "type": "Scores"
+    },
+    "/vulnerabilities/*/metrics/*/content": {
+      "type": "MetricContent"
     }
   },
   "provider": {
     "/metadata_version": {
       "name": "MetadataVersion",
-      "type": "MetadataVersion"
+      "type_name": "MetadataVersion",
+      "constants": {
+        "2.0": "MetadataVersion20",
+        "2.1": "MetadataVersion21"
+      }
     }
   },
   "aggregator": {
     "/aggregator_version": {
       "name": "Version",
-      "type": "AggregatorVersion"
+      "type_name": "AggregatorVersion",
+      "constants": {
+        "2.0": "AggregatorVersion20",
+        "2.1": "AggregatorVersion21"
+      }
     }
   }
 }

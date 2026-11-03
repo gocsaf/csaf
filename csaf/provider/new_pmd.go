@@ -15,7 +15,7 @@ import (
 // NewProviderMetadata returns a new [Provider] with details
 // based on the given CSAF provider metadata version
 func NewProviderMetadata(metadataVersion string) (*Provider, error) {
-	pmd := &Provider{MetadataVersion: ProviderMetadataVersion(metadataVersion)}
+	pmd := &Provider{MetadataVersion: MetadataVersion(metadataVersion)}
 	switch metadataVersion {
 	case "2.0":
 		pmd.Publisher.providerPublisher20Details = &providerPublisher20Details{}

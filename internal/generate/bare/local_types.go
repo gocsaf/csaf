@@ -46,6 +46,9 @@ func (m *typedModel) buildLocalType(expr ast.Expr, version int) (*typedType, err
 		if definition == nil {
 			return &typedType{shape: t.Name}, nil
 		}
+		if t.Name == "DateTime" {
+			return &typedType{shape: dateTimeType}, nil
+		}
 		if source.custom[t.Name] {
 			return &typedType{shape: fmt.Sprintf("v%d.%s", 20+version, t.Name)}, nil
 		}

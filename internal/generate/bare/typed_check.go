@@ -56,6 +56,10 @@ func (e *checkEmitter) sharedType(t *typedType) *checkType {
 	}
 	node := &checkType{name: typedName(t), shape: t.shape, shared: t}
 	e.shared[t] = node
+	if t.replacement {
+		node.shape = "replacement"
+		return node
+	}
 	switch t.shape {
 	case "struct":
 		e.structures = append(e.structures, node)
@@ -160,6 +164,8 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int, keepVersionTypes
 			if replacement := localFields[jsonName]; replacement != nil {
 				f.goName = replacement.name
 				if replacement.common.replacement {
+					child := &checkType{name: typedName(replacement.common), shape: "replacement"}
+					node.fields = append(node.fields, checkField{f.goName, f.name, child, false})
 					continue
 				}
 			}
@@ -188,7 +194,7 @@ type presenceCheck struct {
 func presenceChecks(value string, t *checkType, path string) []presenceCheck {
 	condition := ""
 	switch t.shape {
-	case "string", "v21.DateTime":
+	case "string", dateTimeType:
 		condition = value + ` == ""`
 	case "slice":
 		condition = "len(" + value + ") == 0"
@@ -232,6 +238,10 @@ func (e *checkEmitter) contents(value string, t *checkType, path errorPath) {
 		} else {
 			e.write("if err := %s.Check(v); err != nil { return %s }\n", receiver, path.wrap("."))
 		}
+	case "replacement":
+		// Handwritten replacement types provide their own Check(v version) error method.
+		// Their errors start with "." or "[" so the path continues without a separator.
+		e.write("if err := %s.Check(v); err != nil { return %s }\n", value, path.wrap(""))
 	case "pointer", "slice":
 		leaf := t.elem
 		for leaf.shape == "pointer" || leaf.shape == "slice" {
@@ -346,6 +356,8 @@ func (e *checkEmitter) detailsType(detail *typedDetails) (*checkType, error) {
 	node := &checkType{name: detail.privateName(), shape: "struct"}
 	for _, f := range detail.fields {
 		if f.local.replacement {
+			child := &checkType{name: typedName(f.local), shape: "replacement"}
+			node.fields = append(node.fields, checkField{f.name, f.jsonName, child, false})
 			continue
 		}
 		original := f.versions[detail.version]

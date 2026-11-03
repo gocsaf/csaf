@@ -77,7 +77,7 @@ func (c *comparison) compare(left, right ast.Expr, name string) (*match, error) 
 	if compatible, err := compatibleDateTime(left, right, [2]*model{c.left, c.right}); err != nil {
 		return nil, err
 	} else if compatible {
-		return &match{shape: "v21.DateTime"}, nil
+		return &match{shape: dateTimeType}, nil
 	}
 
 	if !separateOptionalityDifferences && left != nil && right != nil {

@@ -152,7 +152,7 @@ func (m *typedModel) common(left, right ast.Expr, name string, bare *match) (*ty
 	if compatible, err := compatibleDateTime(left, right, m.models); err != nil {
 		return nil, err
 	} else if compatible {
-		return &typedType{shape: "v21.DateTime"}, nil
+		return &typedType{shape: dateTimeType}, nil
 	}
 	// Handle named types that exist in both versions.
 	// "Enums" get one type with the constants of both versions.

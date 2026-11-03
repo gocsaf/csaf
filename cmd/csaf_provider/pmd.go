@@ -18,7 +18,7 @@ import (
 
 	"github.com/gocsaf/csaf/v3/csaf"
 	"github.com/gocsaf/csaf/v3/csaf/provider"
-	v21 "github.com/gocsaf/csaf/v3/csaf/v21"
+	"github.com/gocsaf/csaf/v3/csaf/types"
 	"github.com/gocsaf/csaf/v3/internal/bare"
 	"github.com/gocsaf/csaf/v3/util"
 )
@@ -30,9 +30,9 @@ const (
 	maintenanceWarningWindow = 90 * 24 * time.Hour
 )
 
-// timestamp returns time as [v21.DateTime]
-func timestamp(t time.Time) v21.DateTime {
-	return v21.NewDateTime(t.UTC().Truncate(time.Second))
+// timestamp returns time as [types.DateTime]
+func timestamp(t time.Time) types.DateTime {
+	return types.NewDateTime(t.UTC().Truncate(time.Second))
 }
 
 // newProviderMetadata creates the version specific PMD for [versionTree].
@@ -126,7 +126,7 @@ func (pmdc *providerMetadataConfig) apply(pmd *provider.Provider) {
 
 // setLastUpdated sets last_updated for CSAF 2.1 feeds
 // no-op for 2.0 PMDs
-func setLastUpdated(pmd *provider.Provider, feedURL string, ts v21.DateTime) error {
+func setLastUpdated(pmd *provider.Provider, feedURL string, ts types.DateTime) error {
 	if pmd.MetadataVersion != csafVersion21 {
 		return nil
 	}

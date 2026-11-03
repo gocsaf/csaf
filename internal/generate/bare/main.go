@@ -51,7 +51,7 @@ func generateBare(structures []*match) ([]byte, error) {
 			if typ == "json.RawMessage" {
 				usesRaw = true
 			}
-			if strings.Contains(typ, "v21.DateTime") {
+			if strings.Contains(typ, dateTimeType) {
 				usesDateTime = true
 			}
 			tag := field.jsonName
@@ -68,7 +68,7 @@ func generateBare(structures []*match) ([]byte, error) {
 			source.WriteString("\"encoding/json\"\n")
 		}
 		if usesDateTime {
-			source.WriteString("\n\"github.com/gocsaf/csaf/v3/csaf/v21\"\n")
+			source.WriteString("\n\"github.com/gocsaf/csaf/v3/csaf/types\"\n")
 		}
 		source.WriteString(")\n\n")
 	}

@@ -23,3 +23,6 @@ func compatibleDateTime(left, right ast.Expr, models [2]*model) (bool, error) {
 	}
 	return true, nil
 }
+
+// dateTimeType replaces the DateTime types of both versions.
+const dateTimeType = "types.DateTime"
