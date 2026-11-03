@@ -236,6 +236,9 @@ func (c *controller) upload(r *http.Request) (any, error) {
 			return nil, fmt.Errorf(
 				"valid TLP label missing in document (found '%s')", t)
 		}
+		if !vtr.hasTLP(t) {
+			return nil, fmt.Errorf("TLP '%s' of document not configured", t)
+		}
 	}
 
 	armored, key, err := c.handleSignature(r, data)

@@ -80,7 +80,7 @@ func updateIndex(dir, fname string) error {
 }
 
 // updateChanges updates the changes.csv.
-// If quoted is true, entries are not double quoted (CSAF v2.1, 7.1.13)
+// If quoted is not true, entries are not double quoted (CSAF v2.1, 7.1.13)
 func updateChanges(dir, fname string, releaseDate time.Time, quoted bool) error {
 
 	type change struct {

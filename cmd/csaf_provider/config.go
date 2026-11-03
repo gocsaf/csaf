@@ -302,7 +302,7 @@ func loadConfig() (*config, error) {
 	}
 
 	if cfg.AuthoritativeVersion == "" {
-		cfg.AuthoritativeVersion = defaultCSAFVersion
+		cfg.AuthoritativeVersion = slices.Min(cfg.CSAFVersions)
 	}
 
 	if cfg.CSAFPath == "" {
