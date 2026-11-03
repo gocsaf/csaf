@@ -17,11 +17,11 @@ set -e
 # which are save to process further
 ./downloadExamples.sh
 
-TLPs=("white" "green" "amber" "red")
+TLPs=("clear" "green" "amber" "amber+strict" "red")
 COUNTER=0
 for f in $(ls csaf_examples); do
     ../../bin-linux-amd64/csaf_uploader --insecure -P security123 -a upload \
-        -t ${TLPs[$((COUNTER++ % 4))]} \
+        -t ${TLPs[$((COUNTER++ % 5))]} \
         -u https://localhost:8443/cgi-bin/csaf_provider.go \
         --client_cert ~/devca1/testclient1.crt \
         --client_key ~/devca1/testclient1-key.pem \
