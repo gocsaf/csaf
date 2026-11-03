@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-type entries = map[string]map[string]string
+// Values are strings, except constants which are objects.
+type entries = map[string]map[string]any
 
 func main() {
 	var names, suffixes [2]string
@@ -41,7 +42,7 @@ func main() {
 			if _, exists := documents[1][kind][path]; !exists {
 				continue
 			}
-			merged[kind][path] = map[string]string{}
+			merged[kind][path] = map[string]any{}
 			for i, document := range documents {
 				for field, value := range document[kind][path] {
 					merged[kind][path][field+suffixes[i]] = value

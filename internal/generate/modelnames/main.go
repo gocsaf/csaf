@@ -14,9 +14,11 @@ import (
 )
 
 type entry struct {
-	Name       string `json:"name,omitempty"`
-	StructName string `json:"struct_name,omitempty"`
-	Type       string `json:"type,omitempty"`
+	Name       string            `json:"name,omitempty"`
+	StructName string            `json:"struct_name,omitempty"`
+	Type       string            `json:"type,omitempty"`
+	TypeName   string            `json:"type_name,omitempty"`
+	Constants  map[string]string `json:"constants,omitempty"`
 }
 
 type document struct {

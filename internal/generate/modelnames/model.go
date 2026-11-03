@@ -23,8 +23,9 @@ import (
 const modulePath = "github.com/gocsaf/csaf/v3"
 
 type sourcePackage struct {
-	types  map[string]declaration
-	custom map[string]bool
+	types     map[string]declaration
+	custom    map[string]bool
+	constants map[string]map[string]string // type name -> JSON value -> constant name
 }
 
 type sourceFile struct {
@@ -52,10 +53,11 @@ type jsonField struct {
 
 // A single exporter owns the package cache and the current root's traversal.
 type exporter struct {
-	repo     string
-	packages map[string]*sourcePackage
-	entries  map[string]entry
-	visited  map[*ast.StructType]bool
+	repo         string
+	packages     map[string]*sourcePackage
+	entries      map[string]entry
+	visited      map[*ast.StructType]bool
+	visitedNamed map[*ast.TypeSpec]bool
 }
 
 func (e *exporter) exportRoot(root modelRoot) (map[string]entry, error) {
@@ -71,6 +73,7 @@ func (e *exporter) exportRoot(root modelRoot) (map[string]entry, error) {
 	// Roots share loaded packages, but each has its own output and first visits.
 	e.entries = make(map[string]entry)
 	e.visited = make(map[*ast.StructType]bool)
+	e.visitedNamed = make(map[*ast.TypeSpec]bool)
 	if err := e.visitType("", "", decl.spec.Name, decl.file); err != nil {
 		return nil, err
 	}
@@ -84,8 +87,17 @@ func (e *exporter) visitType(jsonPath, goName string, typ ast.Expr, file *source
 	}
 
 	value := entry{Name: goName}
-	// If not struct or anonymous struct.
-	if structure == nil || structure.goName == "" {
+	named := e.namedType(typ, file)
+	if structure == nil && named != nil {
+		// Named non-struct types are written like structs: the name at every
+		// path, the constants only at the first one.
+		value.TypeName = named.spec.Name.Name
+		if !e.visitedNamed[named.spec] {
+			e.visitedNamed[named.spec] = true
+			value.Constants = named.file.pkg.constants[named.spec.Name.Name]
+		}
+	} else if structure == nil || structure.goName == "" {
+		// If not struct or anonymous struct.
 		value.Type, err = typeString(typ)
 		if err != nil {
 			return err
@@ -111,6 +123,27 @@ func (e *exporter) visitType(jsonPath, goName string, typ ast.Expr, file *source
 		}
 	}
 	return nil
+}
+
+// namedType returns the declaration of a named type in the same package,
+// ignoring pointers. Types with custom JSON methods are left out.
+func (e *exporter) namedType(typ ast.Expr, file *sourceFile) *declaration {
+	for {
+		pointer, ok := typ.(*ast.StarExpr)
+		if !ok {
+			break
+		}
+		typ = pointer.X
+	}
+	ident, ok := typ.(*ast.Ident)
+	if !ok {
+		return nil
+	}
+	decl, ok := file.pkg.types[ident.Name]
+	if !ok || file.pkg.custom[ident.Name] {
+		return nil
+	}
+	return &decl
 }
 
 // Resolve if type is struct. Return definition if it is, to traverse its fields.
@@ -231,7 +264,10 @@ func (e *exporter) loadPackage(dir string) (*sourcePackage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pkg := &sourcePackage{types: make(map[string]declaration), custom: make(map[string]bool)}
+	pkg := &sourcePackage{
+		types: make(map[string]declaration), custom: make(map[string]bool),
+		constants: make(map[string]map[string]string),
+	}
 	for _, filename := range paths {
 		if strings.HasSuffix(filename, "_test.go") {
 			continue
@@ -256,6 +292,10 @@ func (e *exporter) loadPackage(dir string) (*sourcePackage, error) {
 		for _, decl := range node.Decls {
 			switch decl := decl.(type) {
 			case *ast.GenDecl:
+				if decl.Tok == token.CONST {
+					addConstants(pkg, decl)
+					continue
+				}
 				if decl.Tok != token.TYPE {
 					continue
 				}
@@ -283,6 +323,31 @@ func (e *exporter) loadPackage(dir string) (*sourcePackage, error) {
 	}
 	e.packages[dir] = pkg
 	return pkg, nil
+}
+
+// addConstants adds all string constants of a type to the package's constants map.
+func addConstants(pkg *sourcePackage, decl *ast.GenDecl) {
+	for _, spec := range decl.Specs {
+		value := spec.(*ast.ValueSpec)
+		typ, ok := value.Type.(*ast.Ident)
+		if !ok || len(value.Values) != len(value.Names) {
+			continue
+		}
+		for i, name := range value.Names {
+			literal, ok := value.Values[i].(*ast.BasicLit)
+			if !ok || literal.Kind != token.STRING {
+				continue
+			}
+			text, err := strconv.Unquote(literal.Value)
+			if err != nil {
+				continue
+			}
+			if pkg.constants[typ.Name] == nil {
+				pkg.constants[typ.Name] = make(map[string]string)
+			}
+			pkg.constants[typ.Name][text] = name.Name
+		}
+	}
 }
 
 func typeString(typ ast.Expr) (string, error) {
