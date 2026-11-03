@@ -15,15 +15,24 @@ set -e
 # assumes that the following script only downloads file with filenames
 # following https://docs.oasis-open.org/csaf/csaf/v2.0/cs01/csaf-v2.0-cs01.html#51-filename
 # which are save to process further
-./downloadExamples.sh
+./downloadExamples.sh 2.0
+./downloadExamples.sh 2.1
 
-TLPs=("clear" "green" "amber" "amber+strict" "red")
-COUNTER=0
-for f in $(ls csaf_examples); do
-    ../../bin-linux-amd64/csaf_uploader --insecure -P security123 -a upload \
-        -t ${TLPs[$((COUNTER++ % 5))]} \
-        -u https://localhost:8443/cgi-bin/csaf_provider.go \
-        --client_cert ~/devca1/testclient1.crt \
-        --client_key ~/devca1/testclient1-key.pem \
-        ./csaf_examples/"$f"
-done
+# upload uploads examples per CSAF version with their TLPs
+upload() {
+    local version=$1
+    shift
+    local tlps=("$@")
+    local counter=0
+    for f in $(ls csaf_examples/$version); do
+        ../../bin-linux-amd64/csaf_uploader --insecure -P security123 -a upload \
+            -t ${tlps[$((counter++ % ${#tlps[@]}))]} \
+            -u https://localhost:8443/cgi-bin/csaf_provider.go \
+            --client_cert ~/devca1/testclient1.crt \
+            --client_key ~/devca1/testclient1-key.pem \
+            ./csaf_examples/$version/"$f"
+    done
+}
+
+upload 2.0 "white" "green" "amber" "red"
+upload 2.1 "clear" "green" "amber" "amber+strict" "red"

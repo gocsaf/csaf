@@ -27,6 +27,29 @@ find .
 popd
 
 echo
+echo '==== run downloader for CSAF 2.0 (1a)'
+
+mkdir ~/downloaded1-2.0
+
+./bin-linux-amd64/csaf_downloader --directory ../downloaded1-2.0 \
+  --rate 4.1 --insecure --csaf_version=2.0 localhost
+
+echo
+echo '==== run downloader for CSAF 2.1 (1b)'
+
+mkdir ~/downloaded1-2.1
+
+./bin-linux-amd64/csaf_downloader --directory ../downloaded1-2.1 \
+  --rate 4.1 --insecure --csaf_version=2.1 localhost
+
+echo
+echo '==== this was downloaded (1a, 1b)'
+
+pushd ~
+find downloaded1-2.0 downloaded1-2.1
+popd
+
+echo
 echo '==== run downloader (2)'
 
 mkdir ~/downloaded2

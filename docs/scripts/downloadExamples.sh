@@ -12,21 +12,23 @@
 
 set -e
 
-# using an extended regular expression to whitelist only CSAF 2.0 filenames
-# with a sane path
+# The OASIS repo has subfolders for CSAF 2.0 and 2.1 examples
+VERSION=${1:?usage: $0 2.0|2.1}
 
-CSAFPATHregexp='^ *"path": "(csaf_2.1/examples/csaf/[a-z0-9+-_]+.json)",'
+# using an extended regular expression to whitelist CSAF 2.0 or 2.1
+# filenames with a sane path
+CSAFPATHregexp="^ *\"path\": \"(csaf_${VERSION}/examples/csaf/[a-z0-9+-_]+.json)\","
 
 curl --silent --show-error -H 'Accept: application/vnd.github.v3.raw' \
- https://api.github.com/repos/oasis-tcs/csaf/contents/csaf_2.1/examples/csaf \
+ https://api.github.com/repos/oasis-tcs/csaf/contents/csaf_${VERSION}/examples/csaf \
  | grep -E "$CSAFPATHregexp" \
  |  sed -E -e "s;${CSAFPATHregexp};\1;" \
- > csaf_examples_pathnames.txt
+ > csaf_examples_pathnames_${VERSION}.txt
 
-mkdir csaf_examples
-cd csaf_examples
+mkdir -p csaf_examples/${VERSION}
+cd csaf_examples/${VERSION}
 
-cat ../csaf_examples_pathnames.txt | \
+cat ../../csaf_examples_pathnames_${VERSION}.txt | \
  xargs -I {} \
   curl --silent --show-error -H 'Accept: application/vnd.github.v3.raw' \
    https://api.github.com/repos/oasis-tcs/csaf/contents/{} -O

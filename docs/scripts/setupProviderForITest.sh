@@ -102,6 +102,14 @@ canonical_url_prefix = "https://localhost:8443"
 categories = ["Example Company Product A", "expr:document.lang"]
 create_service_document = true
 #no_passphrase = true
+
+# serve CSAF 2.0 and 2.1 versions with 2.0 being authoritative
+# as at the beginning of a transition period as point 7.4 of specification
+csaf_versions = ["2.0", "2.1"]
+version_folders = true
+authoritative_version = "2.0"
+# The downloader finds the 2.1 tree domain in security.txt.
+write_security = true
 ' | sudo tee --append /etc/csaf/config.toml
 
 # Create the Folders
