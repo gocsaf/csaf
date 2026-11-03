@@ -184,6 +184,24 @@ func (c *controller) doRemoteValidation(content any) error {
 	return nil
 }
 
+// createYearlySubfolder creates a subfolder for the given year inside the passed folder.
+func (c *controller) createYearlySubfolder(folder string, year string) (string, error) {
+	subDir := filepath.Join(folder, year)
+
+	// Create folder if it does not exists.
+	if _, err := os.Stat(subDir); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.Mkdir(subDir, 0755); err != nil {
+				return "", err
+			}
+		} else {
+			return "", err
+		}
+	}
+
+	return subDir, nil
+}
+
 // create calls the "ensureFolders" functions to create the directories and files.
 // It returns a struct by success, otherwise an error.
 func (c *controller) create(*http.Request) (any, error) {
@@ -285,20 +303,11 @@ func (c *controller) upload(r *http.Request) (any, error) {
 				}
 			}
 
-			// Create yearly subfolder
 			year := strconv.Itoa(ex.InitialReleaseDate.Year())
 
-			subDir := filepath.Join(folder, year)
-
-			// Create folder if it does not exists.
-			if _, err := os.Stat(subDir); err != nil {
-				if os.IsNotExist(err) {
-					if err := os.Mkdir(subDir, 0755); err != nil {
-						return err
-					}
-				} else {
-					return err
-				}
+			subDir, err := c.createYearlySubfolder(folder, year)
+			if err != nil {
+				return err
 			}
 
 			fname := filepath.Join(subDir, newCSAF)
