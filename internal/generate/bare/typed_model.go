@@ -13,14 +13,17 @@ import (
 	"strings"
 )
 
-// typedType describes a common representation
+// typedType describes a shared type or a copied version-detail type.
 type typedType struct {
-	shape   string           // primitive, "pointer", "slice", "struct"
-	name    string           // struct name, if shape is "struct"
-	elem    *typedType       // element type, if shape is "pointer" or "slice"
-	fields  []typedField     // fields, if shape is "struct"
-	bare    *match           // bare match, if any
-	details [2]*typedDetails // version-specific structs, nil when absent
+	shape       string           // primitive, "pointer", "slice", "map", "struct", "named"
+	name        string           // declaration name for struct and named types
+	elem        *typedType       // element or underlying type of pointer, slice, map and named nodes
+	fields      []typedField     // fields, if shape is "struct"
+	bare        *match           // bare match, if any
+	details     [2]*typedDetails // version-specific structs, nil when absent
+	alias       bool
+	constants   []localConstant
+	replacement bool // supplied by handwritten types
 }
 
 // typedDetails describes a version detail struct once for all emitters.
@@ -49,25 +52,40 @@ func (d *typedDetails) privateName() string {
 type typedField struct {
 	name     string       // Go name of the field
 	jsonName string       // JSON name of the field
-	common   *typedType   // nil means version-specific / differs in the versions / details only
+	common   *typedType   // nil means version-specific / differs in the versions / details only, ohterwise the shared type
 	versions [2]jsonField // original types and presence, retained for typed output
 	bare     *fieldMatch  // bare match, if any
+	local    *typedType   // prepared type of a version-specific detail field
+	tag      string       // original tags of a copied local field
+}
+
+// returns the type of the field.
+// (`type` is used by Go)
+func (f *typedField) typ() *typedType {
+	if f.local != nil {
+		return f.local
+	}
+	return f.common
 }
 
 type typedModel struct {
-	models     [2]*model // left and right models
-	cache      map[typePair]*typedType
-	structures []*typedType // shared structs in generation order. Each owns its details
-	names      map[string]bool
+	versionPath string
+	models      [2]*model // left and right models
+	cache       map[typePair]*typedType
+	structures  []*typedType // shared structs in generation order. Each owns its details
+	names       map[string]bool
 
-	localTypes        map[localTypeKey]string // source version/name -> generated local name
-	localDeclarations []string                // completed type and enum declarations for emitModel
+	localTypes        map[localTypeKey]*typedType // source version/name -> local type
+	localDeclarations []*typedType
+	localExpressions  [2]map[ast.Expr]*typedType // source expressions -> prepared nodes used by checks
 }
 
 func newTypedModel(left, right *model, rootName string, root *match) (*typedModel, error) {
 	m := &typedModel{
-		models: [2]*model{left, right}, cache: make(map[typePair]*typedType),
-		names: make(map[string]bool), localTypes: make(map[localTypeKey]string),
+		versionPath: roots[rootName].versionPath,
+		models:      [2]*model{left, right}, cache: make(map[typePair]*typedType),
+		names: make(map[string]bool), localTypes: make(map[localTypeKey]*typedType),
+		localExpressions: [2]map[ast.Expr]*typedType{make(map[ast.Expr]*typedType), make(map[ast.Expr]*typedType)},
 	}
 	if _, err := m.common(left.types[rootName], right.types[rootName], rootName, root); err != nil {
 		return nil, err
@@ -85,6 +103,22 @@ func newTypedModel(left, right *model, rootName string, root *match) (*typedMode
 					name:    fmt.Sprintf("%s%dDetails", node.name, 20+version),
 					version: version,
 					fields:  fields,
+				}
+			}
+		}
+	}
+	// Prepare local types for version-specific fields. This is done after the common() pass to ensure that all shared types are already known.
+	for _, node := range m.structures {
+		for _, detail := range node.details {
+			if detail == nil {
+				continue
+			}
+			for i := range detail.fields {
+				field := &detail.fields[i]
+				var err error
+				field.local, err = m.localType(field.versions[detail.version].typ, detail.version)
+				if err != nil {
+					return nil, err
 				}
 			}
 		}
@@ -275,8 +309,21 @@ func typedName(t *typedType) string {
 		return "*" + typedName(t.elem)
 	case "slice":
 		return "[]" + typedName(t.elem)
-	case "struct":
+	case "named":
 		return t.name
+	case "map":
+		return "map[string]" + typedName(t.elem)
+	case "struct":
+		if t.name != "" {
+			return t.name
+		}
+		var out strings.Builder
+		out.WriteString("struct {\n")
+		for _, f := range t.fields {
+			fmt.Fprintf(&out, "%s %s %s\n", f.name, typedName(f.common), f.tag)
+		}
+		out.WriteString("}")
+		return out.String()
 	default:
 		return t.shape
 	}

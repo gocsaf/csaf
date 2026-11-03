@@ -14,8 +14,10 @@ import (
 const consumeBare = true
 
 type converterEmitter struct {
-	out       bytes.Buffer
-	loopDepth int
+	out          bytes.Buffer
+	loopDepth    int
+	decoderNames map[string]string
+	decoders     []string
 }
 
 func (c *converterEmitter) write(format string, args ...any) {
@@ -38,14 +40,18 @@ func (c *converterEmitter) sourceType(t *match) string {
 	}
 }
 
-// value emits conversion of one value. Struct recursion emits a helper call.
-// It does not recursively emit another function definition.
+// emits the conversion code in the body of a fromBare function.
 func (c *converterEmitter) value(source, target string, from *match, to *typedType, path errorPath) error {
 	// Unmarshal raw JSON into structured types.
 	if from.raw {
 		c.write("if len(%s) > 0 {\n", source)
-		c.write("if err := json.Unmarshal(%s, &%s); err != nil { return target, %s }\n", source, target, path.wrap(": "))
+		c.rawValue(source, target, to, path)
 		c.write("}\n")
+		return nil
+	}
+	if to.replacement {
+		call := converterName(typedName(to))
+		c.write("%s, err = %s(%s)\nif err != nil { return target, %s }\n", target, call, source, path.wrap(": "))
 		return nil
 	}
 	// Direct assignment of same-typed values, that are not structs.
@@ -88,7 +94,7 @@ func (c *converterEmitter) value(source, target string, from *match, to *typedTy
 }
 
 func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
-	c := &converterEmitter{}
+	c := &converterEmitter{decoderNames: make(map[string]string)}
 	for _, node := range m.structures {
 		if node.bare == nil || node.bare.raw {
 			return nil, fmt.Errorf("shared struct %s has no structured bare counterpart", node.name)
@@ -96,9 +102,9 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 	}
 	c.write("type version uint8\nconst (versionUnknown version = iota; version20; version21)\n\n")
 	root := m.structures[0]
-	versionField := map[string]string{"CSAF": "Document.CSAFVersion", "Provider": "MetadataVersion", "Aggregator": "AggregatorVersion"}[root.name]
-	if versionField == "" {
-		return nil, fmt.Errorf("no version field configured for %s", root.name)
+	versionField, err := bareVersionAccess(root.bare, m.versionPath)
+	if err != nil {
+		return nil, err
 	}
 	c.write("// FromBare converts source to a structured representation.\n")
 	if consumeBare {
@@ -106,7 +112,7 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 	} else {
 		c.write("// Source remains unchanged, including on error. Common pointer and primitive\n// slice data may be shared with the result.\n")
 	}
-	c.write("func FromBare(source *bare.%s) (*%s, error) {\nif source == nil { return nil, errors.New(\"nil source\") }\nvar v version\nswitch source.%s {\ncase \"2.0\": v = version20\ncase \"2.1\": v = version21\ndefault: return nil, fmt.Errorf(\"unsupported version %%q\", source.%s)\n}\nresult, err := fromBare%s(source, v)\nif err != nil { return nil, err }; return &result, nil\n}\n\n", root.name, root.name, versionField, versionField, root.name)
+	c.write("func FromBare(source *bare.%s) (*%s, error) {\nif source == nil { return nil, errors.New(\"nil source\") }\nvar v version\nswitch source.%s {\ncase \"2.0\": v = version20\ncase \"2.1\": v = version21\ndefault: return nil, fmt.Errorf(\"unsupported version %%q\", source.%s)\n}\nresult, err := fromBare%s(source, v)\nif err != nil { return nil, err }; return &result, nil\n}\n\n", root.bare.name, root.name, versionField, versionField, root.name)
 
 	// Emit the recursive conversion functions for each struct.
 	for _, node := range m.structures {
@@ -117,7 +123,7 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 			fields[f.jsonName] = f
 		}
 		for _, f := range node.fields {
-			if f.common != nil && containsStruct(f.common) {
+			if f.common != nil && (containsStruct(f.common) || f.common.replacement && !fields[f.jsonName].typ.raw) {
 				c.write("var err error\n")
 				break
 			}
@@ -157,7 +163,9 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 						return nil, fmt.Errorf("version detail %s.%s requires a raw bare field", node.name, f.jsonName)
 					}
 					source := "source." + original.goName
-					c.write("if len(%s) > 0 {\nif err := json.Unmarshal(%s, &details.%s); err != nil { return target, fmt.Errorf(%q, err) }\n}\n", source, source, f.name, f.jsonName+": %w")
+					if err := c.value(source, "details."+f.name, original.typ, f.local, fieldErrorPath(f.jsonName)); err != nil {
+						return nil, err
+					}
 				}
 				c.write("target.%s = details\n", detail.privateName())
 			}
@@ -167,6 +175,9 @@ func (m *typedModel) emitConverter(packageName string) ([]byte, error) {
 			c.write("*source = %s{}\n", c.sourceType(input))
 		}
 		c.write("return target, nil\n}\n\n")
+	}
+	for _, decoder := range c.decoders {
+		c.write("%s", decoder)
 	}
 	return typedSource(packageName, c.out.String())
 }

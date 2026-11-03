@@ -7,6 +7,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"go/format"
 	"log"
@@ -78,51 +79,76 @@ func generateBare(structures []*match) ([]byte, error) {
 var roots = map[string]struct {
 	barePath    string
 	packageName string
+	versionPath string
 }{
-	"CSAF":       {"internal/bare/csaf_generated.go", "advisory"},
-	"Aggregator": {"internal/bare/aggregator_generated.go", "aggregator"},
-	"Provider":   {"internal/bare/provider_generated.go", "provider"},
+	"CSAF":       {"internal/bare/csaf_generated.go", "advisory", "/document/csaf_version"},
+	"Aggregator": {"internal/bare/aggregator_generated.go", "aggregator", "/aggregator_version"},
+	"Provider":   {"internal/bare/provider_generated.go", "provider", "/metadata_version"},
 }
 
-func main() {
+func generateModels(bareNames, sharedNames *namesFile) (map[string][]byte, error) {
 	left, err := loadModel("csaf/v20")
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	right, err := loadModel("csaf/v21")
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	outputs := make(map[string][]byte)
 	for _, rootName := range slices.Sorted(maps.Keys(roots)) {
 		root := roots[rootName]
 		structures, err := compareModels(left, right, rootName)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
-		source, err := generateBare(structures)
-		if err != nil {
-			log.Fatal(err)
-		}
-		outputs[root.barePath] = source
 		model, err := newTypedModel(left, right, rootName, structures[0])
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
+		}
+		if err := applyBareNames(structures[0], bareNames, root.packageName); err != nil {
+			return nil, fmt.Errorf("bare %s: %w", root.packageName, err)
+		}
+		if err := model.applyNames(sharedNames, root.packageName); err != nil {
+			return nil, fmt.Errorf("shared %s: %w", root.packageName, err)
+		}
+		outputs[root.barePath], err = generateBare(structures)
+		if err != nil {
+			return nil, err
 		}
 		outputs[filepath.Join("csaf", root.packageName, "model_generated.go")], err = model.emitModel(root.packageName)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		outputs[filepath.Join("csaf", root.packageName, "from_bare_generated.go")], err = model.emitConverter(root.packageName)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		outputs[filepath.Join("csaf", root.packageName, "check_generated.go")], err = model.emitCheck(root.packageName)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 	}
 
+	return outputs, nil
+}
+
+func main() {
+	barePath := flag.String("bare-names", "", "optional bare field-name overrides")
+	sharedPath := flag.String("shared-names", "", "optional shared name and type overrides")
+	flag.Parse()
+	bareNames, err := readNames(*barePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sharedNames, err := readNames(*sharedPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	outputs, err := generateModels(bareNames, sharedNames)
+	if err != nil {
+		log.Fatal(err)
+	}
 	for _, output := range slices.Sorted(maps.Keys(outputs)) {
 		if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
 			log.Fatal(err)
@@ -131,4 +157,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	bareNames.report("bare", os.Stderr)
+	sharedNames.report("shared", os.Stderr)
 }

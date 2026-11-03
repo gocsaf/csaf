@@ -69,7 +69,7 @@ func (e *checkEmitter) sharedType(t *typedType) *checkType {
 	return node
 }
 
-// Inside a retained custom-decoder type, its children also keep versioned types.
+// originalType resolves a type expression to its original definition, following type aliases and keeping track of whether any custom decoders are involved. It returns a checkType representing the resolved type, or an error if the type cannot be resolved.
 func (e *checkEmitter) originalType(expr ast.Expr, version int, keepVersionTypes bool) (*checkType, error) {
 	resolved := expr
 	for {
@@ -89,10 +89,12 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int, keepVersionTypes
 	}
 	var name string
 	var err error
+	var local *typedType
 	if keepVersionTypes {
 		name, err = wireType(expr, 20+version, e.model.models[version])
 	} else {
-		name, err = e.model.localType(expr, version)
+		local = e.model.localExpressions[version][expr]
+		name = typedName(local)
 	}
 	if err != nil {
 		return nil, err
@@ -123,8 +125,22 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int, keepVersionTypes
 		if fieldErr != nil {
 			return nil, fieldErr
 		}
+		var localFields map[string]*typedField
+		if local != nil {
+			structure, _, _ := namedStruct(local)
+			localFields, fieldErr = typedFields(structure)
+			if fieldErr != nil {
+				return nil, fieldErr
+			}
+		}
 		for _, jsonName := range slices.Sorted(maps.Keys(fields)) {
 			f := fields[jsonName]
+			if replacement := localFields[jsonName]; replacement != nil {
+				f.goName = replacement.name
+				if replacement.common.replacement {
+					continue
+				}
+			}
 			child, fieldErr := e.originalType(f.typ, version, keepVersionTypes)
 			if fieldErr != nil {
 				return nil, fieldErr
@@ -283,6 +299,9 @@ func (e *checkEmitter) emitStruct(node *checkType) error {
 func (e *checkEmitter) detailsType(detail *typedDetails) (*checkType, error) {
 	node := &checkType{name: detail.privateName(), shape: "struct", helper: "check" + detail.name}
 	for _, f := range detail.fields {
+		if f.local.replacement {
+			continue
+		}
 		original := f.versions[detail.version]
 		child, err := e.originalType(original.typ, detail.version, false)
 		if err != nil {
@@ -298,9 +317,9 @@ func (m *typedModel) emitCheck(packageName string) ([]byte, error) {
 	e := &checkEmitter{model: m, shared: make(map[*typedType]*checkType), originals: make(map[checkTypeKey]*checkType)}
 	root := m.structures[0]
 	e.sharedType(root)
-	versionField := map[string]string{"CSAF": "Document.CSAFVersion", "Provider": "MetadataVersion", "Aggregator": "AggregatorVersion"}[root.name]
-	if versionField == "" {
-		return nil, fmt.Errorf("no check version field for %s", root.name)
+	versionField, err := sharedVersionAccess(root, m.versionPath)
+	if err != nil {
+		return nil, err
 	}
 	e.write("// Checks version consistency and required model values.  It rejects missing\n// required pointers, empty required strings and empty required slices. It does\n// not validate schema formats, enums, exact lengths or conditional constraints.\n// Zero-valued numbers and booleans are accepted.\n")
 	e.write("func (source *%s) Check() error {\nif source == nil { return errors.New(\"nil document\") }\nvar v version\nswitch source.%s {\ncase \"2.0\": v = version20\ncase \"2.1\": v = version21\ndefault: return fmt.Errorf(\"unsupported version %%q\", source.%s)\n}\nreturn check%s(source,v)\n}\n\n", root.name, versionField, versionField, root.name)

@@ -23,7 +23,7 @@ const generatedHeader = `// SPDX-License-Identifier: Apache-2.0
 
 func typedSource(packageName, body string) ([]byte, error) {
 	var imports []string
-	for _, pkg := range []string{"encoding/json", "errors", "fmt"} {
+	for _, pkg := range []string{"bytes", "encoding/json", "errors", "fmt"} {
 		qualifier := pkg
 		if pkg == "encoding/json" {
 			qualifier = "json"
@@ -74,10 +74,7 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 			version := detail.version
 			fmt.Fprintf(&out, "// %s contains fields specific to CSAF 2.%d.\ntype %s struct {\n", detail.privateName(), version, detail.privateName())
 			for _, f := range detail.fields {
-				typ, err := m.localType(f.versions[version].typ, version)
-				if err != nil {
-					return nil, err
-				}
+				typ := typedName(f.local)
 				fmt.Fprintf(&out, "%s %s %s\n", f.name, typ, jsonTag(f.jsonName, f.versions[version].omitEmpty))
 			}
 			out.WriteString("}\n")
@@ -86,18 +83,25 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 				if f.versions[1-version].typ != nil {
 					suffix = fmt.Sprint(20 + version)
 				}
-				typ, err := m.localType(f.versions[version].typ, version)
-				if err != nil {
-					return nil, err
-				}
+				typ := typedName(f.local)
 				zero := wireZeroValue(f.versions[version].typ, m.models[version], typ)
+				if f.local.replacement {
+					zero = "*new(" + typ + ")"
+				}
 				fmt.Fprintf(&out, "// %s%s reports whether the matching version details are present.\nfunc (v *%s) %s%s() (%s,bool) {\n if v == nil || v.%s == nil { return %s,false }; return v.%s.%s,true\n}\n\n", f.name, suffix, node.name, f.name, suffix, typ, detail.privateName(), zero, detail.privateName(), f.name)
 				fmt.Fprintf(&out, "// Set%s%s updates the value if matching version details are present.\nfunc (v *%s) Set%s%s(value %s) bool {\nif v == nil || v.%s == nil { return false }\nv.%s.%s = value\nreturn true\n}\n\n", f.name, suffix, node.name, f.name, suffix, typ, detail.privateName(), detail.privateName(), f.name)
 			}
 		}
 	}
 	for _, declaration := range m.localDeclarations {
-		out.WriteString(declaration)
+		assignment := ""
+		if declaration.alias {
+			assignment = "= "
+		}
+		fmt.Fprintf(&out, "type %s %s%s\n\n", declaration.name, assignment, typedName(declaration.elem))
+		for _, constant := range declaration.constants {
+			fmt.Fprintf(&out, "const %s %s = %s\n", constant.name, declaration.name, constant.value)
+		}
 		out.WriteString("\n")
 	}
 	return typedSource(packageName, out.String())
@@ -118,6 +122,7 @@ func indexExpression(value, index string) string {
 	return value + "[" + index + "]"
 }
 
+// wireZeroValue returns a string representing the zero value for a given type expression.
 func wireZeroValue(expr ast.Expr, m *model, typ string) string {
 	for {
 		ident, ok := expr.(*ast.Ident)
@@ -154,19 +159,23 @@ type errorPath struct {
 	indices []string
 }
 
+// fieldErrorPath returns an errorPath for a field name.
 func fieldErrorPath(name string) errorPath {
 	return errorPath{format: strings.ReplaceAll(name, "%", "%%")}
 }
 
+// indexed returns a new errorPath with an additional index for the path format and indices slice.
 func (p errorPath) indexed(index string) errorPath {
 	return errorPath{format: p.format + "[%d]", indices: append(slices.Clone(p.indices), index)}
 }
 
+// wrap returns a string that formats an error message with the path and wraps the error.
 func (p errorPath) wrap(separator string) string {
 	args := append(slices.Clone(p.indices), "err")
 	return fmt.Sprintf("fmt.Errorf(%q, %s)", p.format+separator+"%w", strings.Join(args, ", "))
 }
 
+// loopIndex returns a loop variable name based on the depth of the loop.
 func loopIndex(depth int) string {
 	names := []string{"i", "j", "k"}
 	if depth < len(names) {

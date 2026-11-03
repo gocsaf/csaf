@@ -1,0 +1,20 @@
+{
+  "advisory": {
+    "/document/csaf_version": {
+      "name": "CSAFVersion",
+      "type": "Version"
+    }
+  },
+  "provider": {
+    "/metadata_version": {
+      "name": "MetadataVersion",
+      "type": "MetadataVersion"
+    }
+  },
+  "aggregator": {
+    "/aggregator_version": {
+      "name": "Version",
+      "type": "AggregatorVersion"
+    }
+  }
+}

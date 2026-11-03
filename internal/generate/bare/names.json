@@ -1,0 +1,23 @@
+{
+  "advisory": {
+    "/document/csaf_version": {
+      "name": "CSAFVersion",
+      "type": "Version"
+    },
+    "/product_tree/relationships/*/product_reference": {
+      "type": "ProductReference"
+    }
+  },
+  "provider": {
+    "/metadata_version": {
+      "name": "MetadataVersion",
+      "type": "MetadataVersion"
+    }
+  },
+  "aggregator": {
+    "/aggregator_version": {
+      "name": "Version",
+      "type": "AggregatorVersion"
+    }
+  }
+}

@@ -10,6 +10,8 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
+	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -18,56 +20,112 @@ type localTypeKey struct {
 	name    string
 }
 
-func (m *typedModel) localType(expr ast.Expr, version int) (string, error) {
-	return renderType(expr, func(name string) (string, error) {
-		source := m.models[version]
-		definition := source.types[name]
-		if definition == nil {
-			return name, nil
-		}
-		if source.custom[name] {
-			return fmt.Sprintf("v%d.%s", 20+version, name), nil
-		}
-		key := localTypeKey{version, name}
-		if known := m.localTypes[key]; known != "" {
-			return known, nil
-		}
-
-		localName := m.reserveLocalName(name, version)
-		// Register before following children so recursive references reuse the name.
-		m.localTypes[key] = localName
-		body, err := m.localType(definition, version)
-		if err != nil {
-			return "", err
-		}
-		// Aliases must stay aliases: a defined copy of a custom type would drop its UnmarshalJSON.
-		assignment := ""
-		if source.aliases[name] {
-			assignment = "= "
-		}
-		var out strings.Builder
-		fmt.Fprintf(&out, "type %s %s%s\n\n", localName, assignment, body)
-		for _, constant := range source.constants[name] {
-			for i, originalName := range constant.Names {
-				// Keep the enum constant's prefix aligned with a renamed type.
-				constantName := originalName.Name
-				if strings.HasPrefix(constantName, name) {
-					constantName = localName + strings.TrimPrefix(constantName, name)
-				}
-				constantName = m.reserveLocalName(constantName, version)
-				var value bytes.Buffer
-				if err := format.Node(&value, token.NewFileSet(), constant.Values[i]); err != nil {
-					return "", err
-				}
-				fmt.Fprintf(&out, "const %s %s = %s\n", constantName, localName, value.String())
-			}
-		}
-		m.localDeclarations = append(m.localDeclarations, out.String())
-		return localName, nil
-	})
+type localConstant struct {
+	name  string
+	value string
 }
 
-// Keep original names unless another generated type or constant already uses them.
+func (m *typedModel) localType(expr ast.Expr, version int) (*typedType, error) {
+	if known := m.localExpressions[version][expr]; known != nil {
+		return known, nil
+	}
+	node, err := m.buildLocalType(expr, version)
+	if err != nil {
+		return nil, err
+	}
+	m.localExpressions[version][expr] = node
+	return node, nil
+}
+
+func (m *typedModel) buildLocalType(expr ast.Expr, version int) (*typedType, error) {
+	source := m.models[version]
+	switch t := expr.(type) {
+	case *ast.Ident:
+		definition := source.types[t.Name]
+		if definition == nil {
+			return &typedType{shape: t.Name}, nil
+		}
+		if source.custom[t.Name] {
+			return &typedType{shape: fmt.Sprintf("v%d.%s", 20+version, t.Name)}, nil
+		}
+		key := localTypeKey{version, t.Name}
+		if known := m.localTypes[key]; known != nil {
+			return known, nil
+		}
+		node := &typedType{shape: "named", name: m.reserveLocalName(t.Name, version), alias: source.aliases[t.Name]}
+		// Register before following children so recursive references reuse the node.
+		m.localTypes[key] = node
+		var err error
+		node.elem, err = m.localType(definition, version)
+		if err != nil {
+			return nil, err
+		}
+		for _, constant := range source.constants[t.Name] {
+			for i, originalName := range constant.Names {
+				name := originalName.Name
+				if strings.HasPrefix(name, t.Name) {
+					name = node.name + strings.TrimPrefix(name, t.Name)
+				}
+				var value bytes.Buffer
+				if err := format.Node(&value, token.NewFileSet(), constant.Values[i]); err != nil {
+					return nil, err
+				}
+				node.constants = append(node.constants, localConstant{m.reserveLocalName(name, version), value.String()})
+			}
+		}
+		m.localDeclarations = append(m.localDeclarations, node)
+		return node, nil
+	case *ast.StarExpr:
+		elem, err := m.localType(t.X, version)
+		return &typedType{shape: "pointer", elem: elem}, err
+	case *ast.ArrayType:
+		if t.Len != nil {
+			return nil, fmt.Errorf("fixed arrays are unsupported")
+		}
+		elem, err := m.localType(t.Elt, version)
+		return &typedType{shape: "slice", elem: elem}, err
+	case *ast.MapType:
+		if key, ok := t.Key.(*ast.Ident); !ok || key.Name != "string" {
+			return nil, fmt.Errorf("expected string map key")
+		}
+		elem, err := m.localType(t.Value, version)
+		return &typedType{shape: "map", elem: elem}, err
+	case *ast.InterfaceType:
+		if len(t.Methods.List) != 0 {
+			return nil, fmt.Errorf("anonymous non-empty interface")
+		}
+		return &typedType{shape: "any"}, nil
+	case *ast.StructType:
+		node := &typedType{shape: "struct"}
+		fields, err := structFields(t)
+		if err != nil {
+			return nil, err
+		}
+		for _, original := range t.Fields.List {
+			tag, err := strconv.Unquote(original.Tag.Value)
+			if err != nil {
+				return nil, err
+			}
+			jsonName, _, _ := strings.Cut(reflect.StructTag(tag).Get("json"), ",")
+			f, exists := fields[jsonName]
+			if !exists {
+				continue
+			}
+			typ, err := m.localType(f.typ, version)
+			if err != nil {
+				return nil, err
+			}
+			field := typedField{name: f.goName, jsonName: jsonName, common: typ, tag: original.Tag.Value}
+			field.versions[version] = f
+			node.fields = append(node.fields, field)
+		}
+		return node, nil
+	default:
+		return nil, fmt.Errorf("unsupported version-specific type %T", expr)
+	}
+}
+
+// Keep original names unless another generated type already uses them.
 func (m *typedModel) reserveLocalName(name string, version int) string {
 	if m.names[name] {
 		name = fmt.Sprintf("%s%d", name, 20+version)
