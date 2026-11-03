@@ -177,7 +177,7 @@
     },
     "/document/tracking/current_release_date": {
       "name": "CurrentReleaseDate",
-      "type": "v21.DateTime"
+      "type": "types.DateTime"
     },
     "/document/tracking/generator": {
       "name": "Generator",
@@ -185,7 +185,7 @@
     },
     "/document/tracking/generator/date": {
       "name": "Date",
-      "type": "*v21.DateTime"
+      "type": "*types.DateTime"
     },
     "/document/tracking/generator/engine": {
       "name": "Engine",
@@ -205,7 +205,7 @@
     },
     "/document/tracking/initial_release_date": {
       "name": "InitialReleaseDate",
-      "type": "v21.DateTime"
+      "type": "types.DateTime"
     },
     "/document/tracking/revision_history": {
       "name": "RevisionHistory",
@@ -213,7 +213,7 @@
     },
     "/document/tracking/revision_history/*/date": {
       "name": "Date",
-      "type": "v21.DateTime"
+      "type": "types.DateTime"
     },
     "/document/tracking/revision_history/*/legacy_version": {
       "name": "LegacyVersion",
@@ -393,7 +393,7 @@
     },
     "/vulnerabilities/*/discovery_date": {
       "name": "DiscoveryDate",
-      "type": "*v21.DateTime"
+      "type": "*types.DateTime"
     },
     "/vulnerabilities/*/dl_vuln_id": {
       "name": "DlVulnID",
@@ -409,7 +409,7 @@
     },
     "/vulnerabilities/*/flags/*/date": {
       "name": "Date",
-      "type": "*v21.DateTime"
+      "type": "*types.DateTime"
     },
     "/vulnerabilities/*/flags/*/group_ids": {
       "name": "GroupIds",
@@ -513,7 +513,7 @@
     },
     "/vulnerabilities/*/remediations/*/date": {
       "name": "Date",
-      "type": "*v21.DateTime"
+      "type": "*types.DateTime"
     },
     "/vulnerabilities/*/remediations/*/details": {
       "name": "Details",
@@ -561,7 +561,7 @@
     },
     "/vulnerabilities/*/threats/*/date": {
       "name": "Date",
-      "type": "*v21.DateTime"
+      "type": "*types.DateTime"
     },
     "/vulnerabilities/*/threats/*/details": {
       "name": "Details",
@@ -646,7 +646,7 @@
     },
     "/last_updated": {
       "name": "LastUpdated",
-      "type": "v21.DateTime"
+      "type": "types.DateTime"
     },
     "/list_on_CSAF_aggregators": {
       "name": "ListOnCSAFAggregators",
@@ -763,7 +763,7 @@
     },
     "/csaf_providers/*/metadata/last_updated": {
       "name": "LastUpdated",
-      "type": "v21.DateTime"
+      "type": "types.DateTime"
     },
     "/csaf_providers/*/metadata/publisher": {
       "name": "Publisher",
@@ -823,7 +823,7 @@
     },
     "/last_updated": {
       "name": "LastUpdated",
-      "type": "v21.DateTime"
+      "type": "types.DateTime"
     },
     "/maintained_from": {
       "name": "MaintainedFrom",

@@ -41,11 +41,14 @@
     },
     "/document/category": {
       "name": "Category",
-      "type": "*DocumentCategory"
+      "type_name": "DocumentCategory"
     },
     "/document/csaf_version": {
       "name": "CSAFVersion",
-      "type": "*Version"
+      "type_name": "Version",
+      "constants": {
+        "2.0": "CSAFVersion20"
+      }
     },
     "/document/distribution": {
       "name": "Distribution",
@@ -61,7 +64,7 @@
     },
     "/document/distribution/tlp/label": {
       "name": "DocumentTLPLabel",
-      "type": "*TLPLabel"
+      "type_name": "TLPLabel"
     },
     "/document/distribution/tlp/url": {
       "name": "URL",
@@ -69,7 +72,7 @@
     },
     "/document/lang": {
       "name": "Lang",
-      "type": "*Lang"
+      "type_name": "Lang"
     },
     "/document/notes": {
       "name": "Notes",
@@ -81,7 +84,16 @@
     },
     "/document/notes/*/category": {
       "name": "NoteCategory",
-      "type": "*NoteCategory"
+      "type_name": "NoteCategory",
+      "constants": {
+        "description": "CSAFNoteCategoryDescription",
+        "details": "CSAFNoteCategoryDetails",
+        "faq": "CSAFNoteCategoryFaq",
+        "general": "CSAFNoteCategoryGeneral",
+        "legal_disclaimer": "CSAFNoteCategoryLegalDisclaimer",
+        "other": "CSAFNoteCategoryOther",
+        "summary": "CSAFNoteCategorySummary"
+      }
     },
     "/document/notes/*/text": {
       "name": "Text",
@@ -97,7 +109,15 @@
     },
     "/document/publisher/category": {
       "name": "Category",
-      "type": "*Category"
+      "type_name": "Category",
+      "constants": {
+        "coordinator": "CSAFCategoryCoordinator",
+        "discoverer": "CSAFCategoryDiscoverer",
+        "other": "CSAFCategoryOther",
+        "translator": "CSAFCategoryTranslator",
+        "user": "CSAFCategoryUser",
+        "vendor": "CSAFCategoryVendor"
+      }
     },
     "/document/publisher/contact_details": {
       "name": "ContactDetails",
@@ -133,7 +153,7 @@
     },
     "/document/source_lang": {
       "name": "SourceLang",
-      "type": "*Lang"
+      "type_name": "Lang"
     },
     "/document/title": {
       "name": "Title",
@@ -173,7 +193,7 @@
     },
     "/document/tracking/id": {
       "name": "ID",
-      "type": "*TrackingID"
+      "type_name": "TrackingID"
     },
     "/document/tracking/initial_release_date": {
       "name": "InitialReleaseDate",
@@ -193,7 +213,7 @@
     },
     "/document/tracking/revision_history/*/number": {
       "name": "Number",
-      "type": "*RevisionNumber"
+      "type_name": "RevisionNumber"
     },
     "/document/tracking/revision_history/*/summary": {
       "name": "Summary",
@@ -201,11 +221,16 @@
     },
     "/document/tracking/status": {
       "name": "Status",
-      "type": "*TrackingStatus"
+      "type_name": "TrackingStatus",
+      "constants": {
+        "draft": "CSAFTrackingStatusDraft",
+        "final": "CSAFTrackingStatusFinal",
+        "interim": "CSAFTrackingStatusInterim"
+      }
     },
     "/document/tracking/version": {
       "name": "Version",
-      "type": "*RevisionNumber"
+      "type_name": "RevisionNumber"
     },
     "/product_tree": {
       "name": "ProductTree",
@@ -221,7 +246,21 @@
     },
     "/product_tree/branches/*/category": {
       "name": "Category",
-      "type": "*BranchCategory"
+      "type_name": "BranchCategory",
+      "constants": {
+        "architecture": "CSAFBranchCategoryArchitecture",
+        "host_name": "CSAFBranchCategoryHostName",
+        "language": "CSAFBranchCategoryLanguage",
+        "legacy": "CSAFBranchCategoryLegacy",
+        "patch_level": "CSAFBranchCategoryPatchLevel",
+        "product_family": "CSAFBranchCategoryProductFamily",
+        "product_name": "CSAFBranchCategoryProductName",
+        "product_version": "CSAFBranchCategoryProductVersion",
+        "product_version_range": "CSAFBranchCategoryProductVersionRange",
+        "service_pack": "CSAFBranchCategoryServicePack",
+        "specification": "CSAFBranchCategorySpecification",
+        "vendor": "CSAFBranchCategoryVendor"
+      }
     },
     "/product_tree/branches/*/name": {
       "name": "Name",
@@ -237,7 +276,7 @@
     },
     "/product_tree/branches/*/product/product_id": {
       "name": "ProductID",
-      "type": "*ProductID"
+      "type_name": "ProductID"
     },
     "/product_tree/branches/*/product/product_identification_helper": {
       "name": "ProductIdentificationHelper",
@@ -245,7 +284,7 @@
     },
     "/product_tree/branches/*/product/product_identification_helper/cpe": {
       "name": "CPE",
-      "type": "*CPE"
+      "type_name": "CPE"
     },
     "/product_tree/branches/*/product/product_identification_helper/hashes": {
       "name": "Hashes",
@@ -261,7 +300,7 @@
     },
     "/product_tree/branches/*/product/product_identification_helper/hashes/file_hashes/*/value": {
       "name": "Value",
-      "type": "*FileHashValue"
+      "type_name": "FileHashValue"
     },
     "/product_tree/branches/*/product/product_identification_helper/hashes/filename": {
       "name": "FileName",
@@ -273,7 +312,7 @@
     },
     "/product_tree/branches/*/product/product_identification_helper/purl": {
       "name": "PURL",
-      "type": "*PURL"
+      "type_name": "PURL"
     },
     "/product_tree/branches/*/product/product_identification_helper/sbom_urls": {
       "name": "SBOMURLs",
@@ -317,7 +356,14 @@
     },
     "/product_tree/relationships/*/category": {
       "name": "Category",
-      "type": "*RelationshipCategory"
+      "type_name": "RelationshipCategory",
+      "constants": {
+        "default_component_of": "CSAFRelationshipCategoryDefaultComponentOf",
+        "external_component_of": "CSAFRelationshipCategoryExternalComponentOf",
+        "installed_on": "CSAFRelationshipCategoryInstalledOn",
+        "installed_with": "CSAFRelationshipCategoryInstalledWith",
+        "optional_component_of": "CSAFRelationshipCategoryOptionalComponentOf"
+      }
     },
     "/product_tree/relationships/*/full_product_name": {
       "name": "FullProductName",
@@ -325,11 +371,11 @@
     },
     "/product_tree/relationships/*/product_reference": {
       "name": "ProductReference",
-      "type": "*ProductID"
+      "type_name": "ProductID"
     },
     "/product_tree/relationships/*/relates_to_product_reference": {
       "name": "RelatesToProductReference",
-      "type": "*ProductID"
+      "type_name": "ProductID"
     },
     "/vulnerabilities": {
       "name": "Vulnerabilities",
@@ -341,7 +387,7 @@
     },
     "/vulnerabilities/*/cve": {
       "name": "CVE",
-      "type": "*CVE"
+      "type_name": "CVE"
     },
     "/vulnerabilities/*/cwe": {
       "name": "CWE",
@@ -349,7 +395,7 @@
     },
     "/vulnerabilities/*/cwe/id": {
       "name": "ID",
-      "type": "*WeaknessID"
+      "type_name": "WeaknessID"
     },
     "/vulnerabilities/*/cwe/name": {
       "name": "Name",
@@ -373,11 +419,18 @@
     },
     "/vulnerabilities/*/flags/*/label": {
       "name": "Label",
-      "type": "*FlagLabel"
+      "type_name": "FlagLabel",
+      "constants": {
+        "component_not_present": "CSAFFlagLabelComponentNotPresent",
+        "inline_mitigations_already_exist": "CSAFFlagLabelInlineMitigationsAlreadyExist",
+        "vulnerable_code_cannot_be_controlled_by_adversary": "CSAFFlagLabelVulnerableCodeCannotBeControlledByAdversary",
+        "vulnerable_code_not_in_execute_path": "CSAFFlagLabelVulnerableCodeNotInExecutePath",
+        "vulnerable_code_not_present": "CSAFFlagLabelVulnerableCodeNotPresent"
+      }
     },
     "/vulnerabilities/*/flags/*/product_ids": {
       "name": "ProductIds",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/ids": {
       "name": "IDs",
@@ -401,11 +454,26 @@
     },
     "/vulnerabilities/*/involvements/*/party": {
       "name": "Party",
-      "type": "*InvolvementParty"
+      "type_name": "InvolvementParty",
+      "constants": {
+        "coordinator": "CSAFInvolvementPartyCoordinator",
+        "discoverer": "CSAFInvolvementPartyDiscoverer",
+        "other": "CSAFInvolvementPartyOther",
+        "user": "CSAFInvolvementPartyUser",
+        "vendor": "CSAFInvolvementPartyVendor"
+      }
     },
     "/vulnerabilities/*/involvements/*/status": {
       "name": "Status",
-      "type": "*InvolvementStatus"
+      "type_name": "InvolvementStatus",
+      "constants": {
+        "completed": "CSAFInvolvementStatusCompleted",
+        "contact_attempted": "CSAFInvolvementStatusContactAttempted",
+        "disputed": "CSAFInvolvementStatusDisputed",
+        "in_progress": "CSAFInvolvementStatusInProgress",
+        "not_contacted": "CSAFInvolvementStatusNotContacted",
+        "open": "CSAFInvolvementStatusOpen"
+      }
     },
     "/vulnerabilities/*/involvements/*/summary": {
       "name": "Summary",
@@ -421,35 +489,35 @@
     },
     "/vulnerabilities/*/product_status/first_affected": {
       "name": "FirstAffected",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/product_status/first_fixed": {
       "name": "FirstFixed",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/product_status/fixed": {
       "name": "Fixed",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/product_status/known_affected": {
       "name": "KnownAffected",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/product_status/known_not_affected": {
       "name": "KnownNotAffected",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/product_status/last_affected": {
       "name": "LastAffected",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/product_status/recommended": {
       "name": "Recommended",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/product_status/under_investigation": {
       "name": "UnderInvestigation",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/references": {
       "name": "References",
@@ -465,7 +533,14 @@
     },
     "/vulnerabilities/*/remediations/*/category": {
       "name": "Category",
-      "type": "*RemediationCategory"
+      "type_name": "RemediationCategory",
+      "constants": {
+        "mitigation": "CSAFRemediationCategoryMitigation",
+        "no_fix_planned": "CSAFRemediationCategoryNoFixPlanned",
+        "none_available": "CSAFRemediationCategoryNoneAvailable",
+        "vendor_fix": "CSAFRemediationCategoryVendorFix",
+        "workaround": "CSAFRemediationCategoryWorkaround"
+      }
     },
     "/vulnerabilities/*/remediations/*/date": {
       "name": "Date",
@@ -485,7 +560,7 @@
     },
     "/vulnerabilities/*/remediations/*/product_ids": {
       "name": "ProductIds",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/remediations/*/restart_required": {
       "name": "RestartRequired",
@@ -493,7 +568,18 @@
     },
     "/vulnerabilities/*/remediations/*/restart_required/category": {
       "name": "Category",
-      "type": "*RestartRequiredCategory"
+      "type_name": "RestartRequiredCategory",
+      "constants": {
+        "connected": "CSAFRestartRequiredCategoryConnected",
+        "dependencies": "CSAFRestartRequiredCategoryDependencies",
+        "machine": "CSAFRestartRequiredCategoryMachine",
+        "none": "CSAFRestartRequiredCategoryNone",
+        "parent": "CSAFRestartRequiredCategoryParent",
+        "service": "CSAFRestartRequiredCategoryService",
+        "system": "CSAFRestartRequiredCategorySystem",
+        "vulnerable_component": "CSAFRestartRequiredCategoryVulnerableComponent",
+        "zone": "CSAFRestartRequiredCategoryZone"
+      }
     },
     "/vulnerabilities/*/remediations/*/restart_required/details": {
       "name": "Details",
@@ -513,23 +599,49 @@
     },
     "/vulnerabilities/*/scores/*/cvss_v2/accessComplexity": {
       "name": "AccessComplexity",
-      "type": "*CVSS20AccessComplexity"
+      "type_name": "CVSS20AccessComplexity",
+      "constants": {
+        "HIGH": "CVSS20AccessComplexityHigh",
+        "LOW": "CVSS20AccessComplexityLow",
+        "MEDIUM": "CVSS20AccessComplexityMedium"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/accessVector": {
       "name": "AccessVector",
-      "type": "*CVSS20AccessVector"
+      "type_name": "CVSS20AccessVector",
+      "constants": {
+        "ADJACENT_NETWORK": "CVSS20AccessVectorAdjacentNetwork",
+        "LOCAL": "CVSS20AccessVectorLocal",
+        "NETWORK": "CVSS20AccessVectorNetwork"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/authentication": {
       "name": "Authentication",
-      "type": "*CVSS20Authentication"
+      "type_name": "CVSS20Authentication",
+      "constants": {
+        "MULTIPLE": "CVSS20AuthenticationMultiple",
+        "NONE": "CVSS20AuthenticationNone",
+        "SINGLE": "CVSS20AuthenticationSingle"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/availabilityImpact": {
       "name": "AvailabilityImpact",
-      "type": "*CVSS20Cia"
+      "type_name": "CVSS20Cia",
+      "constants": {
+        "COMPLETE": "CVSS20CiaComplete",
+        "NONE": "CVSS20CiaNone",
+        "PARTIAL": "CVSS20CiaPartial"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/availabilityRequirement": {
       "name": "AvailabilityRequirement",
-      "type": "*CVSS20CiaRequirement"
+      "type_name": "CVSS20CiaRequirement",
+      "constants": {
+        "HIGH": "CVSS20CiaRequirementHigh",
+        "LOW": "CVSS20CiaRequirementLow",
+        "MEDIUM": "CVSS20CiaRequirementMedium",
+        "NOT_DEFINED": "CVSS20CiaRequirementNotDefined"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/baseScore": {
       "name": "BaseScore",
@@ -537,15 +649,23 @@
     },
     "/vulnerabilities/*/scores/*/cvss_v2/collateralDamagePotential": {
       "name": "CollateralDamagePotential",
-      "type": "*CVSS20CollateralDamagePotential"
+      "type_name": "CVSS20CollateralDamagePotential",
+      "constants": {
+        "HIGH": "CVSS20CollateralDamagePotentialHigh",
+        "LOW": "CVSS20CollateralDamagePotentialLow",
+        "LOW_MEDIUM": "CVSS20CollateralDamagePotentialLowMedium",
+        "MEDIUM_HIGH": "CVSS20CollateralDamagePotentialMediumHigh",
+        "NONE": "CVSS20CollateralDamagePotentialNone",
+        "NOT_DEFINED": "CVSS20CollateralDamagePotentialNotDefined"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/confidentialityImpact": {
       "name": "ConfidentialityImpact",
-      "type": "*CVSS20Cia"
+      "type_name": "CVSS20Cia"
     },
     "/vulnerabilities/*/scores/*/cvss_v2/confidentialityRequirement": {
       "name": "ConfidentialityRequirement",
-      "type": "*CVSS20CiaRequirement"
+      "type_name": "CVSS20CiaRequirement"
     },
     "/vulnerabilities/*/scores/*/cvss_v2/environmentalScore": {
       "name": "EnvironmentalScore",
@@ -553,27 +673,54 @@
     },
     "/vulnerabilities/*/scores/*/cvss_v2/exploitability": {
       "name": "Exploitability",
-      "type": "*CVSS20Exploitability"
+      "type_name": "CVSS20Exploitability",
+      "constants": {
+        "FUNCTIONAL": "CVSS20ExploitabilityFunctional",
+        "HIGH": "CVSS20ExploitabilityHigh",
+        "NOT_DEFINED": "CVSS20ExploitabilityNotDefined",
+        "PROOF_OF_CONCEPT": "CVSS20ExploitabilityProofOfConcept",
+        "UNPROVEN": "CVSS20ExploitabilityUnproven"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/integrityImpact": {
       "name": "IntegrityImpact",
-      "type": "*CVSS20Cia"
+      "type_name": "CVSS20Cia"
     },
     "/vulnerabilities/*/scores/*/cvss_v2/integrityRequirement": {
       "name": "IntegrityRequirement",
-      "type": "*CVSS20CiaRequirement"
+      "type_name": "CVSS20CiaRequirement"
     },
     "/vulnerabilities/*/scores/*/cvss_v2/remediationLevel": {
       "name": "RemediationLevel",
-      "type": "*CVSS20RemediationLevel"
+      "type_name": "CVSS20RemediationLevel",
+      "constants": {
+        "NOT_DEFINED": "CVSS20RemediationLevelNotDefined",
+        "OFFICIAL_FIX": "CVSS20RemediationLevelOfficialFix",
+        "TEMPORARY_FIX": "CVSS20RemediationLevelTemporaryFix",
+        "UNAVAILABLE": "CVSS20RemediationLevelUnavailable",
+        "WORKAROUND": "CVSS20RemediationLevelWorkaround"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/reportConfidence": {
       "name": "ReportConfidence",
-      "type": "*CVSS20ReportConfidence"
+      "type_name": "CVSS20ReportConfidence",
+      "constants": {
+        "CONFIRMED": "CVSS20ReportConfidenceConfirmed",
+        "NOT_DEFINED": "CVSS20ReportConfidenceNotDefined",
+        "UNCONFIRMED": "CVSS20ReportConfidenceUnconfirmed",
+        "UNCORROBORATED": "CVSS20ReportConfidenceUncorroborated"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/targetDistribution": {
       "name": "TargetDistribution",
-      "type": "*CVSS20TargetDistribution"
+      "type_name": "CVSS20TargetDistribution",
+      "constants": {
+        "HIGH": "CVSS20TargetDistributionHigh",
+        "LOW": "CVSS20TargetDistributionLow",
+        "MEDIUM": "CVSS20TargetDistributionMedium",
+        "NONE": "CVSS20TargetDistributionNone",
+        "NOT_DEFINED": "CVSS20TargetDistributionNotDefined"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v2/temporalScore": {
       "name": "TemporalScore",
@@ -581,11 +728,14 @@
     },
     "/vulnerabilities/*/scores/*/cvss_v2/vectorString": {
       "name": "VectorString",
-      "type": "*CVSS2VectorString"
+      "type_name": "CVSS2VectorString"
     },
     "/vulnerabilities/*/scores/*/cvss_v2/version": {
       "name": "Version",
-      "type": "*CVSSVersion2"
+      "type_name": "CVSSVersion2",
+      "constants": {
+        "2.0": "CVSSVersion20"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3": {
       "name": "CVSS3",
@@ -593,19 +743,40 @@
     },
     "/vulnerabilities/*/scores/*/cvss_v3/attackComplexity": {
       "name": "AttackComplexity",
-      "type": "*CVSS3AttackComplexity"
+      "type_name": "CVSS3AttackComplexity",
+      "constants": {
+        "HIGH": "CVSS3AttackComplexityHigh",
+        "LOW": "CVSS3AttackComplexityLow"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/attackVector": {
       "name": "AttackVector",
-      "type": "*CVSS3AttackVector"
+      "type_name": "CVSS3AttackVector",
+      "constants": {
+        "ADJACENT_NETWORK": "CVSS3AttackVectorAdjacentNetwork",
+        "LOCAL": "CVSS3AttackVectorLocal",
+        "NETWORK": "CVSS3AttackVectorNetwork",
+        "PHYSICAL": "CVSS3AttackVectorPhysical"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/availabilityImpact": {
       "name": "AvailabilityImpact",
-      "type": "*CVSS3Cia"
+      "type_name": "CVSS3Cia",
+      "constants": {
+        "HIGH": "CVSS3CiaHigh",
+        "LOW": "CVSS3CiaLow",
+        "NONE": "CVSS3CiaNone"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/availabilityRequirement": {
       "name": "AvailabilityRequirement",
-      "type": "*CVSS3CiaRequirement"
+      "type_name": "CVSS3CiaRequirement",
+      "constants": {
+        "HIGH": "CVSS3CiaRequirementHigh",
+        "LOW": "CVSS3CiaRequirementLow",
+        "MEDIUM": "CVSS3CiaRequirementMedium",
+        "NOT_DEFINED": "CVSS3CiaRequirementNotDefined"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/baseScore": {
       "name": "BaseScore",
@@ -613,15 +784,22 @@
     },
     "/vulnerabilities/*/scores/*/cvss_v3/baseSeverity": {
       "name": "BaseSeverity",
-      "type": "*CVSS3Severity"
+      "type_name": "CVSS3Severity",
+      "constants": {
+        "CRITICAL": "CVSS3SeverityCritical",
+        "HIGH": "CVSS3SeverityHigh",
+        "LOW": "CVSS3SeverityLow",
+        "MEDIUM": "CVSS3SeverityMedium",
+        "NONE": "CVSS3SeverityNone"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/confidentialityImpact": {
       "name": "ConfidentialityImpact",
-      "type": "*CVSS3Cia"
+      "type_name": "CVSS3Cia"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/confidentialityRequirement": {
       "name": "ConfidentialityRequirement",
-      "type": "*CVSS3CiaRequirement"
+      "type_name": "CVSS3CiaRequirement"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/environmentalScore": {
       "name": "EenvironmentalScore",
@@ -629,67 +807,130 @@
     },
     "/vulnerabilities/*/scores/*/cvss_v3/environmentalSeverity": {
       "name": "EnvironmentalSeverity",
-      "type": "*CVSS3Severity"
+      "type_name": "CVSS3Severity"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/exploitCodeMaturity": {
       "name": "ExploitCodeMaturity",
-      "type": "*CVSS3ExploitCodeMaturity"
+      "type_name": "CVSS3ExploitCodeMaturity",
+      "constants": {
+        "FUNCTIONAL": "CVSS3ExploitCodeMaturityFunctional",
+        "HIGH": "CVSS3ExploitCodeMaturityHigh",
+        "NOT_DEFINED": "CVSS3ExploitCodeMaturityNotDefined",
+        "PROOF_OF_CONCEPT": "CVSS3ExploitCodeMaturityProofOfConcept",
+        "UNPROVEN": "CVSS3ExploitCodeMaturityUnproven"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/integrityImpact": {
       "name": "IntegrityImpact",
-      "type": "CVSS3Cia"
+      "type_name": "CVSS3Cia"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/integrityRequirement": {
       "name": "IntegrityRequirement",
-      "type": "*CVSS3CiaRequirement"
+      "type_name": "CVSS3CiaRequirement"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/modifiedAttackComplexity": {
       "name": "ModifiedAttackComplexity",
-      "type": "*CVSS3ModifiedAttackComplexity"
+      "type_name": "CVSS3ModifiedAttackComplexity",
+      "constants": {
+        "HIGH": "CVSS3ModifiedAttackComplexityHigh",
+        "LOW": "CVSS3ModifiedAttackComplexityLow",
+        "NOT_DEFINED": "CVSS3ModifiedAttackComplexityNotDefined"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/modifiedAttackVector": {
       "name": "ModifiedAttackVector",
-      "type": "*CVSS3ModifiedAttackVector"
+      "type_name": "CVSS3ModifiedAttackVector",
+      "constants": {
+        "ADJACENT_NETWORK": "CVSS3ModifiedAttackVectorAdjacentNetwork",
+        "LOCAL": "CVSS3ModifiedAttackVectorLocal",
+        "NETWORK": "CVSS3ModifiedAttackVectorNetwork",
+        "NOT_DEFINED": "CVSS3ModifiedAttackVectorNotDefined",
+        "PHYSICAL": "CVSS3ModifiedAttackVectorPhysical"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/modifiedAvailabilityImpact": {
       "name": "ModifiedAvailabilityImpact",
-      "type": "*CVSS3ModifiedCia"
+      "type_name": "CVSS3ModifiedCia",
+      "constants": {
+        "HIGH": "CVSS3ModifiedCiaHigh",
+        "LOW": "CVSS3ModifiedCiaLow",
+        "NONE": "CVSS3ModifiedCiaNone",
+        "NOT_DEFINED": "CVSS3ModifiedCiaNotDefined"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/modifiedConfidentialityImpact": {
       "name": "ModifiedConfidentialityImpact",
-      "type": "*CVSS3ModifiedCia"
+      "type_name": "CVSS3ModifiedCia"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/modifiedIntegrityImpact": {
       "name": "ModifiedIntegrityImpact",
-      "type": "*CVSS3ModifiedCia"
+      "type_name": "CVSS3ModifiedCia"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/modifiedPrivilegesRequired": {
       "name": "ModifiedPrivilegesRequired",
-      "type": "*CVSS3ModifiedPrivilegesRequired"
+      "type_name": "CVSS3ModifiedPrivilegesRequired",
+      "constants": {
+        "HIGH": "CVSS3ModifiedPrivilegesRequiredHigh",
+        "LOW": "CVSS3ModifiedPrivilegesRequiredLow",
+        "NONE": "CVSS3ModifiedPrivilegesRequiredNone",
+        "NOT_DEFINED": "CVSS3ModifiedPrivilegesRequiredNotDefined"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/modifiedScope": {
       "name": "ModifiedScope",
-      "type": "*CVSS3ModifiedScope"
+      "type_name": "CVSS3ModifiedScope",
+      "constants": {
+        "CHANGED": "CVSS3ModifiedScopeChanged",
+        "NOT_DEFINED": "CVSS3ModifiedScopeNotDefined",
+        "UNCHANGED": "CVSS3ModifiedScopeUnchanged"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/modifiedUserInteraction": {
       "name": "ModifiedUserInteraction",
-      "type": "*CVSS3ModifiedUserInteraction"
+      "type_name": "CVSS3ModifiedUserInteraction",
+      "constants": {
+        "NONE": "CVSS3ModifiedUserInteractionNone",
+        "NOT_DEFINED": "CVSS3ModifiedUserInteractionNotDefined",
+        "REQUIRED": "CVSS3ModifiedUserInteractionRequired"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/privilegesRequired": {
       "name": "PrivilegesRequired",
-      "type": "*CVSS3PrivilegesRequired"
+      "type_name": "CVSS3PrivilegesRequired",
+      "constants": {
+        "HIGH": "CVSS3PrivilegesRequiredHigh",
+        "LOW": "CVSS3PrivilegesRequiredLow",
+        "NONE": "CVSS3PrivilegesRequiredNone"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/remediationLevel": {
       "name": "RemediationLevel",
-      "type": "*CVSS3RemediationLevel"
+      "type_name": "CVSS3RemediationLevel",
+      "constants": {
+        "NOT_DEFINED": "CVSS3RemediationLevelNotDefined",
+        "OFFICIAL_FIX": "CVSS3RemediationLevelOfficialFix",
+        "TEMPORARY_FIX": "CVSS3RemediationLevelTemporaryFix",
+        "UNAVAILABLE": "CVSS3RemediationLevelUnavailable",
+        "WORKAROUND": "CVSS3RemediationLevelWorkaround"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/reportConfidence": {
       "name": "ReportConfidence",
-      "type": "*CVSS3Confidence"
+      "type_name": "CVSS3Confidence",
+      "constants": {
+        "CONFIRMED": "CVSS3ConfidenceConfirmed",
+        "NOT_DEFINED": "CVSS3ConfidenceNotDefined",
+        "REASONABLE": "CVSS3ConfidenceReasonable",
+        "UNKNOWN": "CVSS3ConfidenceUnknown"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/scope": {
       "name": "Scope",
-      "type": "*CVSS3Scope"
+      "type_name": "CVSS3Scope",
+      "constants": {
+        "CHANGED": "CVSS3ScopeChanged",
+        "UNCHANGED": "CVSS3ScopeUnchanged"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/temporalScore": {
       "name": "TemporalScore",
@@ -697,23 +938,31 @@
     },
     "/vulnerabilities/*/scores/*/cvss_v3/temporalSeverity": {
       "name": "TemporalSeverity",
-      "type": "*CVSS3Severity"
+      "type_name": "CVSS3Severity"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/userInteraction": {
       "name": "UserInteraction",
-      "type": "*CVSS3UserInteraction"
+      "type_name": "CVSS3UserInteraction",
+      "constants": {
+        "NONE": "CVSS3UserInteractionNone",
+        "REQUIRED": "CVSS3UserInteractionRequired"
+      }
     },
     "/vulnerabilities/*/scores/*/cvss_v3/vectorString": {
       "name": "VectorString",
-      "type": "*CVSS3VectorString"
+      "type_name": "CVSS3VectorString"
     },
     "/vulnerabilities/*/scores/*/cvss_v3/version": {
       "name": "Version",
-      "type": "*CVSSVersion3"
+      "type_name": "CVSSVersion3",
+      "constants": {
+        "3.0": "CVSSVersion30",
+        "3.1": "CVSSVersion31"
+      }
     },
     "/vulnerabilities/*/scores/*/products": {
       "name": "Products",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/threats": {
       "name": "Threats",
@@ -721,7 +970,12 @@
     },
     "/vulnerabilities/*/threats/*/category": {
       "name": "Category",
-      "type": "*ThreatCategory"
+      "type_name": "ThreatCategory",
+      "constants": {
+        "exploit_status": "CSAFThreatCategoryExploitStatus",
+        "impact": "CSAFThreatCategoryImpact",
+        "target_set": "CSAFThreatCategoryTargetSet"
+      }
     },
     "/vulnerabilities/*/threats/*/date": {
       "name": "Date",
@@ -737,7 +991,7 @@
     },
     "/vulnerabilities/*/threats/*/product_ids": {
       "name": "ProductIds",
-      "type": "*Products"
+      "type_name": "Products"
     },
     "/vulnerabilities/*/title": {
       "name": "Title",
@@ -750,7 +1004,7 @@
     },
     "/canonical_url": {
       "name": "CanonicalURL",
-      "type": "*ProviderURL"
+      "type_name": "ProviderURL"
     },
     "/distributions": {
       "name": "Distributions",
@@ -778,11 +1032,11 @@
     },
     "/distributions/*/rolie/feeds/*/tlp_label": {
       "name": "TLPLabel",
-      "type": "*TLPLabel"
+      "type_name": "TLPLabel"
     },
     "/distributions/*/rolie/feeds/*/url": {
       "name": "URL",
-      "type": "*JSONURL"
+      "type_name": "JSONURL"
     },
     "/distributions/*/rolie/services": {
       "name": "Services",
@@ -790,7 +1044,7 @@
     },
     "/last_updated": {
       "name": "LastUpdated",
-      "type": "*TimeStamp"
+      "type_name": "TimeStamp"
     },
     "/list_on_CSAF_aggregators": {
       "name": "ListOnCSAFAggregators",
@@ -798,7 +1052,10 @@
     },
     "/metadata_version": {
       "name": "MetadataVersion",
-      "type": "*MetadataVersion"
+      "type_name": "MetadataVersion",
+      "constants": {
+        "2.0": "MetadataVersion20"
+      }
     },
     "/mirror_on_CSAF_aggregators": {
       "name": "MirrorOnCSAFAggregators",
@@ -810,7 +1067,7 @@
     },
     "/public_openpgp_keys/*/fingerprint": {
       "name": "Fingerprint",
-      "type": "Fingerprint"
+      "type_name": "Fingerprint"
     },
     "/public_openpgp_keys/*/url": {
       "name": "URL",
@@ -822,7 +1079,15 @@
     },
     "/publisher/category": {
       "name": "Category",
-      "type": "*Category"
+      "type_name": "Category",
+      "constants": {
+        "coordinator": "CSAFCategoryCoordinator",
+        "discoverer": "CSAFCategoryDiscoverer",
+        "other": "CSAFCategoryOther",
+        "translator": "CSAFCategoryTranslator",
+        "user": "CSAFCategoryUser",
+        "vendor": "CSAFCategoryVendor"
+      }
     },
     "/publisher/contact_details": {
       "name": "ContactDetails",
@@ -842,7 +1107,12 @@
     },
     "/role": {
       "name": "Role",
-      "type": "*MetadataRole"
+      "type_name": "MetadataRole",
+      "constants": {
+        "csaf_provider": "MetadataRoleProvider",
+        "csaf_publisher": "MetadataRolePublisher",
+        "csaf_trusted_provider": "MetadataRoleTrustedProvider"
+      }
     }
   },
   "aggregator": {
@@ -855,7 +1125,11 @@
     },
     "/aggregator/category": {
       "name": "Category",
-      "type": "*AggregatorCategory"
+      "type_name": "AggregatorCategory",
+      "constants": {
+        "aggregator": "AggregatorAggregator",
+        "lister": "AggregatorLister"
+      }
     },
     "/aggregator/contact_details": {
       "name": "ContactDetails",
@@ -875,11 +1149,14 @@
     },
     "/aggregator_version": {
       "name": "Version",
-      "type": "*AggregatorVersion"
+      "type_name": "AggregatorVersion",
+      "constants": {
+        "2.0": "AggregatorVersion20"
+      }
     },
     "/canonical_url": {
       "name": "CanonicalURL",
-      "type": "*AggregatorURL"
+      "type_name": "AggregatorURL"
     },
     "/csaf_providers": {
       "name": "CSAFProviders",
@@ -891,7 +1168,7 @@
     },
     "/csaf_providers/*/metadata/last_updated": {
       "name": "LastUpdated",
-      "type": "*TimeStamp"
+      "type_name": "TimeStamp"
     },
     "/csaf_providers/*/metadata/publisher": {
       "name": "Publisher",
@@ -899,7 +1176,15 @@
     },
     "/csaf_providers/*/metadata/publisher/category": {
       "name": "Category",
-      "type": "*Category"
+      "type_name": "Category",
+      "constants": {
+        "coordinator": "CSAFCategoryCoordinator",
+        "discoverer": "CSAFCategoryDiscoverer",
+        "other": "CSAFCategoryOther",
+        "translator": "CSAFCategoryTranslator",
+        "user": "CSAFCategoryUser",
+        "vendor": "CSAFCategoryVendor"
+      }
     },
     "/csaf_providers/*/metadata/publisher/contact_details": {
       "name": "ContactDetails",
@@ -919,11 +1204,16 @@
     },
     "/csaf_providers/*/metadata/role": {
       "name": "Role",
-      "type": "*MetadataRole"
+      "type_name": "MetadataRole",
+      "constants": {
+        "csaf_provider": "MetadataRoleProvider",
+        "csaf_publisher": "MetadataRolePublisher",
+        "csaf_trusted_provider": "MetadataRoleTrustedProvider"
+      }
     },
     "/csaf_providers/*/metadata/url": {
       "name": "URL",
-      "type": "*ProviderURL"
+      "type_name": "ProviderURL"
     },
     "/csaf_providers/*/mirrors": {
       "name": "Mirrors",
@@ -947,7 +1237,7 @@
     },
     "/last_updated": {
       "name": "LastUpdated",
-      "type": "*TimeStamp"
+      "type_name": "TimeStamp"
     }
   }
 }
