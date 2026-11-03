@@ -316,11 +316,17 @@ func (c *controller) upload(r *http.Request) (any, error) {
 				return err
 			}
 
+			summaries := []SummaryPath{
+				SummaryPath{
+					Filename: fname,
+					Summary:  *ex,
+				},
+			}
+
 			// Only write index.txt and changes.csv if configured.
 			if c.cfg.WriteIndices {
 				if err := updateIndices(
-					folder, filepath.Join(year, newCSAF),
-					ex.CurrentReleaseDate,
+					folder, summaries,
 				); err != nil {
 					return err
 				}

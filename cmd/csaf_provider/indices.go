@@ -16,20 +16,30 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"time"
 
+	"github.com/gocsaf/csaf/v3/csaf"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
-func updateIndex(dir, fname string) error {
+type SummaryPath struct {
+	Filename string
+	Summary  csaf.AdvisorySummary
+}
 
+func updateIndex(dir string, summaries []SummaryPath) error {
 	index := filepath.Join(dir, "index.txt")
 
 	lines, err := func() ([]string, error) {
+		paths := []string{}
 		f, err := os.Open(index)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return []string{fname}, nil
+				for _, summary := range summaries {
+					paths = append(paths, summary.Filename)
+				}
+				return paths, nil
 			}
 			return nil, err
 		}
@@ -38,16 +48,18 @@ func updateIndex(dir, fname string) error {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			// stop scanning when we found it.
-			if line := scanner.Text(); line != fname {
+			if line := scanner.Text(); !slices.Contains(lines, line) {
 				lines = append(lines, line)
 			} else {
-				return nil, nil
+				if index, found := slices.BinarySearch(paths, line); found {
+					slices.Delete(paths, index, index+1)
+				}
 			}
 		}
 		if err := scanner.Err(); err != nil {
 			return nil, err
 		}
-		return append(lines, fname), nil
+		return append(lines, paths...), nil
 	}()
 	if err != nil {
 		return err
@@ -72,8 +84,7 @@ func updateIndex(dir, fname string) error {
 	return f.Close()
 }
 
-func updateChanges(dir, fname string, releaseDate time.Time) error {
-
+func updateChanges(dir string, summaries []SummaryPath) error {
 	type change struct {
 		time time.Time
 		path string
@@ -90,7 +101,11 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 		f, err := os.Open(changes)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return []change{{releaseDate, fname}}, nil
+				chs := []change{}
+				for _, summary := range summaries {
+					chs = append(chs, change{summary.Summary.CurrentReleaseDate, summary.Filename})
+				}
+				return chs, nil
 			}
 			return nil, err
 		}
@@ -100,6 +115,12 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 		r.FieldsPerRecord = 2
 		r.ReuseRecord = true
 		replaced := false
+
+		paths := []string{}
+		for _, summary := range summaries {
+			paths = append(paths, summary.Filename)
+		}
+
 		for {
 			record, err := r.Read()
 			if err == io.EOF {
@@ -109,14 +130,18 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 				return nil, err
 			}
 			// Check if new is already in.
-			if record[pathColumn] == fname {
+			if index, found := slices.BinarySearchFunc(summaries, SummaryPath{Filename: record[pathColumn]}, func(a, b SummaryPath) int {
+				return strings.Compare(a.Filename, b.Filename)
+			}); found {
+				summaryEntry := summaries[index]
+				releaseDate := summaryEntry.Summary.CurrentReleaseDate
 				// Identical -> no change at all.
 				if record[timeColumn] == releaseDate.Format(dateFormat) {
 					return nil, nil
 				}
 				// replace old entry
 				replaced = true
-				chs = append(chs, change{releaseDate, fname})
+				chs = append(chs, change{releaseDate, summaryEntry.Filename})
 				continue
 			}
 			t, err := time.Parse(dateFormat, record[timeColumn])
@@ -126,7 +151,9 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 			chs = append(chs, change{t, record[pathColumn]})
 		}
 		if !replaced {
-			chs = append(chs, change{releaseDate, fname})
+			for _, s := range summaries {
+				chs = append(chs, change{s.Summary.CurrentReleaseDate, s.Filename})
+			}
 		}
 		return chs, nil
 	}()
@@ -165,11 +192,10 @@ func updateChanges(dir, fname string, releaseDate time.Time) error {
 	return err2
 }
 
-func updateIndices(dir, fname string, releaseDate time.Time) error {
-
-	if err := updateIndex(dir, fname); err != nil {
+func updateIndices(dir string, summaries []SummaryPath) error {
+	if err := updateIndex(dir, summaries); err != nil {
 		return err
 	}
 
-	return updateChanges(dir, fname, releaseDate)
+	return updateChanges(dir, summaries)
 }
