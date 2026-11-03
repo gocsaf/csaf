@@ -53,10 +53,10 @@ func loadModel(dir string) (*model, error) {
 				case token.CONST:
 					for _, specification := range node.Specs {
 						spec := specification.(*ast.ValueSpec)
-						if len(spec.Values) != len(spec.Names) {
-							return nil, fmt.Errorf("%s: implicit constant values are unsupported", path)
-						}
 						if typ, ok := spec.Type.(*ast.Ident); ok {
+							if len(spec.Values) != len(spec.Names) {
+								return nil, fmt.Errorf("%s: implicit constant values are unsupported", path)
+							}
 							result.constants[typ.Name] = append(result.constants[typ.Name], spec)
 						}
 					}
