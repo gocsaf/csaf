@@ -11,13 +11,16 @@ import (
 	"maps"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 )
 
 type nameOverride struct {
-	Name       string `json:"name"`
-	StructName string `json:"struct_name"`
-	Type       string `json:"type"`
+	Name       string            `json:"name"`
+	StructName string            `json:"struct_name"`
+	Type       string            `json:"type"`
+	TypeName   string            `json:"type_name"` // new name of a named non-struct type
+	Constants  map[string]string `json:"constants"` // JSON value -> Go constant name
 }
 
 type namesFile struct {
@@ -42,6 +45,9 @@ func readNames(filename string) (*namesFile, error) {
 		for path, entry := range entries {
 			if entry.StructName != "" && entry.Type != "" {
 				return nil, fmt.Errorf("%s%s: struct_name and type are mutually exclusive", document, path)
+			}
+			if entry.TypeName != "" && entry.Type != "" {
+				return nil, fmt.Errorf("%s%s: type_name and type are mutually exclusive", document, path)
 			}
 		}
 	}
@@ -172,17 +178,21 @@ func converterName(typ string) string {
 }
 
 // applyNames walks the shared model along JSON paths and applies the
-// overrides of the document
+// overrides of the document: field names, struct names, type replacements,
+// type names and constant names. Afterwards unused types are pruned and
+// duplicate names are rejected. Does nothing if names is nil.
 func (m *typedModel) applyNames(names *namesFile, document string) error {
 	if names == nil {
 		return nil
 	}
 	visited := make(map[*typedType]bool)
 	requested := make(map[*typedType]string)
+	requestedTypes := make(map[*typedType]string)
+	requestedConstants := make(map[*typedType]map[string]string)
 	var visit func(*typedType, *typedField, string) error
 	visit = func(node *typedType, field *typedField, path string) error {
 		entry := names.at(document, path)
-		// Apply name and type overrides to the field.
+		// Apply name override to the field.
 		if entry.Name != "" && field != nil {
 			field.name = entry.Name
 		}
@@ -199,6 +209,30 @@ func (m *typedModel) applyNames(names *namesFile, document string) error {
 				field.common = replacement
 			}
 			return nil
+		}
+		if entry.TypeName != "" || len(entry.Constants) > 0 {
+			named := node
+			for named.shape == "pointer" {
+				named = named.elem
+			}
+			if named.shape != "named" {
+				return fmt.Errorf("%s: type_name and constants require a generated named type", path)
+			}
+			if entry.TypeName != "" {
+				if previous := requestedTypes[named]; previous != "" && previous != entry.TypeName {
+					return fmt.Errorf("conflicting type names for %s: %s and %s", named.name, previous, entry.TypeName)
+				}
+				requestedTypes[named] = entry.TypeName
+			}
+			for value, constantName := range entry.Constants {
+				if requestedConstants[named] == nil {
+					requestedConstants[named] = make(map[string]string)
+				}
+				if previous := requestedConstants[named][value]; previous != "" && previous != constantName {
+					return fmt.Errorf("conflicting constant names for %q of %s: %s and %s", value, named.name, previous, constantName)
+				}
+				requestedConstants[named][value] = constantName
+			}
 		}
 		// Apply struct_name override to the named structs.
 		structure, typeName, suffix := namedStruct(node)
@@ -234,7 +268,47 @@ func (m *typedModel) applyNames(names *namesFile, document string) error {
 	for node, name := range requested {
 		node.name = name
 	}
+	for node, name := range requestedTypes {
+		node.name = name
+	}
+	for node, constants := range requestedConstants {
+		for value, constantName := range constants {
+			found := false
+			for i := range node.constants {
+				if original, err := strconv.Unquote(node.constants[i].value); err == nil && original == value {
+					node.constants[i].name = constantName
+					found = true
+				}
+			}
+			if !found {
+				return fmt.Errorf("%s has no constant with value %q", node.name, value)
+			}
+		}
+		slices.SortFunc(node.constants, func(a, b localConstant) int { return strings.Compare(a.name, b.name) })
+	}
 	m.pruneTypes()
+	return m.checkDuplicateNames()
+}
+
+// checkDuplicateNames reports generated names that are used twice after renaming.
+func (m *typedModel) checkDuplicateNames() error {
+	seen := make(map[string]bool)
+	var names []string
+	for _, structure := range m.structures {
+		names = append(names, structure.name)
+	}
+	for _, declaration := range m.localDeclarations {
+		names = append(names, declaration.name)
+		for _, constant := range declaration.constants {
+			names = append(names, constant.name)
+		}
+	}
+	for _, name := range names {
+		if seen[name] {
+			return fmt.Errorf("name %s is used twice", name)
+		}
+		seen[name] = true
+	}
 	return nil
 }
 
