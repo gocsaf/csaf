@@ -48,7 +48,7 @@ func FromBare(source *bare.Provider) (*Provider, error) {
 func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
 	var target Provider
 	var err error
-	target.CanonicalURL = source.CanonicalURL
+	target.CanonicalURL = ProviderURLT(source.CanonicalURL)
 	if source.Distributions != nil {
 		target.Distributions = make([]ProviderDistributionsElem, len(source.Distributions))
 		for i := range source.Distributions {
@@ -60,7 +60,7 @@ func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
 	}
 	target.LastUpdated = source.LastUpdated
 	target.ListOnCSAFAggregators = source.ListOnCSAFAggregators
-	target.MetadataVersion = source.MetadataVersion
+	target.MetadataVersion = MetadataVersion(source.MetadataVersion)
 	target.MirrorOnCSAFAggregators = source.MirrorOnCSAFAggregators
 	if source.PublicOpenpgpKeys != nil {
 		target.PublicOpenpgpKeys = make([]ProviderPublicOpenpgpKeysElem, len(source.PublicOpenpgpKeys))
@@ -75,7 +75,7 @@ func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
 	if err != nil {
 		return target, fmt.Errorf("publisher.%w", err)
 	}
-	target.Role = source.Role
+	target.Role = ProviderRole(source.Role)
 	if v == version21 {
 		details := &provider21Details{}
 		if len(source.Schema) > 0 {
@@ -134,7 +134,12 @@ func fromBareProviderDistributionsElem(source *bare.ProviderDistributionsElem, v
 func fromBareProviderDistributionsElemRolie(source *bare.ProviderDistributionsElemRolie, v version) (ProviderDistributionsElemRolie, error) {
 	var target ProviderDistributionsElemRolie
 	var err error
-	target.Categories = source.Categories
+	if source.Categories != nil {
+		target.Categories = make([]JsonURLT, len(source.Categories))
+		for i := range source.Categories {
+			target.Categories[i] = JsonURLT(source.Categories[i])
+		}
+	}
 	if source.Feeds != nil {
 		target.Feeds = make([]ProviderDistributionsElemRolieFeedsElem, len(source.Feeds))
 		for i := range source.Feeds {
@@ -144,7 +149,12 @@ func fromBareProviderDistributionsElemRolie(source *bare.ProviderDistributionsEl
 			}
 		}
 	}
-	target.Services = source.Services
+	if source.Services != nil {
+		target.Services = make([]JsonURLT, len(source.Services))
+		for i := range source.Services {
+			target.Services[i] = JsonURLT(source.Services[i])
+		}
+	}
 	*source = bare.ProviderDistributionsElemRolie{}
 	return target, nil
 }
@@ -152,8 +162,8 @@ func fromBareProviderDistributionsElemRolie(source *bare.ProviderDistributionsEl
 func fromBareProviderDistributionsElemRolieFeedsElem(source *bare.ProviderDistributionsElemRolieFeedsElem, v version) (ProviderDistributionsElemRolieFeedsElem, error) {
 	var target ProviderDistributionsElemRolieFeedsElem
 	target.Summary = source.Summary
-	target.TLPLabel = source.TLPLabel
-	target.URL = source.URL
+	target.TLPLabel = TLPLabelT(source.TLPLabel)
+	target.URL = JsonURLT(source.URL)
 	if v == version21 {
 		details := &providerDistributionsElemRolieFeedsElem21Details{}
 		if len(source.LastUpdated) > 0 {
@@ -170,14 +180,14 @@ func fromBareProviderDistributionsElemRolieFeedsElem(source *bare.ProviderDistri
 func fromBareProviderPublicOpenpgpKeysElem(source *bare.ProviderPublicOpenpgpKeysElem, v version) (ProviderPublicOpenpgpKeysElem, error) {
 	var target ProviderPublicOpenpgpKeysElem
 	target.Fingerprint = source.Fingerprint
-	target.URL = source.URL
+	target.URL = URLT(source.URL)
 	*source = bare.ProviderPublicOpenpgpKeysElem{}
 	return target, nil
 }
 
 func fromBareProviderPublisher(source *bare.ProviderPublisher, v version) (ProviderPublisher, error) {
 	var target ProviderPublisher
-	target.Category = source.Category
+	target.Category = PublisherTCategory(source.Category)
 	target.IssuingAuthority = source.IssuingAuthority
 	target.Name = source.Name
 	target.Namespace = source.Namespace

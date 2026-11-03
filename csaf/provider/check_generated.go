@@ -11,10 +11,12 @@ import (
 	"fmt"
 )
 
-// Checks version consistency and required model values.  It rejects missing
-// required pointers, empty required strings and empty required slices. It does
-// not validate schema formats, enums, exact lengths or conditional constraints.
-// Zero-valued numbers and booleans are accepted.
+// Checks version consistency and required model values. It rejects missing
+// required pointers, empty required strings and empty required slices and
+// enum values that are not valid in the document version. Types taken directly
+// from the version packages must provide their own Check() error method.
+// Local checks do not validate schema formats, exact lengths or conditional
+// constraints. Zero-valued numbers and booleans are accepted.
 func (source *Provider) Check() error {
 	if source == nil {
 		return errors.New("nil document")
@@ -28,10 +30,6 @@ func (source *Provider) Check() error {
 	default:
 		return fmt.Errorf("unsupported version %q", source.MetadataVersion)
 	}
-	return checkProvider(source, v)
-}
-
-func checkProvider(source *Provider, v version) error {
 	switch {
 	case v == version20 && source.provider21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
@@ -51,27 +49,33 @@ func checkProvider(source *Provider, v version) error {
 		return errors.New("role: required value is missing or empty")
 	}
 	for i := range source.Distributions {
-		if err := checkProviderDistributionsElem(&source.Distributions[i], v); err != nil {
+		if err := source.Distributions[i].Check(v); err != nil {
 			return fmt.Errorf("distributions[%d].%w", i, err)
 		}
 	}
+	if source.MetadataVersion != "" && !source.MetadataVersion.validIn(v) {
+		return fmt.Errorf("metadata_version: invalid value %q", source.MetadataVersion)
+	}
 	for i := range source.PublicOpenpgpKeys {
-		if err := checkProviderPublicOpenpgpKeysElem(&source.PublicOpenpgpKeys[i], v); err != nil {
+		if err := source.PublicOpenpgpKeys[i].Check(v); err != nil {
 			return fmt.Errorf("public_openpgp_keys[%d].%w", i, err)
 		}
 	}
-	if err := checkProviderPublisher(&source.Publisher, v); err != nil {
+	if err := source.Publisher.Check(v); err != nil {
 		return fmt.Errorf("publisher.%w", err)
 	}
+	if source.Role != "" && !source.Role.validIn(v) {
+		return fmt.Errorf("role: invalid value %q", source.Role)
+	}
 	if source.provider21Details != nil {
-		if err := checkProvider21Details(source.provider21Details, v); err != nil {
+		if err := source.provider21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkProviderDistributionsElem(source *ProviderDistributionsElem, v version) error {
+func (source *ProviderDistributionsElem) Check(v version) error {
 	if source.providerDistributionsElem20Details != nil && source.providerDistributionsElem21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -92,36 +96,36 @@ func checkProviderDistributionsElem(source *ProviderDistributionsElem, v version
 		}
 	}
 	if source.Rolie != nil {
-		if err := checkProviderDistributionsElemRolie(source.Rolie, v); err != nil {
+		if err := source.Rolie.Check(v); err != nil {
 			return fmt.Errorf("rolie.%w", err)
 		}
 	}
 	if source.providerDistributionsElem20Details != nil {
-		if err := checkProviderDistributionsElem20Details(source.providerDistributionsElem20Details, v); err != nil {
+		if err := source.providerDistributionsElem20Details.Check(v); err != nil {
 			return err
 		}
 	}
 	if source.providerDistributionsElem21Details != nil {
-		if err := checkProviderDistributionsElem21Details(source.providerDistributionsElem21Details, v); err != nil {
+		if err := source.providerDistributionsElem21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkProviderDistributionsElemRolie(source *ProviderDistributionsElemRolie, v version) error {
+func (source *ProviderDistributionsElemRolie) Check(v version) error {
 	if len(source.Feeds) == 0 {
 		return errors.New("feeds: required value is missing or empty")
 	}
 	for i := range source.Feeds {
-		if err := checkProviderDistributionsElemRolieFeedsElem(&source.Feeds[i], v); err != nil {
+		if err := source.Feeds[i].Check(v); err != nil {
 			return fmt.Errorf("feeds[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkProviderDistributionsElemRolieFeedsElem(source *ProviderDistributionsElemRolieFeedsElem, v version) error {
+func (source *ProviderDistributionsElemRolieFeedsElem) Check(v version) error {
 	switch {
 	case v == version20 && source.providerDistributionsElemRolieFeedsElem21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
@@ -134,15 +138,18 @@ func checkProviderDistributionsElemRolieFeedsElem(source *ProviderDistributionsE
 	if source.URL == "" {
 		return errors.New("url: required value is missing or empty")
 	}
+	if source.TLPLabel != "" && !source.TLPLabel.validIn(v) {
+		return fmt.Errorf("tlp_label: invalid value %q", source.TLPLabel)
+	}
 	if source.providerDistributionsElemRolieFeedsElem21Details != nil {
-		if err := checkProviderDistributionsElemRolieFeedsElem21Details(source.providerDistributionsElemRolieFeedsElem21Details, v); err != nil {
+		if err := source.providerDistributionsElemRolieFeedsElem21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkProviderPublicOpenpgpKeysElem(source *ProviderPublicOpenpgpKeysElem, v version) error {
+func (source *ProviderPublicOpenpgpKeysElem) Check(v version) error {
 	switch v {
 	case version21:
 		if source.Fingerprint == nil {
@@ -158,7 +165,7 @@ func checkProviderPublicOpenpgpKeysElem(source *ProviderPublicOpenpgpKeysElem, v
 	return nil
 }
 
-func checkProviderPublisher(source *ProviderPublisher, v version) error {
+func (source *ProviderPublisher) Check(v version) error {
 	if source.providerPublisher20Details != nil && source.providerPublisher21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -187,67 +194,76 @@ func checkProviderPublisher(source *ProviderPublisher, v version) error {
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	if source.providerPublisher20Details != nil {
-		if err := checkProviderPublisher20Details(source.providerPublisher20Details, v); err != nil {
+		if err := source.providerPublisher20Details.Check(v); err != nil {
 			return err
 		}
 	}
 	if source.providerPublisher21Details != nil {
-		if err := checkProviderPublisher21Details(source.providerPublisher21Details, v); err != nil {
+		if err := source.providerPublisher21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkProvider21Details(source *provider21Details, v version) error {
+func (source *provider21Details) Check(v version) error {
 	if source.Schema == "" {
 		return errors.New("$schema: required value is missing or empty")
+	}
+	if source.Schema != "" && !source.Schema.validIn(v) {
+		return fmt.Errorf("$schema: invalid value %q", source.Schema)
 	}
 	return nil
 }
 
-func checkProviderDistributionsElem20Details(source *providerDistributionsElem20Details, v version) error {
+func (source *providerDistributionsElem20Details) Check(v version) error {
 	return nil
 }
 
-func checkVersion21Struct8(source *ProviderDistributionsElemDirectory, v version) error {
+func (source *ProviderDistributionsElemDirectory) Check(v version) error {
 	if source.TLPLabel == "" {
 		return errors.New("tlp_label: required value is missing or empty")
 	}
 	if source.URL == "" {
 		return errors.New("url: required value is missing or empty")
 	}
+	if source.TLPLabel != "" && !source.TLPLabel.validIn(v) {
+		return fmt.Errorf("tlp_label: invalid value %q", source.TLPLabel)
+	}
 	return nil
 }
 
-func checkProviderDistributionsElem21Details(source *providerDistributionsElem21Details, v version) error {
+func (source *providerDistributionsElem21Details) Check(v version) error {
 	if source.Directory != nil {
-		if err := checkVersion21Struct8(source.Directory, v); err != nil {
+		if err := source.Directory.Check(v); err != nil {
 			return fmt.Errorf("directory.%w", err)
 		}
 	}
 	return nil
 }
 
-func checkProviderDistributionsElemRolieFeedsElem21Details(source *providerDistributionsElemRolieFeedsElem21Details, v version) error {
+func (source *providerDistributionsElemRolieFeedsElem21Details) Check(v version) error {
 	if source.LastUpdated == "" {
 		return errors.New("last_updated: required value is missing or empty")
 	}
 	return nil
 }
 
-func checkProviderPublisher20Details(source *providerPublisher20Details, v version) error {
+func (source *providerPublisher20Details) Check(v version) error {
 	return nil
 }
 
-func checkVersion21Struct12(source *ContactT, v version) error {
+func (source *ContactT) Check(v version) error {
 	return nil
 }
 
-func checkProviderPublisher21Details(source *providerPublisher21Details, v version) error {
+func (source *providerPublisher21Details) Check(v version) error {
 	if source.Contact != nil {
-		if err := checkVersion21Struct12(source.Contact, v); err != nil {
+		if err := source.Contact.Check(v); err != nil {
 			return fmt.Errorf("contact.%w", err)
 		}
 	}

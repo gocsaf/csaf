@@ -9,7 +9,7 @@ package bare
 import (
 	"encoding/json"
 
-	"github.com/gocsaf/csaf/v3/csaf/v21"
+	"github.com/gocsaf/csaf/v3/csaf/types"
 )
 
 type CSAF struct {
@@ -87,17 +87,17 @@ type CSAFDocumentReferencesElem struct {
 
 type CSAFDocumentTracking struct {
 	Aliases            []string                                  `json:"aliases,omitempty"`
-	CurrentReleaseDate v21.DateTime                              `json:"current_release_date"`
+	CurrentReleaseDate types.DateTime                            `json:"current_release_date"`
 	Generator          *CSAFDocumentTrackingGenerator            `json:"generator,omitempty"`
 	ID                 string                                    `json:"id"`
-	InitialReleaseDate v21.DateTime                              `json:"initial_release_date"`
+	InitialReleaseDate types.DateTime                            `json:"initial_release_date"`
 	RevisionHistory    []CSAFDocumentTrackingRevisionHistoryElem `json:"revision_history"`
 	Status             string                                    `json:"status"`
 	Version            string                                    `json:"version"`
 }
 
 type CSAFDocumentTrackingGenerator struct {
-	Date   *v21.DateTime                       `json:"date,omitempty"`
+	Date   *types.DateTime                     `json:"date,omitempty"`
 	Engine CSAFDocumentTrackingGeneratorEngine `json:"engine"`
 }
 
@@ -107,10 +107,10 @@ type CSAFDocumentTrackingGeneratorEngine struct {
 }
 
 type CSAFDocumentTrackingRevisionHistoryElem struct {
-	Date          v21.DateTime `json:"date"`
-	LegacyVersion *string      `json:"legacy_version,omitempty"`
-	Number        string       `json:"number"`
-	Summary       string       `json:"summary"`
+	Date          types.DateTime `json:"date"`
+	LegacyVersion *string        `json:"legacy_version,omitempty"`
+	Number        string         `json:"number"`
+	Summary       string         `json:"summary"`
 }
 
 type CSAFProductTree struct {
@@ -174,7 +174,7 @@ type CSAFVulnerabilitiesElem struct {
 	CWE                         json.RawMessage                           `json:"cwe,omitempty"`
 	Cwes                        json.RawMessage                           `json:"cwes,omitempty"`
 	DisclosureDate              json.RawMessage                           `json:"disclosure_date,omitempty"`
-	DiscoveryDate               *v21.DateTime                             `json:"discovery_date,omitempty"`
+	DiscoveryDate               *types.DateTime                           `json:"discovery_date,omitempty"`
 	DlVulnID                    json.RawMessage                           `json:"dl_vuln_id,omitempty"`
 	FirstKnownExploitationDates json.RawMessage                           `json:"first_known_exploitation_dates,omitempty"`
 	Flags                       []CSAFVulnerabilitiesElemFlagsElem        `json:"flags,omitempty"`
@@ -193,10 +193,10 @@ type CSAFVulnerabilitiesElem struct {
 }
 
 type CSAFVulnerabilitiesElemFlagsElem struct {
-	Date       *v21.DateTime `json:"date,omitempty"`
-	GroupIds   []string      `json:"group_ids,omitempty"`
-	Label      string        `json:"label"`
-	ProductIds []string      `json:"product_ids,omitempty"`
+	Date       *types.DateTime `json:"date,omitempty"`
+	GroupIds   []string        `json:"group_ids,omitempty"`
+	Label      string          `json:"label"`
+	ProductIds []string        `json:"product_ids,omitempty"`
 }
 
 type CSAFVulnerabilitiesElemIdsElem struct {
@@ -220,7 +220,7 @@ type CSAFVulnerabilitiesElemProductStatus struct {
 
 type CSAFVulnerabilitiesElemRemediationsElem struct {
 	Category        string                                                  `json:"category"`
-	Date            *v21.DateTime                                           `json:"date,omitempty"`
+	Date            *types.DateTime                                         `json:"date,omitempty"`
 	Details         string                                                  `json:"details"`
 	Entitlements    []string                                                `json:"entitlements,omitempty"`
 	GroupIds        []string                                                `json:"group_ids,omitempty"`
@@ -235,9 +235,9 @@ type CSAFVulnerabilitiesElemRemediationsElemRestartRequired struct {
 }
 
 type CSAFVulnerabilitiesElemThreatsElem struct {
-	Category   string        `json:"category"`
-	Date       *v21.DateTime `json:"date,omitempty"`
-	Details    string        `json:"details"`
-	GroupIds   []string      `json:"group_ids,omitempty"`
-	ProductIds []string      `json:"product_ids,omitempty"`
+	Category   string          `json:"category"`
+	Date       *types.DateTime `json:"date,omitempty"`
+	Details    string          `json:"details"`
+	GroupIds   []string        `json:"group_ids,omitempty"`
+	ProductIds []string        `json:"product_ids,omitempty"`
 }

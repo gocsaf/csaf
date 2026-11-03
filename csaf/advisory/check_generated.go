@@ -9,15 +9,14 @@ package advisory
 import (
 	"errors"
 	"fmt"
-
-	"github.com/gocsaf/csaf/v3/csaf/v20"
-	"github.com/gocsaf/csaf/v3/csaf/v21"
 )
 
-// Checks version consistency and required model values.  It rejects missing
-// required pointers, empty required strings and empty required slices. It does
-// not validate schema formats, enums, exact lengths or conditional constraints.
-// Zero-valued numbers and booleans are accepted.
+// Checks version consistency and required model values. It rejects missing
+// required pointers, empty required strings and empty required slices and
+// enum values that are not valid in the document version. Types taken directly
+// from the version packages must provide their own Check() error method.
+// Local checks do not validate schema formats, exact lengths or conditional
+// constraints. Zero-valued numbers and booleans are accepted.
 func (source *CSAF) Check() error {
 	if source == nil {
 		return errors.New("nil document")
@@ -31,38 +30,34 @@ func (source *CSAF) Check() error {
 	default:
 		return fmt.Errorf("unsupported version %q", source.Document.CSAFVersion)
 	}
-	return checkCSAF(source, v)
-}
-
-func checkCSAF(source *CSAF, v version) error {
 	switch {
 	case v == version20 && source.csaf21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
 	case v == version21 && source.csaf21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
-	if err := checkCSAFDocument(&source.Document, v); err != nil {
+	if err := source.Document.Check(v); err != nil {
 		return fmt.Errorf("document.%w", err)
 	}
 	if source.ProductTree != nil {
-		if err := checkCSAFProductTree(source.ProductTree, v); err != nil {
+		if err := source.ProductTree.Check(v); err != nil {
 			return fmt.Errorf("product_tree.%w", err)
 		}
 	}
 	for i := range source.Vulnerabilities {
-		if err := checkCSAFVulnerabilitiesElem(&source.Vulnerabilities[i], v); err != nil {
+		if err := source.Vulnerabilities[i].Check(v); err != nil {
 			return fmt.Errorf("vulnerabilities[%d].%w", i, err)
 		}
 	}
 	if source.csaf21Details != nil {
-		if err := checkCSAF21Details(source.csaf21Details, v); err != nil {
+		if err := source.csaf21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFDocument(source *CSAFDocument, v version) error {
+func (source *CSAFDocument) Check(v version) error {
 	switch v {
 	case version20:
 		if source.csafDocument21Details != nil {
@@ -86,56 +81,59 @@ func checkCSAFDocument(source *CSAFDocument, v version) error {
 		return errors.New("title: required value is missing or empty")
 	}
 	for i := range source.Acknowledgments {
-		if err := checkCSAFDocumentAcknowledgmentsElem(&source.Acknowledgments[i], v); err != nil {
+		if err := source.Acknowledgments[i].Check(v); err != nil {
 			return fmt.Errorf("acknowledgments[%d].%w", i, err)
 		}
 	}
 	if source.AggregateSeverity != nil {
-		if err := checkCSAFDocumentAggregateSeverity(source.AggregateSeverity, v); err != nil {
+		if err := source.AggregateSeverity.Check(v); err != nil {
 			return fmt.Errorf("aggregate_severity.%w", err)
 		}
 	}
+	if source.CSAFVersion != "" && !source.CSAFVersion.validIn(v) {
+		return fmt.Errorf("csaf_version: invalid value %q", source.CSAFVersion)
+	}
 	if source.Distribution != nil {
-		if err := checkCSAFDocumentDistribution(source.Distribution, v); err != nil {
+		if err := source.Distribution.Check(v); err != nil {
 			return fmt.Errorf("distribution.%w", err)
 		}
 	}
 	for i := range source.Notes {
-		if err := checkCSAFDocumentNotesElem(&source.Notes[i], v); err != nil {
+		if err := source.Notes[i].Check(v); err != nil {
 			return fmt.Errorf("notes[%d].%w", i, err)
 		}
 	}
-	if err := checkCSAFDocumentPublisher(&source.Publisher, v); err != nil {
+	if err := source.Publisher.Check(v); err != nil {
 		return fmt.Errorf("publisher.%w", err)
 	}
 	for i := range source.References {
-		if err := checkCSAFDocumentReferencesElem(&source.References[i], v); err != nil {
+		if err := source.References[i].Check(v); err != nil {
 			return fmt.Errorf("references[%d].%w", i, err)
 		}
 	}
-	if err := checkCSAFDocumentTracking(&source.Tracking, v); err != nil {
+	if err := source.Tracking.Check(v); err != nil {
 		return fmt.Errorf("tracking.%w", err)
 	}
 	if source.csafDocument21Details != nil {
-		if err := checkCSAFDocument21Details(source.csafDocument21Details, v); err != nil {
+		if err := source.csafDocument21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFDocumentAcknowledgmentsElem(source *CSAFDocumentAcknowledgmentsElem, v version) error {
+func (source *CSAFDocumentAcknowledgmentsElem) Check(v version) error {
 	return nil
 }
 
-func checkCSAFDocumentAggregateSeverity(source *CSAFDocumentAggregateSeverity, v version) error {
+func (source *CSAFDocumentAggregateSeverity) Check(v version) error {
 	if source.Text == "" {
 		return errors.New("text: required value is missing or empty")
 	}
 	return nil
 }
 
-func checkCSAFDocumentDistribution(source *CSAFDocumentDistribution, v version) error {
+func (source *CSAFDocumentDistribution) Check(v version) error {
 	switch v {
 	case version20:
 		if source.csafDocumentDistribution21Details != nil {
@@ -150,26 +148,29 @@ func checkCSAFDocumentDistribution(source *CSAFDocumentDistribution, v version) 
 		}
 	}
 	if source.TLP != nil {
-		if err := checkCSAFDocumentDistributionTLP(source.TLP, v); err != nil {
+		if err := source.TLP.Check(v); err != nil {
 			return fmt.Errorf("tlp.%w", err)
 		}
 	}
 	if source.csafDocumentDistribution21Details != nil {
-		if err := checkCSAFDocumentDistribution21Details(source.csafDocumentDistribution21Details, v); err != nil {
+		if err := source.csafDocumentDistribution21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFDocumentDistributionTLP(source *CSAFDocumentDistributionTLP, v version) error {
+func (source *CSAFDocumentDistributionTLP) Check(v version) error {
 	if source.Label == "" {
 		return errors.New("label: required value is missing or empty")
+	}
+	if source.Label != "" && !source.Label.validIn(v) {
+		return fmt.Errorf("label: invalid value %q", source.Label)
 	}
 	return nil
 }
 
-func checkCSAFDocumentNotesElem(source *CSAFDocumentNotesElem, v version) error {
+func (source *CSAFDocumentNotesElem) Check(v version) error {
 	switch {
 	case v == version20 && source.csafDocumentNotesElem21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
@@ -182,15 +183,18 @@ func checkCSAFDocumentNotesElem(source *CSAFDocumentNotesElem, v version) error 
 	if source.Text == "" {
 		return errors.New("text: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	if source.csafDocumentNotesElem21Details != nil {
-		if err := checkCSAFDocumentNotesElem21Details(source.csafDocumentNotesElem21Details, v); err != nil {
+		if err := source.csafDocumentNotesElem21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFDocumentPublisher(source *CSAFDocumentPublisher, v version) error {
+func (source *CSAFDocumentPublisher) Check(v version) error {
 	if source.csafDocumentPublisher20Details != nil && source.csafDocumentPublisher21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -219,30 +223,36 @@ func checkCSAFDocumentPublisher(source *CSAFDocumentPublisher, v version) error 
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	if source.csafDocumentPublisher20Details != nil {
-		if err := checkCSAFDocumentPublisher20Details(source.csafDocumentPublisher20Details, v); err != nil {
+		if err := source.csafDocumentPublisher20Details.Check(v); err != nil {
 			return err
 		}
 	}
 	if source.csafDocumentPublisher21Details != nil {
-		if err := checkCSAFDocumentPublisher21Details(source.csafDocumentPublisher21Details, v); err != nil {
+		if err := source.csafDocumentPublisher21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFDocumentReferencesElem(source *CSAFDocumentReferencesElem, v version) error {
+func (source *CSAFDocumentReferencesElem) Check(v version) error {
 	if source.Summary == "" {
 		return errors.New("summary: required value is missing or empty")
 	}
 	if source.URL == "" {
 		return errors.New("url: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	return nil
 }
 
-func checkCSAFDocumentTracking(source *CSAFDocumentTracking, v version) error {
+func (source *CSAFDocumentTracking) Check(v version) error {
 	if source.CurrentReleaseDate == "" {
 		return errors.New("current_release_date: required value is missing or empty")
 	}
@@ -262,33 +272,36 @@ func checkCSAFDocumentTracking(source *CSAFDocumentTracking, v version) error {
 		return errors.New("version: required value is missing or empty")
 	}
 	if source.Generator != nil {
-		if err := checkCSAFDocumentTrackingGenerator(source.Generator, v); err != nil {
+		if err := source.Generator.Check(v); err != nil {
 			return fmt.Errorf("generator.%w", err)
 		}
 	}
 	for i := range source.RevisionHistory {
-		if err := checkCSAFDocumentTrackingRevisionHistoryElem(&source.RevisionHistory[i], v); err != nil {
+		if err := source.RevisionHistory[i].Check(v); err != nil {
 			return fmt.Errorf("revision_history[%d].%w", i, err)
 		}
+	}
+	if source.Status != "" && !source.Status.validIn(v) {
+		return fmt.Errorf("status: invalid value %q", source.Status)
 	}
 	return nil
 }
 
-func checkCSAFDocumentTrackingGenerator(source *CSAFDocumentTrackingGenerator, v version) error {
-	if err := checkCSAFDocumentTrackingGeneratorEngine(&source.Engine, v); err != nil {
+func (source *CSAFDocumentTrackingGenerator) Check(v version) error {
+	if err := source.Engine.Check(v); err != nil {
 		return fmt.Errorf("engine.%w", err)
 	}
 	return nil
 }
 
-func checkCSAFDocumentTrackingGeneratorEngine(source *CSAFDocumentTrackingGeneratorEngine, v version) error {
+func (source *CSAFDocumentTrackingGeneratorEngine) Check(v version) error {
 	if source.Name == "" {
 		return errors.New("name: required value is missing or empty")
 	}
 	return nil
 }
 
-func checkCSAFDocumentTrackingRevisionHistoryElem(source *CSAFDocumentTrackingRevisionHistoryElem, v version) error {
+func (source *CSAFDocumentTrackingRevisionHistoryElem) Check(v version) error {
 	if source.Date == "" {
 		return errors.New("date: required value is missing or empty")
 	}
@@ -301,7 +314,7 @@ func checkCSAFDocumentTrackingRevisionHistoryElem(source *CSAFDocumentTrackingRe
 	return nil
 }
 
-func checkCSAFProductTree(source *CSAFProductTree, v version) error {
+func (source *CSAFProductTree) Check(v version) error {
 	if source.csafProductTree20Details != nil && source.csafProductTree21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -322,34 +335,34 @@ func checkCSAFProductTree(source *CSAFProductTree, v version) error {
 		}
 	}
 	for i := range source.Branches {
-		if err := checkCSAFProductTreeBranchesElem(&source.Branches[i], v); err != nil {
+		if err := source.Branches[i].Check(v); err != nil {
 			return fmt.Errorf("branches[%d].%w", i, err)
 		}
 	}
 	for i := range source.FullProductNames {
-		if err := checkCSAFProductTreeBranchesElemProduct(&source.FullProductNames[i], v); err != nil {
+		if err := source.FullProductNames[i].Check(v); err != nil {
 			return fmt.Errorf("full_product_names[%d].%w", i, err)
 		}
 	}
 	for i := range source.ProductGroups {
-		if err := checkCSAFProductTreeProductGroupsElem(&source.ProductGroups[i], v); err != nil {
+		if err := source.ProductGroups[i].Check(v); err != nil {
 			return fmt.Errorf("product_groups[%d].%w", i, err)
 		}
 	}
 	if source.csafProductTree20Details != nil {
-		if err := checkCSAFProductTree20Details(source.csafProductTree20Details, v); err != nil {
+		if err := source.csafProductTree20Details.Check(v); err != nil {
 			return err
 		}
 	}
 	if source.csafProductTree21Details != nil {
-		if err := checkCSAFProductTree21Details(source.csafProductTree21Details, v); err != nil {
+		if err := source.csafProductTree21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElem(source *CSAFProductTreeBranchesElem, v version) error {
+func (source *CSAFProductTreeBranchesElem) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
@@ -358,20 +371,23 @@ func checkCSAFProductTreeBranchesElem(source *CSAFProductTreeBranchesElem, v ver
 	}
 	if source.Branches != nil {
 		for i := range *source.Branches {
-			if err := checkCSAFProductTreeBranchesElem(&(*source.Branches)[i], v); err != nil {
+			if err := (*source.Branches)[i].Check(v); err != nil {
 				return fmt.Errorf("branches[%d].%w", i, err)
 			}
 		}
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	if source.Product != nil {
-		if err := checkCSAFProductTreeBranchesElemProduct(source.Product, v); err != nil {
+		if err := source.Product.Check(v); err != nil {
 			return fmt.Errorf("product.%w", err)
 		}
 	}
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProduct(source *CSAFProductTreeBranchesElemProduct, v version) error {
+func (source *CSAFProductTreeBranchesElemProduct) Check(v version) error {
 	switch {
 	case v == version20 && source.csafProductTreeBranchesElemProduct21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
@@ -385,19 +401,19 @@ func checkCSAFProductTreeBranchesElemProduct(source *CSAFProductTreeBranchesElem
 		return errors.New("product_id: required value is missing or empty")
 	}
 	if source.ProductIdentificationHelper != nil {
-		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelper(source.ProductIdentificationHelper, v); err != nil {
+		if err := source.ProductIdentificationHelper.Check(v); err != nil {
 			return fmt.Errorf("product_identification_helper.%w", err)
 		}
 	}
 	if source.csafProductTreeBranchesElemProduct21Details != nil {
-		if err := checkCSAFProductTreeBranchesElemProduct21Details(source.csafProductTreeBranchesElemProduct21Details, v); err != nil {
+		if err := source.csafProductTreeBranchesElemProduct21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper(source *CSAFProductTreeBranchesElemProductProductIdentificationHelper, v version) error {
+func (source *CSAFProductTreeBranchesElemProductProductIdentificationHelper) Check(v version) error {
 	if source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details != nil && source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -418,29 +434,29 @@ func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper(source *
 		}
 	}
 	for i := range source.Hashes {
-		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem(&source.Hashes[i], v); err != nil {
+		if err := source.Hashes[i].Check(v); err != nil {
 			return fmt.Errorf("hashes[%d].%w", i, err)
 		}
 	}
 	for i := range source.XGenericUris {
-		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem(&source.XGenericUris[i], v); err != nil {
+		if err := source.XGenericUris[i].Check(v); err != nil {
 			return fmt.Errorf("x_generic_uris[%d].%w", i, err)
 		}
 	}
 	if source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details != nil {
-		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelper20Details(source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details, v); err != nil {
+		if err := source.csafProductTreeBranchesElemProductProductIdentificationHelper20Details.Check(v); err != nil {
 			return err
 		}
 	}
 	if source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details != nil {
-		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelper21Details(source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details, v); err != nil {
+		if err := source.csafProductTreeBranchesElemProductProductIdentificationHelper21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem(source *CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem, v version) error {
+func (source *CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem) Check(v version) error {
 	if len(source.FileHashes) == 0 {
 		return errors.New("file_hashes: required value is missing or empty")
 	}
@@ -448,14 +464,14 @@ func checkCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesEle
 		return errors.New("filename: required value is missing or empty")
 	}
 	for i := range source.FileHashes {
-		if err := checkCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem(&source.FileHashes[i], v); err != nil {
+		if err := source.FileHashes[i].Check(v); err != nil {
 			return fmt.Errorf("file_hashes[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem(source *CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem, v version) error {
+func (source *CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem) Check(v version) error {
 	if source.Algorithm == "" {
 		return errors.New("algorithm: required value is missing or empty")
 	}
@@ -465,7 +481,7 @@ func checkCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesEle
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem(source *CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem, v version) error {
+func (source *CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem) Check(v version) error {
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
@@ -475,7 +491,7 @@ func checkCSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericU
 	return nil
 }
 
-func checkCSAFProductTreeProductGroupsElem(source *CSAFProductTreeProductGroupsElem, v version) error {
+func (source *CSAFProductTreeProductGroupsElem) Check(v version) error {
 	if source.GroupID == "" {
 		return errors.New("group_id: required value is missing or empty")
 	}
@@ -485,7 +501,7 @@ func checkCSAFProductTreeProductGroupsElem(source *CSAFProductTreeProductGroupsE
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElem(source *CSAFVulnerabilitiesElem, v version) error {
+func (source *CSAFVulnerabilitiesElem) Check(v version) error {
 	if source.csafVulnerabilitiesElem20Details != nil && source.csafVulnerabilitiesElem21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -506,66 +522,69 @@ func checkCSAFVulnerabilitiesElem(source *CSAFVulnerabilitiesElem, v version) er
 		}
 	}
 	for i := range source.Acknowledgments {
-		if err := checkCSAFDocumentAcknowledgmentsElem(&source.Acknowledgments[i], v); err != nil {
+		if err := source.Acknowledgments[i].Check(v); err != nil {
 			return fmt.Errorf("acknowledgments[%d].%w", i, err)
 		}
 	}
 	for i := range source.Flags {
-		if err := checkCSAFVulnerabilitiesElemFlagsElem(&source.Flags[i], v); err != nil {
+		if err := source.Flags[i].Check(v); err != nil {
 			return fmt.Errorf("flags[%d].%w", i, err)
 		}
 	}
 	for i := range source.Ids {
-		if err := checkCSAFVulnerabilitiesElemIdsElem(&source.Ids[i], v); err != nil {
+		if err := source.Ids[i].Check(v); err != nil {
 			return fmt.Errorf("ids[%d].%w", i, err)
 		}
 	}
 	for i := range source.Notes {
-		if err := checkCSAFDocumentNotesElem(&source.Notes[i], v); err != nil {
+		if err := source.Notes[i].Check(v); err != nil {
 			return fmt.Errorf("notes[%d].%w", i, err)
 		}
 	}
 	if source.ProductStatus != nil {
-		if err := checkCSAFVulnerabilitiesElemProductStatus(source.ProductStatus, v); err != nil {
+		if err := source.ProductStatus.Check(v); err != nil {
 			return fmt.Errorf("product_status.%w", err)
 		}
 	}
 	for i := range source.References {
-		if err := checkCSAFDocumentReferencesElem(&source.References[i], v); err != nil {
+		if err := source.References[i].Check(v); err != nil {
 			return fmt.Errorf("references[%d].%w", i, err)
 		}
 	}
 	for i := range source.Remediations {
-		if err := checkCSAFVulnerabilitiesElemRemediationsElem(&source.Remediations[i], v); err != nil {
+		if err := source.Remediations[i].Check(v); err != nil {
 			return fmt.Errorf("remediations[%d].%w", i, err)
 		}
 	}
 	for i := range source.Threats {
-		if err := checkCSAFVulnerabilitiesElemThreatsElem(&source.Threats[i], v); err != nil {
+		if err := source.Threats[i].Check(v); err != nil {
 			return fmt.Errorf("threats[%d].%w", i, err)
 		}
 	}
 	if source.csafVulnerabilitiesElem20Details != nil {
-		if err := checkCSAFVulnerabilitiesElem20Details(source.csafVulnerabilitiesElem20Details, v); err != nil {
+		if err := source.csafVulnerabilitiesElem20Details.Check(v); err != nil {
 			return err
 		}
 	}
 	if source.csafVulnerabilitiesElem21Details != nil {
-		if err := checkCSAFVulnerabilitiesElem21Details(source.csafVulnerabilitiesElem21Details, v); err != nil {
+		if err := source.csafVulnerabilitiesElem21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemFlagsElem(source *CSAFVulnerabilitiesElemFlagsElem, v version) error {
+func (source *CSAFVulnerabilitiesElemFlagsElem) Check(v version) error {
 	if source.Label == "" {
 		return errors.New("label: required value is missing or empty")
+	}
+	if source.Label != "" && !source.Label.validIn(v) {
+		return fmt.Errorf("label: invalid value %q", source.Label)
 	}
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemIdsElem(source *CSAFVulnerabilitiesElemIdsElem, v version) error {
+func (source *CSAFVulnerabilitiesElemIdsElem) Check(v version) error {
 	switch {
 	case v == version20 && source.csafVulnerabilitiesElemIdsElem21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
@@ -579,14 +598,14 @@ func checkCSAFVulnerabilitiesElemIdsElem(source *CSAFVulnerabilitiesElemIdsElem,
 		return errors.New("text: required value is missing or empty")
 	}
 	if source.csafVulnerabilitiesElemIdsElem21Details != nil {
-		if err := checkCSAFVulnerabilitiesElemIdsElem21Details(source.csafVulnerabilitiesElemIdsElem21Details, v); err != nil {
+		if err := source.csafVulnerabilitiesElemIdsElem21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemProductStatus(source *CSAFVulnerabilitiesElemProductStatus, v version) error {
+func (source *CSAFVulnerabilitiesElemProductStatus) Check(v version) error {
 	switch {
 	case v == version20 && source.csafVulnerabilitiesElemProductStatus21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
@@ -594,46 +613,55 @@ func checkCSAFVulnerabilitiesElemProductStatus(source *CSAFVulnerabilitiesElemPr
 		return errors.New("version 2.1 details are missing")
 	}
 	if source.csafVulnerabilitiesElemProductStatus21Details != nil {
-		if err := checkCSAFVulnerabilitiesElemProductStatus21Details(source.csafVulnerabilitiesElemProductStatus21Details, v); err != nil {
+		if err := source.csafVulnerabilitiesElemProductStatus21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemRemediationsElem(source *CSAFVulnerabilitiesElemRemediationsElem, v version) error {
+func (source *CSAFVulnerabilitiesElemRemediationsElem) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
 	if source.Details == "" {
 		return errors.New("details: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	if source.RestartRequired != nil {
-		if err := checkCSAFVulnerabilitiesElemRemediationsElemRestartRequired(source.RestartRequired, v); err != nil {
+		if err := source.RestartRequired.Check(v); err != nil {
 			return fmt.Errorf("restart_required.%w", err)
 		}
 	}
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemRemediationsElemRestartRequired(source *CSAFVulnerabilitiesElemRemediationsElemRestartRequired, v version) error {
+func (source *CSAFVulnerabilitiesElemRemediationsElemRestartRequired) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
+	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
 	}
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemThreatsElem(source *CSAFVulnerabilitiesElemThreatsElem, v version) error {
+func (source *CSAFVulnerabilitiesElemThreatsElem) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
 	if source.Details == "" {
 		return errors.New("details: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	return nil
 }
 
-func checkVersion21Struct28(source *ExtensionContentJson, v version) error {
+func (source *ExtensionContentJson) Check(v version) error {
 	if source.Schema == "" {
 		return errors.New("$schema: required value is missing or empty")
 	}
@@ -643,22 +671,28 @@ func checkVersion21Struct28(source *ExtensionContentJson, v version) error {
 	if source.Content == nil {
 		return errors.New("content: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	return nil
 }
 
-func checkCSAF21Details(source *csaf21Details, v version) error {
+func (source *csaf21Details) Check(v version) error {
 	if source.Schema == "" {
 		return errors.New("$schema: required value is missing or empty")
 	}
+	if source.Schema != "" && !source.Schema.validIn(v) {
+		return fmt.Errorf("$schema: invalid value %q", source.Schema)
+	}
 	for i := range source.XExtensions {
-		if err := checkVersion21Struct28(&source.XExtensions[i], v); err != nil {
+		if err := source.XExtensions[i].Check(v); err != nil {
 			return fmt.Errorf("x_extensions[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct30(source *CSAFDocumentInvolvement, v version) error {
+func (source *CSAFDocumentInvolvement) Check(v version) error {
 	if len(source.Actions) == 0 {
 		return errors.New("actions: required value is missing or empty")
 	}
@@ -666,24 +700,24 @@ func checkVersion21Struct30(source *CSAFDocumentInvolvement, v version) error {
 		return errors.New("entities: required value is missing or empty")
 	}
 	for i := range source.Actions {
-		if err := checkVersion21Struct31(&source.Actions[i], v); err != nil {
+		if err := source.Actions[i].Check(v); err != nil {
 			return fmt.Errorf("actions[%d].%w", i, err)
 		}
 	}
 	for i := range source.Entities {
-		if err := checkVersion21Struct32(&source.Entities[i], v); err != nil {
+		if err := source.Entities[i].Check(v); err != nil {
 			return fmt.Errorf("entities[%d].%w", i, err)
 		}
 	}
 	for i := range source.EntityGroups {
-		if err := checkVersion21Struct34(&source.EntityGroups[i], v); err != nil {
+		if err := source.EntityGroups[i].Check(v); err != nil {
 			return fmt.Errorf("entity_groups[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct31(source *CSAFDocumentInvolvementActionsElem, v version) error {
+func (source *CSAFDocumentInvolvementActionsElem) Check(v version) error {
 	if len(source.ActingEntityRefs) == 0 {
 		return errors.New("acting_entity_refs: required value is missing or empty")
 	}
@@ -699,29 +733,38 @@ func checkVersion21Struct31(source *CSAFDocumentInvolvementActionsElem, v versio
 	if source.Status == "" {
 		return errors.New("status: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
+	if source.Status != "" && !source.Status.validIn(v) {
+		return fmt.Errorf("status: invalid value %q", source.Status)
+	}
 	return nil
 }
 
-func checkVersion21Struct32(source *CSAFDocumentInvolvementEntitiesElem, v version) error {
+func (source *CSAFDocumentInvolvementEntitiesElem) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
 	if source.EntityID == "" {
 		return errors.New("entity_id: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	if source.Contact != nil {
-		if err := checkVersion21Struct33(source.Contact, v); err != nil {
+		if err := source.Contact.Check(v); err != nil {
 			return fmt.Errorf("contact.%w", err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct33(source *ContactT, v version) error {
+func (source *ContactT) Check(v version) error {
 	return nil
 }
 
-func checkVersion21Struct34(source *CSAFDocumentInvolvementEntityGroupsElem, v version) error {
+func (source *CSAFDocumentInvolvementEntityGroupsElem) Check(v version) error {
 	if source.EntityGroupID == "" {
 		return errors.New("entity_group_id: required value is missing or empty")
 	}
@@ -734,58 +777,54 @@ func checkVersion21Struct34(source *CSAFDocumentInvolvementEntityGroupsElem, v v
 	return nil
 }
 
-func checkCSAFDocument21Details(source *csafDocument21Details, v version) error {
+func (source *csafDocument21Details) Check(v version) error {
 	if source.Involvement != nil {
-		if err := checkVersion21Struct30(source.Involvement, v); err != nil {
+		if err := source.Involvement.Check(v); err != nil {
 			return fmt.Errorf("involvement.%w", err)
 		}
 	}
 	for i := range source.XExtensions {
-		if err := checkVersion21Struct28(&source.XExtensions[i], v); err != nil {
+		if err := source.XExtensions[i].Check(v); err != nil {
 			return fmt.Errorf("x_extensions[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct36(source *CSAFDocumentDistributionSharingGroup, v version) error {
+func (source *CSAFDocumentDistributionSharingGroup) Check(v version) error {
 	if source.ID == "" {
 		return errors.New("id: required value is missing or empty")
 	}
 	return nil
 }
 
-func checkCSAFDocumentDistribution21Details(source *csafDocumentDistribution21Details, v version) error {
+func (source *csafDocumentDistribution21Details) Check(v version) error {
 	if source.SharingGroup != nil {
-		if err := checkVersion21Struct36(source.SharingGroup, v); err != nil {
+		if err := source.SharingGroup.Check(v); err != nil {
 			return fmt.Errorf("sharing_group.%w", err)
 		}
 	}
 	return nil
 }
 
-func checkCSAFDocumentNotesElem21Details(source *csafDocumentNotesElem21Details, v version) error {
+func (source *csafDocumentNotesElem21Details) Check(v version) error {
 	return nil
 }
 
-func checkCSAFDocumentPublisher20Details(source *csafDocumentPublisher20Details, v version) error {
+func (source *csafDocumentPublisher20Details) Check(v version) error {
 	return nil
 }
 
-func checkVersion21Struct40(source *ContactT, v version) error {
-	return nil
-}
-
-func checkCSAFDocumentPublisher21Details(source *csafDocumentPublisher21Details, v version) error {
+func (source *csafDocumentPublisher21Details) Check(v version) error {
 	if source.Contact != nil {
-		if err := checkVersion21Struct40(source.Contact, v); err != nil {
+		if err := source.Contact.Check(v); err != nil {
 			return fmt.Errorf("contact.%w", err)
 		}
 	}
 	return nil
 }
 
-func checkVersion20Struct42(source *CSAFProductTreeRelationshipsElem, v version) error {
+func (source *CSAFProductTreeRelationshipsElem) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
@@ -795,13 +834,16 @@ func checkVersion20Struct42(source *CSAFProductTreeRelationshipsElem, v version)
 	if source.RelatesToProductReference == "" {
 		return errors.New("relates_to_product_reference: required value is missing or empty")
 	}
-	if err := checkVersion20Struct43(&source.FullProductName, v); err != nil {
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
+	if err := source.FullProductName.Check(v); err != nil {
 		return fmt.Errorf("full_product_name.%w", err)
 	}
 	return nil
 }
 
-func checkVersion20Struct43(source *FullProductNameT, v version) error {
+func (source *FullProductNameT) Check(v version) error {
 	if source.Name == "" {
 		return errors.New("name: required value is missing or empty")
 	}
@@ -809,28 +851,28 @@ func checkVersion20Struct43(source *FullProductNameT, v version) error {
 		return errors.New("product_id: required value is missing or empty")
 	}
 	if source.ProductIdentificationHelper != nil {
-		if err := checkVersion20Struct44(source.ProductIdentificationHelper, v); err != nil {
+		if err := source.ProductIdentificationHelper.Check(v); err != nil {
 			return fmt.Errorf("product_identification_helper.%w", err)
 		}
 	}
 	return nil
 }
 
-func checkVersion20Struct44(source *FullProductNameTProductIdentificationHelper, v version) error {
+func (source *FullProductNameTProductIdentificationHelper) Check(v version) error {
 	for i := range source.Hashes {
-		if err := checkVersion20Struct45(&source.Hashes[i], v); err != nil {
+		if err := source.Hashes[i].Check(v); err != nil {
 			return fmt.Errorf("hashes[%d].%w", i, err)
 		}
 	}
 	for i := range source.XGenericUris {
-		if err := checkVersion20Struct47(&source.XGenericUris[i], v); err != nil {
+		if err := source.XGenericUris[i].Check(v); err != nil {
 			return fmt.Errorf("x_generic_uris[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion20Struct45(source *FullProductNameTProductIdentificationHelperHashesElem, v version) error {
+func (source *FullProductNameTProductIdentificationHelperHashesElem) Check(v version) error {
 	if len(source.FileHashes) == 0 {
 		return errors.New("file_hashes: required value is missing or empty")
 	}
@@ -838,14 +880,14 @@ func checkVersion20Struct45(source *FullProductNameTProductIdentificationHelperH
 		return errors.New("filename: required value is missing or empty")
 	}
 	for i := range source.FileHashes {
-		if err := checkVersion20Struct46(&source.FileHashes[i], v); err != nil {
+		if err := source.FileHashes[i].Check(v); err != nil {
 			return fmt.Errorf("file_hashes[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion20Struct46(source *FullProductNameTProductIdentificationHelperHashesElemFileHashesElem, v version) error {
+func (source *FullProductNameTProductIdentificationHelperHashesElemFileHashesElem) Check(v version) error {
 	if source.Algorithm == "" {
 		return errors.New("algorithm: required value is missing or empty")
 	}
@@ -855,7 +897,7 @@ func checkVersion20Struct46(source *FullProductNameTProductIdentificationHelperH
 	return nil
 }
 
-func checkVersion20Struct47(source *FullProductNameTProductIdentificationHelperXGenericUrisElem, v version) error {
+func (source *FullProductNameTProductIdentificationHelperXGenericUrisElem) Check(v version) error {
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
@@ -865,34 +907,34 @@ func checkVersion20Struct47(source *FullProductNameTProductIdentificationHelperX
 	return nil
 }
 
-func checkCSAFProductTree20Details(source *csafProductTree20Details, v version) error {
+func (source *csafProductTree20Details) Check(v version) error {
 	for i := range source.Relationships {
-		if err := checkVersion20Struct42(&source.Relationships[i], v); err != nil {
+		if err := source.Relationships[i].Check(v); err != nil {
 			return fmt.Errorf("relationships[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct49(source *CSAFProductTreeProductPathsElem, v version) error {
+func (source *CSAFProductTreeProductPathsElem) Check(v version) error {
 	if source.BeginningProductReference == "" {
 		return errors.New("beginning_product_reference: required value is missing or empty")
 	}
 	if len(source.Subpaths) == 0 {
 		return errors.New("subpaths: required value is missing or empty")
 	}
-	if err := checkVersion21Struct50(&source.FullProductName, v); err != nil {
+	if err := source.FullProductName.Check(v); err != nil {
 		return fmt.Errorf("full_product_name.%w", err)
 	}
 	for i := range source.Subpaths {
-		if err := checkVersion21Struct55(&source.Subpaths[i], v); err != nil {
+		if err := source.Subpaths[i].Check(v); err != nil {
 			return fmt.Errorf("subpaths[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct50(source *FullProductNameT21, v version) error {
+func (source *FullProductNameT21) Check(v version) error {
 	if source.Name == "" {
 		return errors.New("name: required value is missing or empty")
 	}
@@ -900,33 +942,33 @@ func checkVersion21Struct50(source *FullProductNameT21, v version) error {
 		return errors.New("product_id: required value is missing or empty")
 	}
 	if source.ProductIdentificationHelper != nil {
-		if err := checkVersion21Struct51(source.ProductIdentificationHelper, v); err != nil {
+		if err := source.ProductIdentificationHelper.Check(v); err != nil {
 			return fmt.Errorf("product_identification_helper.%w", err)
 		}
 	}
 	for i := range source.XExtensions {
-		if err := checkVersion21Struct28(&source.XExtensions[i], v); err != nil {
+		if err := source.XExtensions[i].Check(v); err != nil {
 			return fmt.Errorf("x_extensions[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct51(source *FullProductNameTProductIdentificationHelper21, v version) error {
+func (source *FullProductNameTProductIdentificationHelper21) Check(v version) error {
 	for i := range source.Hashes {
-		if err := checkVersion21Struct52(&source.Hashes[i], v); err != nil {
+		if err := source.Hashes[i].Check(v); err != nil {
 			return fmt.Errorf("hashes[%d].%w", i, err)
 		}
 	}
 	for i := range source.XGenericUris {
-		if err := checkVersion21Struct54(&source.XGenericUris[i], v); err != nil {
+		if err := source.XGenericUris[i].Check(v); err != nil {
 			return fmt.Errorf("x_generic_uris[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct52(source *FullProductNameTProductIdentificationHelperHashesElem21, v version) error {
+func (source *FullProductNameTProductIdentificationHelperHashesElem21) Check(v version) error {
 	if len(source.FileHashes) == 0 {
 		return errors.New("file_hashes: required value is missing or empty")
 	}
@@ -934,14 +976,14 @@ func checkVersion21Struct52(source *FullProductNameTProductIdentificationHelperH
 		return errors.New("filename: required value is missing or empty")
 	}
 	for i := range source.FileHashes {
-		if err := checkVersion21Struct53(&source.FileHashes[i], v); err != nil {
+		if err := source.FileHashes[i].Check(v); err != nil {
 			return fmt.Errorf("file_hashes[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkVersion21Struct53(source *FullProductNameTProductIdentificationHelperHashesElemFileHashesElem21, v version) error {
+func (source *FullProductNameTProductIdentificationHelperHashesElemFileHashesElem21) Check(v version) error {
 	if source.Algorithm == "" {
 		return errors.New("algorithm: required value is missing or empty")
 	}
@@ -951,7 +993,7 @@ func checkVersion21Struct53(source *FullProductNameTProductIdentificationHelperH
 	return nil
 }
 
-func checkVersion21Struct54(source *FullProductNameTProductIdentificationHelperXGenericUrisElem21, v version) error {
+func (source *FullProductNameTProductIdentificationHelperXGenericUrisElem21) Check(v version) error {
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
@@ -961,43 +1003,46 @@ func checkVersion21Struct54(source *FullProductNameTProductIdentificationHelperX
 	return nil
 }
 
-func checkVersion21Struct55(source *SubpathT, v version) error {
+func (source *SubpathT) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
 	if source.NextProductReference == "" {
 		return errors.New("next_product_reference: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	return nil
 }
 
-func checkCSAFProductTree21Details(source *csafProductTree21Details, v version) error {
+func (source *csafProductTree21Details) Check(v version) error {
 	for i := range source.ProductPaths {
-		if err := checkVersion21Struct49(&source.ProductPaths[i], v); err != nil {
+		if err := source.ProductPaths[i].Check(v); err != nil {
 			return fmt.Errorf("product_paths[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProduct21Details(source *csafProductTreeBranchesElemProduct21Details, v version) error {
+func (source *csafProductTreeBranchesElemProduct21Details) Check(v version) error {
 	for i := range source.XExtensions {
-		if err := checkVersion21Struct28(&source.XExtensions[i], v); err != nil {
+		if err := source.XExtensions[i].Check(v); err != nil {
 			return fmt.Errorf("x_extensions[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper20Details(source *csafProductTreeBranchesElemProductProductIdentificationHelper20Details, v version) error {
+func (source *csafProductTreeBranchesElemProductProductIdentificationHelper20Details) Check(v version) error {
 	return nil
 }
 
-func checkCSAFProductTreeBranchesElemProductProductIdentificationHelper21Details(source *csafProductTreeBranchesElemProductProductIdentificationHelper21Details, v version) error {
+func (source *csafProductTreeBranchesElemProductProductIdentificationHelper21Details) Check(v version) error {
 	return nil
 }
 
-func checkVersion20Struct60(source *CSAFVulnerabilitiesElemCWE, v version) error {
+func (source *CSAFVulnerabilitiesElemCWE) Check(v version) error {
 	if source.ID == "" {
 		return errors.New("id: required value is missing or empty")
 	}
@@ -1007,58 +1052,40 @@ func checkVersion20Struct60(source *CSAFVulnerabilitiesElemCWE, v version) error
 	return nil
 }
 
-func checkVersion20Struct61(source *CSAFVulnerabilitiesElemInvolvementsElem, v version) error {
+func (source *CSAFVulnerabilitiesElemInvolvementsElem) Check(v version) error {
 	if source.Party == "" {
 		return errors.New("party: required value is missing or empty")
 	}
 	if source.Status == "" {
 		return errors.New("status: required value is missing or empty")
 	}
-	return nil
-}
-
-func checkVersion20Struct62(source *v20.CSAFVulnerabilitiesElemScoresElem, v version) error {
-	if len(source.Products) == 0 {
-		return errors.New("products: required value is missing or empty")
+	if source.Party != "" && !source.Party.validIn(v) {
+		return fmt.Errorf("party: invalid value %q", source.Party)
 	}
-	if source.CVSSV2 != nil {
-		if err := checkVersion20Struct63(source.CVSSV2, v); err != nil {
-			return fmt.Errorf("cvss_v2.%w", err)
-		}
+	if source.Status != "" && !source.Status.validIn(v) {
+		return fmt.Errorf("status: invalid value %q", source.Status)
 	}
 	return nil
 }
 
-func checkVersion20Struct63(source *v20.CVSSV20, v version) error {
-	if source.VectorString == "" {
-		return errors.New("vectorString: required value is missing or empty")
-	}
-	if source.Version == "" {
-		return errors.New("version: required value is missing or empty")
-	}
-	return nil
-}
-
-func checkCSAFVulnerabilitiesElem20Details(source *csafVulnerabilitiesElem20Details, v version) error {
+func (source *csafVulnerabilitiesElem20Details) Check(v version) error {
 	if source.CWE != nil {
-		if err := checkVersion20Struct60(source.CWE, v); err != nil {
+		if err := source.CWE.Check(v); err != nil {
 			return fmt.Errorf("cwe.%w", err)
 		}
 	}
 	for i := range source.Involvements {
-		if err := checkVersion20Struct61(&source.Involvements[i], v); err != nil {
+		if err := source.Involvements[i].Check(v); err != nil {
 			return fmt.Errorf("involvements[%d].%w", i, err)
 		}
 	}
-	for i := range source.Scores {
-		if err := checkVersion20Struct62(&source.Scores[i], v); err != nil {
-			return fmt.Errorf("scores[%d].%w", i, err)
-		}
+	if err := source.Scores.Check(v); err != nil {
+		return fmt.Errorf("scores%w", err)
 	}
 	return nil
 }
 
-func checkVersion21Struct65(source *CSAFVulnerabilitiesElemCwesElem, v version) error {
+func (source *CSAFVulnerabilitiesElemCwesElem) Check(v version) error {
 	if source.ID == "" {
 		return errors.New("id: required value is missing or empty")
 	}
@@ -1071,7 +1098,7 @@ func checkVersion21Struct65(source *CSAFVulnerabilitiesElemCwesElem, v version) 
 	return nil
 }
 
-func checkVersion21Struct66(source *CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem, v version) error {
+func (source *CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem) Check(v version) error {
 	if source.Date == "" {
 		return errors.New("date: required value is missing or empty")
 	}
@@ -1081,198 +1108,44 @@ func checkVersion21Struct66(source *CSAFVulnerabilitiesElemFirstKnownExploitatio
 	return nil
 }
 
-func checkVersion21Struct67(source *CSAFVulnerabilitiesElemMetricsElem, v version) error {
+func (source *CSAFVulnerabilitiesElemMetricsElem) Check(v version) error {
 	if len(source.Products) == 0 {
 		return errors.New("products: required value is missing or empty")
 	}
-	if err := checkVersion21Struct68(&source.Content, v); err != nil {
-		return fmt.Errorf("content.%w", err)
+	if err := source.Content.Check(v); err != nil {
+		return fmt.Errorf("content%w", err)
 	}
 	return nil
 }
 
-func checkVersion21Struct68(source *v21.CSAFVulnerabilitiesElemMetricsElemContent, v version) error {
-	if source.CVSSV2 != nil {
-		if err := checkVersion21Struct69(source.CVSSV2, v); err != nil {
-			return fmt.Errorf("cvss_v2.%w", err)
-		}
-	}
-	if source.CVSSV4 != nil {
-		if err := checkVersion21Struct70(source.CVSSV4, v); err != nil {
-			return fmt.Errorf("cvss_v4.%w", err)
-		}
-	}
-	if source.EPSS != nil {
-		if err := checkVersion21Struct71(source.EPSS, v); err != nil {
-			return fmt.Errorf("epss.%w", err)
-		}
-	}
-	if source.SSVCV2 != nil {
-		if err := checkVersion21Struct72(source.SSVCV2, v); err != nil {
-			return fmt.Errorf("ssvc_v2.%w", err)
-		}
-	}
-	for i := range source.XExtensions {
-		if err := checkVersion21Struct77(&source.XExtensions[i], v); err != nil {
-			return fmt.Errorf("x_extensions[%d].%w", i, err)
-		}
-	}
-	return nil
-}
-
-func checkVersion21Struct69(source *v21.CVSSV20, v version) error {
-	if source.VectorString == "" {
-		return errors.New("vectorString: required value is missing or empty")
-	}
-	if source.Version == "" {
-		return errors.New("version: required value is missing or empty")
-	}
-	return nil
-}
-
-func checkVersion21Struct70(source *v21.CVSSV40, v version) error {
-	if source.BaseSeverity == "" {
-		return errors.New("baseSeverity: required value is missing or empty")
-	}
-	if source.VectorString == "" {
-		return errors.New("vectorString: required value is missing or empty")
-	}
-	if source.Version == "" {
-		return errors.New("version: required value is missing or empty")
-	}
-	return nil
-}
-
-func checkVersion21Struct71(source *v21.CSAFVulnerabilitiesElemMetricsElemContentEPSS, v version) error {
-	if source.Percentile == "" {
-		return errors.New("percentile: required value is missing or empty")
-	}
-	if source.Probability == "" {
-		return errors.New("probability: required value is missing or empty")
-	}
-	if source.Timestamp == "" {
-		return errors.New("timestamp: required value is missing or empty")
-	}
-	return nil
-}
-
-func checkVersion21Struct72(source *v21.SSVCV2, v version) error {
-	if source.SchemaVersion == "" {
-		return errors.New("schemaVersion: required value is missing or empty")
-	}
-	if len(source.Selections) == 0 {
-		return errors.New("selections: required value is missing or empty")
-	}
-	if source.Timestamp == "" {
-		return errors.New("timestamp: required value is missing or empty")
-	}
-	for i := range source.DecisionPointResources {
-		if err := checkVersion21Struct73(&source.DecisionPointResources[i], v); err != nil {
-			return fmt.Errorf("decision_point_resources[%d].%w", i, err)
-		}
-	}
-	for i := range source.References {
-		if err := checkVersion21Struct74(&source.References[i], v); err != nil {
-			return fmt.Errorf("references[%d].%w", i, err)
-		}
-	}
-	for i := range source.Selections {
-		if err := checkVersion21Struct75(&source.Selections[i], v); err != nil {
-			return fmt.Errorf("selections[%d].%w", i, err)
-		}
-	}
-	return nil
-}
-
-func checkVersion21Struct73(source *v21.Reference, v version) error {
-	if source.Summary == "" {
-		return errors.New("summary: required value is missing or empty")
-	}
-	if source.URI == "" {
-		return errors.New("uri: required value is missing or empty")
-	}
-	return nil
-}
-
-func checkVersion21Struct74(source *v21.Reference, v version) error {
-	if source.Summary == "" {
-		return errors.New("summary: required value is missing or empty")
-	}
-	if source.URI == "" {
-		return errors.New("uri: required value is missing or empty")
-	}
-	return nil
-}
-
-func checkVersion21Struct75(source *v21.Selection, v version) error {
-	if source.Key == "" {
-		return errors.New("key: required value is missing or empty")
-	}
-	if source.Namespace == "" {
-		return errors.New("namespace: required value is missing or empty")
-	}
-	if len(source.Values) == 0 {
-		return errors.New("values: required value is missing or empty")
-	}
-	if source.Version == "" {
-		return errors.New("version: required value is missing or empty")
-	}
-	for i := range source.Values {
-		if err := checkVersion21Struct76(&source.Values[i], v); err != nil {
-			return fmt.Errorf("values[%d].%w", i, err)
-		}
-	}
-	return nil
-}
-
-func checkVersion21Struct76(source *v21.MinimalDecisionPointValue, v version) error {
-	if source.Key == "" {
-		return errors.New("key: required value is missing or empty")
-	}
-	return nil
-}
-
-func checkVersion21Struct77(source *v21.ExtensionContentJson, v version) error {
-	if source.Schema == "" {
-		return errors.New("$schema: required value is missing or empty")
-	}
-	if source.Category == "" {
-		return errors.New("category: required value is missing or empty")
-	}
-	if source.Content == nil {
-		return errors.New("content: required value is missing or empty")
-	}
-	return nil
-}
-
-func checkCSAFVulnerabilitiesElem21Details(source *csafVulnerabilitiesElem21Details, v version) error {
+func (source *csafVulnerabilitiesElem21Details) Check(v version) error {
 	for i := range source.Cwes {
-		if err := checkVersion21Struct65(&source.Cwes[i], v); err != nil {
+		if err := source.Cwes[i].Check(v); err != nil {
 			return fmt.Errorf("cwes[%d].%w", i, err)
 		}
 	}
 	for i := range source.FirstKnownExploitationDates {
-		if err := checkVersion21Struct66(&source.FirstKnownExploitationDates[i], v); err != nil {
+		if err := source.FirstKnownExploitationDates[i].Check(v); err != nil {
 			return fmt.Errorf("first_known_exploitation_dates[%d].%w", i, err)
 		}
 	}
 	for i := range source.Metrics {
-		if err := checkVersion21Struct67(&source.Metrics[i], v); err != nil {
+		if err := source.Metrics[i].Check(v); err != nil {
 			return fmt.Errorf("metrics[%d].%w", i, err)
 		}
 	}
 	for i := range source.XExtensions {
-		if err := checkVersion21Struct28(&source.XExtensions[i], v); err != nil {
+		if err := source.XExtensions[i].Check(v); err != nil {
 			return fmt.Errorf("x_extensions[%d].%w", i, err)
 		}
 	}
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemIdsElem21Details(source *csafVulnerabilitiesElemIdsElem21Details, v version) error {
+func (source *csafVulnerabilitiesElemIdsElem21Details) Check(v version) error {
 	return nil
 }
 
-func checkCSAFVulnerabilitiesElemProductStatus21Details(source *csafVulnerabilitiesElemProductStatus21Details, v version) error {
+func (source *csafVulnerabilitiesElemProductStatus21Details) Check(v version) error {
 	return nil
 }

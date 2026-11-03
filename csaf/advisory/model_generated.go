@@ -7,8 +7,7 @@
 package advisory
 
 import (
-	"github.com/gocsaf/csaf/v3/csaf/v20"
-	"github.com/gocsaf/csaf/v3/csaf/v21"
+	"github.com/gocsaf/csaf/v3/csaf/types"
 )
 
 // CSAF contains common fields and optional version-specific details.
@@ -64,13 +63,13 @@ type CSAFDocument struct {
 	Acknowledgments   []CSAFDocumentAcknowledgmentsElem `json:"acknowledgments,omitempty"`
 	AggregateSeverity *CSAFDocumentAggregateSeverity    `json:"aggregate_severity,omitempty"`
 	Category          string                            `json:"category"`
-	CSAFVersion       string                            `json:"csaf_version"`
+	CSAFVersion       Version                           `json:"csaf_version"`
 	Distribution      *CSAFDocumentDistribution         `json:"distribution,omitempty"`
-	Lang              *string                           `json:"lang,omitempty"`
+	Lang              *LangT                            `json:"lang,omitempty"`
 	Notes             []CSAFDocumentNotesElem           `json:"notes,omitempty"`
 	Publisher         CSAFDocumentPublisher             `json:"publisher"`
 	References        []CSAFDocumentReferencesElem      `json:"references,omitempty"`
-	SourceLang        *string                           `json:"source_lang,omitempty"`
+	SourceLang        *LangT                            `json:"source_lang,omitempty"`
 	Title             string                            `json:"title"`
 	Tracking          CSAFDocumentTracking              `json:"tracking"`
 	*csafDocument21Details
@@ -179,16 +178,16 @@ func (v *CSAFDocumentDistribution) SetSharingGroup(value *CSAFDocumentDistributi
 
 // CSAFDocumentDistributionTLP contains common fields and optional version-specific details.
 type CSAFDocumentDistributionTLP struct {
-	Label string `json:"label"`
-	URL   string `json:"url,omitempty"`
+	Label CSAFDocumentDistributionTLPLabel `json:"label"`
+	URL   string                           `json:"url,omitempty"`
 }
 
 // CSAFDocumentNotesElem contains common fields and optional version-specific details.
 type CSAFDocumentNotesElem struct {
-	Audience *string `json:"audience,omitempty"`
-	Category string  `json:"category"`
-	Text     string  `json:"text"`
-	Title    *string `json:"title,omitempty"`
+	Audience *string            `json:"audience,omitempty"`
+	Category NotesTElemCategory `json:"category"`
+	Text     string             `json:"text"`
+	Title    *string            `json:"title,omitempty"`
 	*csafDocumentNotesElem21Details
 }
 
@@ -234,10 +233,10 @@ func (v *CSAFDocumentNotesElem) SetProductIds(value ProductsT) bool {
 
 // CSAFDocumentPublisher contains common fields and optional version-specific details.
 type CSAFDocumentPublisher struct {
-	Category         string  `json:"category"`
-	IssuingAuthority *string `json:"issuing_authority,omitempty"`
-	Name             string  `json:"name"`
-	Namespace        string  `json:"namespace"`
+	Category         PublisherTCategory `json:"category"`
+	IssuingAuthority *string            `json:"issuing_authority,omitempty"`
+	Name             string             `json:"name"`
+	Namespace        string             `json:"namespace"`
 	*csafDocumentPublisher20Details
 	*csafDocumentPublisher21Details
 }
@@ -288,26 +287,26 @@ func (v *CSAFDocumentPublisher) SetContact(value *ContactT) bool {
 
 // CSAFDocumentReferencesElem contains common fields and optional version-specific details.
 type CSAFDocumentReferencesElem struct {
-	Category string `json:"category,omitempty"`
-	Summary  string `json:"summary"`
-	URL      string `json:"url"`
+	Category ReferencesTElemCategory `json:"category,omitempty"`
+	Summary  string                  `json:"summary"`
+	URL      string                  `json:"url"`
 }
 
 // CSAFDocumentTracking contains common fields and optional version-specific details.
 type CSAFDocumentTracking struct {
 	Aliases            []string                                  `json:"aliases,omitempty"`
-	CurrentReleaseDate v21.DateTime                              `json:"current_release_date"`
+	CurrentReleaseDate types.DateTime                            `json:"current_release_date"`
 	Generator          *CSAFDocumentTrackingGenerator            `json:"generator,omitempty"`
 	ID                 string                                    `json:"id"`
-	InitialReleaseDate v21.DateTime                              `json:"initial_release_date"`
+	InitialReleaseDate types.DateTime                            `json:"initial_release_date"`
 	RevisionHistory    []CSAFDocumentTrackingRevisionHistoryElem `json:"revision_history"`
-	Status             string                                    `json:"status"`
-	Version            string                                    `json:"version"`
+	Status             CSAFDocumentTrackingStatus                `json:"status"`
+	Version            VersionT                                  `json:"version"`
 }
 
 // CSAFDocumentTrackingGenerator contains common fields and optional version-specific details.
 type CSAFDocumentTrackingGenerator struct {
-	Date   *v21.DateTime                       `json:"date,omitempty"`
+	Date   *types.DateTime                     `json:"date,omitempty"`
 	Engine CSAFDocumentTrackingGeneratorEngine `json:"engine"`
 }
 
@@ -319,10 +318,10 @@ type CSAFDocumentTrackingGeneratorEngine struct {
 
 // CSAFDocumentTrackingRevisionHistoryElem contains common fields and optional version-specific details.
 type CSAFDocumentTrackingRevisionHistoryElem struct {
-	Date          v21.DateTime `json:"date"`
-	LegacyVersion *string      `json:"legacy_version,omitempty"`
-	Number        string       `json:"number"`
-	Summary       string       `json:"summary"`
+	Date          types.DateTime `json:"date"`
+	LegacyVersion *string        `json:"legacy_version,omitempty"`
+	Number        VersionT       `json:"number"`
+	Summary       string         `json:"summary"`
 }
 
 // CSAFProductTree contains common fields and optional version-specific details.
@@ -381,7 +380,7 @@ func (v *CSAFProductTree) SetProductPaths(value []CSAFProductTreeProductPathsEle
 // CSAFProductTreeBranchesElem contains common fields and optional version-specific details.
 type CSAFProductTreeBranchesElem struct {
 	Branches *[]CSAFProductTreeBranchesElem      `json:"branches,omitempty"`
-	Category string                              `json:"category"`
+	Category BranchesTElemCategory               `json:"category"`
 	Name     string                              `json:"name"`
 	Product  *CSAFProductTreeBranchesElemProduct `json:"product,omitempty"`
 }
@@ -389,7 +388,7 @@ type CSAFProductTreeBranchesElem struct {
 // CSAFProductTreeBranchesElemProduct contains common fields and optional version-specific details.
 type CSAFProductTreeBranchesElemProduct struct {
 	Name                        string                                                         `json:"name"`
-	ProductID                   string                                                         `json:"product_id"`
+	ProductID                   ProductIDT                                                     `json:"product_id"`
 	ProductIdentificationHelper *CSAFProductTreeBranchesElemProductProductIdentificationHelper `json:"product_identification_helper,omitempty"`
 	*csafProductTreeBranchesElemProduct21Details
 }
@@ -493,16 +492,16 @@ type CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisEl
 
 // CSAFProductTreeProductGroupsElem contains common fields and optional version-specific details.
 type CSAFProductTreeProductGroupsElem struct {
-	GroupID    string   `json:"group_id"`
-	ProductIds []string `json:"product_ids"`
-	Summary    *string  `json:"summary,omitempty"`
+	GroupID    ProductGroupIDT `json:"group_id"`
+	ProductIds []ProductIDT    `json:"product_ids"`
+	Summary    *string         `json:"summary,omitempty"`
 }
 
 // CSAFVulnerabilitiesElem contains common fields and optional version-specific details.
 type CSAFVulnerabilitiesElem struct {
 	Acknowledgments []CSAFDocumentAcknowledgmentsElem         `json:"acknowledgments,omitempty"`
 	CVE             *string                                   `json:"cve,omitempty"`
-	DiscoveryDate   *v21.DateTime                             `json:"discovery_date,omitempty"`
+	DiscoveryDate   *types.DateTime                           `json:"discovery_date,omitempty"`
 	Flags           []CSAFVulnerabilitiesElemFlagsElem        `json:"flags,omitempty"`
 	Ids             []CSAFVulnerabilitiesElemIdsElem          `json:"ids,omitempty"`
 	Notes           []CSAFDocumentNotesElem                   `json:"notes,omitempty"`
@@ -519,8 +518,8 @@ type CSAFVulnerabilitiesElem struct {
 type csafVulnerabilitiesElem20Details struct {
 	CWE          *CSAFVulnerabilitiesElemCWE               `json:"cwe,omitempty"`
 	Involvements []CSAFVulnerabilitiesElemInvolvementsElem `json:"involvements,omitempty"`
-	ReleaseDate  *v20.DateTime                             `json:"release_date,omitempty"`
-	Scores       []v20.CSAFVulnerabilitiesElemScoresElem   `json:"scores,omitempty"`
+	ReleaseDate  *types.DateTime                           `json:"release_date,omitempty"`
+	Scores       Scores                                    `json:"scores,omitempty"`
 }
 
 // CWE reports whether the matching version details are present.
@@ -558,7 +557,7 @@ func (v *CSAFVulnerabilitiesElem) SetInvolvements(value []CSAFVulnerabilitiesEle
 }
 
 // ReleaseDate reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) ReleaseDate() (*v20.DateTime, bool) {
+func (v *CSAFVulnerabilitiesElem) ReleaseDate() (*types.DateTime, bool) {
 	if v == nil || v.csafVulnerabilitiesElem20Details == nil {
 		return nil, false
 	}
@@ -566,7 +565,7 @@ func (v *CSAFVulnerabilitiesElem) ReleaseDate() (*v20.DateTime, bool) {
 }
 
 // SetReleaseDate updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetReleaseDate(value *v20.DateTime) bool {
+func (v *CSAFVulnerabilitiesElem) SetReleaseDate(value *types.DateTime) bool {
 	if v == nil || v.csafVulnerabilitiesElem20Details == nil {
 		return false
 	}
@@ -575,15 +574,15 @@ func (v *CSAFVulnerabilitiesElem) SetReleaseDate(value *v20.DateTime) bool {
 }
 
 // Scores reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) Scores() ([]v20.CSAFVulnerabilitiesElemScoresElem, bool) {
+func (v *CSAFVulnerabilitiesElem) Scores() (Scores, bool) {
 	if v == nil || v.csafVulnerabilitiesElem20Details == nil {
-		return nil, false
+		return *new(Scores), false
 	}
 	return v.csafVulnerabilitiesElem20Details.Scores, true
 }
 
 // SetScores updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetScores(value []v20.CSAFVulnerabilitiesElemScoresElem) bool {
+func (v *CSAFVulnerabilitiesElem) SetScores(value Scores) bool {
 	if v == nil || v.csafVulnerabilitiesElem20Details == nil {
 		return false
 	}
@@ -594,7 +593,7 @@ func (v *CSAFVulnerabilitiesElem) SetScores(value []v20.CSAFVulnerabilitiesElemS
 // csafVulnerabilitiesElem21Details contains fields specific to CSAF 2.1.
 type csafVulnerabilitiesElem21Details struct {
 	Cwes                        []CSAFVulnerabilitiesElemCwesElem                        `json:"cwes,omitempty"`
-	DisclosureDate              *v21.DateTime                                            `json:"disclosure_date,omitempty"`
+	DisclosureDate              *types.DateTime                                          `json:"disclosure_date,omitempty"`
 	DlVulnID                    *DlVulnIDT                                               `json:"dl_vuln_id,omitempty"`
 	FirstKnownExploitationDates []CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem `json:"first_known_exploitation_dates,omitempty"`
 	Metrics                     []CSAFVulnerabilitiesElemMetricsElem                     `json:"metrics,omitempty"`
@@ -619,7 +618,7 @@ func (v *CSAFVulnerabilitiesElem) SetCwes(value []CSAFVulnerabilitiesElemCwesEle
 }
 
 // DisclosureDate reports whether the matching version details are present.
-func (v *CSAFVulnerabilitiesElem) DisclosureDate() (*v21.DateTime, bool) {
+func (v *CSAFVulnerabilitiesElem) DisclosureDate() (*types.DateTime, bool) {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return nil, false
 	}
@@ -627,7 +626,7 @@ func (v *CSAFVulnerabilitiesElem) DisclosureDate() (*v21.DateTime, bool) {
 }
 
 // SetDisclosureDate updates the value if matching version details are present.
-func (v *CSAFVulnerabilitiesElem) SetDisclosureDate(value *v21.DateTime) bool {
+func (v *CSAFVulnerabilitiesElem) SetDisclosureDate(value *types.DateTime) bool {
 	if v == nil || v.csafVulnerabilitiesElem21Details == nil {
 		return false
 	}
@@ -705,10 +704,10 @@ func (v *CSAFVulnerabilitiesElem) SetXExtensions(value ExtensionsT) bool {
 
 // CSAFVulnerabilitiesElemFlagsElem contains common fields and optional version-specific details.
 type CSAFVulnerabilitiesElemFlagsElem struct {
-	Date       *v21.DateTime `json:"date,omitempty"`
-	GroupIds   []string      `json:"group_ids,omitempty"`
-	Label      string        `json:"label"`
-	ProductIds []string      `json:"product_ids,omitempty"`
+	Date       *types.DateTime                       `json:"date,omitempty"`
+	GroupIds   ProductGroupsT                        `json:"group_ids,omitempty"`
+	Label      CSAFVulnerabilitiesElemFlagsElemLabel `json:"label"`
+	ProductIds ProductsT                             `json:"product_ids,omitempty"`
 }
 
 // CSAFVulnerabilitiesElemIdsElem contains common fields and optional version-specific details.
@@ -760,14 +759,14 @@ func (v *CSAFVulnerabilitiesElemIdsElem) SetProductIds(value ProductsT) bool {
 
 // CSAFVulnerabilitiesElemProductStatus contains common fields and optional version-specific details.
 type CSAFVulnerabilitiesElemProductStatus struct {
-	FirstAffected      []string `json:"first_affected,omitempty"`
-	FirstFixed         []string `json:"first_fixed,omitempty"`
-	Fixed              []string `json:"fixed,omitempty"`
-	KnownAffected      []string `json:"known_affected,omitempty"`
-	KnownNotAffected   []string `json:"known_not_affected,omitempty"`
-	LastAffected       []string `json:"last_affected,omitempty"`
-	Recommended        []string `json:"recommended,omitempty"`
-	UnderInvestigation []string `json:"under_investigation,omitempty"`
+	FirstAffected      ProductsT `json:"first_affected,omitempty"`
+	FirstFixed         ProductsT `json:"first_fixed,omitempty"`
+	Fixed              ProductsT `json:"fixed,omitempty"`
+	KnownAffected      ProductsT `json:"known_affected,omitempty"`
+	KnownNotAffected   ProductsT `json:"known_not_affected,omitempty"`
+	LastAffected       ProductsT `json:"last_affected,omitempty"`
+	Recommended        ProductsT `json:"recommended,omitempty"`
+	UnderInvestigation ProductsT `json:"under_investigation,omitempty"`
 	*csafVulnerabilitiesElemProductStatus21Details
 }
 
@@ -795,33 +794,282 @@ func (v *CSAFVulnerabilitiesElemProductStatus) SetUnknown(value ProductsT) bool 
 
 // CSAFVulnerabilitiesElemRemediationsElem contains common fields and optional version-specific details.
 type CSAFVulnerabilitiesElemRemediationsElem struct {
-	Category        string                                                  `json:"category"`
-	Date            *v21.DateTime                                           `json:"date,omitempty"`
+	Category        CSAFVulnerabilitiesElemRemediationsElemCategory         `json:"category"`
+	Date            *types.DateTime                                         `json:"date,omitempty"`
 	Details         string                                                  `json:"details"`
 	Entitlements    []string                                                `json:"entitlements,omitempty"`
-	GroupIds        []string                                                `json:"group_ids,omitempty"`
-	ProductIds      []string                                                `json:"product_ids,omitempty"`
+	GroupIds        ProductGroupsT                                          `json:"group_ids,omitempty"`
+	ProductIds      ProductsT                                               `json:"product_ids,omitempty"`
 	RestartRequired *CSAFVulnerabilitiesElemRemediationsElemRestartRequired `json:"restart_required,omitempty"`
 	URL             *string                                                 `json:"url,omitempty"`
 }
 
 // CSAFVulnerabilitiesElemRemediationsElemRestartRequired contains common fields and optional version-specific details.
 type CSAFVulnerabilitiesElemRemediationsElemRestartRequired struct {
-	Category string  `json:"category"`
-	Details  *string `json:"details,omitempty"`
+	Category CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory `json:"category"`
+	Details  *string                                                        `json:"details,omitempty"`
 }
 
 // CSAFVulnerabilitiesElemThreatsElem contains common fields and optional version-specific details.
 type CSAFVulnerabilitiesElemThreatsElem struct {
-	Category   string        `json:"category"`
-	Date       *v21.DateTime `json:"date,omitempty"`
-	Details    string        `json:"details"`
-	GroupIds   []string      `json:"group_ids,omitempty"`
-	ProductIds []string      `json:"product_ids,omitempty"`
+	Category   CSAFVulnerabilitiesElemThreatsElemCategory `json:"category"`
+	Date       *types.DateTime                            `json:"date,omitempty"`
+	Details    string                                     `json:"details"`
+	GroupIds   ProductGroupsT                             `json:"group_ids,omitempty"`
+	ProductIds ProductsT                                  `json:"product_ids,omitempty"`
 }
+
+// Version contains the values of all versions. Check validates them per version.
+type Version string
+
+// Only valid in 2.0.
+const CSAFVersion20 Version = "2.0"
+
+// Only valid in 2.1.
+const CSAFVersion21 Version = "2.1"
+
+func (value Version) validIn(v version) bool {
+	switch value {
+	case CSAFVersion20:
+		return v == version20
+	case CSAFVersion21:
+		return v == version21
+	}
+	return false
+}
+
+// CSAFDocumentDistributionTLPLabel contains the values of all versions. Check validates them per version.
+type CSAFDocumentDistributionTLPLabel string
+
+const CSAFDocumentDistributionTLPLabelAMBER CSAFDocumentDistributionTLPLabel = "AMBER"
+
+// Only valid in 2.1.
+const CSAFDocumentDistributionTLPLabelAMBERSTRICT CSAFDocumentDistributionTLPLabel = "AMBER+STRICT"
+
+// Only valid in 2.1.
+const CSAFDocumentDistributionTLPLabelCLEAR CSAFDocumentDistributionTLPLabel = "CLEAR"
+const CSAFDocumentDistributionTLPLabelGREEN CSAFDocumentDistributionTLPLabel = "GREEN"
+const CSAFDocumentDistributionTLPLabelRED CSAFDocumentDistributionTLPLabel = "RED"
+
+// Only valid in 2.0.
+const CSAFDocumentDistributionTLPLabelWHITE CSAFDocumentDistributionTLPLabel = "WHITE"
+
+func (value CSAFDocumentDistributionTLPLabel) validIn(v version) bool {
+	switch value {
+	case CSAFDocumentDistributionTLPLabelAMBER, CSAFDocumentDistributionTLPLabelGREEN, CSAFDocumentDistributionTLPLabelRED:
+		return true
+	case CSAFDocumentDistributionTLPLabelWHITE:
+		return v == version20
+	case CSAFDocumentDistributionTLPLabelAMBERSTRICT, CSAFDocumentDistributionTLPLabelCLEAR:
+		return v == version21
+	}
+	return false
+}
+
+type LangT string
+
+// NotesTElemCategory contains the values of all versions. Check validates them per version.
+type NotesTElemCategory string
+
+const NotesTElemCategoryDescription NotesTElemCategory = "description"
+const NotesTElemCategoryDetails NotesTElemCategory = "details"
+const NotesTElemCategoryFaq NotesTElemCategory = "faq"
+const NotesTElemCategoryGeneral NotesTElemCategory = "general"
+const NotesTElemCategoryLegalDisclaimer NotesTElemCategory = "legal_disclaimer"
+const NotesTElemCategoryOther NotesTElemCategory = "other"
+const NotesTElemCategorySummary NotesTElemCategory = "summary"
+
+func (value NotesTElemCategory) validIn(v version) bool {
+	switch value {
+	case NotesTElemCategoryDescription, NotesTElemCategoryDetails, NotesTElemCategoryFaq, NotesTElemCategoryGeneral, NotesTElemCategoryLegalDisclaimer, NotesTElemCategoryOther, NotesTElemCategorySummary:
+		return true
+	}
+	return false
+}
+
+// PublisherTCategory contains the values of all versions. Check validates them per version.
+type PublisherTCategory string
+
+const PublisherTCategoryCoordinator PublisherTCategory = "coordinator"
+const PublisherTCategoryDiscoverer PublisherTCategory = "discoverer"
+
+// Only valid in 2.1.
+const PublisherTCategoryMultiplier PublisherTCategory = "multiplier"
+const PublisherTCategoryOther PublisherTCategory = "other"
+const PublisherTCategoryTranslator PublisherTCategory = "translator"
+const PublisherTCategoryUser PublisherTCategory = "user"
+const PublisherTCategoryVendor PublisherTCategory = "vendor"
+
+func (value PublisherTCategory) validIn(v version) bool {
+	switch value {
+	case PublisherTCategoryCoordinator, PublisherTCategoryDiscoverer, PublisherTCategoryOther, PublisherTCategoryTranslator, PublisherTCategoryUser, PublisherTCategoryVendor:
+		return true
+	case PublisherTCategoryMultiplier:
+		return v == version21
+	}
+	return false
+}
+
+// ReferencesTElemCategory contains the values of all versions. Check validates them per version.
+type ReferencesTElemCategory string
+
+const ReferencesTElemCategoryExternal ReferencesTElemCategory = "external"
+const ReferencesTElemCategorySelf ReferencesTElemCategory = "self"
+
+func (value ReferencesTElemCategory) validIn(v version) bool {
+	switch value {
+	case ReferencesTElemCategoryExternal, ReferencesTElemCategorySelf:
+		return true
+	}
+	return false
+}
+
+type VersionT string
+
+// CSAFDocumentTrackingStatus contains the values of all versions. Check validates them per version.
+type CSAFDocumentTrackingStatus string
+
+const CSAFDocumentTrackingStatusDraft CSAFDocumentTrackingStatus = "draft"
+const CSAFDocumentTrackingStatusFinal CSAFDocumentTrackingStatus = "final"
+const CSAFDocumentTrackingStatusInterim CSAFDocumentTrackingStatus = "interim"
+
+func (value CSAFDocumentTrackingStatus) validIn(v version) bool {
+	switch value {
+	case CSAFDocumentTrackingStatusDraft, CSAFDocumentTrackingStatusFinal, CSAFDocumentTrackingStatusInterim:
+		return true
+	}
+	return false
+}
+
+// BranchesTElemCategory contains the values of all versions. Check validates them per version.
+type BranchesTElemCategory string
+
+const BranchesTElemCategoryArchitecture BranchesTElemCategory = "architecture"
+const BranchesTElemCategoryHostName BranchesTElemCategory = "host_name"
+const BranchesTElemCategoryLanguage BranchesTElemCategory = "language"
+
+// Only valid in 2.0.
+const BranchesTElemCategoryLegacy BranchesTElemCategory = "legacy"
+const BranchesTElemCategoryPatchLevel BranchesTElemCategory = "patch_level"
+
+// Only valid in 2.1.
+const BranchesTElemCategoryPlatform BranchesTElemCategory = "platform"
+const BranchesTElemCategoryProductFamily BranchesTElemCategory = "product_family"
+const BranchesTElemCategoryProductName BranchesTElemCategory = "product_name"
+const BranchesTElemCategoryProductVersion BranchesTElemCategory = "product_version"
+const BranchesTElemCategoryProductVersionRange BranchesTElemCategory = "product_version_range"
+const BranchesTElemCategoryServicePack BranchesTElemCategory = "service_pack"
+const BranchesTElemCategorySpecification BranchesTElemCategory = "specification"
+const BranchesTElemCategoryVendor BranchesTElemCategory = "vendor"
+
+func (value BranchesTElemCategory) validIn(v version) bool {
+	switch value {
+	case BranchesTElemCategoryArchitecture, BranchesTElemCategoryHostName, BranchesTElemCategoryLanguage, BranchesTElemCategoryPatchLevel, BranchesTElemCategoryProductFamily, BranchesTElemCategoryProductName, BranchesTElemCategoryProductVersion, BranchesTElemCategoryProductVersionRange, BranchesTElemCategoryServicePack, BranchesTElemCategorySpecification, BranchesTElemCategoryVendor:
+		return true
+	case BranchesTElemCategoryLegacy:
+		return v == version20
+	case BranchesTElemCategoryPlatform:
+		return v == version21
+	}
+	return false
+}
+
+type ProductIDT string
+
+type ProductGroupIDT string
+
+type ProductGroupsT []ProductGroupIDT
+
+// CSAFVulnerabilitiesElemFlagsElemLabel contains the values of all versions. Check validates them per version.
+type CSAFVulnerabilitiesElemFlagsElemLabel string
+
+const CSAFVulnerabilitiesElemFlagsElemLabelComponentNotPresent CSAFVulnerabilitiesElemFlagsElemLabel = "component_not_present"
+const CSAFVulnerabilitiesElemFlagsElemLabelInlineMitigationsAlreadyExist CSAFVulnerabilitiesElemFlagsElemLabel = "inline_mitigations_already_exist"
+const CSAFVulnerabilitiesElemFlagsElemLabelVulnerableCodeCannotBeControlledByAdversary CSAFVulnerabilitiesElemFlagsElemLabel = "vulnerable_code_cannot_be_controlled_by_adversary"
+const CSAFVulnerabilitiesElemFlagsElemLabelVulnerableCodeNotInExecutePath CSAFVulnerabilitiesElemFlagsElemLabel = "vulnerable_code_not_in_execute_path"
+const CSAFVulnerabilitiesElemFlagsElemLabelVulnerableCodeNotPresent CSAFVulnerabilitiesElemFlagsElemLabel = "vulnerable_code_not_present"
+
+func (value CSAFVulnerabilitiesElemFlagsElemLabel) validIn(v version) bool {
+	switch value {
+	case CSAFVulnerabilitiesElemFlagsElemLabelComponentNotPresent, CSAFVulnerabilitiesElemFlagsElemLabelInlineMitigationsAlreadyExist, CSAFVulnerabilitiesElemFlagsElemLabelVulnerableCodeCannotBeControlledByAdversary, CSAFVulnerabilitiesElemFlagsElemLabelVulnerableCodeNotInExecutePath, CSAFVulnerabilitiesElemFlagsElemLabelVulnerableCodeNotPresent:
+		return true
+	}
+	return false
+}
+
+type ProductsT []ProductIDT
+
+// CSAFVulnerabilitiesElemRemediationsElemCategory contains the values of all versions. Check validates them per version.
+type CSAFVulnerabilitiesElemRemediationsElemCategory string
+
+// Only valid in 2.1.
+const CSAFVulnerabilitiesElemRemediationsElemCategoryFixPlanned CSAFVulnerabilitiesElemRemediationsElemCategory = "fix_planned"
+const CSAFVulnerabilitiesElemRemediationsElemCategoryMitigation CSAFVulnerabilitiesElemRemediationsElemCategory = "mitigation"
+const CSAFVulnerabilitiesElemRemediationsElemCategoryNoFixPlanned CSAFVulnerabilitiesElemRemediationsElemCategory = "no_fix_planned"
+const CSAFVulnerabilitiesElemRemediationsElemCategoryNoneAvailable CSAFVulnerabilitiesElemRemediationsElemCategory = "none_available"
+
+// Only valid in 2.1.
+const CSAFVulnerabilitiesElemRemediationsElemCategoryOptionalPatch CSAFVulnerabilitiesElemRemediationsElemCategory = "optional_patch"
+const CSAFVulnerabilitiesElemRemediationsElemCategoryVendorFix CSAFVulnerabilitiesElemRemediationsElemCategory = "vendor_fix"
+const CSAFVulnerabilitiesElemRemediationsElemCategoryWorkaround CSAFVulnerabilitiesElemRemediationsElemCategory = "workaround"
+
+func (value CSAFVulnerabilitiesElemRemediationsElemCategory) validIn(v version) bool {
+	switch value {
+	case CSAFVulnerabilitiesElemRemediationsElemCategoryMitigation, CSAFVulnerabilitiesElemRemediationsElemCategoryNoFixPlanned, CSAFVulnerabilitiesElemRemediationsElemCategoryNoneAvailable, CSAFVulnerabilitiesElemRemediationsElemCategoryVendorFix, CSAFVulnerabilitiesElemRemediationsElemCategoryWorkaround:
+		return true
+	case CSAFVulnerabilitiesElemRemediationsElemCategoryFixPlanned, CSAFVulnerabilitiesElemRemediationsElemCategoryOptionalPatch:
+		return v == version21
+	}
+	return false
+}
+
+// CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory contains the values of all versions. Check validates them per version.
+type CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory string
+
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryConnected CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "connected"
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryDependencies CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "dependencies"
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryMachine CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "machine"
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryNone CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "none"
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryParent CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "parent"
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryService CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "service"
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategorySystem CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "system"
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryVulnerableComponent CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "vulnerable_component"
+const CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryZone CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory = "zone"
+
+func (value CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory) validIn(v version) bool {
+	switch value {
+	case CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryConnected, CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryDependencies, CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryMachine, CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryNone, CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryParent, CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryService, CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategorySystem, CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryVulnerableComponent, CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategoryZone:
+		return true
+	}
+	return false
+}
+
+// CSAFVulnerabilitiesElemThreatsElemCategory contains the values of all versions. Check validates them per version.
+type CSAFVulnerabilitiesElemThreatsElemCategory string
+
+const CSAFVulnerabilitiesElemThreatsElemCategoryExploitStatus CSAFVulnerabilitiesElemThreatsElemCategory = "exploit_status"
+const CSAFVulnerabilitiesElemThreatsElemCategoryImpact CSAFVulnerabilitiesElemThreatsElemCategory = "impact"
+const CSAFVulnerabilitiesElemThreatsElemCategoryTargetSet CSAFVulnerabilitiesElemThreatsElemCategory = "target_set"
+
+func (value CSAFVulnerabilitiesElemThreatsElemCategory) validIn(v version) bool {
+	switch value {
+	case CSAFVulnerabilitiesElemThreatsElemCategoryExploitStatus, CSAFVulnerabilitiesElemThreatsElemCategoryImpact, CSAFVulnerabilitiesElemThreatsElemCategoryTargetSet:
+		return true
+	}
+	return false
+}
+
 type CSAFSchema string
 
 const CSAFSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaCSAFJson CSAFSchema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
+
+func (value CSAFSchema) validIn(v version) bool {
+	switch value {
+	case CSAFSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaCSAFJson:
+		return v == version21
+	}
+	return false
+}
 
 type ContentSchemaT string
 
@@ -830,6 +1078,14 @@ type ExtensionContentJsonCategory string
 const ExtensionContentJsonCategoryEssential ExtensionContentJsonCategory = "essential"
 const ExtensionContentJsonCategorySignificant ExtensionContentJsonCategory = "significant"
 const ExtensionContentJsonCategorySupplementary ExtensionContentJsonCategory = "supplementary"
+
+func (value ExtensionContentJsonCategory) validIn(v version) bool {
+	switch value {
+	case ExtensionContentJsonCategoryEssential, ExtensionContentJsonCategorySignificant, ExtensionContentJsonCategorySupplementary:
+		return v == version21
+	}
+	return false
+}
 
 type ExtensionContentJsonContent map[string]any
 
@@ -858,15 +1114,15 @@ const CSAFDocumentInvolvementActionsElemCategoryFixRelease CSAFDocumentInvolveme
 const CSAFDocumentInvolvementActionsElemCategoryNotification CSAFDocumentInvolvementActionsElemCategory = "notification"
 const CSAFDocumentInvolvementActionsElemCategoryTriage CSAFDocumentInvolvementActionsElemCategory = "triage"
 
+func (value CSAFDocumentInvolvementActionsElemCategory) validIn(v version) bool {
+	switch value {
+	case CSAFDocumentInvolvementActionsElemCategoryConfirmation, CSAFDocumentInvolvementActionsElemCategoryCoordination, CSAFDocumentInvolvementActionsElemCategoryDiscovery, CSAFDocumentInvolvementActionsElemCategoryDispute, CSAFDocumentInvolvementActionsElemCategoryExploitation, CSAFDocumentInvolvementActionsElemCategoryFixDeployment, CSAFDocumentInvolvementActionsElemCategoryFixRelease, CSAFDocumentInvolvementActionsElemCategoryNotification, CSAFDocumentInvolvementActionsElemCategoryTriage:
+		return v == version21
+	}
+	return false
+}
+
 type DlVulnIDT string
-
-type ProductGroupIDT string
-
-type ProductGroupsT []ProductGroupIDT
-
-type ProductIDT string
-
-type ProductsT []ProductIDT
 
 type CSAFDocumentInvolvementActionsElemStatus string
 
@@ -878,11 +1134,19 @@ const CSAFDocumentInvolvementActionsElemStatusInProgress CSAFDocumentInvolvement
 const CSAFDocumentInvolvementActionsElemStatusOutstanding CSAFDocumentInvolvementActionsElemStatus = "outstanding"
 const CSAFDocumentInvolvementActionsElemStatusPlanned CSAFDocumentInvolvementActionsElemStatus = "planned"
 
+func (value CSAFDocumentInvolvementActionsElemStatus) validIn(v version) bool {
+	switch value {
+	case CSAFDocumentInvolvementActionsElemStatusAttempted, CSAFDocumentInvolvementActionsElemStatusCompleted, CSAFDocumentInvolvementActionsElemStatusDeferred, CSAFDocumentInvolvementActionsElemStatusDiscontinued, CSAFDocumentInvolvementActionsElemStatusInProgress, CSAFDocumentInvolvementActionsElemStatusOutstanding, CSAFDocumentInvolvementActionsElemStatusPlanned:
+		return v == version21
+	}
+	return false
+}
+
 type CSAFDocumentInvolvementActionsElem struct {
 	ActingEntityRefs    EntityRefsT                                `json:"acting_entity_refs"`
 	ActionID            ActionIDT                                  `json:"action_id"`
 	Category            CSAFDocumentInvolvementActionsElemCategory `json:"category"`
-	Date                v21.DateTime                               `json:"date"`
+	Date                types.DateTime                             `json:"date"`
 	DlVulnIds           []DlVulnIDT                                `json:"dl_vuln_ids,omitempty,omitzero"`
 	GroupIds            ProductGroupsT                             `json:"group_ids,omitempty,omitzero"`
 	ProductIds          ProductsT                                  `json:"product_ids,omitempty,omitzero"`
@@ -903,6 +1167,14 @@ const CSAFDocumentInvolvementEntitiesElemCategoryPublic CSAFDocumentInvolvementE
 const CSAFDocumentInvolvementEntitiesElemCategoryReportingAuthority CSAFDocumentInvolvementEntitiesElemCategory = "reporting_authority"
 const CSAFDocumentInvolvementEntitiesElemCategoryUser CSAFDocumentInvolvementEntitiesElemCategory = "user"
 const CSAFDocumentInvolvementEntitiesElemCategoryVendor CSAFDocumentInvolvementEntitiesElemCategory = "vendor"
+
+func (value CSAFDocumentInvolvementEntitiesElemCategory) validIn(v version) bool {
+	switch value {
+	case CSAFDocumentInvolvementEntitiesElemCategoryAdversary, CSAFDocumentInvolvementEntitiesElemCategoryCoordinator, CSAFDocumentInvolvementEntitiesElemCategoryDiscoverer, CSAFDocumentInvolvementEntitiesElemCategoryMultiplier, CSAFDocumentInvolvementEntitiesElemCategoryOther, CSAFDocumentInvolvementEntitiesElemCategoryPublic, CSAFDocumentInvolvementEntitiesElemCategoryReportingAuthority, CSAFDocumentInvolvementEntitiesElemCategoryUser, CSAFDocumentInvolvementEntitiesElemCategoryVendor:
+		return v == version21
+	}
+	return false
+}
 
 type ContactT struct {
 	Details             *string `json:"details,omitempty,omitzero"`
@@ -948,7 +1220,13 @@ const CSAFProductTreeRelationshipsElemCategoryInstalledOn CSAFProductTreeRelatio
 const CSAFProductTreeRelationshipsElemCategoryInstalledWith CSAFProductTreeRelationshipsElemCategory = "installed_with"
 const CSAFProductTreeRelationshipsElemCategoryOptionalComponentOf CSAFProductTreeRelationshipsElemCategory = "optional_component_of"
 
-type ProductIDT20 string
+func (value CSAFProductTreeRelationshipsElemCategory) validIn(v version) bool {
+	switch value {
+	case CSAFProductTreeRelationshipsElemCategoryDefaultComponentOf, CSAFProductTreeRelationshipsElemCategoryExternalComponentOf, CSAFProductTreeRelationshipsElemCategoryInstalledOn, CSAFProductTreeRelationshipsElemCategoryInstalledWith, CSAFProductTreeRelationshipsElemCategoryOptionalComponentOf:
+		return v == version20
+	}
+	return false
+}
 
 type FullProductNameTProductIdentificationHelperHashesElemFileHashesElem struct {
 	Algorithm string `json:"algorithm"`
@@ -978,15 +1256,15 @@ type FullProductNameTProductIdentificationHelper struct {
 
 type FullProductNameT struct {
 	Name                        string                                       `json:"name"`
-	ProductID                   ProductIDT20                                 `json:"product_id"`
+	ProductID                   ProductIDT                                   `json:"product_id"`
 	ProductIdentificationHelper *FullProductNameTProductIdentificationHelper `json:"product_identification_helper,omitempty,omitzero"`
 }
 
 type CSAFProductTreeRelationshipsElem struct {
 	Category                  CSAFProductTreeRelationshipsElemCategory `json:"category"`
 	FullProductName           FullProductNameT                         `json:"full_product_name"`
-	ProductReference          ProductIDT20                             `json:"product_reference"`
-	RelatesToProductReference ProductIDT20                             `json:"relates_to_product_reference"`
+	ProductReference          ProductIDT                               `json:"product_reference"`
+	RelatesToProductReference ProductIDT                               `json:"relates_to_product_reference"`
 }
 
 type FullProductNameTProductIdentificationHelperHashesElemFileHashesElem21 struct {
@@ -1030,6 +1308,14 @@ const SubpathTCategoryInstalledOn SubpathTCategory = "installed_on"
 const SubpathTCategoryInstalledWith SubpathTCategory = "installed_with"
 const SubpathTCategoryOptionalComponentOf SubpathTCategory = "optional_component_of"
 
+func (value SubpathTCategory) validIn(v version) bool {
+	switch value {
+	case SubpathTCategoryDefaultComponentOf, SubpathTCategoryExternalComponentOf, SubpathTCategoryInstalledOn, SubpathTCategoryInstalledWith, SubpathTCategoryOptionalComponentOf:
+		return v == version21
+	}
+	return false
+}
+
 type SubpathT struct {
 	Category             SubpathTCategory `json:"category"`
 	NextProductReference ProductIDT       `json:"next_product_reference"`
@@ -1054,6 +1340,14 @@ const CSAFVulnerabilitiesElemInvolvementsElemPartyOther CSAFVulnerabilitiesElemI
 const CSAFVulnerabilitiesElemInvolvementsElemPartyUser CSAFVulnerabilitiesElemInvolvementsElemParty = "user"
 const CSAFVulnerabilitiesElemInvolvementsElemPartyVendor CSAFVulnerabilitiesElemInvolvementsElemParty = "vendor"
 
+func (value CSAFVulnerabilitiesElemInvolvementsElemParty) validIn(v version) bool {
+	switch value {
+	case CSAFVulnerabilitiesElemInvolvementsElemPartyCoordinator, CSAFVulnerabilitiesElemInvolvementsElemPartyDiscoverer, CSAFVulnerabilitiesElemInvolvementsElemPartyOther, CSAFVulnerabilitiesElemInvolvementsElemPartyUser, CSAFVulnerabilitiesElemInvolvementsElemPartyVendor:
+		return v == version20
+	}
+	return false
+}
+
 type CSAFVulnerabilitiesElemInvolvementsElemStatus string
 
 const CSAFVulnerabilitiesElemInvolvementsElemStatusCompleted CSAFVulnerabilitiesElemInvolvementsElemStatus = "completed"
@@ -1063,8 +1357,16 @@ const CSAFVulnerabilitiesElemInvolvementsElemStatusInProgress CSAFVulnerabilitie
 const CSAFVulnerabilitiesElemInvolvementsElemStatusNotContacted CSAFVulnerabilitiesElemInvolvementsElemStatus = "not_contacted"
 const CSAFVulnerabilitiesElemInvolvementsElemStatusOpen CSAFVulnerabilitiesElemInvolvementsElemStatus = "open"
 
+func (value CSAFVulnerabilitiesElemInvolvementsElemStatus) validIn(v version) bool {
+	switch value {
+	case CSAFVulnerabilitiesElemInvolvementsElemStatusCompleted, CSAFVulnerabilitiesElemInvolvementsElemStatusContactAttempted, CSAFVulnerabilitiesElemInvolvementsElemStatusDisputed, CSAFVulnerabilitiesElemInvolvementsElemStatusInProgress, CSAFVulnerabilitiesElemInvolvementsElemStatusNotContacted, CSAFVulnerabilitiesElemInvolvementsElemStatusOpen:
+		return v == version20
+	}
+	return false
+}
+
 type CSAFVulnerabilitiesElemInvolvementsElem struct {
-	Date    *v20.DateTime                                 `json:"date,omitempty,omitzero"`
+	Date    *types.DateTime                               `json:"date,omitempty,omitzero"`
 	Party   CSAFVulnerabilitiesElemInvolvementsElemParty  `json:"party"`
 	Status  CSAFVulnerabilitiesElemInvolvementsElemStatus `json:"status"`
 	Summary *string                                       `json:"summary,omitempty,omitzero"`
@@ -1077,14 +1379,14 @@ type CSAFVulnerabilitiesElemCwesElem struct {
 }
 
 type CSAFVulnerabilitiesElemFirstKnownExploitationDatesElem struct {
-	Date             v21.DateTime   `json:"date"`
-	ExploitationDate v21.DateTime   `json:"exploitation_date"`
+	Date             types.DateTime `json:"date"`
+	ExploitationDate types.DateTime `json:"exploitation_date"`
 	GroupIds         ProductGroupsT `json:"group_ids,omitempty,omitzero"`
 	ProductIds       ProductsT      `json:"product_ids,omitempty,omitzero"`
 }
 
 type CSAFVulnerabilitiesElemMetricsElem struct {
-	Content  v21.CSAFVulnerabilitiesElemMetricsElemContent `json:"content"`
-	Products ProductsT                                     `json:"products"`
-	Source   *string                                       `json:"source,omitempty,omitzero"`
+	Content  MetricContent `json:"content"`
+	Products ProductsT     `json:"products"`
+	Source   *string       `json:"source,omitempty,omitzero"`
 }

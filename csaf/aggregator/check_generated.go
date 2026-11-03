@@ -11,34 +11,32 @@ import (
 	"fmt"
 )
 
-// Checks version consistency and required model values.  It rejects missing
-// required pointers, empty required strings and empty required slices. It does
-// not validate schema formats, enums, exact lengths or conditional constraints.
-// Zero-valued numbers and booleans are accepted.
+// Checks version consistency and required model values. It rejects missing
+// required pointers, empty required strings and empty required slices and
+// enum values that are not valid in the document version. Types taken directly
+// from the version packages must provide their own Check() error method.
+// Local checks do not validate schema formats, exact lengths or conditional
+// constraints. Zero-valued numbers and booleans are accepted.
 func (source *Aggregator) Check() error {
 	if source == nil {
 		return errors.New("nil document")
 	}
 	var v version
-	switch source.AggregatorVersion {
+	switch source.Version {
 	case "2.0":
 		v = version20
 	case "2.1":
 		v = version21
 	default:
-		return fmt.Errorf("unsupported version %q", source.AggregatorVersion)
+		return fmt.Errorf("unsupported version %q", source.Version)
 	}
-	return checkAggregator(source, v)
-}
-
-func checkAggregator(source *Aggregator, v version) error {
 	switch {
 	case v == version20 && source.aggregator21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
 	case v == version21 && source.aggregator21Details == nil:
 		return errors.New("version 2.1 details are missing")
 	}
-	if source.AggregatorVersion == "" {
+	if source.Version == "" {
 		return errors.New("aggregator_version: required value is missing or empty")
 	}
 	if source.CanonicalURL == "" {
@@ -50,28 +48,31 @@ func checkAggregator(source *Aggregator, v version) error {
 	if source.LastUpdated == "" {
 		return errors.New("last_updated: required value is missing or empty")
 	}
-	if err := checkAggregatorAggregator(&source.Aggregator, v); err != nil {
+	if err := source.Aggregator.Check(v); err != nil {
 		return fmt.Errorf("aggregator.%w", err)
 	}
+	if source.Version != "" && !source.Version.validIn(v) {
+		return fmt.Errorf("aggregator_version: invalid value %q", source.Version)
+	}
 	for i := range source.CSAFProviders {
-		if err := checkAggregatorCSAFProvidersElem(&source.CSAFProviders[i], v); err != nil {
+		if err := source.CSAFProviders[i].Check(v); err != nil {
 			return fmt.Errorf("csaf_providers[%d].%w", i, err)
 		}
 	}
 	for i := range source.CSAFPublishers {
-		if err := checkAggregatorCSAFPublishersElem(&source.CSAFPublishers[i], v); err != nil {
+		if err := source.CSAFPublishers[i].Check(v); err != nil {
 			return fmt.Errorf("csaf_publishers[%d].%w", i, err)
 		}
 	}
 	if source.aggregator21Details != nil {
-		if err := checkAggregator21Details(source.aggregator21Details, v); err != nil {
+		if err := source.aggregator21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkAggregatorAggregator(source *AggregatorAggregator, v version) error {
+func (source *AggregatorAggregator) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
@@ -81,17 +82,20 @@ func checkAggregatorAggregator(source *AggregatorAggregator, v version) error {
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	return nil
 }
 
-func checkAggregatorCSAFProvidersElem(source *AggregatorCSAFProvidersElem, v version) error {
-	if err := checkAggregatorCSAFProvidersElemMetadata(&source.Metadata, v); err != nil {
+func (source *AggregatorCSAFProvidersElem) Check(v version) error {
+	if err := source.Metadata.Check(v); err != nil {
 		return fmt.Errorf("metadata.%w", err)
 	}
 	return nil
 }
 
-func checkAggregatorCSAFProvidersElemMetadata(source *AggregatorCSAFProvidersElemMetadata, v version) error {
+func (source *AggregatorCSAFProvidersElemMetadata) Check(v version) error {
 	switch v {
 	case version21:
 		if source.Role == nil {
@@ -107,13 +111,18 @@ func checkAggregatorCSAFProvidersElemMetadata(source *AggregatorCSAFProvidersEle
 	if source.URL == "" {
 		return errors.New("url: required value is missing or empty")
 	}
-	if err := checkAggregatorCSAFProvidersElemMetadataPublisher(&source.Publisher, v); err != nil {
+	if err := source.Publisher.Check(v); err != nil {
 		return fmt.Errorf("publisher.%w", err)
+	}
+	if source.Role != nil {
+		if *source.Role != "" && !(*source.Role).validIn(v) {
+			return fmt.Errorf("role: invalid value %q", *source.Role)
+		}
 	}
 	return nil
 }
 
-func checkAggregatorCSAFProvidersElemMetadataPublisher(source *AggregatorCSAFProvidersElemMetadataPublisher, v version) error {
+func (source *AggregatorCSAFProvidersElemMetadataPublisher) Check(v version) error {
 	if source.aggregatorCSAFProvidersElemMetadataPublisher20Details != nil && source.aggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -142,50 +151,56 @@ func checkAggregatorCSAFProvidersElemMetadataPublisher(source *AggregatorCSAFPro
 	if source.Namespace == "" {
 		return errors.New("namespace: required value is missing or empty")
 	}
+	if source.Category != "" && !source.Category.validIn(v) {
+		return fmt.Errorf("category: invalid value %q", source.Category)
+	}
 	if source.aggregatorCSAFProvidersElemMetadataPublisher20Details != nil {
-		if err := checkAggregatorCSAFProvidersElemMetadataPublisher20Details(source.aggregatorCSAFProvidersElemMetadataPublisher20Details, v); err != nil {
+		if err := source.aggregatorCSAFProvidersElemMetadataPublisher20Details.Check(v); err != nil {
 			return err
 		}
 	}
 	if source.aggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
-		if err := checkAggregatorCSAFProvidersElemMetadataPublisher21Details(source.aggregatorCSAFProvidersElemMetadataPublisher21Details, v); err != nil {
+		if err := source.aggregatorCSAFProvidersElemMetadataPublisher21Details.Check(v); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkAggregatorCSAFPublishersElem(source *AggregatorCSAFPublishersElem, v version) error {
+func (source *AggregatorCSAFPublishersElem) Check(v version) error {
 	if len(source.Mirrors) == 0 {
 		return errors.New("mirrors: required value is missing or empty")
 	}
 	if source.UpdateInterval == "" {
 		return errors.New("update_interval: required value is missing or empty")
 	}
-	if err := checkAggregatorCSAFProvidersElemMetadata(&source.Metadata, v); err != nil {
+	if err := source.Metadata.Check(v); err != nil {
 		return fmt.Errorf("metadata.%w", err)
 	}
 	return nil
 }
 
-func checkAggregator21Details(source *aggregator21Details, v version) error {
+func (source *aggregator21Details) Check(v version) error {
 	if source.Schema == "" {
 		return errors.New("$schema: required value is missing or empty")
+	}
+	if source.Schema != "" && !source.Schema.validIn(v) {
+		return fmt.Errorf("$schema: invalid value %q", source.Schema)
 	}
 	return nil
 }
 
-func checkAggregatorCSAFProvidersElemMetadataPublisher20Details(source *aggregatorCSAFProvidersElemMetadataPublisher20Details, v version) error {
+func (source *aggregatorCSAFProvidersElemMetadataPublisher20Details) Check(v version) error {
 	return nil
 }
 
-func checkVersion21Struct8(source *ContactT, v version) error {
+func (source *ContactT) Check(v version) error {
 	return nil
 }
 
-func checkAggregatorCSAFProvidersElemMetadataPublisher21Details(source *aggregatorCSAFProvidersElemMetadataPublisher21Details, v version) error {
+func (source *aggregatorCSAFProvidersElemMetadataPublisher21Details) Check(v version) error {
 	if source.Contact != nil {
-		if err := checkVersion21Struct8(source.Contact, v); err != nil {
+		if err := source.Contact.Check(v); err != nil {
 			return fmt.Errorf("contact.%w", err)
 		}
 	}

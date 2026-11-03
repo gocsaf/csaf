@@ -7,28 +7,28 @@
 package provider
 
 import (
-	"github.com/gocsaf/csaf/v3/csaf/v21"
+	"github.com/gocsaf/csaf/v3/csaf/types"
 )
 
 // Provider contains common fields and optional version-specific details.
 type Provider struct {
-	CanonicalURL            string                          `json:"canonical_url"`
+	CanonicalURL            ProviderURLT                    `json:"canonical_url"`
 	Distributions           []ProviderDistributionsElem     `json:"distributions,omitempty"`
-	LastUpdated             v21.DateTime                    `json:"last_updated"`
+	LastUpdated             types.DateTime                  `json:"last_updated"`
 	ListOnCSAFAggregators   bool                            `json:"list_on_CSAF_aggregators"`
-	MetadataVersion         string                          `json:"metadata_version"`
+	MetadataVersion         MetadataVersion                 `json:"metadata_version"`
 	MirrorOnCSAFAggregators bool                            `json:"mirror_on_CSAF_aggregators"`
 	PublicOpenpgpKeys       []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty"`
 	Publisher               ProviderPublisher               `json:"publisher"`
-	Role                    string                          `json:"role"`
+	Role                    ProviderRole                    `json:"role"`
 	*provider21Details
 }
 
 // provider21Details contains fields specific to CSAF 2.1.
 type provider21Details struct {
-	Schema          ProviderSchema `json:"$schema"`
-	MaintainedFrom  *v21.DateTime  `json:"maintained_from,omitempty"`
-	MaintainedUntil *v21.DateTime  `json:"maintained_until,omitempty"`
+	Schema          ProviderSchema  `json:"$schema"`
+	MaintainedFrom  *types.DateTime `json:"maintained_from,omitempty"`
+	MaintainedUntil *types.DateTime `json:"maintained_until,omitempty"`
 }
 
 // Schema reports whether the matching version details are present.
@@ -49,7 +49,7 @@ func (v *Provider) SetSchema(value ProviderSchema) bool {
 }
 
 // MaintainedFrom reports whether the matching version details are present.
-func (v *Provider) MaintainedFrom() (*v21.DateTime, bool) {
+func (v *Provider) MaintainedFrom() (*types.DateTime, bool) {
 	if v == nil || v.provider21Details == nil {
 		return nil, false
 	}
@@ -57,7 +57,7 @@ func (v *Provider) MaintainedFrom() (*v21.DateTime, bool) {
 }
 
 // SetMaintainedFrom updates the value if matching version details are present.
-func (v *Provider) SetMaintainedFrom(value *v21.DateTime) bool {
+func (v *Provider) SetMaintainedFrom(value *types.DateTime) bool {
 	if v == nil || v.provider21Details == nil {
 		return false
 	}
@@ -66,7 +66,7 @@ func (v *Provider) SetMaintainedFrom(value *v21.DateTime) bool {
 }
 
 // MaintainedUntil reports whether the matching version details are present.
-func (v *Provider) MaintainedUntil() (*v21.DateTime, bool) {
+func (v *Provider) MaintainedUntil() (*types.DateTime, bool) {
 	if v == nil || v.provider21Details == nil {
 		return nil, false
 	}
@@ -74,7 +74,7 @@ func (v *Provider) MaintainedUntil() (*v21.DateTime, bool) {
 }
 
 // SetMaintainedUntil updates the value if matching version details are present.
-func (v *Provider) SetMaintainedUntil(value *v21.DateTime) bool {
+func (v *Provider) SetMaintainedUntil(value *types.DateTime) bool {
 	if v == nil || v.provider21Details == nil {
 		return false
 	}
@@ -135,34 +135,34 @@ func (v *ProviderDistributionsElem) SetDirectory(value *ProviderDistributionsEle
 
 // ProviderDistributionsElemRolie contains common fields and optional version-specific details.
 type ProviderDistributionsElemRolie struct {
-	Categories []string                                  `json:"categories,omitempty"`
+	Categories []JsonURLT                                `json:"categories,omitempty"`
 	Feeds      []ProviderDistributionsElemRolieFeedsElem `json:"feeds"`
-	Services   []string                                  `json:"services,omitempty"`
+	Services   []JsonURLT                                `json:"services,omitempty"`
 }
 
 // ProviderDistributionsElemRolieFeedsElem contains common fields and optional version-specific details.
 type ProviderDistributionsElemRolieFeedsElem struct {
-	Summary  *string `json:"summary,omitempty"`
-	TLPLabel string  `json:"tlp_label"`
-	URL      string  `json:"url"`
+	Summary  *string   `json:"summary,omitempty"`
+	TLPLabel TLPLabelT `json:"tlp_label"`
+	URL      JsonURLT  `json:"url"`
 	*providerDistributionsElemRolieFeedsElem21Details
 }
 
 // providerDistributionsElemRolieFeedsElem21Details contains fields specific to CSAF 2.1.
 type providerDistributionsElemRolieFeedsElem21Details struct {
-	LastUpdated v21.DateTime `json:"last_updated"`
+	LastUpdated types.DateTime `json:"last_updated"`
 }
 
 // LastUpdated reports whether the matching version details are present.
-func (v *ProviderDistributionsElemRolieFeedsElem) LastUpdated() (v21.DateTime, bool) {
+func (v *ProviderDistributionsElemRolieFeedsElem) LastUpdated() (types.DateTime, bool) {
 	if v == nil || v.providerDistributionsElemRolieFeedsElem21Details == nil {
-		return v21.DateTime(""), false
+		return types.DateTime(""), false
 	}
 	return v.providerDistributionsElemRolieFeedsElem21Details.LastUpdated, true
 }
 
 // SetLastUpdated updates the value if matching version details are present.
-func (v *ProviderDistributionsElemRolieFeedsElem) SetLastUpdated(value v21.DateTime) bool {
+func (v *ProviderDistributionsElemRolieFeedsElem) SetLastUpdated(value types.DateTime) bool {
 	if v == nil || v.providerDistributionsElemRolieFeedsElem21Details == nil {
 		return false
 	}
@@ -173,15 +173,15 @@ func (v *ProviderDistributionsElemRolieFeedsElem) SetLastUpdated(value v21.DateT
 // ProviderPublicOpenpgpKeysElem contains common fields and optional version-specific details.
 type ProviderPublicOpenpgpKeysElem struct {
 	Fingerprint *string `json:"fingerprint,omitempty"`
-	URL         string  `json:"url"`
+	URL         URLT    `json:"url"`
 }
 
 // ProviderPublisher contains common fields and optional version-specific details.
 type ProviderPublisher struct {
-	Category         string  `json:"category"`
-	IssuingAuthority *string `json:"issuing_authority,omitempty"`
-	Name             string  `json:"name"`
-	Namespace        string  `json:"namespace"`
+	Category         PublisherTCategory `json:"category"`
+	IssuingAuthority *string            `json:"issuing_authority,omitempty"`
+	Name             string             `json:"name"`
+	Namespace        string             `json:"namespace"`
 	*providerPublisher20Details
 	*providerPublisher21Details
 }
@@ -230,25 +230,115 @@ func (v *ProviderPublisher) SetContact(value *ContactT) bool {
 	return true
 }
 
-type ProviderSchema string
+type ProviderURLT string
 
-const ProviderSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaProviderJson ProviderSchema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json"
+type JsonURLT string
 
-type URLT string
-
+// TLPLabelT contains the values of all versions. Check validates them per version.
 type TLPLabelT string
 
 const TLPLabelTAMBER TLPLabelT = "AMBER"
+
+// Only valid in 2.1.
 const TLPLabelTAMBERSTRICT TLPLabelT = "AMBER+STRICT"
+
+// Only valid in 2.1.
 const TLPLabelTCLEAR TLPLabelT = "CLEAR"
 const TLPLabelTGREEN TLPLabelT = "GREEN"
 const TLPLabelTRED TLPLabelT = "RED"
 
-type URLT21 string
+// Only valid in 2.0.
+const TLPLabelTUNLABELED TLPLabelT = "UNLABELED"
+
+// Only valid in 2.0.
+const TLPLabelTWHITE TLPLabelT = "WHITE"
+
+func (value TLPLabelT) validIn(v version) bool {
+	switch value {
+	case TLPLabelTAMBER, TLPLabelTGREEN, TLPLabelTRED:
+		return true
+	case TLPLabelTUNLABELED, TLPLabelTWHITE:
+		return v == version20
+	case TLPLabelTAMBERSTRICT, TLPLabelTCLEAR:
+		return v == version21
+	}
+	return false
+}
+
+// MetadataVersion contains the values of all versions. Check validates them per version.
+type MetadataVersion string
+
+// Only valid in 2.0.
+const MetadataVersion20 MetadataVersion = "2.0"
+
+// Only valid in 2.1.
+const MetadataVersion21 MetadataVersion = "2.1"
+
+func (value MetadataVersion) validIn(v version) bool {
+	switch value {
+	case MetadataVersion20:
+		return v == version20
+	case MetadataVersion21:
+		return v == version21
+	}
+	return false
+}
+
+type URLT string
+
+// PublisherTCategory contains the values of all versions. Check validates them per version.
+type PublisherTCategory string
+
+const PublisherTCategoryCoordinator PublisherTCategory = "coordinator"
+const PublisherTCategoryDiscoverer PublisherTCategory = "discoverer"
+
+// Only valid in 2.1.
+const PublisherTCategoryMultiplier PublisherTCategory = "multiplier"
+const PublisherTCategoryOther PublisherTCategory = "other"
+const PublisherTCategoryTranslator PublisherTCategory = "translator"
+const PublisherTCategoryUser PublisherTCategory = "user"
+const PublisherTCategoryVendor PublisherTCategory = "vendor"
+
+func (value PublisherTCategory) validIn(v version) bool {
+	switch value {
+	case PublisherTCategoryCoordinator, PublisherTCategoryDiscoverer, PublisherTCategoryOther, PublisherTCategoryTranslator, PublisherTCategoryUser, PublisherTCategoryVendor:
+		return true
+	case PublisherTCategoryMultiplier:
+		return v == version21
+	}
+	return false
+}
+
+// ProviderRole contains the values of all versions. Check validates them per version.
+type ProviderRole string
+
+const ProviderRoleCSAFProvider ProviderRole = "csaf_provider"
+const ProviderRoleCSAFPublisher ProviderRole = "csaf_publisher"
+const ProviderRoleCSAFTrustedProvider ProviderRole = "csaf_trusted_provider"
+
+func (value ProviderRole) validIn(v version) bool {
+	switch value {
+	case ProviderRoleCSAFProvider, ProviderRoleCSAFPublisher, ProviderRoleCSAFTrustedProvider:
+		return true
+	}
+	return false
+}
+
+type ProviderSchema string
+
+const ProviderSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaProviderJson ProviderSchema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json"
+
+func (value ProviderSchema) validIn(v version) bool {
+	switch value {
+	case ProviderSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaProviderJson:
+		return v == version21
+	}
+	return false
+}
 
 type ProviderDistributionsElemDirectory struct {
 	TLPLabel TLPLabelT `json:"tlp_label"`
-	URL      URLT21    `json:"url"`
+	URL      URLT      `json:"url"`
 }
 
 type ContactT struct {

@@ -9,14 +9,14 @@ package bare
 import (
 	"encoding/json"
 
-	"github.com/gocsaf/csaf/v3/csaf/v21"
+	"github.com/gocsaf/csaf/v3/csaf/types"
 )
 
 type Provider struct {
 	Schema                  json.RawMessage                 `json:"$schema,omitempty"`
 	CanonicalURL            string                          `json:"canonical_url"`
 	Distributions           []ProviderDistributionsElem     `json:"distributions,omitempty"`
-	LastUpdated             v21.DateTime                    `json:"last_updated"`
+	LastUpdated             types.DateTime                  `json:"last_updated"`
 	ListOnCSAFAggregators   bool                            `json:"list_on_CSAF_aggregators"`
 	MaintainedFrom          json.RawMessage                 `json:"maintained_from,omitempty"`
 	MaintainedUntil         json.RawMessage                 `json:"maintained_until,omitempty"`
