@@ -313,6 +313,10 @@ func loadConfig() (*config, error) {
 		cfg.TLPs = cfg.defaultTLPs()
 	}
 
+	if cfg.ProviderMetaData == nil {
+		cfg.ProviderMetaData = &providerMetadataConfig{}
+	}
+
 	if cfg.ProviderMetaData.Publisher == nil {
 		cfg.ProviderMetaData.Publisher = &publisherConfig{
 			Category:  string(csaf.CSAFCategoryVendor),
