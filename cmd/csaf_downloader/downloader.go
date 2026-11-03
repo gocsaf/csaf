@@ -341,7 +341,7 @@ func (d *downloader) loadOpenPGPKeys(
 		if key.URL == "" {
 			continue
 		}
-		u, err := url.Parse(key.URL)
+		u, err := url.Parse(string(key.URL))
 		if err != nil {
 			slog.Warn("Invalid URL",
 				"url", key.URL,

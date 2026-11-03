@@ -409,7 +409,7 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string
 				fmt.Sprintf("%s: Decoding pmd model failed: %v", path, err))
 			break
 		}
-		if pmdl.Version != "" && string(pmdl.Version) != pmd.MetadataVersion {
+		if pmdl.Version != "" && string(pmdl.Version) != string(pmd.MetadataVersion) {
 			result.Messages.Add(
 				VersionMismatch,
 				fmt.Sprintf("%s: requested metadata_version %q, got %q", path, pmdl.Version, pmd.MetadataVersion))

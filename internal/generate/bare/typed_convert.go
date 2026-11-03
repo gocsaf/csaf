@@ -60,6 +60,13 @@ func (c *converterEmitter) value(source, target string, from *match, to *typedTy
 		return nil
 	}
 	switch to.shape {
+	case "named":
+		// Named primitives are converted directly, other named types by their definition.
+		if primitive(to.elem.shape) {
+			c.write("%s = %s(%s)\n", target, to.name, source)
+			return nil
+		}
+		return c.value(source, target, from, to.elem, path)
 	case "struct":
 		// Convert structs with their respective helper functions.
 		c.write("%s, err = fromBare%s(%s, v)\nif err != nil { return target, %s }\n", target, to.name, addressExpression(source), path.wrap("."))

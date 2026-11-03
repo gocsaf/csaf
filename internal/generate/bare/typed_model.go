@@ -5,8 +5,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
+	"go/format"
+	"go/token"
 	"maps"
 	"slices"
 	"strconv"
@@ -23,6 +26,7 @@ type typedType struct {
 	details     [2]*typedDetails // version-specific structs, nil when absent
 	alias       bool
 	constants   []localConstant
+	sharedEnum  bool // enum with the constants of both versions
 	replacement bool // supplied by handwritten types
 }
 
@@ -78,6 +82,9 @@ type typedModel struct {
 	localTypes        map[localTypeKey]*typedType // source version/name -> local type
 	localDeclarations []*typedType
 	localExpressions  [2]map[ast.Expr]*typedType // source expressions -> prepared nodes used by checks
+
+	namedTypes     map[string]*typedType    // "left|right" type names -> shared named type
+	namedByVersion [2]map[string]*typedType // version type name -> shared named type, reused by details
 }
 
 func newTypedModel(left, right *model, rootName string, root *match) (*typedModel, error) {
@@ -86,6 +93,7 @@ func newTypedModel(left, right *model, rootName string, root *match) (*typedMode
 		models:      [2]*model{left, right}, cache: make(map[typePair]*typedType),
 		names: make(map[string]bool), localTypes: make(map[localTypeKey]*typedType),
 		localExpressions: [2]map[ast.Expr]*typedType{make(map[ast.Expr]*typedType), make(map[ast.Expr]*typedType)},
+		namedTypes:       make(map[string]*typedType), namedByVersion: [2]map[string]*typedType{make(map[string]*typedType), make(map[string]*typedType)},
 	}
 	if _, err := m.common(left.types[rootName], right.types[rootName], rootName, root); err != nil {
 		return nil, err
@@ -145,6 +153,12 @@ func (m *typedModel) common(left, right ast.Expr, name string, bare *match) (*ty
 		return nil, err
 	} else if compatible {
 		return &typedType{shape: "v21.DateTime"}, nil
+	}
+	// Handle named types that exist in both versions.
+	// "Enums" get one type with the constants of both versions.
+	// Other named types are only shared if name and definition are equal.
+	if named, err := m.sharedNamed(left, right, bare); named != nil || err != nil {
+		return named, err
 	}
 	left, leftRaw := m.models[0].resolve(left)
 	right, rightRaw := m.models[1].resolve(right)
@@ -228,6 +242,146 @@ func (m *typedModel) common(left, right ast.Expr, name string, bare *match) (*ty
 	}
 	m.cache[pair] = node
 	return node, nil
+}
+
+// sharedNamed keeps named types that exist in both versions.
+// "Enums" get one type with the constants of both versions.
+// Other named types are only shared if name and definition are equal.
+// Left and right are assumed to be from the same path.
+func (m *typedModel) sharedNamed(left, right ast.Expr, bare *match) (*typedType, error) {
+	a, ok := left.(*ast.Ident)
+	if !ok {
+		return nil, nil
+	}
+	b, ok := right.(*ast.Ident)
+	if !ok {
+		return nil, nil
+	}
+	definitionA := m.models[0].types[a.Name]
+	definitionB := m.models[1].types[b.Name]
+	if definitionA == nil || definitionB == nil || m.models[0].custom[a.Name] || m.models[1].custom[b.Name] {
+		return nil, nil
+	}
+	key := a.Name + "|" + b.Name
+	if known := m.namedTypes[key]; known != nil {
+		return known, nil
+	}
+
+	constantsA := m.models[0].constants[a.Name]
+	constantsB := m.models[1].constants[b.Name]
+	isEnum := len(constantsA) > 0 && len(constantsB) > 0
+	if !isEnum {
+		// An enum on only one side does not happen in our schemas.
+		if len(constantsA) > 0 || len(constantsB) > 0 || a.Name != b.Name {
+			return nil, nil
+		}
+		// Merge only if both definitions are primitive or slices of primitives (not structs).
+		if !primitiveLeaf(definitionA, m.models[0]) || !primitiveLeaf(definitionB, m.models[1]) {
+			return nil, nil
+		}
+		keepName := func(name string) (string, error) { return name, nil }
+		textA, err := renderType(definitionA, keepName)
+		if err != nil {
+			return nil, err
+		}
+		textB, err := renderType(definitionB, keepName)
+		if err != nil {
+			return nil, err
+		}
+		if textA != textB {
+			return nil, nil
+		}
+	}
+
+	name := b.Name
+	for m.names[name] {
+		name += "Type"
+	}
+	m.names[name] = true
+	node := &typedType{shape: "named", name: name}
+	m.namedTypes[key] = node
+
+	if isEnum {
+		baseA, _ := m.models[0].resolve(a)
+		baseB, _ := m.models[1].resolve(b)
+		identA, okA := baseA.(*ast.Ident)
+		identB, okB := baseB.(*ast.Ident)
+		if !okA || !okB || identA.Name != identB.Name {
+			return nil, fmt.Errorf("enum %s has different base types", name)
+		}
+		node.elem = &typedType{shape: identA.Name}
+		node.sharedEnum = true
+		if err := m.mergeConstants(node, [2]string{a.Name, b.Name}, [2][]*ast.ValueSpec{constantsA, constantsB}); err != nil {
+			return nil, err
+		}
+	} else {
+		elem, err := m.common(definitionA, definitionB, name, bare)
+		if err != nil {
+			return nil, err
+		}
+		if elem == nil {
+			return nil, fmt.Errorf("named type %s has no common definition", name)
+		}
+		node.elem = elem
+	}
+	m.namedByVersion[0][a.Name] = node
+	m.namedByVersion[1][b.Name] = node
+	m.localDeclarations = append(m.localDeclarations, node)
+	return node, nil
+}
+
+// primitiveLeaf reports whether expr is a primitive or a slice of primitives.
+func primitiveLeaf(expr ast.Expr, m *model) bool {
+	for {
+		switch t := expr.(type) {
+		case *ast.Ident:
+			if primitive(t.Name) {
+				return true
+			}
+			if m.types[t.Name] == nil || m.custom[t.Name] {
+				return false
+			}
+			expr = m.types[t.Name]
+		case *ast.ArrayType:
+			expr = t.Elt
+		default:
+			return false
+		}
+	}
+}
+
+// mergeConstants adds the constants of both versions to node.
+// Constants are matched by value.
+func (m *typedModel) mergeConstants(node *typedType, typeNames [2]string, constants [2][]*ast.ValueSpec) error {
+	byValue := make(map[string]int)
+	for version := range 2 {
+		for _, spec := range constants[version] {
+			for i, ident := range spec.Names {
+				var value bytes.Buffer
+				if err := format.Node(&value, token.NewFileSet(), spec.Values[i]); err != nil {
+					return err
+				}
+				constantName := node.name + strings.TrimPrefix(ident.Name, typeNames[version])
+				if index, ok := byValue[value.String()]; ok {
+					if node.constants[index].name != constantName {
+						return fmt.Errorf("value %s of %s has different constant names", value.String(), node.name)
+					}
+					node.constants[index].versions[version] = true
+					continue
+				}
+				if m.names[constantName] {
+					return fmt.Errorf("constant name %s is already used", constantName)
+				}
+				m.names[constantName] = true
+				byValue[value.String()] = len(node.constants)
+				constant := localConstant{name: constantName, value: value.String()}
+				constant.versions[version] = true
+				node.constants = append(node.constants, constant)
+			}
+		}
+	}
+	slices.SortFunc(node.constants, func(x, y localConstant) int { return strings.Compare(x.name, y.name) })
+	return nil
 }
 
 func (m *typedModel) fields(node *typedType, left, right *ast.StructType) error {

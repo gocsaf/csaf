@@ -42,7 +42,7 @@ func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (
 		return nil, err
 	}
 	ts := timestamp(now)
-	pmd.CanonicalURL = vtr.pmdURL()
+	pmd.CanonicalURL = provider.ProviderURLT(vtr.pmdURL())
 	pmd.LastUpdated = ts
 	pmd.Role = roleTrustedProvider
 	pmd.ListOnCSAFAggregators = true
@@ -57,8 +57,8 @@ func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (
 		}
 		summary := "TLP:" + t.label() + " advisories"
 		feed.Summary = &summary
-		feed.TLPLabel = t.label()
-		feed.URL = vtr.feedURL(t)
+		feed.TLPLabel = provider.TLPLabelT(t.label())
+		feed.URL = provider.JsonURLT(vtr.feedURL(t))
 		feed.SetLastUpdated(ts)
 		feeds = append(feeds, feed)
 	}
@@ -85,7 +85,7 @@ func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (
 			case csafVersion21:
 				dist.SetDirectory(&provider.ProviderDistributionsElemDirectory{
 					TLPLabel: provider.TLPLabelT(t.label()),
-					URL:      provider.URLT21(url),
+					URL:      provider.URLT(url),
 				})
 			}
 			pmd.Distributions = append(pmd.Distributions, dist)
@@ -115,7 +115,7 @@ func (pmdc *providerMetadataConfig) apply(pmd *provider.Provider) {
 	}
 	if pc := pmdc.Publisher; pc != nil {
 		p := &pmd.Publisher
-		p.Category = pc.Category
+		p.Category = provider.PublisherTCategory(pc.Category)
 		p.IssuingAuthority = pc.IssuingAuthority
 		p.Name = pc.Name
 		p.Namespace = pc.Namespace
@@ -134,7 +134,7 @@ func setLastUpdated(pmd *provider.Provider, feedURL string, ts v21.DateTime) err
 	for i := range pmd.Distributions {
 		if r := pmd.Distributions[i].Rolie; r != nil {
 			for j := range r.Feeds {
-				if r.Feeds[j].URL == feedURL {
+				if string(r.Feeds[j].URL) == feedURL {
 					r.Feeds[j].SetLastUpdated(ts)
 					found = true
 				}
@@ -191,7 +191,7 @@ func (vtr *versionTree) loadPMD() (*provider.Provider, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
-	if pmd.MetadataVersion != vtr.version {
+	if string(pmd.MetadataVersion) != vtr.version {
 		return nil, fmt.Errorf(
 			"%s has metadata_version %q, but is configured for CSAF %s",
 			path, pmd.MetadataVersion, vtr.version)

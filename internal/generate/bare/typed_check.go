@@ -11,6 +11,7 @@ import (
 	"go/ast"
 	"maps"
 	"slices"
+	"strings"
 )
 
 type checkType struct {
@@ -18,8 +19,8 @@ type checkType struct {
 	shape  string
 	elem   *checkType
 	fields []checkField
-	helper string
 	shared *typedType
+	enum   bool // the type has a validIn method
 }
 
 type checkField struct {
@@ -40,6 +41,7 @@ type checkEmitter struct {
 	model      *typedModel
 	shared     map[*typedType]*checkType
 	originals  map[checkTypeKey]*checkType
+	locals     map[*typedType]*checkType // one check per local type, methods must be unique
 	structures []*checkType
 	loopDepth  int
 }
@@ -56,7 +58,6 @@ func (e *checkEmitter) sharedType(t *typedType) *checkType {
 	e.shared[t] = node
 	switch t.shape {
 	case "struct":
-		node.helper = "check" + t.name
 		e.structures = append(e.structures, node)
 		for _, f := range t.fields {
 			if f.common != nil {
@@ -65,6 +66,12 @@ func (e *checkEmitter) sharedType(t *typedType) *checkType {
 		}
 	case "pointer", "slice":
 		node.elem = e.sharedType(t.elem)
+	case "named":
+		// Checks use the shape of the definition.
+		definition := e.sharedType(t.elem)
+		node.shape = definition.shape
+		node.elem = definition.elem
+		node.enum = len(t.constants) > 0
 	}
 	return node
 }
@@ -95,12 +102,21 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int, keepVersionTypes
 	} else {
 		local = e.model.localExpressions[version][expr]
 		name = typedName(local)
+		if known := e.locals[local]; known != nil && local.shape == "named" {
+			return known, nil
+		}
 	}
 	if err != nil {
 		return nil, err
 	}
 	node := &checkType{name: name}
+	if local != nil && local.shape == "named" && len(local.constants) > 0 {
+		node.enum = true
+	}
 	e.originals[key] = node
+	if local != nil && local.shape == "named" {
+		e.locals[local] = node
+	}
 	switch t := resolved.(type) {
 	case *ast.Ident:
 		node.shape = t.Name
@@ -118,8 +134,14 @@ func (e *checkEmitter) originalType(expr ast.Expr, version int, keepVersionTypes
 	case *ast.InterfaceType:
 		node.shape = "interface"
 	case *ast.StructType:
+		if keepVersionTypes {
+			node.shape = "external"
+			return node, nil
+		}
 		node.shape = "struct"
-		node.helper = fmt.Sprintf("checkVersion%dStruct%d", 20+version, len(e.structures))
+		if local == nil || local.shape != "named" {
+			return nil, fmt.Errorf("check method requires a named local struct: %s", name)
+		}
 		e.structures = append(e.structures, node)
 		fields, fieldErr := structFields(t)
 		if fieldErr != nil {
@@ -191,16 +213,32 @@ func (e *checkEmitter) presence(value string, t *checkType, path string) {
 }
 
 func (e *checkEmitter) contents(value string, t *checkType, path errorPath) {
+	if t.enum {
+		// Empty values are absent. Required values are already checked for presence.
+		receiver := value
+		if strings.HasPrefix(receiver, "*") {
+			receiver = "(" + receiver + ")"
+		}
+		args := append(slices.Clone(path.indices), value)
+		e.write("if %s != \"\" && !%s.validIn(v) { return fmt.Errorf(%q, %s) }\n", value, receiver, path.format+": invalid value %q", strings.Join(args, ", "))
+		return
+	}
 	switch t.shape {
-	case "struct":
-		e.write("if err := %s(%s, v); err != nil { return %s }\n", t.helper, addressExpression(value), path.wrap("."))
+	case "struct", "external":
+		// A pointer receiver works on the field itself, so drop a dereference.
+		receiver := strings.TrimPrefix(value, "*")
+		if t.shape == "external" {
+			e.write("if err := %s.Check(); err != nil { return %s }\n", receiver, path.wrap("."))
+		} else {
+			e.write("if err := %s.Check(v); err != nil { return %s }\n", receiver, path.wrap("."))
+		}
 	case "pointer", "slice":
 		leaf := t.elem
 		for leaf.shape == "pointer" || leaf.shape == "slice" {
 			leaf = leaf.elem
 		}
-		// If it's not a struct, it's basically covered by the earlier presence checks already.
-		if leaf.shape != "struct" {
+		// If it's not a struct or enum, it's basically covered by the earlier presence checks already.
+		if leaf.shape != "struct" && leaf.shape != "external" && !leaf.enum {
 			return
 		}
 
@@ -219,7 +257,15 @@ func (e *checkEmitter) contents(value string, t *checkType, path errorPath) {
 }
 
 func (e *checkEmitter) emitStruct(node *checkType) error {
-	e.write("func %s(source *%s, v version) error {\n", node.helper, node.name)
+	if node.shared == e.model.structures[0] {
+		versionField, err := sharedVersionAccess(node.shared, e.model.versionPath)
+		if err != nil {
+			return err
+		}
+		e.write("func (source *%s) Check() error {\nif source == nil { return errors.New(\"nil document\") }\nvar v version\nswitch source.%s {\ncase \"2.0\": v = version20\ncase \"2.1\": v = version21\ndefault: return fmt.Errorf(\"unsupported version %%q\", source.%s)\n}\n", node.name, versionField, versionField)
+	} else {
+		e.write("func (source *%s) Check(v version) error {\n", node.name)
+	}
 	if t := node.shared; t != nil {
 		has := [2]bool{t.details[0] != nil, t.details[1] != nil}
 		if has[0] && has[1] {
@@ -289,7 +335,7 @@ func (e *checkEmitter) emitStruct(node *checkType) error {
 			if err != nil {
 				return err
 			}
-			e.write("if source.%s != nil {\nif err := %s(source.%s, v); err != nil { return err }\n}\n", d.name, d.helper, d.name)
+			e.write("if source.%s != nil {\nif err := source.%s.Check(v); err != nil { return err }\n}\n", d.name, d.name)
 		}
 	}
 	e.write("return nil\n}\n\n")
@@ -297,7 +343,7 @@ func (e *checkEmitter) emitStruct(node *checkType) error {
 }
 
 func (e *checkEmitter) detailsType(detail *typedDetails) (*checkType, error) {
-	node := &checkType{name: detail.privateName(), shape: "struct", helper: "check" + detail.name}
+	node := &checkType{name: detail.privateName(), shape: "struct"}
 	for _, f := range detail.fields {
 		if f.local.replacement {
 			continue
@@ -314,15 +360,10 @@ func (e *checkEmitter) detailsType(detail *typedDetails) (*checkType, error) {
 }
 
 func (m *typedModel) emitCheck(packageName string) ([]byte, error) {
-	e := &checkEmitter{model: m, shared: make(map[*typedType]*checkType), originals: make(map[checkTypeKey]*checkType)}
+	e := &checkEmitter{model: m, shared: make(map[*typedType]*checkType), originals: make(map[checkTypeKey]*checkType), locals: make(map[*typedType]*checkType)}
 	root := m.structures[0]
 	e.sharedType(root)
-	versionField, err := sharedVersionAccess(root, m.versionPath)
-	if err != nil {
-		return nil, err
-	}
-	e.write("// Checks version consistency and required model values.  It rejects missing\n// required pointers, empty required strings and empty required slices. It does\n// not validate schema formats, enums, exact lengths or conditional constraints.\n// Zero-valued numbers and booleans are accepted.\n")
-	e.write("func (source *%s) Check() error {\nif source == nil { return errors.New(\"nil document\") }\nvar v version\nswitch source.%s {\ncase \"2.0\": v = version20\ncase \"2.1\": v = version21\ndefault: return fmt.Errorf(\"unsupported version %%q\", source.%s)\n}\nreturn check%s(source,v)\n}\n\n", root.name, versionField, versionField, root.name)
+	e.write("// Checks version consistency and required model values. It rejects missing\n// required pointers, empty required strings and empty required slices and\n// enum values that are not valid in the document version. Types taken directly\n// from the version packages must provide their own Check() error method.\n// Local checks do not validate schema formats, exact lengths or conditional\n// constraints. Zero-valued numbers and booleans are accepted.\n")
 	for i := 0; i < len(e.structures); i++ {
 		if err := e.emitStruct(e.structures[i]); err != nil {
 			return nil, err

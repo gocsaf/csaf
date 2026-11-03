@@ -37,7 +37,7 @@ func DecodePublisher(metadataVersion string, data []byte) (ProviderPublisher, er
 	if err != nil {
 		return ProviderPublisher{}, fmt.Errorf("publisher: %w", err)
 	}
-	if err := checkProviderPublisher(&p, v); err != nil {
+	if err := p.Check(v); err != nil {
 		return ProviderPublisher{}, fmt.Errorf("publisher: %w", err)
 	}
 	return p, nil
@@ -92,12 +92,12 @@ func (pmd *Provider) SetPGP(fingerprint, url string) {
 	for i := range pmd.PublicOpenpgpKeys {
 		key := &pmd.PublicOpenpgpKeys[i]
 		if key.Fingerprint != nil && strings.EqualFold(*key.Fingerprint, fingerprint) {
-			key.URL = url
+			key.URL = URLT(url)
 			return
 		}
 	}
 	pmd.PublicOpenpgpKeys = append(pmd.PublicOpenpgpKeys, ProviderPublicOpenpgpKeysElem{
 		Fingerprint: &fingerprint,
-		URL:         url,
+		URL:         URLT(url),
 	})
 }

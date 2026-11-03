@@ -21,8 +21,9 @@ type localTypeKey struct {
 }
 
 type localConstant struct {
-	name  string
-	value string
+	name     string
+	value    string
+	versions [2]bool // versions in which the value is valid
 }
 
 func (m *typedModel) localType(expr ast.Expr, version int) (*typedType, error) {
@@ -48,6 +49,14 @@ func (m *typedModel) buildLocalType(expr ast.Expr, version int) (*typedType, err
 		if source.custom[t.Name] {
 			return &typedType{shape: fmt.Sprintf("v%d.%s", 20+version, t.Name)}, nil
 		}
+		// Reuse shared named types. Enums check their values per version.
+		if shared := m.namedByVersion[version][t.Name]; shared != nil {
+			// The checks still need the prepared parts of the definition.
+			if _, err := m.localType(definition, version); err != nil {
+				return nil, err
+			}
+			return shared, nil
+		}
 		key := localTypeKey{version, t.Name}
 		if known := m.localTypes[key]; known != nil {
 			return known, nil
@@ -70,7 +79,9 @@ func (m *typedModel) buildLocalType(expr ast.Expr, version int) (*typedType, err
 				if err := format.Node(&value, token.NewFileSet(), constant.Values[i]); err != nil {
 					return nil, err
 				}
-				node.constants = append(node.constants, localConstant{m.reserveLocalName(name, version), value.String()})
+				constant := localConstant{name: m.reserveLocalName(name, version), value: value.String()}
+				constant.versions[version] = true
+				node.constants = append(node.constants, constant)
 			}
 		}
 		m.localDeclarations = append(m.localDeclarations, node)

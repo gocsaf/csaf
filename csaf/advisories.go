@@ -353,7 +353,7 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 		if feed.URL == "" {
 			continue
 		}
-		feedURL, err := url.Parse(feed.URL)
+		feedURL, err := url.Parse(string(feed.URL))
 		if err != nil {
 			slog.Error("Invalid URL in feed", "feed", feed.URL, "err", err)
 			continue
@@ -441,10 +441,10 @@ func (afp *AdvisoryFileProcessor) processROLIELegacy(files *[]AdvisoryFile, res 
 		}
 
 		switch {
-		case sha256 == "" && sha512 == "" && afp.pmd.Role == string(MetadataRoleTrustedProvider):
+		case sha256 == "" && sha512 == "" && string(afp.pmd.Role) == string(MetadataRoleTrustedProvider):
 			slog.Error("No hash listed on ROLIE feed", "file", self)
 			return
-		case sign == "" && afp.pmd.Role == string(MetadataRoleTrustedProvider):
+		case sign == "" && string(afp.pmd.Role) == string(MetadataRoleTrustedProvider):
 			slog.Error("No signature listed on ROLIE feed", "file", self)
 			return
 		default:
@@ -492,10 +492,10 @@ func (afp *AdvisoryFileProcessor) processROLIEStream(files *[]AdvisoryFile, res 
 			var file AdvisoryFile
 
 			switch {
-			case sha256 == "" && sha512 == "" && afp.pmd.Role == string(MetadataRoleTrustedProvider):
+			case sha256 == "" && sha512 == "" && string(afp.pmd.Role) == string(MetadataRoleTrustedProvider):
 				slog.Error("No hash listed on ROLIE feed", "file", self)
 				return
-			case sign == "" && afp.pmd.Role == string(MetadataRoleTrustedProvider):
+			case sign == "" && string(afp.pmd.Role) == string(MetadataRoleTrustedProvider):
 				slog.Error("No signature listed on ROLIE feed", "file", self)
 				return
 			default:

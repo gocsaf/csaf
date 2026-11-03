@@ -98,13 +98,52 @@ func (m *typedModel) emitModel(packageName string) ([]byte, error) {
 		if declaration.alias {
 			assignment = "= "
 		}
+		if declaration.sharedEnum {
+			fmt.Fprintf(&out, "// %s contains the values of all versions. Check validates them per version.\n", declaration.name)
+		}
 		fmt.Fprintf(&out, "type %s %s%s\n\n", declaration.name, assignment, typedName(declaration.elem))
 		for _, constant := range declaration.constants {
+			if declaration.sharedEnum && constant.versions[0] != constant.versions[1] {
+				if constant.versions[0] {
+					out.WriteString("// Only valid in 2.0.\n")
+				} else {
+					out.WriteString("// Only valid in 2.1.\n")
+				}
+			}
 			fmt.Fprintf(&out, "const %s %s = %s\n", constant.name, declaration.name, constant.value)
 		}
 		out.WriteString("\n")
+		if len(declaration.constants) > 0 {
+			emitValidIn(&out, declaration)
+		}
 	}
 	return typedSource(packageName, out.String())
+}
+
+// emitValidIn writes a method that reports whether a constant is valid in a version.
+func emitValidIn(out *bytes.Buffer, declaration *typedType) {
+	var both, only20, only21 []string
+	for _, constant := range declaration.constants {
+		switch {
+		case constant.versions[0] && constant.versions[1]:
+			both = append(both, constant.name)
+		case constant.versions[0]:
+			only20 = append(only20, constant.name)
+		default:
+			only21 = append(only21, constant.name)
+		}
+	}
+	fmt.Fprintf(out, "func (value %s) validIn(v version) bool {\nswitch value {\n", declaration.name)
+	if len(both) > 0 {
+		fmt.Fprintf(out, "case %s:\nreturn true\n", strings.Join(both, ", "))
+	}
+	if len(only20) > 0 {
+		fmt.Fprintf(out, "case %s:\nreturn v == version20\n", strings.Join(only20, ", "))
+	}
+	if len(only21) > 0 {
+		fmt.Fprintf(out, "case %s:\nreturn v == version21\n", strings.Join(only21, ", "))
+	}
+	out.WriteString("}\nreturn false\n}\n\n")
 }
 
 // addressExpression cancels a dereference when passing a value to a helper.
