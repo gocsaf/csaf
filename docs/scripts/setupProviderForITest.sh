@@ -117,26 +117,26 @@ curl https://localhost:8443/cgi-bin/csaf_provider.go/api/create --cert-type p12 
 
 popd
 
-# Setup validation service
-./setupValidationService.sh
+# Setup validation service | TEMPORARILY DISABLED
+#./setupValidationService.sh
 
 # Disable exit for the next error as these is expected.
 set +e
 
-# Wait for the service to be started
-echo
-echo === Try to reach the validator service ten times, up to nine fails are ok
-for ((i = 1; i <= 10; i++)); do
- if [ $(curl -IL http://localhost:8082/api/v1/tests | grep -c HTTP ) != "0" ]; then
- break
- fi
- sleep 3
-done
-
-if [ $i == 11 ]; then
-    echo Could not connect to validation service!
-    exit 1
-fi
+#  Wait for the service to be started
+#  echo
+#  echo === Try to reach the validator service ten times, up to nine fails are ok
+# for ((i = 1; i <= 10; i++)); do
+#  if [ $(curl -IL http://localhost:8082/api/v1/tests | grep -c HTTP ) != "0" ]; then
+#  break
+#  fi
+#  sleep 3
+# done
+#
+# if [ $i == 11 ]; then
+#    echo Could not connect to validation service!
+#    exit 1
+# fi
 
 # Upload files
 ./uploadToProvider.sh

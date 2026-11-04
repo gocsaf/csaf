@@ -28,7 +28,20 @@ curl --silent --show-error -H 'Accept: application/vnd.github.v3.raw' \
 mkdir -p csaf_examples/${VERSION}
 cd csaf_examples/${VERSION}
 
-cat ../../csaf_examples_pathnames_${VERSION}.txt | \
- xargs -I {} \
-  curl --silent --show-error -H 'Accept: application/vnd.github.v3.raw' \
-   https://api.github.com/repos/oasis-tcs/csaf/contents/{} -O
+if [ "$VERSION" = "2.0" ]; then
+
+    cat ../../csaf_examples_pathnames_${VERSION}.txt | \
+    xargs -I {} \
+      curl --silent --show-error \
+      -H 'Accept: application/vnd.github.v3.raw' \
+      https://api.github.com/repos/oasis-tcs/csaf/contents/{} -O
+
+elif [ "$VERSION" = "2.1" ]; then
+
+    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/clear/2026/csaf2_1.json"
+    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/green/2026/csaf2_1green.json"
+    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/amber/2026/csaf2_1amber.json"
+    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/amber%2Bstrict/2026/csaf2_1amberstrict.json"
+    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/red/2026/csaf2_1red.json"
+
+fi

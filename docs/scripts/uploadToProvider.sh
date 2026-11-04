@@ -18,6 +18,17 @@ set -e
 ./downloadExamples.sh 2.0
 ./downloadExamples.sh 2.1
 
+# uploadSingle uploads a single advisory
+uploadSingle() {
+../../bin-linux-amd64/csaf_uploader --insecure -P security123 -a upload \
+            -t "$1" \
+            -u https://localhost:8443/cgi-bin/csaf_provider.go \
+            --client_cert ~/devca1/testclient1.crt \
+            --client_key ~/devca1/testclient1-key.pem \
+            ./csaf_examples/"$3"/"$2"
+}
+
+
 # upload uploads examples per CSAF version with their TLPs
 upload() {
     local version=$1
@@ -25,14 +36,16 @@ upload() {
     local tlps=("$@")
     local counter=0
     for f in $(ls csaf_examples/$version); do
-        ../../bin-linux-amd64/csaf_uploader --insecure -P security123 -a upload \
-            -t ${tlps[$((counter++ % ${#tlps[@]}))]} \
-            -u https://localhost:8443/cgi-bin/csaf_provider.go \
-            --client_cert ~/devca1/testclient1.crt \
-            --client_key ~/devca1/testclient1-key.pem \
-            ./csaf_examples/$version/"$f"
+            uploadSingle "${tlps[$((counter++ % ${#tlps[@]}))]}" "$f" "$version"
     done
 }
 
 upload 2.0 "white" "green" "amber" "red"
-upload 2.1 "clear" "green" "amber" "amber+strict" "red"
+
+# For 2.1, we have different TLPs, so we make sure to match them
+
+uploadSingle "clear" "csaf2_1.json" "2.1"
+uploadSingle "green" "csaf2_1green.json" "2.1"
+uploadSingle "amber" "csaf2_1amber.json" "2.1"
+uploadSingle "amber+strict" "csaf2_1amberstrict.json"  "2.1"
+uploadSingle "red" "csaf2_1red.json" "2.1"
