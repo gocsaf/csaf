@@ -38,10 +38,10 @@ if [ "$VERSION" = "2.0" ]; then
 
 elif [ "$VERSION" = "2.1" ]; then
 
-    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/clear/2026/csaf2_1.json"
-    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/green/2026/csaf2_1green.json"
-    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/amber/2026/csaf2_1amber.json"
-    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/amber%2Bstrict/2026/csaf2_1amberstrict.json"
-    curl --silent --show-error -O "https://github.com/csaf-testsuite/distribution/blob/2.1_main/data/.well-known/csaf/red/2026/csaf2_1red.json"
+    curl --silent --show-error -O "https://raw.githubusercontent.com/csaf-testsuite/distribution/refs/heads/2.1_main/data/.well-known/csaf/clear/2026/csaf2_1.json"
+    curl --silent --show-error -O "https://raw.githubusercontent.com/csaf-testsuite/distribution/refs/heads/2.1_main/data/.well-known/csaf/green/2026/csaf2_1green.json"
+    curl --silent --show-error -O "https://raw.githubusercontent.com/csaf-testsuite/distribution/refs/heads/2.1_main/data/.well-known/csaf/amber/2026/csaf2_1amber.json"
+    curl --silent --show-error -O "https://raw.githubusercontent.com/csaf-testsuite/distribution/refs/heads/2.1_main/data/.well-known/csaf/amber+strict/2026/csaf2_1amberstrict.json"
+    curl --silent --show-error -O "https://raw.githubusercontent.com/csaf-testsuite/distribution/refs/heads/2.1_main/data/.well-known/csaf/red/2026/csaf2_1red.json"
 
 fi
