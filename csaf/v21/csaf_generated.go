@@ -255,15 +255,17 @@ type CSAFDocumentInvolvementActionsElem struct {
 
 type CSAFDocumentInvolvementActionsElemCategory string
 
+const CSAFDocumentInvolvementActionsElemCategoryAssessment CSAFDocumentInvolvementActionsElemCategory = "assessment"
 const CSAFDocumentInvolvementActionsElemCategoryConfirmation CSAFDocumentInvolvementActionsElemCategory = "confirmation"
 const CSAFDocumentInvolvementActionsElemCategoryCoordination CSAFDocumentInvolvementActionsElemCategory = "coordination"
 const CSAFDocumentInvolvementActionsElemCategoryDiscovery CSAFDocumentInvolvementActionsElemCategory = "discovery"
 const CSAFDocumentInvolvementActionsElemCategoryDispute CSAFDocumentInvolvementActionsElemCategory = "dispute"
+const CSAFDocumentInvolvementActionsElemCategoryEmbargo CSAFDocumentInvolvementActionsElemCategory = "embargo"
 const CSAFDocumentInvolvementActionsElemCategoryExploitation CSAFDocumentInvolvementActionsElemCategory = "exploitation"
 const CSAFDocumentInvolvementActionsElemCategoryFixDeployment CSAFDocumentInvolvementActionsElemCategory = "fix_deployment"
 const CSAFDocumentInvolvementActionsElemCategoryFixRelease CSAFDocumentInvolvementActionsElemCategory = "fix_release"
 const CSAFDocumentInvolvementActionsElemCategoryNotification CSAFDocumentInvolvementActionsElemCategory = "notification"
-const CSAFDocumentInvolvementActionsElemCategoryTriage CSAFDocumentInvolvementActionsElemCategory = "triage"
+const CSAFDocumentInvolvementActionsElemCategoryObservation CSAFDocumentInvolvementActionsElemCategory = "observation"
 
 type CSAFDocumentInvolvementActionsElemStatus string
 
@@ -482,7 +484,7 @@ type CSAFVulnerabilitiesElem struct {
 	// Holds the date and time the vulnerability was originally discovered.
 	DiscoveryDate *DateTime `json:"discovery_date,omitempty,omitzero"`
 
-	// Contains the local IDs referring to this vulnerability from another part of the
+	// Contains the local ID referring to this vulnerability from another part of the
 	// same document.
 	DlVulnID *DlVulnIDT `json:"dl_vuln_id,omitempty,omitzero"`
 

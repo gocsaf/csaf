@@ -197,6 +197,20 @@ def prepare_schemas(
         schemas[name] = json.loads(data)
         retrieval_uris[name] = uri
 
+    for name, version_property in (
+        ("csaf.json", None),
+        ("provider.json", "metadata_version"),
+        ("aggregator.json", "aggregator_version"),
+    ):
+        properties = schemas[name]["properties"]
+        properties["$schema"]["enum"] = [properties["$schema"]["const"]]
+        version = (
+            properties[version_property]
+            if version_property is not None
+            else properties["document"]["properties"]["csaf_version"]
+        )
+        version["enum"] = [version["const"]]
+
     patch_property_references(schemas)
 
     documents: list[tuple[str, bytes]] = []

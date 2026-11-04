@@ -118,15 +118,17 @@
       "name": "Category",
       "type_name": "CSAFDocumentInvolvementActionsElemCategory",
       "constants": {
+        "assessment": "CSAFDocumentInvolvementActionsElemCategoryAssessment",
         "confirmation": "CSAFDocumentInvolvementActionsElemCategoryConfirmation",
         "coordination": "CSAFDocumentInvolvementActionsElemCategoryCoordination",
         "discovery": "CSAFDocumentInvolvementActionsElemCategoryDiscovery",
         "dispute": "CSAFDocumentInvolvementActionsElemCategoryDispute",
+        "embargo": "CSAFDocumentInvolvementActionsElemCategoryEmbargo",
         "exploitation": "CSAFDocumentInvolvementActionsElemCategoryExploitation",
         "fix_deployment": "CSAFDocumentInvolvementActionsElemCategoryFixDeployment",
         "fix_release": "CSAFDocumentInvolvementActionsElemCategoryFixRelease",
         "notification": "CSAFDocumentInvolvementActionsElemCategoryNotification",
-        "triage": "CSAFDocumentInvolvementActionsElemCategoryTriage"
+        "observation": "CSAFDocumentInvolvementActionsElemCategoryObservation"
       }
     },
     "/document/involvement/actions/*/date": {

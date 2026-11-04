@@ -44,6 +44,12 @@
         },
         "issuing_authority": {
           "description": "Provides information about the authority of the issuing party to release the document, in particular, the party's constituency and responsibilities or other obligations.",
+          "examples": [
+            "Example Company PSIRT is responsible for vulnerability handling across all Example Company products and services.",
+            "Example CERT as designated CSIRT according to Directive (EU) 2022/2555 Article 12 section 1 acts as coordinator for the purposes of coordinated vulnerability disclosure.",
+            "Example ISAC publishes security information for products used by or relevant for its constituency enriched by a sector-specific assessment.",
+            "The Example Organization Security Team is responsible for vulnerability handling across all Example Organization offerings."
+          ],
           "minLength": 1,
           "title": "Issuing authority",
           "type": "string"
@@ -115,6 +121,7 @@
   "description": "Representation of metadata information of a CSAF provider as a JSON document.",
   "properties": {
     "$schema": {
+      "const": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json",
       "description": "Contains the URL of the provider-metadata.json JSON schema which the document promises to be valid for.",
       "enum": [
         "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json"
@@ -270,6 +277,7 @@
       "type": "string"
     },
     "metadata_version": {
+      "const": "2.1",
       "description": "Gives the version of the CSAF provider metadata specification which the document was generated for.",
       "enum": [
         "2.1"

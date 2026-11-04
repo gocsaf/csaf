@@ -61,6 +61,7 @@
   "description": "Representation of information where to find CSAF providers as a JSON document.",
   "properties": {
     "$schema": {
+      "const": "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json",
       "description": "Contains the URL of the Aggregator JSON schema which the document promises to be valid for.",
       "enum": [
         "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json"
@@ -128,6 +129,7 @@
       "type": "object"
     },
     "aggregator_version": {
+      "const": "2.1",
       "description": "Gives the version of the CSAF aggregator specification which the document was generated for.",
       "enum": [
         "2.1"
