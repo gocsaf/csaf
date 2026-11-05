@@ -284,7 +284,7 @@ func (p *processor) process(files []string) error {
 		}
 	}()
 
-	req, err := http.NewRequest("POST", p.cfg.URL+"/api/bulk_upload/", pr)
+	req, err := http.NewRequest("POST", p.cfg.URL+"/api/bulk_upload", pr)
 	if err != nil {
 		log.Printf("failed to create request %v", err)
 		return err
