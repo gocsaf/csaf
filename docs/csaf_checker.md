@@ -1,5 +1,13 @@
 ## csaf_checker
 
+### CSAF version support
+
+The checker can load CSAF 2.0 and 2.1 provider metadata and selects the advisory
+JSON Schema from `document.csaf_version`. Its distribution checks remain based
+on CSAF 2.0.
+
+The checker does not provide a complete CSAF 2.1 conformance check. 
+
 ### Usage
 
 ```
