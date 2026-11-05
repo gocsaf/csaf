@@ -35,6 +35,7 @@ Can be used for automated forwarding of CSAF documents.
 ### [csaf_validator](docs/csaf_validator.md)
 is a tool to validate local CSAF 2.0 and 2.1 advisory files against the JSON Schema
 selected by their `document.csaf_version` and an optional remote validator.
+Remote validation is only supported for CSAF 2.0, not for CSAF 2.1.
 
 ## Tools for advisory providers
 
