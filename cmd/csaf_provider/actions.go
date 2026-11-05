@@ -33,6 +33,13 @@ import (
 
 const dateFormat = time.RFC3339
 
+type Result struct {
+	Name        string   `json:"name"`
+	ReleaseDate string   `json:"release_date"`
+	Warnings    []string `json:"warnings,omitempty"`
+	Error       error    `json:"-"`
+}
+
 // loadCSAF loads the csaf file from the request, calls the "UploadLimter" function to
 // set the upload limit size of the file and the refines
 // the filename. It returns the filename, file content in a buffer of bytes
@@ -353,12 +360,7 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		return nil, err
 	}
 
-	result := struct {
-		Name        string   `json:"name"`
-		ReleaseDate string   `json:"release_date"`
-		Warnings    []string `json:"warnings,omitempty"`
-		Error       error    `json:"-"`
-	}{
+	result := Result{
 		Name:        newCSAF,
 		ReleaseDate: ex.CurrentReleaseDate.Format(dateFormat),
 		Warnings:    warnings,
