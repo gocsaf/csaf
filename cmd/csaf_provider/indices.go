@@ -52,7 +52,7 @@ func updateIndex(dir string, summaries []SummaryPath) error {
 				lines = append(lines, line)
 			} else {
 				if index, found := slices.BinarySearch(paths, line); found {
-					slices.Delete(paths, index, index+1)
+					paths = slices.Delete(paths, index, index+1)
 				}
 			}
 		}
