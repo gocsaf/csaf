@@ -12,12 +12,13 @@
 
 # csaf
 
-Tools and Go library for [CSAF](csaf.io).
+Tools and Go library for [CSAF](https://csaf.io).
 
-Implements a CSAF [v2.0](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
-and its [errata](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html))
-**trusted provider**, checker, aggregator and **downloader**.
-Includes an uploader command line tool for the trusted provider.
+Includes a **trusted provider**, uploader, checker, aggregator,
+**downloader** and validator.
+Version 5 adds support for CSAF 2.1 alongside
+[CSAF 2.0 and its errata](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html).
+Support differs by tool as described below.
 
 Powers
 [ISDuBA](https://github.com/ISDuBA/ISDuBA),
@@ -25,40 +26,41 @@ Powers
 and others.
 
 
-> [!NOTE]
-> ### Development for CSAF 2.1 starts → new major version 4
-> [develop-4](https://github.com/gocsaf/csaf/tree/develop-4) is the branch
-where we put the new code for CSAF 2.1.
->
-> What do you think of our
-> [rough plan](https://github.com/gocsaf/csaf/blob/develop-4/docs/planning-for-csaf-2.1.md)?
-
-
 ## Tools for users
 ### [csaf_downloader](docs/csaf_downloader.md)
-is a tool for downloading advisories from a provider.
+is a tool for downloading CSAF 2.0 and 2.1 advisories from a provider.
+Use `--csaf_version=2.0` or `--csaf_version=2.1` to select a provider metadata version.
 Can be used for automated forwarding of CSAF documents.
 
 ### [csaf_validator](docs/csaf_validator.md)
-is a tool to validate local advisories files against the JSON Schema and an optional remote validator.
+is a tool to validate local CSAF 2.0 and 2.1 advisory files against the JSON Schema
+selected by their `document.csaf_version` and an optional remote validator.
 
 ## Tools for advisory providers
 
 ### [csaf_provider](docs/csaf_provider.md)
 is an implementation of the role CSAF Trusted Provider, also offering
 a simple HTTPS based management service.
+It can serve CSAF 2.0, CSAF 2.1, or both in separate version trees.
+The default remains CSAF 2.0. See the [provider options](docs/csaf_provider.md#provider-options)
+for `csaf_versions`, `version_folders` and `authoritative_version`.
 
 ### [csaf_uploader](docs/csaf_uploader.md)
-is a command line tool to upload CSAF documents to the `csaf_provider`.
+is a command line tool to upload CSAF 2.0 and 2.1 documents to the `csaf_provider`.
+TLP labels include `white` for CSAF 2.0 and `clear` and `amber+strict` for CSAF 2.1.
 
 ### [csaf_checker](docs/csaf_checker.md)
 is a tool for testing a CSAF Trusted Provider according to [Section 7 of the CSAF standard](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html#7-distributing-csaf-documents).
+Its distribution checks remain based on CSAF 2.0, including directory discovery
+and TLP checks. It does not provide a complete CSAF 2.1 conformance check.
 
 ### [csaf_aggregator](docs/csaf_aggregator.md)
 is a CSAF Aggregator, to list or mirror providers.
+Its generated `aggregator.json` and ROLIE entry formats remain based on CSAF 2.0.
+Full CSAF 2.1 aggregation is not yet supported.
 
 
-## Use as go library
+## Use as Go library
 
 The modules of this repository can be used as library by other Go applications. [ISDuBA](https://github.com/ISDuBA/ISDuBA) does so, for example.
 But there is only limited support and thus it is _not officially supported_.
@@ -141,4 +143,5 @@ For further details of the development process consult our [development page](./
 
 - Contains third party Free Software components under licenses that to our best knowledge are compatible at time of adding the dependency, [3rdpartylicenses.md](3rdpartylicenses.md) has the details.
 
-- Check the source file of each schema under `/csaf/schema/` to see the source and license of each one.
+- Check the source file of each schema under `csaf/schema/` and `csaf/v21/schema/`
+  to see the source and license of each one.
