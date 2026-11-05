@@ -71,6 +71,7 @@ func (c *controller) handleSignature(
 	r *http.Request,
 	data []byte,
 	sigText string,
+	passwd string,
 ) (string, *crypto.Key, error) {
 
 	// Was the signature given via request?
@@ -109,7 +110,7 @@ func (c *controller) handleSignature(
 		return "", nil, err
 	}
 
-	if passwd := r.FormValue("passphrase"); !c.cfg.NoPassphrase && passwd != "" {
+	if !c.cfg.NoPassphrase && passwd != "" {
 		if key, err = key.Unlock([]byte(passwd)); err != nil {
 			return "", nil, err
 		}
@@ -276,7 +277,8 @@ func (c *controller) upload(r *http.Request) (any, error) {
 	if sigText == "" {
 		return nil, errors.New("missing signature in request")
 	}
-	armored, key, err := c.handleSignature(r, data, sigText)
+	passwd := r.FormValue("passphrase")
+	armored, key, err := c.handleSignature(r, data, sigText, passwd)
 	if err != nil {
 		return nil, err
 	}
