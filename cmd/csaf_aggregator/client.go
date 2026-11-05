@@ -15,7 +15,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 var errNotFound = errors.New("not found")

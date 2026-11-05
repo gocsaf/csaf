@@ -16,11 +16,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/csaf"
-	"github.com/gocsaf/csaf/v3/csaf/provider"
-	"github.com/gocsaf/csaf/v3/csaf/types"
-	"github.com/gocsaf/csaf/v3/internal/bare"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/csaf"
+	"github.com/gocsaf/csaf/v5/csaf/provider"
+	"github.com/gocsaf/csaf/v5/csaf/types"
+	"github.com/gocsaf/csaf/v5/internal/bare"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 const (

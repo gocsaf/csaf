@@ -178,7 +178,7 @@ testsemver:
 
 
 # Set -ldflags parameter to pass the semversion.
-LDFLAGS = -ldflags "-X github.com/gocsaf/csaf/v3/util.SemVersion=$(SEMVER)"
+LDFLAGS = -ldflags "-X github.com/gocsaf/csaf/v5/util.SemVersion=$(SEMVER)"
 
 # Build binaries and place them under bin-$(GOOS)-$(GOARCH)
 # Using 'Target-specific Variable Values' to specify the build target system

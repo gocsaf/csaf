@@ -15,7 +15,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/gocsaf/csaf/v3/internal/options"
+	"github.com/gocsaf/csaf/v5/internal/options"
 )
 
 // run uses a processor to check all the given domains or direct urls

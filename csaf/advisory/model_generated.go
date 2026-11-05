@@ -7,7 +7,7 @@
 package advisory
 
 import (
-	"github.com/gocsaf/csaf/v3/csaf/types"
+	"github.com/gocsaf/csaf/v5/csaf/types"
 )
 
 // CSAF contains common fields and optional version-specific details.

@@ -23,9 +23,9 @@ import (
 
 	"github.com/jessevdk/go-flags"
 
-	"github.com/gocsaf/csaf/v3/csaf"
-	"github.com/gocsaf/csaf/v3/internal/misc"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/csaf"
+	"github.com/gocsaf/csaf/v5/internal/misc"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 const (

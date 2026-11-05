@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	v21 "github.com/gocsaf/csaf/v3/csaf/v21"
+	v21 "github.com/gocsaf/csaf/v5/csaf/v21"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 

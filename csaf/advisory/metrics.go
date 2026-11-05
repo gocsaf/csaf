@@ -10,7 +10,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gocsaf/csaf/v3/csaf/types"
+	"github.com/gocsaf/csaf/v5/csaf/types"
 )
 
 type Scores []Score

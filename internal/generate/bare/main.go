@@ -68,7 +68,7 @@ func generateBare(structures []*match) ([]byte, error) {
 			source.WriteString("\"encoding/json\"\n")
 		}
 		if usesDateTime {
-			source.WriteString("\n\"github.com/gocsaf/csaf/v3/csaf/types\"\n")
+			source.WriteString("\n\"github.com/gocsaf/csaf/v5/csaf/types\"\n")
 		}
 		source.WriteString(")\n\n")
 	}

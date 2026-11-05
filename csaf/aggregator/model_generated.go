@@ -7,7 +7,7 @@
 package aggregator
 
 import (
-	"github.com/gocsaf/csaf/v3/csaf/types"
+	"github.com/gocsaf/csaf/v5/csaf/types"
 )
 
 // Aggregator contains common fields and optional version-specific details.

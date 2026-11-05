@@ -14,11 +14,11 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v5/internal/misc"
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 type (

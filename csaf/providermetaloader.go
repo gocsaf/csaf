@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/csaf/provider"
-	"github.com/gocsaf/csaf/v3/internal/bare"
-	"github.com/gocsaf/csaf/v3/internal/misc"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/csaf/provider"
+	"github.com/gocsaf/csaf/v5/internal/bare"
+	"github.com/gocsaf/csaf/v5/internal/misc"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 // ProviderMetadataLoader helps load provider-metadata.json from

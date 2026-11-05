@@ -35,10 +35,10 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/time/rate"
 
-	"github.com/gocsaf/csaf/v3/csaf"
-	"github.com/gocsaf/csaf/v3/csaf/provider"
-	"github.com/gocsaf/csaf/v3/internal/misc"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/csaf"
+	"github.com/gocsaf/csaf/v5/csaf/provider"
+	"github.com/gocsaf/csaf/v5/internal/misc"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 type hashFetchInfo struct {

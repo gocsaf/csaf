@@ -22,7 +22,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v5/internal/misc"
 )
 
 // We from Intevation consider the source code parts in the following

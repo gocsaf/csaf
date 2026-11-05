@@ -20,8 +20,8 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/gocsaf/csaf/v3/internal/testutil"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/internal/testutil"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 func getRequirementTestData(t *testing.T, params testutil.ProviderParams, directoryProvider bool) []Requirement {

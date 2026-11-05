@@ -15,9 +15,9 @@ import (
 	"slices"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/internal/misc"
-	"github.com/gocsaf/csaf/v3/internal/models"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/internal/misc"
+	"github.com/gocsaf/csaf/v5/internal/models"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 // ROLIEServiceWorkspaceCollectionCategoriesCategory is a category in a ROLIE service collection.

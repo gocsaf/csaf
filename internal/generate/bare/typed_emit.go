@@ -36,12 +36,12 @@ func typedSource(packageName, body string) ([]byte, error) {
 		imports = append(imports, "")
 	}
 	if strings.Contains(body, "bare.") {
-		imports = append(imports, `"github.com/gocsaf/csaf/v3/internal/bare"`)
+		imports = append(imports, `"github.com/gocsaf/csaf/v5/internal/bare"`)
 	}
 	for _, pkg := range []string{"types", "v20", "v21"} {
 		if strings.Contains(body, pkg+".") {
 			path := "csaf/" + pkg
-			imports = append(imports, fmt.Sprintf("%q", "github.com/gocsaf/csaf/v3/"+path))
+			imports = append(imports, fmt.Sprintf("%q", "github.com/gocsaf/csaf/v5/"+path))
 		}
 	}
 	source := generatedHeader + "package " + packageName + "\n\n"

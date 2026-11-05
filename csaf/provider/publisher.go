@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gocsaf/csaf/v3/internal/bare"
+	"github.com/gocsaf/csaf/v5/internal/bare"
 )
 
 // DecodePublisher decodes a publisher JSON object for the specified CSAF

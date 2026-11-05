@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-const modulePath = "github.com/gocsaf/csaf/v3"
+const modulePath = "github.com/gocsaf/csaf/v5"
 
 type sourcePackage struct {
 	types     map[string]declaration

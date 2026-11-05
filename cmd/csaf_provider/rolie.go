@@ -14,9 +14,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/csaf"
-	"github.com/gocsaf/csaf/v3/csaf/provider"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v5/csaf"
+	"github.com/gocsaf/csaf/v5/csaf/provider"
+	"github.com/gocsaf/csaf/v5/util"
 )
 
 // rolieFormats are the formats of ROLIE entries per CSAF version.

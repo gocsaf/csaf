@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v5/csaf"
 )
 
 func main() {

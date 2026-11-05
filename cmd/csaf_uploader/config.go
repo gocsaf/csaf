@@ -19,8 +19,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/term"
 
-	"github.com/gocsaf/csaf/v3/internal/certs"
-	"github.com/gocsaf/csaf/v3/internal/options"
+	"github.com/gocsaf/csaf/v5/internal/certs"
+	"github.com/gocsaf/csaf/v5/internal/options"
 )
 
 const (

@@ -20,8 +20,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/csaf"
-	"github.com/gocsaf/csaf/v3/internal/models"
+	"github.com/gocsaf/csaf/v5/csaf"
+	"github.com/gocsaf/csaf/v5/internal/models"
 )
 
 // MessageType is the kind of the message.

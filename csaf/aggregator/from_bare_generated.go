@@ -11,7 +11,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gocsaf/csaf/v3/internal/bare"
+	"github.com/gocsaf/csaf/v5/internal/bare"
 )
 
 type version uint8

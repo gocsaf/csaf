@@ -9,7 +9,7 @@ package bare
 import (
 	"encoding/json"
 
-	"github.com/gocsaf/csaf/v3/csaf/types"
+	"github.com/gocsaf/csaf/v5/csaf/types"
 )
 
 type Aggregator struct {
