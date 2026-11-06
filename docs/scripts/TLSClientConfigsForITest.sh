@@ -27,7 +27,7 @@ echo '
         ssl_verify_depth 2;
 
         # This example allows access to all three TLP locations for all certs.
-        location ~ /.well-known/csaf/(red|green|amber)/{
+        location ~ /.well-known/csaf/(v2\.[01]/)?(red|green|amber|amber\+strict)/{
             # For atomic directory switches
             disable_symlinks off;
             autoindex on;
