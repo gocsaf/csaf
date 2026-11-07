@@ -10,29 +10,35 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gocsaf/csaf/v5/csaf"
+	"github.com/gocsaf/csaf/v5/csaf/aggregator"
+	"github.com/gocsaf/csaf/v5/csaf/types"
 	"github.com/gocsaf/csaf/v5/internal/misc"
 	"github.com/gocsaf/csaf/v5/util"
 )
 
 type fullJob struct {
 	provider           *provider
-	aggregatorProvider *csaf.AggregatorCSAFProvider
+	aggregatorProvider *aggregator.AggregatorCSAFProvidersElem
+	vtr                *versionTree
 	work               fullWorkFunc
 	err                error
 }
 
 // setupProviderFull fetches the provider-metadata.json for a specific provider.
-func (w *worker) setupProviderFull(ctx context.Context, provider *provider) error {
+func (w *worker) setupProviderFull(ctx context.Context, provider *provider, vtr *versionTree) error {
 	w.log.Info("Setting up provider",
 		"provider", slog.GroupValue(
 			slog.String("name", provider.Name),
@@ -40,6 +46,7 @@ func (w *worker) setupProviderFull(ctx context.Context, provider *provider) erro
 		))
 	w.dir = ""
 	w.provider = provider
+	w.vtr = vtr
 
 	// Each job needs a separate client.
 	w.client = w.processor.cfg.httpClient(provider)
@@ -64,14 +71,14 @@ func (w *worker) setupProviderFull(ctx context.Context, provider *provider) erro
 }
 
 // fullWorkFunc implements the actual work (mirror/list).
-type fullWorkFunc func(*worker, context.Context) (*csaf.AggregatorCSAFProvider, error)
+type fullWorkFunc func(*worker, context.Context) (*aggregator.AggregatorCSAFProvidersElem, error)
 
 // fullWork handles the treatment of providers concurrently.
 func (w *worker) fullWork(ctx context.Context, wg *sync.WaitGroup, jobs <-chan *fullJob) {
 	defer wg.Done()
 
 	for j := range jobs {
-		if err := w.setupProviderFull(ctx, j.provider); err != nil {
+		if err := w.setupProviderFull(ctx, j.provider, j.vtr); err != nil {
 			j.err = err
 			continue
 		}
@@ -117,37 +124,73 @@ func (p *processor) full(ctx context.Context) error {
 		go w.fullWork(ctx, &wg, queue)
 	}
 
-	jobs := make([]fullJob, len(p.cfg.Providers))
+	vtrs := p.cfg.versionTrees()
+	jobs := make([][]fullJob, len(vtrs))
 
-	for i, provider := range p.cfg.Providers {
-		var work fullWorkFunc
-		if provider.runAsMirror(p.cfg) {
-			work = (*worker).mirror
-		} else {
-			work = (*worker).lister
+	for i, vtr := range vtrs {
+		providers := vtr.providers()
+		jobs[i] = make([]fullJob, len(providers))
+		for j, provider := range providers {
+			var work fullWorkFunc
+			if provider.runAsMirror(p.cfg) {
+				work = (*worker).mirror
+			} else {
+				work = (*worker).lister
+			}
+			jobs[i][j] = fullJob{
+				provider: provider,
+				vtr:      vtr,
+				work:     work,
+			}
 		}
-		jobs[i] = fullJob{
-			provider: provider,
-			work:     work,
+	}
+	for i := range jobs {
+		for j := range jobs[i] {
+			queue <- &jobs[i][j]
 		}
-		queue <- &jobs[i]
 	}
 	close(queue)
 
 	wg.Wait()
 
+	var errs []error
+	for i, vtr := range vtrs {
+		if err := p.writeAggregator(vtr, jobs[i]); err != nil {
+			errs = append(errs, fmt.Errorf("%s%w", vtr.prefixVer(), err))
+		}
+	}
+
+	if p.cfg.VersionFolders {
+		if err := p.linkAuthoritativeVersion(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+// writeAggregator writes an aggregator.json of a [versionTree] from job results.
+func (p *processor) writeAggregator(vtr *versionTree, jobs []fullJob) error {
+
 	// Assemble aggregator data structure.
-	var providers []*csaf.AggregatorCSAFProvider
-	var publishers []*csaf.AggregatorCSAFPublisher
+	var providers []aggregator.AggregatorCSAFProvidersElem
+	var publishers []aggregator.AggregatorCSAFPublishersElem
 
 	for i := range jobs {
 		j := &jobs[i]
+		if errors.Is(j.err, errVersionNotServed) {
+			p.log.Info("Version tree not served by provider",
+				"provider", j.provider.Name,
+				"csaf_version", vtr.version)
+			continue
+		}
 		if j.err != nil {
 			p.log.Error("Job execution failed",
 				slog.Group("job",
 					slog.Group("provider"),
 					"name", j.provider.Name,
 				),
+				"csaf_version", vtr.version,
 				"err", j.err,
 			)
 			continue
@@ -158,20 +201,43 @@ func (p *processor) full(ctx context.Context) error {
 					slog.Group("provider"),
 					"name", j.provider.Name,
 				),
+				"csaf_version", vtr.version,
 			)
 			continue
 		}
 
 		// "https://" signals a publisher.
 		if strings.HasPrefix(j.provider.Domain, "https://") {
-			pub := &csaf.AggregatorCSAFPublisher{
+			if len(j.aggregatorProvider.Mirrors) == 0 {
+				p.log.Error("Publishers can only be listed as mirrors",
+					"provider", j.provider.Name,
+					"csaf_version", vtr.version)
+				continue
+			}
+			pub := aggregator.AggregatorCSAFPublishersElem{
 				Metadata:       j.aggregatorProvider.Metadata,
 				Mirrors:        j.aggregatorProvider.Mirrors,
 				UpdateInterval: j.provider.updateInterval(p.cfg),
 			}
+			if slices.ContainsFunc(publishers, func(o aggregator.AggregatorCSAFPublishersElem) bool {
+				return reflect.DeepEqual(o, pub)
+			}) {
+				p.log.Warn("Ignoring duplicate publisher entry",
+					"provider", j.provider.Name,
+					"csaf_version", vtr.version)
+				continue
+			}
 			publishers = append(publishers, pub)
 		} else {
-			providers = append(providers, j.aggregatorProvider)
+			if slices.ContainsFunc(providers, func(o aggregator.AggregatorCSAFProvidersElem) bool {
+				return reflect.DeepEqual(o, *j.aggregatorProvider)
+			}) {
+				p.log.Warn("Ignoring duplicate provider entry",
+					"provider", j.provider.Name,
+					"csaf_version", vtr.version)
+				continue
+			}
+			providers = append(providers, *j.aggregatorProvider)
 		}
 	}
 
@@ -179,39 +245,114 @@ func (p *processor) full(ctx context.Context) error {
 		return errors.New("all jobs failed, stopping")
 	}
 
-	version := csaf.AggregatorVersion20
-	canonicalURL := csaf.AggregatorURL(
-		p.cfg.Domain + "/.well-known/csaf-aggregator/aggregator.json")
-
-	lastUpdated := csaf.TimeStamp(time.Now().UTC())
-
-	agg := csaf.Aggregator{
-		Aggregator:     &p.cfg.Aggregator,
-		Version:        &version,
-		CanonicalURL:   &canonicalURL,
-		CSAFProviders:  providers,
-		CSAFPublishers: publishers,
-		LastUpdated:    &lastUpdated,
-	}
-
-	web := filepath.Join(p.cfg.Web, ".well-known", "csaf-aggregator")
-
-	dstName := filepath.Join(web, "aggregator.json")
-
-	fname, file, err := util.MakeUniqFile(dstName + ".tmp")
+	agg, err := aggregator.NewAggregator(vtr.version)
 	if err != nil {
 		return err
 	}
+	agg.Aggregator = p.cfg.aggregatorInfo()
+	agg.CanonicalURL = aggregator.AggregatorURLT(vtr.aggregatorURL())
+	agg.CSAFProviders = providers
+	agg.CSAFPublishers = publishers
+	agg.LastUpdated = timestamp(time.Now())
+	if from := p.cfg.MaintainedFrom; from != nil {
+		ts := timestamp(*from)
+		agg.SetMaintainedFrom(&ts)
+	}
+	if until := p.cfg.MaintainedFrom; until != nil {
+		ts := timestamp(*until)
+		agg.SetMaintainedUntil(&ts)
+	}
 
-	if _, err := agg.WriteTo(file); err != nil {
+	return writeAggregatorFile(vtr.aggregatorPath(), agg)
+}
+
+// timestamp returns t as [types.DateTime].
+func timestamp(t time.Time) types.DateTime {
+	return types.NewDateTime(t.UTC().Truncate(time.Second))
+}
+
+// aggregatorInfo returns the configured aggregator section of the aggregator.json.
+func (c *config) aggregatorInfo() aggregator.AggregatorAggregator {
+	ai := &c.Aggregator
+	return aggregator.AggregatorAggregator{
+		Category:         *ai.Category,
+		Name:             ai.Name,
+		Namespace:        ai.Namespace,
+		ContactDetails:   ai.ContactDetails,
+		IssuingAuthority: ai.IssuingAuthority,
+	}
+}
+
+// writeAggregatorFile writes the aggregator.json.
+func writeAggregatorFile(path string, agg *aggregator.Aggregator) error {
+	if err := agg.Check(); err != nil {
+		return fmt.Errorf("invalid aggregator.json: %w", err)
+	}
+	return writeValidatedJSON(path, agg, csaf.ValidateAggregator)
+}
+
+// writeValidatedJSON writes v as JSON to path after schema validation.
+func writeValidatedJSON(path string, v any, validate func(any) ([]string, error)) error {
+	raw, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	var doc any
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return err
+	}
+	msgs, err := validate(doc)
+	if err != nil {
+		return err
+	}
+	if len(msgs) > 0 {
+		return fmt.Errorf("%s does not validate: %s",
+			filepath.Base(path), strings.Join(msgs, "; "))
+	}
+
+	fname, file, err := util.MakeUniqFile(path + ".tmp")
+	if err != nil {
+		return err
+	}
+	if _, err := file.Write(append(raw, '\n')); err != nil {
 		file.Close()
-		os.RemoveAll(fname)
+		os.Remove(fname)
 		return err
 	}
 
 	if err := file.Close(); err != nil {
+		os.Remove(fname)
 		return err
 	}
+	if err := os.Rename(fname, path); err != nil {
+		os.Remove(fname)
+		return err
+	}
+	return nil
+}
 
-	return os.Rename(fname, dstName)
+// linkAuthoritativeVersion symlinks the aggregator.json of the authoritative
+// CSAF version to be available at aggregator_path
+func (p *processor) linkAuthoritativeVersion() error {
+	link := filepath.Join(p.cfg.Web, p.cfg.AggregatorPath, "aggregator.json")
+	target := filepath.Join(versionFolder(p.cfg.AuthoritativeVersion), "aggregator.json")
+
+	if _, err := os.Stat(filepath.Join(filepath.Dir(link), target)); err != nil {
+		return fmt.Errorf("cannot link authoritative aggregator.json: %w", err)
+	}
+
+	if current, err := os.Readlink(link); err == nil && current == target {
+		return nil
+	}
+	// Switch atomically, e.g. at the roll-over date.
+	tmp := link + ".tmp"
+	os.Remove(tmp)
+	if err := os.Symlink(target, tmp); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp, link); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	return nil
 }
