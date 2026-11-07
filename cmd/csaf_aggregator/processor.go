@@ -10,12 +10,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/gocsaf/csaf/v5/csaf"
 	csafprovider "github.com/gocsaf/csaf/v5/csaf/provider"
@@ -59,6 +61,7 @@ type worker struct {
 	categories       map[string]util.Set[string] // the categories per label.
 	log              *slog.Logger                // the structured logger, supplied with the worker number.
 	pool             misc.BufferPool
+	vtr              *versionTree // [versionTree] of current job
 }
 
 func newWorker(num int, processor *processor, pool misc.BufferPool) *worker {
@@ -84,20 +87,28 @@ func (w *worker) createDir() (string, error) {
 		return w.dir, nil
 	}
 	dir, err := util.MakeUniqDir(
-		filepath.Join(w.processor.cfg.Folder, w.provider.Name))
+		filepath.Join(w.vtr.folder, w.provider.Name))
 	if err == nil {
 		w.dir = dir
 	}
 	return dir, err
 }
 
+// errVersionNotServed is produced by a CSAF version mismatch
+// between loaded provider and worker's [versionTree].
+var errVersionNotServed = errors.New("CSAF version not served")
+
 func (w *worker) locateProviderMetadata(ctx context.Context, domain string) error {
-
 	loader := csaf.NewProviderMetadataLoader(w.client)
-
+	loader.Version = csaf.SpecVersion(w.vtr.version)
 	lpmd := loader.LoadWithContext(ctx, domain)
 
 	if !lpmd.Valid() {
+		if slices.ContainsFunc(lpmd.Messages, func(m csaf.ProviderMetadataLoadMessage) bool {
+			return m.Type == csaf.VersionMismatch
+		}) {
+			return fmt.Errorf("%w: %s by %q", errVersionNotServed, w.vtr.version, domain)
+		}
 		for i := range lpmd.Messages {
 			w.log.Error(
 				"Loading provider-metadata.json",
@@ -121,28 +132,35 @@ func (w *worker) locateProviderMetadata(ctx context.Context, domain string) erro
 	return nil
 }
 
-// getProviderBaseURL returns the base URL for the provider.
-func (w *worker) getProviderBaseURL() (*url.URL, error) {
-	baseURL, err := url.Parse(w.processor.cfg.Domain)
-	if err != nil {
-		return nil, err
-	}
-	baseURL = baseURL.JoinPath(".well-known",
-		"csaf-aggregator",
-		w.provider.Name)
-	return baseURL, nil
+// mirrorURL returns the URL of the given path elements below the
+// mirror of the current provider.
+func (w *worker) mirrorURL(elems ...string) string {
+	return w.vtr.url(w.provider.Name) + "/" + strings.Join(elems, "/")
 }
 
-// removeOrphans removes the directories that are not in the providers list.
+// removeOrphans removes the mirrors of the trees which are not in their
+// providers list.
 func (p *processor) removeOrphans() error {
-
-	keep := util.Set[string]{}
-	for _, p := range p.cfg.Providers {
-		keep.Add(p.Name)
+	for _, vtr := range p.cfg.versionTrees() {
+		keep := util.Set[string]{}
+		for _, provider := range vtr.providers() {
+			keep.Add(provider.Name)
+		}
+		if err := p.removeOrphansIn(vtr.dir(), vtr.folder, keep); err != nil {
+			return err
+		}
 	}
+	if p.cfg.VersionFolders {
+		web := filepath.Join(p.cfg.Web, p.cfg.AggregatorPath)
+		return p.removeOrphansIn(web, p.cfg.Folder, util.Set[string]{})
+	}
+	return nil
+}
 
-	path := filepath.Join(p.cfg.Web, ".well-known", "csaf-aggregator")
-
+// removeOrphansIn removes the mirrors in path  that are not in keep.
+// Only symlinks to directories are removed, and their targets if
+// they are stored in folder.
+func (p *processor) removeOrphansIn(path, folder string, keep util.Set[string]) error {
 	entries, err := func() ([]os.DirEntry, error) {
 		dir, err := os.Open(path)
 		if err != nil {
@@ -156,7 +174,7 @@ func (p *processor) removeOrphans() error {
 		return err
 	}
 
-	prefix, err := filepath.Abs(p.cfg.Folder)
+	prefix, err := filepath.Abs(folder)
 	if err != nil {
 		return err
 	}
@@ -226,12 +244,13 @@ func (p *processor) process() error {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
 
-	if err := ensureDir(p.cfg.Folder); err != nil {
-		return err
-	}
-	web := filepath.Join(p.cfg.Web, ".well-known", "csaf-aggregator")
-	if err := ensureDir(web); err != nil {
-		return err
+	for _, vtr := range p.cfg.versionTrees() {
+		if err := ensureDir(vtr.folder); err != nil {
+			return err
+		}
+		if err := ensureDir(vtr.dir()); err != nil {
+			return err
+		}
 	}
 
 	if err := p.removeOrphans(); err != nil {
