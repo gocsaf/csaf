@@ -12,19 +12,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gocsaf/csaf/v5/csaf"
-	"github.com/gocsaf/csaf/v5/util"
+	"github.com/gocsaf/csaf/v5/csaf/aggregator"
 )
 
 // mirrorAllowed checks if mirroring is allowed.
 func (w *worker) listAllowed() bool {
-	var b bool
-	return w.expr.Extract(
-		`$.list_on_CSAF_aggregators`,
-		util.BoolMatcher(&b), false, w.metadataProvider) == nil && b
+	return w.metadataModel.ListOnCSAFAggregators
 }
 
-func (w *worker) lister(_ context.Context) (*csaf.AggregatorCSAFProvider, error) {
+func (w *worker) lister(_ context.Context) (*aggregator.AggregatorCSAFProvidersElem, error) {
 	// Check if we are allowed to mirror this domain.
 	if !w.listAllowed() {
 		return nil, fmt.Errorf(
