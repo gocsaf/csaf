@@ -38,6 +38,25 @@ const (
 	indexTXT = "index.txt"
 )
 
+// rolieFormats are the formats of ROLIE entries per CSAF version.
+var rolieFormats = map[string]csaf.Format{
+	csafVersion20: {
+		Schema:  "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf_json_schema.json",
+		Version: csafVersion20,
+	},
+	csafVersion21: {
+		Schema:  "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json",
+		Version: csafVersion21,
+	},
+}
+
+// csvWriter is implemented by [csv.Writer] and [util.FullyQuotedCSVWriter]
+type csvWriter interface {
+	Write([]string) error
+	Flush()
+	Error() error
+}
+
 func (w *worker) writeInterims(label string, summaries []summary) error {
 
 	// Filter out the interims.
@@ -115,7 +134,13 @@ func (w *worker) writeCSV(label string, summaries []summary) error {
 			b.summary.CurrentReleaseDate)
 	})
 
-	out := util.NewFullyQuotedCSWWriter(f)
+	// CSAF 2.1 does not quote fields (7.1.13)
+	var out csvWriter
+	if w.vtr.version == csafVersion20 {
+		out = util.NewFullyQuotedCSWWriter(f)
+	} else {
+		out = csv.NewWriter(f)
+	}
 
 	record := make([]string, 2)
 
@@ -183,26 +208,15 @@ func (w *worker) writeROLIENoSummaries(label string) error {
 
 	fname := "csaf-feed-tlp-" + labelFolder + ".json"
 
-	feedURL, err := w.getProviderBaseURL()
-	if err != nil {
-		return err
-	}
-	feedURL = feedURL.JoinPath(labelFolder, fname)
-
 	links := []csaf.Link{{
 		Rel:  "self",
-		HRef: feedURL.String(),
+		HRef: w.mirrorURL(labelFolder, fname),
 	}}
 
 	if w.provider.serviceDocument(w.processor.cfg) {
-		serviceURL, err := w.getProviderBaseURL()
-		if err != nil {
-			return err
-		}
-		serviceURL = serviceURL.JoinPath("service.json")
 		links = append(links, csaf.Link{
 			Rel:  "service",
-			HRef: serviceURL.String(),
+			HRef: w.mirrorURL("service.json"),
 		})
 	}
 
@@ -230,29 +244,16 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 
 	fname := "csaf-feed-tlp-" + labelFolder + ".json"
 
-	feedURL, err := w.getProviderBaseURL()
-	if err != nil {
-		return err
-	}
-	feedURL = feedURL.JoinPath(labelFolder, fname)
-
 	entries := make([]*csaf.Entry, len(summaries))
 
-	format := csaf.Format{
-		Schema:  "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf_json_schema.json",
-		Version: "2.0",
-	}
+	format := rolieFormats[w.vtr.version]
 
 	for i := range summaries {
 		s := &summaries[i]
 
-		csafURL, err := w.getProviderBaseURL()
-		if err != nil {
-			return err
-		}
-		csafURLString := csafURL.JoinPath(label,
+		csafURLString := w.mirrorURL(label,
 			strconv.Itoa(s.summary.InitialReleaseDate.Year()),
-			s.filename).String()
+			s.filename)
 
 		entries[i] = &csaf.Entry{
 			ID:        s.summary.ID,
@@ -280,18 +281,13 @@ func (w *worker) writeROLIE(label string, summaries []summary) error {
 
 	links := []csaf.Link{{
 		Rel:  "self",
-		HRef: feedURL.String(),
+		HRef: w.mirrorURL(labelFolder, fname),
 	}}
 
 	if w.provider.serviceDocument(w.processor.cfg) {
-		serviceURL, err := w.getProviderBaseURL()
-		if err != nil {
-			return err
-		}
-		serviceURL = serviceURL.JoinPath("service.json")
 		links = append(links, csaf.Link{
 			Rel:  "service",
-			HRef: serviceURL.String(),
+			HRef: w.mirrorURL("service.json"),
 		})
 	}
 
@@ -361,15 +357,9 @@ func (w *worker) writeService() error {
 	for _, ts := range labels {
 		feedName := "csaf-feed-tlp-" + ts + ".json"
 
-		hrefURL, err := w.getProviderBaseURL()
-		if err != nil {
-			return err
-		}
-		hrefURL = hrefURL.JoinPath(ts, feedName)
-
 		collection := csaf.ROLIEServiceWorkspaceCollection{
 			Title:      "CSAF feed (TLP:" + strings.ToUpper(ts) + ")",
-			HRef:       hrefURL.String(),
+			HRef:       w.mirrorURL(ts, feedName),
 			Categories: categories,
 		}
 		collections = append(collections, collection)
@@ -397,6 +387,9 @@ func (w *worker) writeIndices() error {
 
 	for label, summaries := range w.summaries {
 		w.log.Debug("Writing indices", "label", label, "summaries.num", len(summaries))
+		if err := os.MkdirAll(filepath.Join(w.dir, label), 0755); err != nil {
+			return err
+		}
 		if err := w.writeInterims(label, summaries); err != nil {
 			return err
 		}
