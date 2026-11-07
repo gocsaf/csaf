@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"maps"
 	"net/http"
 	"net/url"
 	"os"
@@ -32,19 +31,18 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 
 	"github.com/gocsaf/csaf/v5/csaf"
+	"github.com/gocsaf/csaf/v5/csaf/aggregator"
+	csafprovider "github.com/gocsaf/csaf/v5/csaf/provider"
 	"github.com/gocsaf/csaf/v5/internal/misc"
 	"github.com/gocsaf/csaf/v5/util"
 )
 
 // mirrorAllowed checks if mirroring is allowed.
 func (w *worker) mirrorAllowed() bool {
-	var b bool
-	return w.expr.Extract(
-		`$.mirror_on_CSAF_aggregators`,
-		util.BoolMatcher(&b), false, w.metadataProvider) == nil && b
+	return w.metadataModel.MirrorOnCSAFAggregators
 }
 
-func (w *worker) mirror(ctx context.Context) (*csaf.AggregatorCSAFProvider, error) {
+func (w *worker) mirror(ctx context.Context) (*aggregator.AggregatorCSAFProvidersElem, error) {
 	result, err := w.mirrorInternal(ctx)
 	if err != nil && w.dir != "" {
 		// If something goes wrong remove the debris.
@@ -57,7 +55,7 @@ func (w *worker) mirror(ctx context.Context) (*csaf.AggregatorCSAFProvider, erro
 
 func (w *worker) mirrorInternal(
 	ctx context.Context,
-) (*csaf.AggregatorCSAFProvider, error) {
+) (*aggregator.AggregatorCSAFProvidersElem, error) {
 
 	// Check if we are allowed to mirror this domain.
 	if !w.mirrorAllowed() {
@@ -92,11 +90,11 @@ func (w *worker) mirrorInternal(
 		return nil, err
 	}
 
-	if err := w.doMirrorTransaction(); err != nil {
+	if err := w.writeProviderMetadata(ctx); err != nil {
 		return nil, err
 	}
 
-	if err := w.writeProviderMetadata(ctx); err != nil {
+	if err := w.doMirrorTransaction(); err != nil {
 		return nil, err
 	}
 
@@ -107,25 +105,17 @@ func (w *worker) mirrorInternal(
 	}
 
 	// Add us as a mirror.
-	mirror, err := w.getProviderBaseURL()
-	if err != nil {
-		return nil, err
-	}
-	mirrorURL := csaf.ProviderURL(
-		mirror.JoinPath("provider-metadata.json").String(),
-	)
-
-	acp.Mirrors = []csaf.ProviderURL{
-		mirrorURL,
+	acp.Mirrors = aggregator.MirrorsT{
+		aggregator.ProviderURLT(w.mirrorURL("provider-metadata.json")),
 	}
 
 	return acp, err
 }
 
-func (w *worker) labelsFromSummaries() []csaf.TLPLabel {
-	labels := make([]csaf.TLPLabel, 0, len(w.summaries))
+func (w *worker) labelsFromSummaries() []string {
+	labels := make([]string, 0, len(w.summaries))
 	for label := range w.summaries {
-		labels = append(labels, csaf.TLPLabel(strings.ToUpper(label)))
+		labels = append(labels, strings.ToUpper(label))
 	}
 	slices.Sort(labels)
 	return labels
@@ -136,85 +126,128 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 
 	fname := filepath.Join(w.dir, "provider-metadata.json")
 
-	prefixURL, err := w.getProviderBaseURL()
+	src := w.metadataModel
+
+	pmd, err := csafprovider.NewProviderMetadata(w.vtr.version)
 	if err != nil {
 		return err
 	}
-	pm := csaf.NewProviderMetadataPrefix(
-		prefixURL.String(),
-		w.labelsFromSummaries())
+	pmd.CanonicalURL = csafprovider.ProviderURLT(w.mirrorURL("provider-metadata.json"))
+	pmd.Publisher = src.Publisher
+	pmd.ListOnCSAFAggregators = true
+	pmd.MirrorOnCSAFAggregators = true
+	pmd.LastUpdated = src.LastUpdated
+
+	if strings.HasPrefix(w.provider.Domain, "https://") {
+		pmd.Role = csafprovider.ProviderRoleCSAFPublisher
+	} else {
+		pmd.Role = csafprovider.ProviderRoleCSAFProvider
+	}
+
+	if from, _ := src.MaintainedFrom(); from != nil {
+		pmd.SetMaintainedFrom(from)
+	}
+	if until, _ := src.MaintainedUntil(); until != nil {
+		pmd.SetMaintainedUntil(until)
+	}
+
+	labels := w.labelsFromSummaries()
+
+	// Register feeds
+	now := timestamp(time.Now())
+	var feeds []csafprovider.ProviderDistributionsElemRolieFeedsElem
+	for _, label := range labels {
+		feed, err := pmd.NewFeed()
+		if err != nil {
+			return err
+		}
+		lower := strings.ToLower(label)
+		summary := "TLP:" + label + "advisories"
+		feed.Summary = &summary
+		feed.TLPLabel = csafprovider.TLPLabelT(label)
+		feed.URL = csafprovider.JsonURLT(w.mirrorURL(lower, feedName(lower)))
+		feed.SetLastUpdated(now)
+		feeds = append(feeds, feed)
+	}
+	if len(feeds) > 0 {
+		dist, err := pmd.NewDistribution()
+		if err != nil {
+			return err
+		}
+		dist.Rolie = &csafprovider.ProviderDistributionsElemRolie{Feeds: feeds}
+		pmd.Distributions = append(pmd.Distributions, dist)
+	}
 
 	// Fill in directory URLs if needed.
 	if w.provider.writeIndices(w.processor.cfg) {
-		for _, label := range slices.Sorted(maps.Keys(w.summaries)) {
-			pm.AddDirectoryDistribution(prefixURL.JoinPath(label).String())
+		for _, label := range labels {
+			dist, err := pmd.NewDistribution()
+			if err != nil {
+				return err
+			}
+			url := w.mirrorURL(strings.ToLower(label))
+			switch w.vtr.version {
+			case csafVersion20:
+				u := csafprovider.URLT(url)
+				dist.SetDirectoryURL(&u)
+			case csafVersion21:
+				dist.SetDirectory(&csafprovider.ProviderDistributionsElemDirectory{
+					TLPLabel: csafprovider.TLPLabelT(label),
+					URL:      csafprovider.URLT(url),
+				})
+			}
+			pmd.Distributions = append(pmd.Distributions, dist)
 		}
 	}
 
-	// Figure out the role
-	var role csaf.MetadataRole
-
-	if strings.HasPrefix(w.provider.Domain, "https://") {
-		role = csaf.MetadataRolePublisher
-	} else {
-		role = csaf.MetadataRoleProvider
-	}
-
-	pm.Role = &role
-
-	pm.Publisher = new(csaf.Publisher)
-
-	var lastUpdate time.Time
-
-	if err := w.expr.Match([]util.PathEvalMatcher{
-		{Expr: `$.publisher`, Action: util.ReMarshalMatcher(pm.Publisher)},
-		{Expr: `$.last_updated`, Action: util.TimeMatcher(&lastUpdate, time.RFC3339)},
-		{Expr: `$.public_openpgp_keys`, Action: util.ReMarshalMatcher(&pm.PGPKeys)},
-	}, w.metadataProvider); err != nil {
-		// only log the errors
-		w.log.Error("Extracting data from original provider failed", "err", err)
-	}
-
 	// We are mirroring the remote public keys, too.
-	if err := w.mirrorPGPKeys(ctx, pm); err != nil {
+	pmd.PublicOpenpgpKeys = slices.Clone(src.PublicOpenpgpKeys)
+	if err := w.mirrorPGPKeys(ctx, pmd); err != nil {
 		return err
 	}
 
-	la := csaf.TimeStamp(lastUpdate)
-	pm.LastUpdated = &la
+	if err := pmd.Check(); err != nil {
+		return fmt.Errorf("invalid provider-metadata.json of mirror: %w", err)
+	}
+	return writeValidatedJSON(fname, pmd, csaf.ValidateProviderMetadata)
 
-	return util.WriteToFile(fname, pm)
+}
+
+// feedName returns the file name of the ROLIE feed of a TLP label
+// in lower case.
+func feedName(label string) string {
+	return "csaf-feed-tlp-" + label + ".json"
 }
 
 // mirrorPGPKeys creates a local openpgp folder and downloads the referenced
 // OpenPGP keys into it. The own key is also inserted.
-func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) error {
+func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csafprovider.Provider) error {
 	openPGPFolder := filepath.Join(w.dir, "openpgp")
 	if err := os.MkdirAll(openPGPFolder, 0755); err != nil {
 		return err
 	}
 
-	keyURL, err := w.getProviderBaseURL()
-	if err != nil {
-		return err
-	}
 	localKeyURL := func(fingerprint string) string {
-		return keyURL.JoinPath("openpgp", fingerprint+".asc").String()
+		return w.mirrorURL("openpgp", fingerprint+".asc")
 	}
 
-	for i := range pm.PGPKeys {
-		pgpKey := &pm.PGPKeys[i]
-		if pgpKey.URL == nil {
+	for i := range pm.PublicOpenpgpKeys {
+		pgpKey := &pm.PublicOpenpgpKeys[i]
+		if pgpKey.URL == "" {
 			w.log.Warn("Ignoring PGP key without URL", "fingerprint", pgpKey.Fingerprint)
 			continue
 		}
-		if _, err := hex.DecodeString(string(pgpKey.Fingerprint)); err != nil {
-			w.log.Warn("Ignoring PGP key with invalid fingerprint", "url", *pgpKey.URL)
+		if pgpKey.Fingerprint == nil {
+			w.log.Warn("Ignoring PGP key without fingerprint", "url", pgpKey.URL)
+			continue
+		}
+		if _, err := hex.DecodeString(*pgpKey.Fingerprint); err != nil {
+			w.log.Warn("Ignoring PGP key with invalid fingerprint", "url", pgpKey.URL)
 			continue
 		}
 
 		// Fetch remote key.
-		res, err := w.client.GetWithContext(ctx, *pgpKey.URL)
+		res, err := w.client.GetWithContext(ctx, string(pgpKey.URL))
 		if err != nil {
 			os.RemoveAll(openPGPFolder)
 			return err
@@ -224,10 +257,10 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 			os.RemoveAll(openPGPFolder)
 			res.Body.Close()
 			return fmt.Errorf("cannot fetch PGP key %s: %s (%d)",
-				*pgpKey.URL, res.Status, res.StatusCode)
+				pgpKey.URL, res.Status, res.StatusCode)
 		}
 
-		fingerprint := strings.ToUpper(string(pgpKey.Fingerprint))
+		fingerprint := strings.ToUpper(*pgpKey.Fingerprint)
 
 		localFile := filepath.Join(openPGPFolder, fingerprint+".asc")
 
@@ -250,8 +283,7 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 		}
 
 		// replace the URL
-		u := localKeyURL(fingerprint)
-		pgpKey.URL = &u
+		pgpKey.URL = csafprovider.URLT(localKeyURL(fingerprint))
 	}
 
 	// If we have public key configured copy it into the new folder
@@ -291,42 +323,21 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 
 // createAggregatorProvider fills the "metadata" section in the "csaf_providers" of
 // the aggregator document.
-func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error) {
-	const (
-		lastUpdatedExpr = `$.last_updated`
-		publisherExpr   = `$.publisher`
-		roleExpr        = `$.role`
-		urlExpr         = `$.canonical_url`
-	)
+func (w *worker) createAggregatorProvider() (*aggregator.AggregatorCSAFProvidersElem, error) {
+	pmd := w.metadataModel
 
-	var (
-		lastUpdatedT time.Time
-		pub          csaf.Publisher
-		roleS        string
-		urlS         string
-	)
-
-	if err := w.expr.Match([]util.PathEvalMatcher{
-		{Expr: lastUpdatedExpr, Action: util.TimeMatcher(&lastUpdatedT, time.RFC3339)},
-		{Expr: publisherExpr, Action: util.ReMarshalMatcher(&pub)},
-		{Expr: roleExpr, Action: util.StringMatcher(&roleS)},
-		{Expr: urlExpr, Action: util.StringMatcher(&urlS)},
-	}, w.metadataProvider); err != nil {
+	pub, err := aggregator.PublisherFromProvider(&pmd.Publisher)
+	if err != nil {
 		return nil, err
 	}
+	role := aggregator.RoleT(pmd.Role)
 
-	var (
-		lastUpdated = csaf.TimeStamp(lastUpdatedT)
-		role        = csaf.MetadataRole(roleS)
-		providerURL = csaf.ProviderURL(urlS)
-	)
-
-	return &csaf.AggregatorCSAFProvider{
-		Metadata: &csaf.AggregatorCSAFProviderMetadata{
-			LastUpdated: &lastUpdated,
-			Publisher:   &pub,
+	return &aggregator.AggregatorCSAFProvidersElem{
+		Metadata: aggregator.AggregatorCSAFProvidersElemMetadata{
+			LastUpdated: pmd.LastUpdated,
+			Publisher:   pub,
 			Role:        &role,
-			URL:         &providerURL,
+			URL:         aggregator.ProviderURLT(pmd.CanonicalURL),
 		},
 	}, nil
 }
@@ -334,8 +345,7 @@ func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error
 // doMirrorTransaction performs an atomic directory swap.
 func (w *worker) doMirrorTransaction() error {
 
-	webTarget := filepath.Join(
-		w.processor.cfg.Web, ".well-known", "csaf-aggregator", w.provider.Name)
+	webTarget := filepath.Join(w.vtr.dir(), w.provider.Name)
 
 	var oldWeb string
 
@@ -353,7 +363,7 @@ func (w *worker) doMirrorTransaction() error {
 	}
 
 	// Check if there is a sysmlink already.
-	target := filepath.Join(w.processor.cfg.Folder, w.provider.Name)
+	target := filepath.Join(w.vtr.folder, w.provider.Name)
 	w.log.Debug("Checking for path existance", "path", target)
 
 	exists, err := util.PathExists(target)
@@ -568,7 +578,8 @@ func (w *worker) mirrorFilesWithContext(
 		}
 
 		// Check against remote validator.
-		if rmv := w.processor.remoteValidator; rmv != nil {
+		// XXX: TODO: disable remote validation with CSAF version 2.1, while it's not yet possible.
+		if rmv := w.processor.remoteValidator; rmv != nil && w.vtr.version == csafVersion20 {
 			rvr, err := rmv.ValidateWithContext(ctx, advisory)
 			if err != nil {
 				w.log.Error("Calling remote validator failed", "err", err)
@@ -583,6 +594,14 @@ func (w *worker) mirrorFilesWithContext(
 		sum, err := csaf.NewAdvisorySummary(w.expr, advisory)
 		if err != nil {
 			w.log.Error("Error while creating new advisory", "file", file, "err", err)
+			return nil
+		}
+
+		if sum.CSAFVersion != w.vtr.version {
+			w.log.Error("Ignoring advisory of other CSAF version",
+				"file", file.URL(),
+				"csaf_version", sum.CSAFVersion,
+				"metadata_version", w.vtr.version)
 			return nil
 		}
 
