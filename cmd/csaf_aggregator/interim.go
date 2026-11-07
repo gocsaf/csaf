@@ -25,13 +25,34 @@ import (
 	"time"
 
 	"github.com/gocsaf/csaf/v5/csaf"
+	csafprovider "github.com/gocsaf/csaf/v5/csaf/provider"
 	"github.com/gocsaf/csaf/v5/internal/misc"
 	"github.com/gocsaf/csaf/v5/util"
 )
 
 type interimJob struct {
 	provider *provider
+	vtr      *versionTree
 	err      error
+}
+
+// interimLabels are the TLP labels of the mirrored advisories
+// per CSAF version.
+var interimLabels = map[string][]csafprovider.TLPLabelT{
+	csafVersion20: {
+		csafprovider.TLPLabelTUNLABELED,
+		csafprovider.TLPLabelTWHITE,
+		csafprovider.TLPLabelTGREEN,
+		csafprovider.TLPLabelTAMBER,
+		csafprovider.TLPLabelTRED,
+	},
+	csafVersion21: {
+		csafprovider.TLPLabelTCLEAR,
+		csafprovider.TLPLabelTGREEN,
+		csafprovider.TLPLabelTAMBER,
+		csafprovider.TLPLabelTAMBERSTRICT,
+		csafprovider.TLPLabelTRED,
+	},
 }
 
 // statusExpr is used as an expression to check the new status
@@ -165,11 +186,13 @@ func (w *worker) checkInterims(
 }
 
 // setupProviderInterim prepares the worker for a specific provider.
-func (w *worker) setupProviderInterim(provider *provider) {
-	w.log.Info("Setting up worker", provider.Name, provider.Domain)
+func (w *worker) setupProviderInterim(provider *provider, vtr *versionTree) {
+	w.log.Info("Setting up worker", provider.Name, provider.Domain,
+		"csaf_version", vtr.version)
 
 	w.dir = ""
 	w.provider = provider
+	w.vtr = vtr
 
 	// Each job needs a separate client.
 	w.client = w.processor.cfg.httpClient(provider)
@@ -177,28 +200,21 @@ func (w *worker) setupProviderInterim(provider *provider) {
 
 func (w *worker) interimWork(ctx context.Context, wg *sync.WaitGroup, jobs <-chan *interimJob) {
 	defer wg.Done()
-	path := filepath.Join(w.processor.cfg.Web, ".well-known", "csaf-aggregator")
 
 	tooOld := w.processor.cfg.tooOldForInterims()
 
 	for j := range jobs {
-		w.setupProviderInterim(j.provider)
+		w.setupProviderInterim(j.provider, j.vtr)
 
-		providerPath := filepath.Join(path, j.provider.Name)
+		providerPath := filepath.Join(j.vtr.dir(), j.provider.Name)
 
 		j.err = func() error {
-			tx := newLazyTransaction(providerPath, w.processor.cfg.Folder)
+			tx := newLazyTransaction(providerPath, j.vtr.folder)
 			defer tx.rollback()
 
 			// Try all the labels
-			for _, label := range []string{
-				csaf.TLPLabelUnlabeled,
-				csaf.TLPLabelWhite,
-				csaf.TLPLabelGreen,
-				csaf.TLPLabelAmber,
-				csaf.TLPLabelRed,
-			} {
-				label = strings.ToLower(label)
+			for _, tlp := range interimLabels[j.vtr.version] {
+				label := strings.ToLower(string(tlp))
 				labelPath := filepath.Join(providerPath, label)
 
 				interCSV := filepath.Join(labelPath, interimsCSV)
@@ -277,10 +293,14 @@ func (p *processor) interim(ctx context.Context) error {
 		go w.interimWork(ctx, &wg, queue)
 	}
 
-	jobs := make([]interimJob, len(p.cfg.Providers))
+	var jobs []interimJob
+	for _, vtr := range p.cfg.versionTrees() {
+		for _, provider := range vtr.providers() {
+			jobs = append(jobs, interimJob{provider: provider, vtr: vtr})
+		}
+	}
 
-	for i, p := range p.cfg.Providers {
-		jobs[i] = interimJob{provider: p}
+	for i := range jobs {
 		queue <- &jobs[i]
 	}
 	close(queue)
@@ -291,7 +311,7 @@ func (p *processor) interim(ctx context.Context) error {
 
 	for i := range jobs {
 		if err := jobs[i].err; err != nil {
-			errs = append(errs, err)
+			errs = append(errs, fmt.Errorf("%s%w", jobs[i].vtr.prefixVer(), err))
 		}
 	}
 
