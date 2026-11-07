@@ -14,13 +14,18 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"runtime"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/gocsaf/csaf/v5/csaf"
+	"github.com/gocsaf/csaf/v5/csaf/aggregator"
 	"github.com/gocsaf/csaf/v5/internal/certs"
 	"github.com/gocsaf/csaf/v5/internal/filter"
 	"github.com/gocsaf/csaf/v5/internal/models"
@@ -36,7 +41,17 @@ const (
 	defaultDomain         = "https://example.com"
 	defaultUpdateInterval = "on best effort"
 	defaultLockFile       = "/var/lock/csaf_aggregator/lock"
+	defaultAggregatorPath = "/.well-known/csaf-aggregator"
+	defaultCSAFVersion    = csafVersion20
 )
+
+// supported CSAF versions
+const (
+	csafVersion20 = "2.0"
+	csafVersion21 = "2.1"
+)
+
+var csafVersions = []string{csafVersion20, csafVersion21}
 
 type provider struct {
 	Name   string `toml:"name"`
@@ -47,8 +62,8 @@ type provider struct {
 	WriteIndices *bool     `toml:"write_indices"`
 	Categories   *[]string `toml:"categories"`
 	// ServiceDocument incidates if we should create a service.json document.
-	ServiceDocument     *bool                    `toml:"create_service_document"`
-	AggregatoryCategory *csaf.AggregatorCategory `toml:"category"`
+	ServiceDocument     *bool                                    `toml:"create_service_document"`
+	AggregatoryCategory *aggregator.AggregatorAggregatorCategory `toml:"category"`
 
 	// UpdateInterval is as the mandatory `update_interval` if this is a publisher.
 	UpdateInterval *string `toml:"update_interval"`
@@ -67,6 +82,7 @@ type provider struct {
 
 	clientCerts   []tls.Certificate
 	ignorePattern filter.PatternMatcher
+	CSAFVersions  []string `toml:"csaf_versions"`
 }
 
 type config struct {
@@ -77,17 +93,17 @@ type config struct {
 	Web     string `toml:"web"`
 	Domain  string `toml:"domain"`
 	// Rate gives the average upper limit of https operations per second.
-	Rate                 *float64            `toml:"rate"`
-	Insecure             *bool               `toml:"insecure"`
-	Categories           *[]string           `toml:"categories"`
-	WriteIndices         bool                `toml:"write_indices"`
-	Aggregator           csaf.AggregatorInfo `toml:"aggregator"`
-	Providers            []*provider         `toml:"providers"`
-	OpenPGPPrivateKey    string              `toml:"openpgp_private_key"`
-	OpenPGPPublicKey     string              `toml:"openpgp_public_key"`
-	Passphrase           *string             `toml:"passphrase"`
-	AllowSingleProvider  bool                `toml:"allow_single_provider"`
-	StreamingROLIEParser bool                `long:"streaming_rolie_parser" description:"Use the streaming ROLIE feed parser (experimental)" toml:"streaming_rolie_parser"`
+	Rate                 *float64       `toml:"rate"`
+	Insecure             *bool          `toml:"insecure"`
+	Categories           *[]string      `toml:"categories"`
+	WriteIndices         bool           `toml:"write_indices"`
+	Aggregator           aggregatorInfo `toml:"aggregator"`
+	Providers            []*provider    `toml:"providers"`
+	OpenPGPPrivateKey    string         `toml:"openpgp_private_key"`
+	OpenPGPPublicKey     string         `toml:"openpgp_public_key"`
+	Passphrase           *string        `toml:"passphrase"`
+	AllowSingleProvider  bool           `toml:"allow_single_provider"`
+	StreamingROLIEParser bool           `long:"streaming_rolie_parser" description:"Use the streaming ROLIE feed parser (experimental)" toml:"streaming_rolie_parser"`
 
 	ClientCert       *string        `toml:"client_cert"`
 	ClientKey        *string        `toml:"client_key"`
@@ -131,6 +147,43 @@ type config struct {
 
 	clientCerts   []tls.Certificate
 	ignorePattern filter.PatternMatcher
+
+	AggregatorPath       string     `toml:"aggregator_path"`
+	AuthoritativeVersion string     `toml:"authoritative_version"`
+	CSAFVersions         []string   `toml:"csaf_versions"`
+	MaintainedFrom       *time.Time `toml:"maintained_from"`
+	MaintainedUntil      *time.Time `toml:"maintained_until"`
+	VersionFolders       bool       `toml:"version_folders"`
+}
+
+// aggregatorInfo is the [aggregator] section of the config.
+type aggregatorInfo struct {
+	Category         *aggregator.AggregatorAggregatorCategory `toml:"category"`
+	Name             string                                   `toml:"name"`
+	Namespace        string                                   `toml:"namespace"`
+	ContactDetails   *string                                  `toml:"contact_details"`
+	IssuingAuthority *string                                  `toml:"issuing_authority"`
+}
+
+// validCategory tells if c is a aggregator category.
+func validCategory(c aggregator.AggregatorAggregatorCategory) bool {
+	return c == aggregator.AggregatorAggregatorCategoryAggregator ||
+		c == aggregator.AggregatorAggregatorCategoryLister
+}
+
+// check checks the mandatory values of the [aggregator] section.
+func (ac *aggregatorInfo) check() error {
+	switch {
+	case ac.Category == nil:
+		return errors.New("aggregator.category is missing")
+	case !validCategory(*ac.Category):
+		return fmt.Errorf("aggregator.category %q is invalid", *ac.Category)
+	case ac.Name == "":
+		return errors.New("aggregator.name is missing")
+	case ac.Namespace == "":
+		return errors.New("aggregator.namespace is missing")
+	}
+	return nil
 }
 
 // configPaths are the potential file locations of the config file.
@@ -214,6 +267,11 @@ func (p *provider) serviceDocument(c *config) bool {
 	return c.ServiceDocument
 }
 
+// versionConfigured tells if the provider is configured with given CSAF version.
+func (p *provider) versionConfigured(version string) bool {
+	return p.CSAFVersions == nil || slices.Contains(p.CSAFVersions, version)
+}
+
 // writeIndices tells if we should write index.txt and changes.csv.
 func (p *provider) writeIndices(c *config) bool {
 	if p.WriteIndices != nil {
@@ -224,28 +282,15 @@ func (p *provider) writeIndices(c *config) bool {
 
 func (p *provider) runAsMirror(c *config) bool {
 	if p.AggregatoryCategory != nil {
-		return *p.AggregatoryCategory == csaf.AggregatorAggregator
+		return *p.AggregatoryCategory == aggregator.AggregatorAggregatorCategoryAggregator
 	}
 	return c.runAsMirror()
-}
-
-// atLeastNMirrors checks if there are at least n mirrors configured.
-func (c *config) atLeastNMirrors(n int) bool {
-	var mirrors int
-	for _, p := range c.Providers {
-		if p.runAsMirror(c) {
-			if mirrors++; mirrors >= n {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 // runAsMirror determines if the aggregator should run in mirror mode.
 func (c *config) runAsMirror() bool {
 	return c.Aggregator.Category != nil &&
-		*c.Aggregator.Category == csaf.AggregatorAggregator
+		*c.Aggregator.Category == aggregator.AggregatorAggregatorCategoryAggregator
 }
 
 func (c *config) privateOpenPGPKey() (*crypto.Key, error) {
@@ -347,9 +392,71 @@ func (c *config) httpClient(p *provider) util.ClientWithContext {
 	}
 }
 
+// checkAggregatorPath checks that aggregator_path is an absolute
+// URL path without trailing slash.
+func (c *config) checkAggregatorPath() error {
+	if p := c.AggregatorPath; !strings.HasPrefix(p, "/") || p == "/" || path.Clean(p) != p {
+		return fmt.Errorf(
+			"invalid aggregator_path %q: expected an absolute path without trailing slash", p)
+	}
+	return nil
+}
+
+// checkDomain checks that domain is an absolute URL with no trailing slashes.
+func (c *config) checkDomain() error {
+	u, err := url.ParseRequestURI(c.Domain)
+	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" ||
+		strings.HasSuffix(c.Domain, "/") {
+		return fmt.Errorf(
+			"invalid domain %q: expected an http(s) URL without trailing slash", c.Domain)
+	}
+	return nil
+}
+
+// checkMirror checks provider mirror settings of all configured [versionTree]s.
+func (c *config) checkMirror() error {
+	for _, vtr := range c.versionTrees() {
+		if err := vtr.checkMirror(); err != nil {
+			return fmt.Errorf("%s%w", vtr.prefixVer(), err)
+		}
+	}
+	return nil
+}
+
+// checkMirror checks provider mirror settings for [versionTree].
+func (vtr *versionTree) checkMirror() error {
+	c := vtr.cfg
+	if c.runAsMirror() {
+		if !c.AllowSingleProvider && !vtr.atLeastNMirrors(2) {
+			return errors.New("at least 2 providers need to be mirrored")
+		} else if c.AllowSingleProvider && !vtr.atLeastNMirrors(1) {
+			return errors.New("at least one provider must be mirrored")
+		}
+	} else if !c.AllowSingleProvider && vtr.atLeastNMirrors(1) {
+		return errors.New("found mirrors in a lister aggregator")
+	}
+
+	return nil
+}
+
+// atLeastNMirrors checks if there are at least n mirrors configured in [versionTree].
+func (vtr *versionTree) atLeastNMirrors(n int) bool {
+	var mirrors int
+	for _, p := range vtr.providers() {
+		if p.runAsMirror(vtr.cfg) {
+			if mirrors++; mirrors >= n {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (c *config) checkProviders() error {
-	if !c.AllowSingleProvider && len(c.Providers) < 2 {
-		return errors.New("need at least two providers")
+	for _, vtr := range c.versionTrees() {
+		if !c.AllowSingleProvider && len(vtr.providers()) < 2 {
+			return fmt.Errorf("%sneed at least two providers", vtr.prefixVer())
+		}
 	}
 
 	already := util.Set[string]{}
@@ -361,6 +468,9 @@ func (c *config) checkProviders() error {
 		if p.Domain == "" {
 			return errors.New("no domain given for provider")
 		}
+		if p.AggregatoryCategory != nil && !validCategory(*p.AggregatoryCategory) {
+			return fmt.Errorf("invalid category %q for provider %q", *p.AggregatoryCategory, p.Name)
+		}
 		if already.Contains(p.Name) {
 			return fmt.Errorf("provider '%s' is configured more than once", p.Name)
 		}
@@ -369,18 +479,60 @@ func (c *config) checkProviders() error {
 	return nil
 }
 
-func (c *config) checkMirror() error {
-	if c.runAsMirror() {
-		if !c.AllowSingleProvider && !c.atLeastNMirrors(2) {
-			return errors.New("at least 2 providers need to be mirrored")
-		} else if c.AllowSingleProvider && !c.atLeastNMirrors(1) {
-			return errors.New("at least one provider must be mirrored")
-		}
-	} else if !c.AllowSingleProvider && c.atLeastNMirrors(1) {
-		return errors.New("found mirrors in a lister aggregator")
+// checkVersions checks that versions contains supported CSAF versions without
+// duplicates.
+func checkVersions(key string, versions []string) error {
+	if len(versions) == 0 {
+		return fmt.Errorf("%s needs at least one configured version", key)
 	}
-
+	for i, version := range versions {
+		if !slices.Contains(csafVersions, version) {
+			return fmt.Errorf("%s: unsupported CSAF version %q", key, version)
+		}
+		if slices.Contains(versions[:i], version) {
+			return fmt.Errorf("%s: duplicate CSAF version %q", key, version)
+		}
+	}
 	return nil
+}
+
+// checkVersionSettings checks the CSAF version specific settings.
+func (c *config) checkVersionSettings() error {
+	if err := checkVersions("csaf_versions", c.CSAFVersions); err != nil {
+		return err
+	}
+	if len(c.CSAFVersions) > 1 && !c.VersionFolders {
+		return errors.New("need version_folders when serving multiple CSAF versions")
+	}
+	if !c.serves(c.AuthoritativeVersion) {
+		return fmt.Errorf("csaf_versions missing authoritative_version %q", c.AuthoritativeVersion)
+	}
+	if !c.serves(csafVersion21) && (c.MaintainedFrom != nil || c.MaintainedUntil != nil) {
+		return fmt.Errorf("csaf_versions missing %q for maintained_from and maintaned_until settings", csafVersion21)
+	}
+	if from, until := c.MaintainedFrom, c.MaintainedUntil; from != nil && until != nil && until.Before(*from) {
+		return fmt.Errorf("maintained_until is before maintained_from")
+	}
+	for _, p := range c.Providers {
+		if p.CSAFVersions == nil {
+			continue
+		}
+		key := fmt.Sprintf("csaf_versions of provider %q", p.Name)
+		if err := checkVersions(key, p.CSAFVersions); err != nil {
+			return err
+		}
+		for _, version := range p.CSAFVersions {
+			if !c.serves(version) {
+				return fmt.Errorf("%s: CSAF %s is not in csaf_versions", key, version)
+			}
+		}
+	}
+	return nil
+}
+
+// serves returns true if CSAF version is configured.
+func (c *config) serves(version string) bool {
+	return slices.Contains(c.CSAFVersions, version)
 }
 
 func (c *config) setDefaults() {
@@ -394,6 +546,18 @@ func (c *config) setDefaults() {
 
 	if c.Domain == "" {
 		c.Domain = defaultDomain
+	}
+
+	if c.AggregatorPath == "" {
+		c.AggregatorPath = defaultAggregatorPath
+	}
+
+	if len(c.CSAFVersions) == 0 {
+		c.CSAFVersions = []string{defaultCSAFVersion}
+	}
+
+	if c.AuthoritativeVersion == "" {
+		c.AuthoritativeVersion = slices.Min(c.CSAFVersions)
 	}
 
 	switch {
@@ -412,8 +576,9 @@ func (c *config) setDefaults() {
 		}
 	}
 
-	if c.Workers > len(c.Providers) {
-		c.Workers = len(c.Providers)
+	// one job per provider and CSAF version.
+	if jobs := len(c.Providers) * len(c.CSAFVersions); c.Workers > jobs {
+		c.Workers = jobs
 	}
 }
 
@@ -494,7 +659,10 @@ func (c *config) prepare() error {
 	for _, prepare := range []func() error{
 		c.prepareCertificates,
 		c.compileIgnorePatterns,
-		c.Aggregator.Validate,
+		c.Aggregator.check,
+		c.checkDomain,
+		c.checkAggregatorPath,
+		c.checkVersionSettings,
 		c.checkProviders,
 		c.checkMirror,
 	} {
