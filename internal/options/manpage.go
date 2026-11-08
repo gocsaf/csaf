@@ -5,8 +5,7 @@
 //
 // SPDX-FileCopyrightText: 2026 Juan Manuel Méndez Rey <juan.mendezr@proton.me>
 
-// Package manpage lets a command write its own manual page.
-package manpage
+package options
 
 import (
 	"os"
@@ -14,14 +13,15 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-// Flag carries the hidden option that asks a command for its manual page.
-// Add it to a parser with AddTo before parsing, and call WriteIfAsked after.
-type Flag struct {
-	Man bool `long:"man" description:"Write the manual page in groff format to stdout and exit" hidden:"true"`
+// ManFlag carries the --man option that asks a command for its manual page.
+// Parser adds it by itself. Commands that build their own flags.Parser add it
+// with AddTo before parsing and call WriteIfAsked after.
+type ManFlag struct {
+	Man bool `long:"man" description:"Write the manual page in groff format to stdout and exit"`
 }
 
 // AddTo adds the --man option to the given parser.
-func (f *Flag) AddTo(parser *flags.Parser) error {
+func (f *ManFlag) AddTo(parser *flags.Parser) error {
 	_, err := parser.AddGroup("Manual page", "", f)
 	return err
 }
@@ -29,7 +29,7 @@ func (f *Flag) AddTo(parser *flags.Parser) error {
 // WriteIfAsked writes the manual page of the parser to stdout if --man was
 // given, and reports whether it did. The date in the page comes from
 // SOURCE_DATE_EPOCH when that is set, so the output is reproducible.
-func (f *Flag) WriteIfAsked(parser *flags.Parser) bool {
+func (f *ManFlag) WriteIfAsked(parser *flags.Parser) bool {
 	if !f.Man {
 		return false
 	}

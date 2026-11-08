@@ -15,7 +15,6 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/gocsaf/csaf/v3/internal/manpage"
 	"github.com/gocsaf/csaf/v3/util"
 
 	"github.com/BurntSushi/toml"
@@ -62,7 +61,7 @@ func (p *Parser[C]) Parse() ([]string, *C, error) {
 	}
 	parser.ShortDescription = p.ShortDescription
 	parser.LongDescription = p.LongDescription
-	var man manpage.Flag
+	var man ManFlag
 	if err := man.AddTo(parser); err != nil {
 		return nil, nil, err
 	}

@@ -18,7 +18,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 
-	"github.com/gocsaf/csaf/v3/internal/manpage"
+	internaloptions "github.com/gocsaf/csaf/v3/internal/options"
 	"github.com/gocsaf/csaf/v3/util"
 )
 
@@ -45,7 +45,7 @@ func main() {
 		"request, and csaf_uploader is the client that talks to it. It keeps " +
 		"the provider metadata, the ROLIE feeds and the index files in step as " +
 		"advisories arrive, and signs them with the configured OpenPGP key."
-	var man manpage.Flag
+	var man internaloptions.ManFlag
 	if err := man.AddTo(parser); err != nil {
 		log.Fatalf("error: %v\n", err)
 	}
