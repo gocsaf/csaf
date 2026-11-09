@@ -43,7 +43,8 @@ func (w *worker) setupProviderFull(ctx context.Context, provider *provider, vtr 
 		"provider", slog.GroupValue(
 			slog.String("name", provider.Name),
 			slog.String("domain", provider.Domain),
-		))
+		),
+		"csaf_version", vtr.version)
 	w.dir = ""
 	w.provider = provider
 	w.vtr = vtr
