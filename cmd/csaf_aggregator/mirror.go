@@ -162,7 +162,7 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 			return err
 		}
 		lower := strings.ToLower(label)
-		summary := "TLP:" + label + "advisories"
+		summary := "TLP:" + label + " advisories"
 		feed.Summary = &summary
 		feed.TLPLabel = csafprovider.TLPLabelT(label)
 		feed.URL = csafprovider.JsonURLT(w.mirrorURL(lower, feedName(lower)))
