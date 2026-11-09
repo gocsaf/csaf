@@ -258,7 +258,7 @@ func (p *processor) writeAggregator(vtr *versionTree, jobs []fullJob) error {
 		ts := timestamp(*from)
 		agg.SetMaintainedFrom(&ts)
 	}
-	if until := p.cfg.MaintainedFrom; until != nil {
+	if until := p.cfg.MaintainedUntil; until != nil {
 		ts := timestamp(*until)
 		agg.SetMaintainedUntil(&ts)
 	}
