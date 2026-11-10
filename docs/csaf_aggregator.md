@@ -113,6 +113,12 @@ client_passphrase       // optional client cert passphrase (limited, experimenta
 client_timeout          // optional timeout for HTTP Client connections
 header                  // adds extra HTTP header fields to the client
 time_range              // Accepted time range of advisories to handle. See downloader docs for details.
+aggregator_path         // URL path below domain where aggregator is served. Path below web, where it is written. (default: "/.well-known/csaf-aggregator")
+authoritative_version   // version symlinked at well-known path (default: lowest CSAF version)
+csaf_versions           // versions served by aggregator: "2.0", "2.1" or both (default: ["2.0"])
+version_folders         // use "v2.0"/"v2.1" folders below aggregator_path, required with multiple versions served (default: false)
+maintained_from         // start of maintenace window for CSAF 2.1 aggregators
+maintained_until        // end of maintenace window for CSAF 2.1 aggregators
 ```
 
 Next we have two TOML _tables_:
@@ -131,7 +137,7 @@ At last there is the TOML _array of tables_:
 providers             // each entry to be mirrored or listed
 ```
 
-where at least 2 providers have to be configured.
+where at least 2 providers have to be configured for every served CSAF version.
 With each _table_ allowing:
 
 ```
@@ -150,6 +156,7 @@ client_key
 client_passphrase
 client_timeout
 header
+csaf_versions
 ```
 
 Where valid `name` and `domain` settings are required.
@@ -178,6 +185,36 @@ be done using an array of strings taken literally or, by prepending `"expr:"`.
 The latter is evaluated as JSONPath and the result will be added into the
 categories document. For a more detailed explanation and examples,
 [refer to the provider config](csaf_provider.md#provider-options).
+
+#### CSAF versions
+The aggregator is capable of serving CSAF 2.0 and 2.1 simultaniously.
+```toml
+csaf_versions = ["2.0", "2.1"]
+version_folders = true
+authoritative_version = "2.0"
+```
+Above setup would create version folders `v2.0` and `v2.1` below the
+configured `aggregator_path` each with their own `aggregator.json` and
+mirrors. The `aggregator.json` at the well-known path becomes a symlink
+to the `authoritative_version`s `aggregator.json`.
+
+A CSAF 2.0 aggregator only syncs/lists providers/publishers of its version,
+same goes for a CSAF 2.1 aggregator. Each provider entry will be tried in
+both versions, unless its own `csaf_versions` restricts it to one. When tried,
+a `provider-metadata.json` lookup happens (well-known -> security.txt -> DNS)
+and the entry is skipped if the provider does not serve it. A provider serving
+both versions would have its authoritative `provider-metadata.json` via symlink
+at well-known location, the other would be found via `security.txt`.
+The minimum of two mirrored providers is now per version served on aggregator.
+
+Switching an existing 2.0 aggregator to `version_folders` will remove the
+mirrors directly under `aggregator_path` and replace the `aggregator.json`
+with the symlink to `authoritative_version` folder file on the next full run.
+This also changes the mirror URLs to:
+`/.well-known/csaf-aggregator/v2.0/<example>/provider-metadata.json`
+
+TODO: A configured remote validator is currently disabled for CSAF 2.1
+advisories, until it is functional for said version.
 
 #### Example config file
 

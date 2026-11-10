@@ -17,6 +17,31 @@ insecure = true
 # to override for testing, enable:
 # allow_single_provider = true
 
+# URL path below `domain` where aggregator is served.
+# Path below `web` where aggregator is written.
+# aggregator_path = "/.well-known/csaf-aggregator"
+
+# CSAF versions served by this aggregator: "2.0", "2.1", or both.
+# Each version has its own aggregator.json and mirrors, inside
+# `version_folders` when serving multiple versions. Providers are
+# checked for each version and skipped if they do not serve it.
+# Also: see providers.csaf_versions.
+
+# Store each CSAF version's tree in a "v2.0" or "v2.1" folder
+# under `aggregator_path`. This is required when serving multiple versions.
+# The `aggregator.json` at `aggregator_path` becomes a symlink to
+# the authoritative version's file (CSAF 2.1, section 7.4.4).
+#version_folders = false
+
+# Version whose aggregator.json is served at aggregator_path, usually the
+# well-known URL. Defaults to the lowest configured version.
+#authoritative_version = "2.0"
+
+# Set the maintenance window of the aggregator.
+# Only written into the CSAF 2.1 aggregator.json.
+#maintained_from = 2026-01-01T00:00:00Z
+#maintained_until = 2027-01-01T00:00:00Z
+
 [aggregator]
   # Set if this instance shall be a mirror (aka `aggregator`) or a `lister`.
   # This determines the default value for the entries in [[provider]].
@@ -45,6 +70,9 @@ insecure = true
   client_key = "./../devca1/testclient1-key.pem"
 #  client_passphrase = # Limited and experimental, see downloader doc.
 #  header =
+# Restrict entry to only sync CSAF version 2.0.
+# If no csaf_versions set, entry is tried by all csaf_versions on aggregator.
+# csaf_versions = ["2.0"]
 
 [[providers]]
   name = "local-dev-provider3"
