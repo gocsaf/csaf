@@ -26,6 +26,7 @@ insecure = true
 # `version_folders` when serving multiple versions. Providers are
 # checked for each version and skipped if they do not serve it.
 # Also: see providers.csaf_versions.
+# csaf_versions = ["2.0"]
 
 # Store each CSAF version's tree in a "v2.0" or "v2.1" folder
 # under `aggregator_path`. This is required when serving multiple versions.
