@@ -32,3 +32,16 @@ echo '=== run aggregator'
 cd ~/csaf/
 sudo cp docs/examples/aggregator.toml /etc/csaf
 sudo ./bin-linux-amd64/csaf_aggregator -c /etc/csaf/aggregator.toml
+
+echo
+echo '=== check aggregator for both versions ==='
+
+for version in 2.0 2.1; do
+    curl --fail --insecure --silent \
+      "https://localhost:9443/.well-known/csaf-aggregator/v$version/aggregator.json" > /dev/null
+done
+
+# check symlink to authoritative version working
+curl --fail --insecure --silent \
+  https://localhost:9443/.well-known/csaf-aggregator/aggregator.json |
+  grep -q '"aggregator_version": "2.0"'

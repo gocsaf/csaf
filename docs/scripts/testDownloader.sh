@@ -55,10 +55,24 @@ echo '==== run downloader (2)'
 mkdir ~/downloaded2
 
 ./bin-linux-amd64/csaf_downloader --directory ../downloaded2 \
-  --insecure https://localhost:9443/.well-known/csaf-aggregator/local-dev-provider2/provider-metadata.json
+  --insecure https://localhost:9443/.well-known/csaf-aggregator/v2.0/local-dev-provider2/provider-metadata.json
 
 echo
 echo '==== this was downloaded (2)'
 pushd ~/downloaded2
+find .
+popd
+
+echo
+echo '=== run downloader from the CSAF 2.1 mirror (2b)'
+
+mkdir ~/downloaded2-2.1
+
+./bin-linux-amd64/csaf_downloader --directory ../downloaded2-2.1 \
+  --insecure https://localhost:9443/.well-known/csaf-aggregator/v2.1/local-dev-provider2-v21/provider-metadata.json
+
+echo
+echo '==== this was downloaded (2b)'
+pushd ~/downloaded2-2.1
 find .
 popd
