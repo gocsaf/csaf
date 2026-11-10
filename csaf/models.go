@@ -41,8 +41,10 @@ const (
 var tlpLabelPattern = alternativesUnmarshal(
 	TLPLabelUnlabeled,
 	TLPLabelWhite,
+	TLPLabelClear,
 	TLPLabelGreen,
 	TLPLabelAmber,
+	TLPLabelAmberStrict,
 	TLPLabelRed,
 )
 

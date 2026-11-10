@@ -52,14 +52,16 @@ func (lc *labelChecker) reset() {
 // tlpLevel returns an inclusion order of TLP colors.
 func tlpLevel(label csaf.TLPLabel) int {
 	switch label {
-	case csaf.TLPLabelWhite:
+	case csaf.TLPLabelWhite, csaf.TLPLabelClear:
 		return 1
 	case csaf.TLPLabelGreen:
 		return 2
 	case csaf.TLPLabelAmber:
 		return 3
-	case csaf.TLPLabelRed:
+	case csaf.TLPLabelAmberStrict:
 		return 4
+	case csaf.TLPLabelRed:
+		return 5
 	default:
 		return 0
 	}
@@ -107,9 +109,9 @@ func (lc *labelChecker) checkPermissions(
 	url string,
 ) {
 	switch label {
-	case csaf.TLPLabelAmber, csaf.TLPLabelRed:
+	case csaf.TLPLabelAmber, csaf.TLPLabelAmberStrict, csaf.TLPLabelRed:
 		// If the client has no authorization it shouldn't be able
-		// to access TLP:AMBER or TLP:RED advisories
+		// to access TLP:AMBER, TLP:AMBER+STRICT or TLP:RED advisories
 		p.badAmberRedPermissions.use()
 		if !p.usedAuthorizedClient() {
 			p.badAmberRedPermissions.error(
@@ -130,7 +132,7 @@ func (lc *labelChecker) checkPermissions(
 			}
 		}
 
-	case csaf.TLPLabelWhite:
+	case csaf.TLPLabelWhite, csaf.TLPLabelClear:
 		// If we found a white labeled document we need to track it
 		// to find out later if there was an unprotected way to access it.
 
@@ -156,9 +158,9 @@ func (lc *labelChecker) checkPermissions(
 					// directly warn if we cannot access it.
 					// The cases of being in an amber or red feed are resolved.
 					if !accessible &&
-						(lc.feedLabel == "" || lc.feedLabel == csaf.TLPLabelWhite) {
+						(lc.feedLabel == "" || lc.feedLabel == csaf.TLPLabelWhite || lc.feedLabel == csaf.TLPLabelClear) {
 						p.badWhitePermissions.warn(
-							"Advisory %s of TLP level WHITE is access-protected.", url)
+							"Advisory %s of TLP level %s is access-protected.", url, label)
 					}
 					resp.Body.Close()
 				}
@@ -331,7 +333,7 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 			switch label {
 			case csaf.TLPLabelUnlabeled:
 				hasUnlabeled = true
-			case csaf.TLPLabelWhite:
+			case csaf.TLPLabelWhite, csaf.TLPLabelClear:
 				hasWhite = true
 			case csaf.TLPLabelGreen:
 				hasGreen = true
@@ -357,7 +359,7 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 
 	if !hasWhite && !hasGreen && !hasUnlabeled {
 		p.badROLIEFeed.error(
-			"One ROLIE feed with a TLP:WHITE, TLP:GREEN or unlabeled tlp must exist, " +
+			"One ROLIE feed with a TLP:WHITE, TLP:CLEAR, TLP:GREEN or unlabeled tlp must exist, " +
 				"but none were found.")
 	}
 
@@ -365,8 +367,10 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 	for _, label := range []csaf.TLPLabel{
 		csaf.TLPLabelUnlabeled,
 		csaf.TLPLabelWhite,
+		csaf.TLPLabelClear,
 		csaf.TLPLabelGreen,
 		csaf.TLPLabelAmber,
+		csaf.TLPLabelAmberStrict,
 		csaf.TLPLabelRed,
 	} {
 		if !hasSummary.Contains(label) && len(p.labelChecker.advisories[label]) > 0 {
