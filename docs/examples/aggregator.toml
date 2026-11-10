@@ -21,22 +21,29 @@ insecure = true
 # Path below `web` where aggregator is written.
 # aggregator_path = "/.well-known/csaf-aggregator"
 
+# This example shows a setup of an aggregator at the
+# beginning of a transition period (CSAF 2.1, 7.4).
+# The aggregator serves both CSAF 2.0 and 2.1 versions,
+# 2.0 being authoritative. To go back to CSAF 2.0 only,
+# remove csaf_versions, version_folders, authoritative_version,
+# and change provider domains without version folders.
+
 # CSAF versions served by this aggregator: "2.0", "2.1", or both.
 # Each version has its own aggregator.json and mirrors, inside
 # `version_folders` when serving multiple versions. Providers are
 # checked for each version and skipped if they do not serve it.
 # Also: see providers.csaf_versions.
-# csaf_versions = ["2.0"]
+csaf_versions = ["2.0", "2.1"]
 
 # Store each CSAF version's tree in a "v2.0" or "v2.1" folder
 # under `aggregator_path`. This is required when serving multiple versions.
 # The `aggregator.json` at `aggregator_path` becomes a symlink to
 # the authoritative version's file (CSAF 2.1, section 7.4.4).
-#version_folders = false
+version_folders = true
 
 # Version whose aggregator.json is served at aggregator_path, usually the
 # well-known URL. Defaults to the lowest configured version.
-#authoritative_version = "2.0"
+authoritative_version = "2.0"
 
 # Set the maintenance window of the aggregator.
 # Only written into the CSAF 2.1 aggregator.json.
@@ -63,7 +70,7 @@ insecure = true
 
 [[providers]]
   name = "local-dev-provider2"
-  domain = "https://localhost:8443/.well-known/csaf/provider-metadata.json"
+  domain = "https://localhost:8443/.well-known/csaf/v2.0/provider-metadata.json"
 #  rate = 1.2
 #  insecure = true
   write_indices = true
@@ -73,7 +80,17 @@ insecure = true
 #  header =
 # Restrict entry to only sync CSAF version 2.0.
 # If no csaf_versions set, entry is tried by all csaf_versions on aggregator.
-# csaf_versions = ["2.0"]
+  csaf_versions = ["2.0"]
+
+[[providers]]
+  name = "local-dev-provider2-v21"
+  domain = "https://localhost:8443/.well-known/csaf/v2.1/provider-metadata.json"
+#  rate = 1.2
+#  insecure = true
+  write_indices = true
+  client_cert = "./../devca1/testclient1.crt"
+  client_key = "./../devca1/testclient1-key.pem"
+  csaf_versions = ["2.1"]
 
 [[providers]]
   name = "local-dev-provider3"
