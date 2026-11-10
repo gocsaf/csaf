@@ -10,6 +10,9 @@ on:
 
 jobs:
   build:
+    # Disable until Go v1.28, because we need v1.27+ for jsonv2
+    # so oldstable cannot build it right now
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
