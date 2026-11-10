@@ -9,10 +9,12 @@
 package aggregator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/gocsaf/csaf/v5/csaf/provider"
+	"github.com/gocsaf/csaf/v5/internal/bare"
 )
 
 // NewAggregator returns a new [Aggregator] with details
@@ -27,6 +29,23 @@ func NewAggregator(aggregatorVersion string) (*Aggregator, error) {
 		}
 	default:
 		return nil, fmt.Errorf("unsupported aggregator version %q", aggregatorVersion)
+	}
+	return agg, nil
+}
+
+// DecodeAggregator decodes an aggregator.json as CSAF 2.0 or
+// CSAF 2.1 Aggregator based on aggregator_version
+func DecodeAggregator(raw []byte) (*Aggregator, error) {
+	var b bare.Aggregator
+	if err := json.Unmarshal(raw, &b); err != nil {
+		return nil, fmt.Errorf("aggregator: %w", err)
+	}
+	agg, err := FromBare(&b)
+	if err != nil {
+		return nil, fmt.Errorf("aggregator: %w", err)
+	}
+	if err := agg.Check(); err != nil {
+		return nil, fmt.Errorf("aggregator: %w", err)
 	}
 	return agg, nil
 }
