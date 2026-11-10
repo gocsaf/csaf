@@ -303,11 +303,11 @@ func (c *controller) upload(r *http.Request) (any, error) {
 			feedName := "csaf-feed-tlp-" + ts + ".json"
 
 			feed := filepath.Join(folder, feedName)
-			rolie, err := c.getROLIE(folder, t, feedName, feed)
+			rolie, err := c.getROLIE(t, feedName, feed)
 			if err != nil {
 				return err
 			}
-			if err := c.extendROLIE(rolie, folder, newCSAF, t, ex); err != nil {
+			if err := c.extendROLIE(rolie, newCSAF, t, ex); err != nil {
 				return err
 			}
 			c.finalizeROLIE(rolie, feed)
@@ -530,7 +530,7 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 		c.cfg, t,
 		func(folder string, pmd *csaf.ProviderMetadata) error {
 			feed := filepath.Join(folder, feedName)
-			rolie, err := c.getROLIE(folder, t, feedName, feed)
+			rolie, err := c.getROLIE(t, feedName, feed)
 			if err != nil {
 				return err
 			}
@@ -579,7 +579,7 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 				}
 
 				// extend the ROLIE feed.
-				if err := c.extendROLIE(rolie, folder, cleanFilename, t, ex); err != nil {
+				if err := c.extendROLIE(rolie, cleanFilename, t, ex); err != nil {
 					return err
 				}
 

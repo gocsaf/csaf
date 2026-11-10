@@ -66,7 +66,7 @@ func loadCategoryDocument(path string) (*csaf.ROLIECategoryDocument, error) {
 }
 
 // getROLIE loads an existing rolie feed or creates a new one.
-func (c *controller) getROLIE(folder string,
+func (c *controller) getROLIE(
 	t tlp, feedName string, feed string) (*csaf.ROLIEFeed, error) {
 	// Load the feed
 	ts := string(t)
@@ -114,7 +114,6 @@ func (c *controller) getROLIE(folder string,
 // extendROLIE adds a new entry to the ROLIE feed for a given advisory.
 func (c *controller) extendROLIE(
 	rolie *csaf.ROLIEFeed,
-	folder string,
 	newCSAF string,
 	t tlp,
 	ex *csaf.AdvisorySummary,
