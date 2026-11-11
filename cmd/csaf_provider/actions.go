@@ -630,7 +630,10 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 				index++
 			}
 
-			c.finalizeROLIE(rolie, feed)
+			err = c.finalizeROLIE(rolie, feed)
+			if err != nil {
+				return err
+			}
 
 			// Only write index.txt and changes.csv if configured.
 			if c.cfg.WriteIndices {
