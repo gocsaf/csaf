@@ -430,7 +430,11 @@ func (c *controller) readMetadata(tr *tar.Reader) (*UploadMetadata, error) {
 func (c *controller) readSignature(tr *tar.Reader) ([]byte, error) {
 	_, err := tr.Next()
 	if errors.Is(err, io.EOF) {
-		return nil, fmt.Errorf("signature is missing: %w", err)
+		if c.cfg.UploadSignature {
+			return nil, fmt.Errorf("signature is missing: %w", err)
+		} else {
+			return nil, nil
+		}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("extracting header of signature file failed: %w", err)
