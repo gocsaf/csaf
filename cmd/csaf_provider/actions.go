@@ -176,13 +176,9 @@ func (c *controller) doLocalValidation(content any) error {
 }
 
 // doRemoteValidation validates a CSAF doc against a remote validator.
-func (c *controller) doRemoteValidation(content any) error {
+func (c *controller) doRemoteValidation(content any, rv csaf.RemoteValidator) error {
 	if c.cfg.RemoteValidator != nil {
-		validator, err := c.cfg.RemoteValidator.Open()
-		if err != nil {
-			return err
-		}
-		rvr, err := validator.Validate(content)
+		rvr, err := rv.Validate(content)
 		if err != nil {
 			return err
 		}
@@ -193,13 +189,15 @@ func (c *controller) doRemoteValidation(content any) error {
 	return nil
 }
 
-func (c *controller) runValidations(content any) error {
+func (c *controller) runValidations(content any, rv csaf.RemoteValidator) error {
 	if err := c.doLocalValidation(content); err != nil {
 		return err
 	}
 
-	if err := c.doRemoteValidation(content); err != nil {
-		return err
+	if c.cfg.RemoteValidator != nil {
+		if err := c.doRemoteValidation(content, rv); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -248,7 +246,12 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		return nil, err
 	}
 
-	if err = c.runValidations(content); err != nil {
+	var validator csaf.RemoteValidator
+	if c.cfg.RemoteValidator != nil {
+		validator, err = c.cfg.RemoteValidator.Open()
+	}
+
+	if err = c.runValidations(content, validator); err != nil {
 		return nil, err
 	}
 
@@ -464,7 +467,7 @@ func (c *controller) getCleanFilename(tr *tar.Reader) (*tar.Header, string, erro
 	return header, cleanFilename, nil
 }
 
-func (c *controller) getDataFromFile(tr *tar.Reader, pe *util.PathEval) ([]byte, any, *csaf.AdvisorySummary, string, error) {
+func (c *controller) getDataFromFile(tr *tar.Reader, pe *util.PathEval, rv csaf.RemoteValidator) ([]byte, any, *csaf.AdvisorySummary, string, error) {
 	header, cleanFilename, err := c.getCleanFilename(tr)
 	if err != nil {
 		return nil, nil, nil, "", err
@@ -475,7 +478,7 @@ func (c *controller) getDataFromFile(tr *tar.Reader, pe *util.PathEval) ([]byte,
 		return nil, nil, nil, "", err
 	}
 
-	if err = c.runValidations(content); err != nil {
+	if err = c.runValidations(content, rv); err != nil {
 		return nil, nil, nil, "", err
 	}
 
@@ -511,8 +514,19 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 	results := []Result{}
 	pe := util.NewPathEval()
 
+	var rv csaf.RemoteValidator
+	if c.cfg.RemoteValidator != nil {
+		rv, err = c.cfg.RemoteValidator.Open()
+		if err != nil {
+			return nil, err
+		}
+		if rv == nil {
+			return nil, errors.New("failed to initialize remote validator")
+		}
+	}
+
 	// If the request meta data contains no TLP we Extract it from the first document.
-	data, content, ex, cleanFilename, err := c.getDataFromFile(tarReader, pe)
+	data, content, ex, cleanFilename, err := c.getDataFromFile(tarReader, pe, rv)
 	if errors.Is(err, io.EOF) {
 		return nil, errors.New("request contains no files")
 	}
@@ -544,7 +558,7 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 				warn := func(msg string) { warnings = append(warnings, msg) }
 
 				if index > 0 {
-					data, content, ex, cleanFilename, err = c.getDataFromFile(tarReader, pe)
+					data, content, ex, cleanFilename, err = c.getDataFromFile(tarReader, pe, rv)
 					if errors.Is(err, io.EOF) {
 						break
 					}
