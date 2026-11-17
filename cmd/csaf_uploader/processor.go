@@ -317,19 +317,22 @@ func (p *processor) process(files []string) error {
 		return fmt.Errorf("non-JSON reply from server: %v", sb.String())
 	}
 
-	type result struct {
+	type FileResult struct {
 		Name        string   `json:"name"`
 		ReleaseDate string   `json:"release_date"`
 		Warnings    []string `json:"warnings"`
-		Errors      []string `json:"errors"`
 	}
-	var results []result
+	type Result struct {
+		FileResults []FileResult `json:"file_results"`
+		Errors      []string     `json:"errors"`
+	}
+	var result Result
 
-	if err := misc.StrictJSONParse(resp.Body, &results); err != nil {
+	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
 		return err
 	}
 
-	for _, result := range results {
+	for _, result := range result.FileResults {
 		if result.Name != "" {
 			fmt.Printf("Name: %s\n", result.Name)
 		}
@@ -338,8 +341,9 @@ func (p *processor) process(files []string) error {
 		}
 
 		writeStrings("Warnings:", result.Warnings)
-		writeStrings("Errors:", result.Errors)
 	}
+
+	writeStrings("Errors:", result.Errors)
 
 	return uploadErr
 }

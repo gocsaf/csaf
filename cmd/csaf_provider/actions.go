@@ -35,11 +35,14 @@ import (
 
 const dateFormat = time.RFC3339
 
-type Result struct {
+type FileResult struct {
 	Name        string   `json:"name"`
 	ReleaseDate string   `json:"release_date"`
-	Warnings    []string `json:"warnings,omitempty"`
-	Error       error    `json:"-"`
+	Warnings    []string `json:"warnings"`
+}
+type Result struct {
+	FileResults []FileResult `json:"file_results"`
+	Error       []string     `json:"-"`
 }
 
 // loadCSAF loads the csaf file from the request, calls the "UploadLimter" function to
@@ -374,10 +377,13 @@ func (c *controller) upload(r *http.Request) (any, error) {
 		return nil, err
 	}
 
-	result := Result{
+	fileResult := FileResult{
 		Name:        newCSAF,
 		ReleaseDate: ex.CurrentReleaseDate.Format(dateFormat),
 		Warnings:    warnings,
+	}
+	result := Result{
+		FileResults: []FileResult{fileResult},
 	}
 
 	return &result, nil
@@ -517,7 +523,7 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 	t := tlp(strings.ToLower(metadata.TLP))
 
 	summaries := []SummaryPath{}
-	results := []Result{}
+	result := Result{}
 	pe := util.NewPathEval()
 
 	var rv csaf.RemoteValidator
@@ -645,12 +651,12 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 					warn("Publishers in provider metadata and CSAF do not match.")
 				}
 
-				result := Result{
+				fileResult := FileResult{
 					Name:        cleanFilename,
 					ReleaseDate: ex.CurrentReleaseDate.Format(dateFormat),
 					Warnings:    warnings,
 				}
-				results = append(results, result)
+				result.FileResults = append(result.FileResults, fileResult)
 				index++
 			}
 
@@ -673,5 +679,5 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 		return nil, err
 	}
 
-	return &results, nil
+	return &result, nil
 }
