@@ -11,6 +11,7 @@ package main
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -497,11 +498,16 @@ func (c *controller) getDataFromFile(tr *tar.Reader, pe *util.PathEval, rv csaf.
 
 func (c *controller) bulkUpload(r *http.Request) (any, error) {
 	// We reject everything which is not announced as tar archive.
-	if r.Header.Get("Content-Type") != "application/x-tar" {
-		return nil, errors.New("expected content type 'application/x-tar'")
+	if r.Header.Get("Content-Type") != "application/gzip" {
+		return nil, errors.New("expected content type 'application/gzip'")
 	}
 
-	tarReader := tar.NewReader(r.Body)
+	gzipReader, err := gzip.NewReader(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer gzipReader.Close()
+	tarReader := tar.NewReader(gzipReader)
 
 	metadata, err := c.readMetadata(tarReader)
 	if err != nil {

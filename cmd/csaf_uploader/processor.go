@@ -11,6 +11,7 @@ package main
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -199,8 +200,10 @@ func (p *processor) process(files []string) error {
 	}
 
 	go func() {
-		tarWriter := tar.NewWriter(pw)
+		gzipWriter := gzip.NewWriter(pw)
+		tarWriter := tar.NewWriter(gzipWriter)
 		defer pw.Close()
+		defer gzipWriter.Close()
 		defer tarWriter.Close()
 		if err := tarWriter.WriteHeader(header); err != nil {
 			log.Printf("failed to write metadata header to tar writer %v", err)
@@ -291,7 +294,7 @@ func (p *processor) process(files []string) error {
 	}
 
 	req.Header.Set("X-CSAF-PROVIDER-AUTH", p.cfg.cachedAuth)
-	req.Header.Set("Content-Type", "application/x-tar")
+	req.Header.Set("Content-Type", "application/gzip")
 
 	resp, err := p.httpClient().Do(req)
 	if err != nil {
