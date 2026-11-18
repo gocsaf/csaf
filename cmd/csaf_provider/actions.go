@@ -456,9 +456,9 @@ func (c *controller) readSignature(tr *tar.Reader) ([]byte, error) {
 	return signature, nil
 }
 
-// getCleanFilename transforms the filename from the header of a file from a tar stream and
+// cleanupFilename transforms the filename from the header of a file from a tar stream and
 // checks if it is valid.
-func (c *controller) getCleanFilename(tr *tar.Reader) (*tar.Header, string, error) {
+func cleanupFilename(tr *tar.Reader) (*tar.Header, string, error) {
 	// Get header of document file
 	header, err := tr.Next()
 	if err != nil {
@@ -475,7 +475,7 @@ func (c *controller) getCleanFilename(tr *tar.Reader) (*tar.Header, string, erro
 }
 
 func (c *controller) getDataFromFile(tr *tar.Reader, pe *util.PathEval, rv csaf.RemoteValidator) ([]byte, any, *csaf.AdvisorySummary, string, error) {
-	header, cleanFilename, err := c.getCleanFilename(tr)
+	header, cleanFilename, err := cleanupFilename(tr)
 	if err != nil {
 		return nil, nil, nil, "", err
 	}
