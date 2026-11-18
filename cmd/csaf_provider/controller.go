@@ -68,6 +68,7 @@ func (c *controller) bind(pim *pathInfoMux) {
 		pim.handleFunc("/upload", c.auth(c.web(c.upload, "upload.html")))
 		pim.handleFunc("/create", c.auth(c.web(c.create, "create.html")))
 	}
+	pim.handleFunc("/api/bulk_upload", c.auth(api(c.bulkUpload)))
 	pim.handleFunc("/api/upload", c.auth(api(c.upload)))
 	pim.handleFunc("/api/create", c.auth(api(c.create)))
 }

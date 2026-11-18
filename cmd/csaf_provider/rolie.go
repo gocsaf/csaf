@@ -65,21 +65,15 @@ func loadCategoryDocument(path string) (*csaf.ROLIECategoryDocument, error) {
 	return csaf.LoadROLIECategoryDocument(f)
 }
 
-// extendROLIE adds a new entry to the ROLIE feed for a given advisory.
-func (c *controller) extendROLIE(
-	folder string,
-	newCSAF string,
-	t tlp,
-	ex *csaf.AdvisorySummary,
-) error {
+// getROLIE loads an existing rolie feed or creates a new one.
+func (c *controller) getROLIE(
+	t tlp, feedName string, feed string) (*csaf.ROLIEFeed, error) {
 	// Load the feed
 	ts := string(t)
-	feedName := "csaf-feed-tlp-" + ts + ".json"
 
-	feed := filepath.Join(folder, feedName)
 	rolie, err := loadROLIEFeed(feed)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	feedURL := csaf.JSONURL(
@@ -114,11 +108,19 @@ func (c *controller) extendROLIE(
 			},
 		}
 	}
+	return rolie, nil
+}
 
-	rolie.Feed.Updated = csaf.TimeStamp(time.Now().UTC())
-
+// extendROLIE adds a new entry to the ROLIE feed for a given advisory.
+func (c *controller) extendROLIE(
+	rolie *csaf.ROLIEFeed,
+	newCSAF string,
+	t tlp,
+	ex *csaf.AdvisorySummary,
+) error {
 	year := strconv.Itoa(ex.InitialReleaseDate.Year())
 
+	ts := string(t)
 	csafURL := c.cfg.CanonicalURLPrefix +
 		"/.well-known/csaf/" + ts + "/" + year + "/" + newCSAF
 
@@ -150,6 +152,12 @@ func (c *controller) extendROLIE(
 	} else {
 		e.Summary = nil
 	}
+	return nil
+}
+
+// finalizeROLIE sorts the entries of a rolie feed and saves it into a file
+func (c *controller) finalizeROLIE(rolie *csaf.ROLIEFeed, feed string) error {
+	rolie.Feed.Updated = csaf.TimeStamp(time.Now().UTC())
 
 	// Sort by descending updated order.
 	rolie.SortEntriesByUpdated()
