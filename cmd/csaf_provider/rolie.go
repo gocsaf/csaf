@@ -83,7 +83,7 @@ func (c *controller) extendROLIE(
 	newCSAF string,
 	t tlp,
 	ex *csaf.AdvisorySummary,
-	pmd *provider.Provider,
+	pmd *provider.ProviderMetadata,
 	vtr *versionTree,
 ) error {
 	// Load the feed

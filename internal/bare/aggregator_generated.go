@@ -13,15 +13,15 @@ import (
 )
 
 type Aggregator struct {
-	Schema            json.RawMessage                `json:"$schema,omitempty"`
-	Aggregator        AggregatorAggregator           `json:"aggregator"`
-	AggregatorVersion string                         `json:"aggregator_version"`
-	CanonicalURL      string                         `json:"canonical_url"`
-	CSAFProviders     []AggregatorCSAFProvidersElem  `json:"csaf_providers"`
-	CSAFPublishers    []AggregatorCSAFPublishersElem `json:"csaf_publishers,omitempty"`
-	LastUpdated       types.DateTime                 `json:"last_updated"`
-	MaintainedFrom    json.RawMessage                `json:"maintained_from,omitempty"`
-	MaintainedUntil   json.RawMessage                `json:"maintained_until,omitempty"`
+	Schema          json.RawMessage                `json:"$schema,omitempty"`
+	Aggregator      AggregatorAggregator           `json:"aggregator"`
+	Version         string                         `json:"aggregator_version"`
+	CanonicalURL    string                         `json:"canonical_url"`
+	CSAFProviders   []AggregatorCSAFProvidersElem  `json:"csaf_providers"`
+	CSAFPublishers  []AggregatorCSAFPublishersElem `json:"csaf_publishers,omitempty"`
+	LastUpdated     types.DateTime                 `json:"last_updated"`
+	MaintainedFrom  json.RawMessage                `json:"maintained_from,omitempty"`
+	MaintainedUntil json.RawMessage                `json:"maintained_until,omitempty"`
 }
 
 type AggregatorAggregator struct {

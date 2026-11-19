@@ -18,7 +18,7 @@ type Scores []Score
 type Score struct {
 	CVSSV2   *types.CVSSV20 `json:"cvss_v2,omitempty,omitzero"`
 	CVSSV3   types.CVSSV3   `json:"cvss_v3,omitempty,omitzero"`
-	Products ProductsT      `json:"products"`
+	Products ProductIDs     `json:"products"`
 }
 
 type MetricContent struct {
@@ -28,7 +28,7 @@ type MetricContent struct {
 	EPSS                      *MetricContentEPSS         `json:"epss,omitempty,omitzero"`
 	QualitativeSeverityRating *QualitativeSeverityRating `json:"qualitative_severity_rating,omitempty,omitzero"`
 	SSVCV2                    *types.SSVCV2              `json:"ssvc_v2,omitempty,omitzero"`
-	XExtensions               ExtensionsT                `json:"x_extensions,omitempty,omitzero"`
+	XExtensions               Extensions                 `json:"x_extensions,omitempty,omitzero"`
 }
 
 type MetricContentEPSS struct {

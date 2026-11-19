@@ -22,7 +22,7 @@ import (
 func doTransaction(
 	vtr *versionTree,
 	t tlp,
-	fn func(string, *provider.Provider) error,
+	fn func(string, *provider.ProviderMetadata) error,
 ) error {
 
 	wellknown := vtr.dir()

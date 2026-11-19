@@ -33,7 +33,7 @@ type AdvisorySummary struct {
 	CSAFVersion        string
 	ID                 string
 	Title              string
-	Publisher          provider.ProviderPublisher
+	Publisher          provider.Publisher
 	InitialReleaseDate time.Time
 	CurrentReleaseDate time.Time
 	Summary            string

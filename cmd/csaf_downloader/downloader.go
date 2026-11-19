@@ -258,7 +258,7 @@ func (d *downloader) download(ctx context.Context, domain string) error {
 	if err := d.loadOpenPGPKeys(
 		ctx,
 		client,
-		lpmd.Model.PublicOpenpgpKeys,
+		lpmd.Model.PublicOpenPGPKeys,
 	); err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ allFiles:
 func (d *downloader) loadOpenPGPKeys(
 	ctx context.Context,
 	client util.ClientWithContext,
-	keys []provider.ProviderPublicOpenpgpKeysElem,
+	keys []provider.OpenPGPKey,
 ) error {
 	// Try to load
 

@@ -12,17 +12,17 @@ import (
 	"fmt"
 )
 
-// NewProviderMetadata returns a new [Provider] with details
+// NewProviderMetadata returns a new [ProviderMetadata] with details
 // based on the given CSAF provider metadata version
-func NewProviderMetadata(metadataVersion string) (*Provider, error) {
-	pmd := &Provider{MetadataVersion: MetadataVersion(metadataVersion)}
+func NewProviderMetadata(metadataVersion string) (*ProviderMetadata, error) {
+	pmd := &ProviderMetadata{MetadataVersion: MetadataVersion(metadataVersion)}
 	switch metadataVersion {
 	case "2.0":
 		pmd.Publisher.providerPublisher20Details = &providerPublisher20Details{}
 	case "2.1":
 		pmd.Publisher.providerPublisher21Details = &providerPublisher21Details{}
 		pmd.provider21Details = &provider21Details{
-			Schema: ProviderSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaProviderJson,
+			Schema: SchemaURI21,
 		}
 	default:
 		return nil, fmt.Errorf("unsupported provider metadata version %q", metadataVersion)
@@ -30,10 +30,10 @@ func NewProviderMetadata(metadataVersion string) (*Provider, error) {
 	return pmd, nil
 }
 
-// NewDistribution returns a new [ProviderDistributionsElem] with details
+// NewDistribution returns a new [Distribution] with details
 // based on the given CSAF provider metadata version
-func (pmd *Provider) NewDistribution() (ProviderDistributionsElem, error) {
-	var dist ProviderDistributionsElem
+func (pmd *ProviderMetadata) NewDistribution() (Distribution, error) {
+	var dist Distribution
 	switch pmd.MetadataVersion {
 	case "2.0":
 		dist.providerDistributionsElem20Details = &providerDistributionsElem20Details{}
@@ -45,10 +45,10 @@ func (pmd *Provider) NewDistribution() (ProviderDistributionsElem, error) {
 	return dist, nil
 }
 
-// NewFeed returns a new  [ProviderDistributionsElemRolieFeedsElem] based on
+// NewFeed returns a new  [Feed] based on
 // CSAF provider metadata version with specific details for Version 2.1
-func (pmd *Provider) NewFeed() (ProviderDistributionsElemRolieFeedsElem, error) {
-	var feed ProviderDistributionsElemRolieFeedsElem
+func (pmd *ProviderMetadata) NewFeed() (Feed, error) {
+	var feed Feed
 	switch pmd.MetadataVersion {
 	case "2.0":
 	case "2.1":

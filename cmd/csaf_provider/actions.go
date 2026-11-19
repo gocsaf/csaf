@@ -251,7 +251,7 @@ func (c *controller) upload(r *http.Request) (any, error) {
 
 	if err := doTransaction(
 		vtr, t,
-		func(folder string, pmd *provider.Provider) error {
+		func(folder string, pmd *provider.ProviderMetadata) error {
 
 			// extend the ROLIE feed.
 			if err := c.extendROLIE(folder, newCSAF, t, ex, pmd, vtr); err != nil {

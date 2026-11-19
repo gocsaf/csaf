@@ -25,7 +25,7 @@ const (
 // FromBare converts source to a structured representation.
 // Source must be exclusively owned. It is consumed and emptied on success.
 // On error it may be partially consumed and must not be reused.
-func FromBare(source *bare.CSAF) (*CSAF, error) {
+func FromBare(source *bare.CSAF) (*Advisory, error) {
 	if source == nil {
 		return nil, errors.New("nil source")
 	}
@@ -38,31 +38,31 @@ func FromBare(source *bare.CSAF) (*CSAF, error) {
 	default:
 		return nil, fmt.Errorf("unsupported version %q", source.Document.CSAFVersion)
 	}
-	result, err := fromBareCSAF(source, v)
+	result, err := fromBareAdvisory(source, v)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func fromBareCSAF(source *bare.CSAF, v version) (CSAF, error) {
-	var target CSAF
+func fromBareAdvisory(source *bare.CSAF, v version) (Advisory, error) {
+	var target Advisory
 	var err error
-	target.Document, err = fromBareCSAFDocument(&source.Document, v)
+	target.Document, err = fromBareDocument(&source.Document, v)
 	if err != nil {
 		return target, fmt.Errorf("document.%w", err)
 	}
 	if source.ProductTree != nil {
-		target.ProductTree = new(CSAFProductTree)
-		*target.ProductTree, err = fromBareCSAFProductTree(source.ProductTree, v)
+		target.ProductTree = new(ProductTree)
+		*target.ProductTree, err = fromBareProductTree(source.ProductTree, v)
 		if err != nil {
 			return target, fmt.Errorf("product_tree.%w", err)
 		}
 	}
 	if source.Vulnerabilities != nil {
-		target.Vulnerabilities = make([]CSAFVulnerabilitiesElem, len(source.Vulnerabilities))
+		target.Vulnerabilities = make([]Vulnerability, len(source.Vulnerabilities))
 		for i := range source.Vulnerabilities {
-			target.Vulnerabilities[i], err = fromBareCSAFVulnerabilitiesElem(&source.Vulnerabilities[i], v)
+			target.Vulnerabilities[i], err = fromBareVulnerability(&source.Vulnerabilities[i], v)
 			if err != nil {
 				return target, fmt.Errorf("vulnerabilities[%d].%w", i, err)
 			}
@@ -86,21 +86,21 @@ func fromBareCSAF(source *bare.CSAF, v version) (CSAF, error) {
 	return target, nil
 }
 
-func fromBareCSAFDocument(source *bare.CSAFDocument, v version) (CSAFDocument, error) {
-	var target CSAFDocument
+func fromBareDocument(source *bare.CSAFDocument, v version) (Document, error) {
+	var target Document
 	var err error
 	if source.Acknowledgments != nil {
-		target.Acknowledgments = make([]CSAFDocumentAcknowledgmentsElem, len(source.Acknowledgments))
+		target.Acknowledgments = make([]Acknowledgment, len(source.Acknowledgments))
 		for i := range source.Acknowledgments {
-			target.Acknowledgments[i], err = fromBareCSAFDocumentAcknowledgmentsElem(&source.Acknowledgments[i], v)
+			target.Acknowledgments[i], err = fromBareAcknowledgment(&source.Acknowledgments[i], v)
 			if err != nil {
 				return target, fmt.Errorf("acknowledgments[%d].%w", i, err)
 			}
 		}
 	}
 	if source.AggregateSeverity != nil {
-		target.AggregateSeverity = new(CSAFDocumentAggregateSeverity)
-		*target.AggregateSeverity, err = fromBareCSAFDocumentAggregateSeverity(source.AggregateSeverity, v)
+		target.AggregateSeverity = new(AggregateSeverity)
+		*target.AggregateSeverity, err = fromBareAggregateSeverity(source.AggregateSeverity, v)
 		if err != nil {
 			return target, fmt.Errorf("aggregate_severity.%w", err)
 		}
@@ -108,44 +108,44 @@ func fromBareCSAFDocument(source *bare.CSAFDocument, v version) (CSAFDocument, e
 	target.Category = source.Category
 	target.CSAFVersion = Version(source.CSAFVersion)
 	if source.Distribution != nil {
-		target.Distribution = new(CSAFDocumentDistribution)
-		*target.Distribution, err = fromBareCSAFDocumentDistribution(source.Distribution, v)
+		target.Distribution = new(Distribution)
+		*target.Distribution, err = fromBareDistribution(source.Distribution, v)
 		if err != nil {
 			return target, fmt.Errorf("distribution.%w", err)
 		}
 	}
 	if source.Lang != nil {
-		target.Lang = new(LangT)
-		*target.Lang = LangT(*source.Lang)
+		target.Lang = new(Lang)
+		*target.Lang = Lang(*source.Lang)
 	}
 	if source.Notes != nil {
-		target.Notes = make([]CSAFDocumentNotesElem, len(source.Notes))
+		target.Notes = make([]Note, len(source.Notes))
 		for i := range source.Notes {
-			target.Notes[i], err = fromBareCSAFDocumentNotesElem(&source.Notes[i], v)
+			target.Notes[i], err = fromBareNote(&source.Notes[i], v)
 			if err != nil {
 				return target, fmt.Errorf("notes[%d].%w", i, err)
 			}
 		}
 	}
-	target.Publisher, err = fromBareCSAFDocumentPublisher(&source.Publisher, v)
+	target.Publisher, err = fromBarePublisher(&source.Publisher, v)
 	if err != nil {
 		return target, fmt.Errorf("publisher.%w", err)
 	}
 	if source.References != nil {
-		target.References = make([]CSAFDocumentReferencesElem, len(source.References))
+		target.References = make([]Reference, len(source.References))
 		for i := range source.References {
-			target.References[i], err = fromBareCSAFDocumentReferencesElem(&source.References[i], v)
+			target.References[i], err = fromBareReference(&source.References[i], v)
 			if err != nil {
 				return target, fmt.Errorf("references[%d].%w", i, err)
 			}
 		}
 	}
 	if source.SourceLang != nil {
-		target.SourceLang = new(LangT)
-		*target.SourceLang = LangT(*source.SourceLang)
+		target.SourceLang = new(Lang)
+		*target.SourceLang = Lang(*source.SourceLang)
 	}
 	target.Title = source.Title
-	target.Tracking, err = fromBareCSAFDocumentTracking(&source.Tracking, v)
+	target.Tracking, err = fromBareTracking(&source.Tracking, v)
 	if err != nil {
 		return target, fmt.Errorf("tracking.%w", err)
 	}
@@ -172,31 +172,31 @@ func fromBareCSAFDocument(source *bare.CSAFDocument, v version) (CSAFDocument, e
 	return target, nil
 }
 
-func fromBareCSAFDocumentAcknowledgmentsElem(source *bare.CSAFDocumentAcknowledgmentsElem, v version) (CSAFDocumentAcknowledgmentsElem, error) {
-	var target CSAFDocumentAcknowledgmentsElem
+func fromBareAcknowledgment(source *bare.CSAFDocumentAcknowledgmentsElem, v version) (Acknowledgment, error) {
+	var target Acknowledgment
 	target.Names = source.Names
 	target.Organization = source.Organization
 	target.Summary = source.Summary
-	target.Urls = source.Urls
+	target.URLs = source.URLs
 	*source = bare.CSAFDocumentAcknowledgmentsElem{}
 	return target, nil
 }
 
-func fromBareCSAFDocumentAggregateSeverity(source *bare.CSAFDocumentAggregateSeverity, v version) (CSAFDocumentAggregateSeverity, error) {
-	var target CSAFDocumentAggregateSeverity
+func fromBareAggregateSeverity(source *bare.CSAFDocumentAggregateSeverity, v version) (AggregateSeverity, error) {
+	var target AggregateSeverity
 	target.Namespace = source.Namespace
 	target.Text = source.Text
 	*source = bare.CSAFDocumentAggregateSeverity{}
 	return target, nil
 }
 
-func fromBareCSAFDocumentDistribution(source *bare.CSAFDocumentDistribution, v version) (CSAFDocumentDistribution, error) {
-	var target CSAFDocumentDistribution
+func fromBareDistribution(source *bare.CSAFDocumentDistribution, v version) (Distribution, error) {
+	var target Distribution
 	var err error
 	target.Text = source.Text
 	if source.TLP != nil {
-		target.TLP = new(CSAFDocumentDistributionTLP)
-		*target.TLP, err = fromBareCSAFDocumentDistributionTLP(source.TLP, v)
+		target.TLP = new(TLP)
+		*target.TLP, err = fromBareTLP(source.TLP, v)
 		if err != nil {
 			return target, fmt.Errorf("tlp.%w", err)
 		}
@@ -214,29 +214,29 @@ func fromBareCSAFDocumentDistribution(source *bare.CSAFDocumentDistribution, v v
 	return target, nil
 }
 
-func fromBareCSAFDocumentDistributionTLP(source *bare.CSAFDocumentDistributionTLP, v version) (CSAFDocumentDistributionTLP, error) {
-	var target CSAFDocumentDistributionTLP
-	target.Label = CSAFDocumentDistributionTLPLabel(source.Label)
+func fromBareTLP(source *bare.CSAFDocumentDistributionTLP, v version) (TLP, error) {
+	var target TLP
+	target.Label = TLPLabel(source.Label)
 	target.URL = source.URL
 	*source = bare.CSAFDocumentDistributionTLP{}
 	return target, nil
 }
 
-func fromBareCSAFDocumentNotesElem(source *bare.CSAFDocumentNotesElem, v version) (CSAFDocumentNotesElem, error) {
-	var target CSAFDocumentNotesElem
+func fromBareNote(source *bare.CSAFDocumentNotesElem, v version) (Note, error) {
+	var target Note
 	target.Audience = source.Audience
-	target.Category = NotesTElemCategory(source.Category)
+	target.Category = NoteCategory(source.Category)
 	target.Text = source.Text
 	target.Title = source.Title
 	if v == version21 {
 		details := &csafDocumentNotesElem21Details{}
-		if len(source.GroupIds) > 0 {
-			if err := json.Unmarshal(source.GroupIds, &details.GroupIds); err != nil {
+		if len(source.GroupIDs) > 0 {
+			if err := json.Unmarshal(source.GroupIDs, &details.GroupIDs); err != nil {
 				return target, fmt.Errorf("group_ids: %w", err)
 			}
 		}
-		if len(source.ProductIds) > 0 {
-			if err := json.Unmarshal(source.ProductIds, &details.ProductIds); err != nil {
+		if len(source.ProductIDs) > 0 {
+			if err := json.Unmarshal(source.ProductIDs, &details.ProductIDs); err != nil {
 				return target, fmt.Errorf("product_ids: %w", err)
 			}
 		}
@@ -246,9 +246,9 @@ func fromBareCSAFDocumentNotesElem(source *bare.CSAFDocumentNotesElem, v version
 	return target, nil
 }
 
-func fromBareCSAFDocumentPublisher(source *bare.CSAFDocumentPublisher, v version) (CSAFDocumentPublisher, error) {
-	var target CSAFDocumentPublisher
-	target.Category = PublisherTCategory(source.Category)
+func fromBarePublisher(source *bare.CSAFDocumentPublisher, v version) (Publisher, error) {
+	var target Publisher
+	target.Category = PublisherCategory(source.Category)
 	target.IssuingAuthority = source.IssuingAuthority
 	target.Name = source.Name
 	target.Namespace = source.Namespace
@@ -274,23 +274,23 @@ func fromBareCSAFDocumentPublisher(source *bare.CSAFDocumentPublisher, v version
 	return target, nil
 }
 
-func fromBareCSAFDocumentReferencesElem(source *bare.CSAFDocumentReferencesElem, v version) (CSAFDocumentReferencesElem, error) {
-	var target CSAFDocumentReferencesElem
-	target.Category = ReferencesTElemCategory(source.Category)
+func fromBareReference(source *bare.CSAFDocumentReferencesElem, v version) (Reference, error) {
+	var target Reference
+	target.Category = ReferenceCategory(source.Category)
 	target.Summary = source.Summary
 	target.URL = source.URL
 	*source = bare.CSAFDocumentReferencesElem{}
 	return target, nil
 }
 
-func fromBareCSAFDocumentTracking(source *bare.CSAFDocumentTracking, v version) (CSAFDocumentTracking, error) {
-	var target CSAFDocumentTracking
+func fromBareTracking(source *bare.CSAFDocumentTracking, v version) (Tracking, error) {
+	var target Tracking
 	var err error
 	target.Aliases = source.Aliases
 	target.CurrentReleaseDate = source.CurrentReleaseDate
 	if source.Generator != nil {
-		target.Generator = new(CSAFDocumentTrackingGenerator)
-		*target.Generator, err = fromBareCSAFDocumentTrackingGenerator(source.Generator, v)
+		target.Generator = new(Generator)
+		*target.Generator, err = fromBareGenerator(source.Generator, v)
 		if err != nil {
 			return target, fmt.Errorf("generator.%w", err)
 		}
@@ -298,25 +298,25 @@ func fromBareCSAFDocumentTracking(source *bare.CSAFDocumentTracking, v version) 
 	target.ID = source.ID
 	target.InitialReleaseDate = source.InitialReleaseDate
 	if source.RevisionHistory != nil {
-		target.RevisionHistory = make([]CSAFDocumentTrackingRevisionHistoryElem, len(source.RevisionHistory))
+		target.RevisionHistory = make([]Revision, len(source.RevisionHistory))
 		for i := range source.RevisionHistory {
-			target.RevisionHistory[i], err = fromBareCSAFDocumentTrackingRevisionHistoryElem(&source.RevisionHistory[i], v)
+			target.RevisionHistory[i], err = fromBareRevision(&source.RevisionHistory[i], v)
 			if err != nil {
 				return target, fmt.Errorf("revision_history[%d].%w", i, err)
 			}
 		}
 	}
-	target.Status = CSAFDocumentTrackingStatus(source.Status)
-	target.Version = VersionT(source.Version)
+	target.Status = TrackingStatus(source.Status)
+	target.Version = RevisionNumber(source.Version)
 	*source = bare.CSAFDocumentTracking{}
 	return target, nil
 }
 
-func fromBareCSAFDocumentTrackingGenerator(source *bare.CSAFDocumentTrackingGenerator, v version) (CSAFDocumentTrackingGenerator, error) {
-	var target CSAFDocumentTrackingGenerator
+func fromBareGenerator(source *bare.CSAFDocumentTrackingGenerator, v version) (Generator, error) {
+	var target Generator
 	var err error
 	target.Date = source.Date
-	target.Engine, err = fromBareCSAFDocumentTrackingGeneratorEngine(&source.Engine, v)
+	target.Engine, err = fromBareEngine(&source.Engine, v)
 	if err != nil {
 		return target, fmt.Errorf("engine.%w", err)
 	}
@@ -324,49 +324,49 @@ func fromBareCSAFDocumentTrackingGenerator(source *bare.CSAFDocumentTrackingGene
 	return target, nil
 }
 
-func fromBareCSAFDocumentTrackingGeneratorEngine(source *bare.CSAFDocumentTrackingGeneratorEngine, v version) (CSAFDocumentTrackingGeneratorEngine, error) {
-	var target CSAFDocumentTrackingGeneratorEngine
+func fromBareEngine(source *bare.CSAFDocumentTrackingGeneratorEngine, v version) (Engine, error) {
+	var target Engine
 	target.Name = source.Name
 	target.Version = source.Version
 	*source = bare.CSAFDocumentTrackingGeneratorEngine{}
 	return target, nil
 }
 
-func fromBareCSAFDocumentTrackingRevisionHistoryElem(source *bare.CSAFDocumentTrackingRevisionHistoryElem, v version) (CSAFDocumentTrackingRevisionHistoryElem, error) {
-	var target CSAFDocumentTrackingRevisionHistoryElem
+func fromBareRevision(source *bare.CSAFDocumentTrackingRevisionHistoryElem, v version) (Revision, error) {
+	var target Revision
 	target.Date = source.Date
 	target.LegacyVersion = source.LegacyVersion
-	target.Number = VersionT(source.Number)
+	target.Number = RevisionNumber(source.Number)
 	target.Summary = source.Summary
 	*source = bare.CSAFDocumentTrackingRevisionHistoryElem{}
 	return target, nil
 }
 
-func fromBareCSAFProductTree(source *bare.CSAFProductTree, v version) (CSAFProductTree, error) {
-	var target CSAFProductTree
+func fromBareProductTree(source *bare.CSAFProductTree, v version) (ProductTree, error) {
+	var target ProductTree
 	var err error
 	if source.Branches != nil {
-		target.Branches = make([]CSAFProductTreeBranchesElem, len(source.Branches))
+		target.Branches = make([]Branch, len(source.Branches))
 		for i := range source.Branches {
-			target.Branches[i], err = fromBareCSAFProductTreeBranchesElem(&source.Branches[i], v)
+			target.Branches[i], err = fromBareBranch(&source.Branches[i], v)
 			if err != nil {
 				return target, fmt.Errorf("branches[%d].%w", i, err)
 			}
 		}
 	}
 	if source.FullProductNames != nil {
-		target.FullProductNames = make([]CSAFProductTreeBranchesElemProduct, len(source.FullProductNames))
+		target.FullProductNames = make([]FullProductName, len(source.FullProductNames))
 		for i := range source.FullProductNames {
-			target.FullProductNames[i], err = fromBareCSAFProductTreeBranchesElemProduct(&source.FullProductNames[i], v)
+			target.FullProductNames[i], err = fromBareFullProductName(&source.FullProductNames[i], v)
 			if err != nil {
 				return target, fmt.Errorf("full_product_names[%d].%w", i, err)
 			}
 		}
 	}
 	if source.ProductGroups != nil {
-		target.ProductGroups = make([]CSAFProductTreeProductGroupsElem, len(source.ProductGroups))
+		target.ProductGroups = make([]ProductGroup, len(source.ProductGroups))
 		for i := range source.ProductGroups {
-			target.ProductGroups[i], err = fromBareCSAFProductTreeProductGroupsElem(&source.ProductGroups[i], v)
+			target.ProductGroups[i], err = fromBareProductGroup(&source.ProductGroups[i], v)
 			if err != nil {
 				return target, fmt.Errorf("product_groups[%d].%w", i, err)
 			}
@@ -394,26 +394,26 @@ func fromBareCSAFProductTree(source *bare.CSAFProductTree, v version) (CSAFProdu
 	return target, nil
 }
 
-func fromBareCSAFProductTreeBranchesElem(source *bare.CSAFProductTreeBranchesElem, v version) (CSAFProductTreeBranchesElem, error) {
-	var target CSAFProductTreeBranchesElem
+func fromBareBranch(source *bare.CSAFProductTreeBranchesElem, v version) (Branch, error) {
+	var target Branch
 	var err error
 	if source.Branches != nil {
-		target.Branches = new([]CSAFProductTreeBranchesElem)
+		target.Branches = new([]Branch)
 		if *source.Branches != nil {
-			*target.Branches = make([]CSAFProductTreeBranchesElem, len(*source.Branches))
+			*target.Branches = make([]Branch, len(*source.Branches))
 			for i := range *source.Branches {
-				(*target.Branches)[i], err = fromBareCSAFProductTreeBranchesElem(&(*source.Branches)[i], v)
+				(*target.Branches)[i], err = fromBareBranch(&(*source.Branches)[i], v)
 				if err != nil {
 					return target, fmt.Errorf("branches[%d].%w", i, err)
 				}
 			}
 		}
 	}
-	target.Category = BranchesTElemCategory(source.Category)
+	target.Category = BranchCategory(source.Category)
 	target.Name = source.Name
 	if source.Product != nil {
-		target.Product = new(CSAFProductTreeBranchesElemProduct)
-		*target.Product, err = fromBareCSAFProductTreeBranchesElemProduct(source.Product, v)
+		target.Product = new(FullProductName)
+		*target.Product, err = fromBareFullProductName(source.Product, v)
 		if err != nil {
 			return target, fmt.Errorf("product.%w", err)
 		}
@@ -422,14 +422,14 @@ func fromBareCSAFProductTreeBranchesElem(source *bare.CSAFProductTreeBranchesEle
 	return target, nil
 }
 
-func fromBareCSAFProductTreeBranchesElemProduct(source *bare.CSAFProductTreeBranchesElemProduct, v version) (CSAFProductTreeBranchesElemProduct, error) {
-	var target CSAFProductTreeBranchesElemProduct
+func fromBareFullProductName(source *bare.CSAFProductTreeBranchesElemProduct, v version) (FullProductName, error) {
+	var target FullProductName
 	var err error
 	target.Name = source.Name
-	target.ProductID = ProductIDT(source.ProductID)
+	target.ProductID = ProductID(source.ProductID)
 	if source.ProductIdentificationHelper != nil {
-		target.ProductIdentificationHelper = new(CSAFProductTreeBranchesElemProductProductIdentificationHelper)
-		*target.ProductIdentificationHelper, err = fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelper(source.ProductIdentificationHelper, v)
+		target.ProductIdentificationHelper = new(ProductIdentificationHelper)
+		*target.ProductIdentificationHelper, err = fromBareProductIdentificationHelper(source.ProductIdentificationHelper, v)
 		if err != nil {
 			return target, fmt.Errorf("product_identification_helper.%w", err)
 		}
@@ -447,27 +447,27 @@ func fromBareCSAFProductTreeBranchesElemProduct(source *bare.CSAFProductTreeBran
 	return target, nil
 }
 
-func fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelper(source *bare.CSAFProductTreeBranchesElemProductProductIdentificationHelper, v version) (CSAFProductTreeBranchesElemProductProductIdentificationHelper, error) {
-	var target CSAFProductTreeBranchesElemProductProductIdentificationHelper
+func fromBareProductIdentificationHelper(source *bare.CSAFProductTreeBranchesElemProductProductIdentificationHelper, v version) (ProductIdentificationHelper, error) {
+	var target ProductIdentificationHelper
 	var err error
 	target.CPE = source.CPE
 	if source.Hashes != nil {
-		target.Hashes = make([]CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem, len(source.Hashes))
+		target.Hashes = make([]Hashes, len(source.Hashes))
 		for i := range source.Hashes {
-			target.Hashes[i], err = fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem(&source.Hashes[i], v)
+			target.Hashes[i], err = fromBareHashes(&source.Hashes[i], v)
 			if err != nil {
 				return target, fmt.Errorf("hashes[%d].%w", i, err)
 			}
 		}
 	}
 	target.ModelNumbers = source.ModelNumbers
-	target.SbomUrls = source.SbomUrls
+	target.SBOMURLs = source.SBOMURLs
 	target.SerialNumbers = source.SerialNumbers
-	target.Skus = source.Skus
-	if source.XGenericUris != nil {
-		target.XGenericUris = make([]CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem, len(source.XGenericUris))
-		for i := range source.XGenericUris {
-			target.XGenericUris[i], err = fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem(&source.XGenericUris[i], v)
+	target.SKUs = source.SKUs
+	if source.XGenericURIs != nil {
+		target.XGenericURIs = make([]XGenericURI, len(source.XGenericURIs))
+		for i := range source.XGenericURIs {
+			target.XGenericURIs[i], err = fromBareXGenericURI(&source.XGenericURIs[i], v)
 			if err != nil {
 				return target, fmt.Errorf("x_generic_uris[%d].%w", i, err)
 			}
@@ -476,16 +476,16 @@ func fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelper(sourc
 	switch v {
 	case version20:
 		details := &csafProductTreeBranchesElemProductProductIdentificationHelper20Details{}
-		if len(source.Purl) > 0 {
-			if err := json.Unmarshal(source.Purl, &details.Purl); err != nil {
+		if len(source.PURL) > 0 {
+			if err := json.Unmarshal(source.PURL, &details.PURL); err != nil {
 				return target, fmt.Errorf("purl: %w", err)
 			}
 		}
 		target.csafProductTreeBranchesElemProductProductIdentificationHelper20Details = details
 	case version21:
 		details := &csafProductTreeBranchesElemProductProductIdentificationHelper21Details{}
-		if len(source.Purls) > 0 {
-			if err := json.Unmarshal(source.Purls, &details.Purls); err != nil {
+		if len(source.PURLs) > 0 {
+			if err := json.Unmarshal(source.PURLs, &details.PURLs); err != nil {
 				return target, fmt.Errorf("purls: %w", err)
 			}
 		}
@@ -495,13 +495,13 @@ func fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelper(sourc
 	return target, nil
 }
 
-func fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem(source *bare.CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem, v version) (CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem, error) {
-	var target CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem
+func fromBareHashes(source *bare.CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem, v version) (Hashes, error) {
+	var target Hashes
 	var err error
 	if source.FileHashes != nil {
-		target.FileHashes = make([]CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem, len(source.FileHashes))
+		target.FileHashes = make([]FileHash, len(source.FileHashes))
 		for i := range source.FileHashes {
-			target.FileHashes[i], err = fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem(&source.FileHashes[i], v)
+			target.FileHashes[i], err = fromBareFileHash(&source.FileHashes[i], v)
 			if err != nil {
 				return target, fmt.Errorf("file_hashes[%d].%w", i, err)
 			}
@@ -512,29 +512,29 @@ func fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelperHashes
 	return target, nil
 }
 
-func fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem(source *bare.CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem, v version) (CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem, error) {
-	var target CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem
+func fromBareFileHash(source *bare.CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem, v version) (FileHash, error) {
+	var target FileHash
 	target.Algorithm = source.Algorithm
 	target.Value = source.Value
 	*source = bare.CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElemFileHashesElem{}
 	return target, nil
 }
 
-func fromBareCSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem(source *bare.CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem, v version) (CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem, error) {
-	var target CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem
+func fromBareXGenericURI(source *bare.CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem, v version) (XGenericURI, error) {
+	var target XGenericURI
 	target.Namespace = source.Namespace
 	target.URI = source.URI
 	*source = bare.CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem{}
 	return target, nil
 }
 
-func fromBareCSAFProductTreeProductGroupsElem(source *bare.CSAFProductTreeProductGroupsElem, v version) (CSAFProductTreeProductGroupsElem, error) {
-	var target CSAFProductTreeProductGroupsElem
-	target.GroupID = ProductGroupIDT(source.GroupID)
-	if source.ProductIds != nil {
-		target.ProductIds = make([]ProductIDT, len(source.ProductIds))
-		for i := range source.ProductIds {
-			target.ProductIds[i] = ProductIDT(source.ProductIds[i])
+func fromBareProductGroup(source *bare.CSAFProductTreeProductGroupsElem, v version) (ProductGroup, error) {
+	var target ProductGroup
+	target.GroupID = ProductGroupID(source.GroupID)
+	if source.ProductIDs != nil {
+		target.ProductIDs = make([]ProductID, len(source.ProductIDs))
+		for i := range source.ProductIDs {
+			target.ProductIDs[i] = ProductID(source.ProductIDs[i])
 		}
 	}
 	target.Summary = source.Summary
@@ -542,13 +542,13 @@ func fromBareCSAFProductTreeProductGroupsElem(source *bare.CSAFProductTreeProduc
 	return target, nil
 }
 
-func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v version) (CSAFVulnerabilitiesElem, error) {
-	var target CSAFVulnerabilitiesElem
+func fromBareVulnerability(source *bare.CSAFVulnerabilitiesElem, v version) (Vulnerability, error) {
+	var target Vulnerability
 	var err error
 	if source.Acknowledgments != nil {
-		target.Acknowledgments = make([]CSAFDocumentAcknowledgmentsElem, len(source.Acknowledgments))
+		target.Acknowledgments = make([]Acknowledgment, len(source.Acknowledgments))
 		for i := range source.Acknowledgments {
-			target.Acknowledgments[i], err = fromBareCSAFDocumentAcknowledgmentsElem(&source.Acknowledgments[i], v)
+			target.Acknowledgments[i], err = fromBareAcknowledgment(&source.Acknowledgments[i], v)
 			if err != nil {
 				return target, fmt.Errorf("acknowledgments[%d].%w", i, err)
 			}
@@ -557,61 +557,61 @@ func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v ver
 	target.CVE = source.CVE
 	target.DiscoveryDate = source.DiscoveryDate
 	if source.Flags != nil {
-		target.Flags = make([]CSAFVulnerabilitiesElemFlagsElem, len(source.Flags))
+		target.Flags = make([]Flag, len(source.Flags))
 		for i := range source.Flags {
-			target.Flags[i], err = fromBareCSAFVulnerabilitiesElemFlagsElem(&source.Flags[i], v)
+			target.Flags[i], err = fromBareFlag(&source.Flags[i], v)
 			if err != nil {
 				return target, fmt.Errorf("flags[%d].%w", i, err)
 			}
 		}
 	}
-	if source.Ids != nil {
-		target.Ids = make([]CSAFVulnerabilitiesElemIdsElem, len(source.Ids))
-		for i := range source.Ids {
-			target.Ids[i], err = fromBareCSAFVulnerabilitiesElemIdsElem(&source.Ids[i], v)
+	if source.IDs != nil {
+		target.IDs = make([]VulnerabilityID, len(source.IDs))
+		for i := range source.IDs {
+			target.IDs[i], err = fromBareVulnerabilityID(&source.IDs[i], v)
 			if err != nil {
 				return target, fmt.Errorf("ids[%d].%w", i, err)
 			}
 		}
 	}
 	if source.Notes != nil {
-		target.Notes = make([]CSAFDocumentNotesElem, len(source.Notes))
+		target.Notes = make([]Note, len(source.Notes))
 		for i := range source.Notes {
-			target.Notes[i], err = fromBareCSAFDocumentNotesElem(&source.Notes[i], v)
+			target.Notes[i], err = fromBareNote(&source.Notes[i], v)
 			if err != nil {
 				return target, fmt.Errorf("notes[%d].%w", i, err)
 			}
 		}
 	}
 	if source.ProductStatus != nil {
-		target.ProductStatus = new(CSAFVulnerabilitiesElemProductStatus)
-		*target.ProductStatus, err = fromBareCSAFVulnerabilitiesElemProductStatus(source.ProductStatus, v)
+		target.ProductStatus = new(ProductStatus)
+		*target.ProductStatus, err = fromBareProductStatus(source.ProductStatus, v)
 		if err != nil {
 			return target, fmt.Errorf("product_status.%w", err)
 		}
 	}
 	if source.References != nil {
-		target.References = make([]CSAFDocumentReferencesElem, len(source.References))
+		target.References = make([]Reference, len(source.References))
 		for i := range source.References {
-			target.References[i], err = fromBareCSAFDocumentReferencesElem(&source.References[i], v)
+			target.References[i], err = fromBareReference(&source.References[i], v)
 			if err != nil {
 				return target, fmt.Errorf("references[%d].%w", i, err)
 			}
 		}
 	}
 	if source.Remediations != nil {
-		target.Remediations = make([]CSAFVulnerabilitiesElemRemediationsElem, len(source.Remediations))
+		target.Remediations = make([]Remediation, len(source.Remediations))
 		for i := range source.Remediations {
-			target.Remediations[i], err = fromBareCSAFVulnerabilitiesElemRemediationsElem(&source.Remediations[i], v)
+			target.Remediations[i], err = fromBareRemediation(&source.Remediations[i], v)
 			if err != nil {
 				return target, fmt.Errorf("remediations[%d].%w", i, err)
 			}
 		}
 	}
 	if source.Threats != nil {
-		target.Threats = make([]CSAFVulnerabilitiesElemThreatsElem, len(source.Threats))
+		target.Threats = make([]Threat, len(source.Threats))
 		for i := range source.Threats {
-			target.Threats[i], err = fromBareCSAFVulnerabilitiesElemThreatsElem(&source.Threats[i], v)
+			target.Threats[i], err = fromBareThreat(&source.Threats[i], v)
 			if err != nil {
 				return target, fmt.Errorf("threats[%d].%w", i, err)
 			}
@@ -646,8 +646,8 @@ func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v ver
 		target.csafVulnerabilitiesElem20Details = details
 	case version21:
 		details := &csafVulnerabilitiesElem21Details{}
-		if len(source.Cwes) > 0 {
-			if err := json.Unmarshal(source.Cwes, &details.Cwes); err != nil {
+		if len(source.CWEs) > 0 {
+			if err := json.Unmarshal(source.CWEs, &details.CWEs); err != nil {
 				return target, fmt.Errorf("cwes: %w", err)
 			}
 		}
@@ -656,8 +656,8 @@ func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v ver
 				return target, fmt.Errorf("disclosure_date: %w", err)
 			}
 		}
-		if len(source.DlVulnID) > 0 {
-			if err := json.Unmarshal(source.DlVulnID, &details.DlVulnID); err != nil {
+		if len(source.DLVulnID) > 0 {
+			if err := json.Unmarshal(source.DLVulnID, &details.DLVulnID); err != nil {
 				return target, fmt.Errorf("dl_vuln_id: %w", err)
 			}
 		}
@@ -667,7 +667,7 @@ func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v ver
 			}
 		}
 		if len(source.Metrics) > 0 {
-			converted, err := decodeBareSliceCSAFVulnerabilitiesElemMetricsElem(source.Metrics)
+			converted, err := decodeBareSliceMetric(source.Metrics)
 			if err != nil {
 				return target, fmt.Errorf("metrics: %w", err)
 			}
@@ -684,39 +684,39 @@ func fromBareCSAFVulnerabilitiesElem(source *bare.CSAFVulnerabilitiesElem, v ver
 	return target, nil
 }
 
-func fromBareCSAFVulnerabilitiesElemFlagsElem(source *bare.CSAFVulnerabilitiesElemFlagsElem, v version) (CSAFVulnerabilitiesElemFlagsElem, error) {
-	var target CSAFVulnerabilitiesElemFlagsElem
+func fromBareFlag(source *bare.CSAFVulnerabilitiesElemFlagsElem, v version) (Flag, error) {
+	var target Flag
 	target.Date = source.Date
-	if source.GroupIds != nil {
-		target.GroupIds = make([]ProductGroupIDT, len(source.GroupIds))
-		for i := range source.GroupIds {
-			target.GroupIds[i] = ProductGroupIDT(source.GroupIds[i])
+	if source.GroupIDs != nil {
+		target.GroupIDs = make([]ProductGroupID, len(source.GroupIDs))
+		for i := range source.GroupIDs {
+			target.GroupIDs[i] = ProductGroupID(source.GroupIDs[i])
 		}
 	}
-	target.Label = CSAFVulnerabilitiesElemFlagsElemLabel(source.Label)
-	if source.ProductIds != nil {
-		target.ProductIds = make([]ProductIDT, len(source.ProductIds))
-		for i := range source.ProductIds {
-			target.ProductIds[i] = ProductIDT(source.ProductIds[i])
+	target.Label = FlagLabel(source.Label)
+	if source.ProductIDs != nil {
+		target.ProductIDs = make([]ProductID, len(source.ProductIDs))
+		for i := range source.ProductIDs {
+			target.ProductIDs[i] = ProductID(source.ProductIDs[i])
 		}
 	}
 	*source = bare.CSAFVulnerabilitiesElemFlagsElem{}
 	return target, nil
 }
 
-func fromBareCSAFVulnerabilitiesElemIdsElem(source *bare.CSAFVulnerabilitiesElemIdsElem, v version) (CSAFVulnerabilitiesElemIdsElem, error) {
-	var target CSAFVulnerabilitiesElemIdsElem
+func fromBareVulnerabilityID(source *bare.CSAFVulnerabilitiesElemIdsElem, v version) (VulnerabilityID, error) {
+	var target VulnerabilityID
 	target.SystemName = source.SystemName
 	target.Text = source.Text
 	if v == version21 {
 		details := &csafVulnerabilitiesElemIdsElem21Details{}
-		if len(source.GroupIds) > 0 {
-			if err := json.Unmarshal(source.GroupIds, &details.GroupIds); err != nil {
+		if len(source.GroupIDs) > 0 {
+			if err := json.Unmarshal(source.GroupIDs, &details.GroupIDs); err != nil {
 				return target, fmt.Errorf("group_ids: %w", err)
 			}
 		}
-		if len(source.ProductIds) > 0 {
-			if err := json.Unmarshal(source.ProductIds, &details.ProductIds); err != nil {
+		if len(source.ProductIDs) > 0 {
+			if err := json.Unmarshal(source.ProductIDs, &details.ProductIDs); err != nil {
 				return target, fmt.Errorf("product_ids: %w", err)
 			}
 		}
@@ -726,54 +726,54 @@ func fromBareCSAFVulnerabilitiesElemIdsElem(source *bare.CSAFVulnerabilitiesElem
 	return target, nil
 }
 
-func fromBareCSAFVulnerabilitiesElemProductStatus(source *bare.CSAFVulnerabilitiesElemProductStatus, v version) (CSAFVulnerabilitiesElemProductStatus, error) {
-	var target CSAFVulnerabilitiesElemProductStatus
+func fromBareProductStatus(source *bare.CSAFVulnerabilitiesElemProductStatus, v version) (ProductStatus, error) {
+	var target ProductStatus
 	if source.FirstAffected != nil {
-		target.FirstAffected = make([]ProductIDT, len(source.FirstAffected))
+		target.FirstAffected = make([]ProductID, len(source.FirstAffected))
 		for i := range source.FirstAffected {
-			target.FirstAffected[i] = ProductIDT(source.FirstAffected[i])
+			target.FirstAffected[i] = ProductID(source.FirstAffected[i])
 		}
 	}
 	if source.FirstFixed != nil {
-		target.FirstFixed = make([]ProductIDT, len(source.FirstFixed))
+		target.FirstFixed = make([]ProductID, len(source.FirstFixed))
 		for i := range source.FirstFixed {
-			target.FirstFixed[i] = ProductIDT(source.FirstFixed[i])
+			target.FirstFixed[i] = ProductID(source.FirstFixed[i])
 		}
 	}
 	if source.Fixed != nil {
-		target.Fixed = make([]ProductIDT, len(source.Fixed))
+		target.Fixed = make([]ProductID, len(source.Fixed))
 		for i := range source.Fixed {
-			target.Fixed[i] = ProductIDT(source.Fixed[i])
+			target.Fixed[i] = ProductID(source.Fixed[i])
 		}
 	}
 	if source.KnownAffected != nil {
-		target.KnownAffected = make([]ProductIDT, len(source.KnownAffected))
+		target.KnownAffected = make([]ProductID, len(source.KnownAffected))
 		for i := range source.KnownAffected {
-			target.KnownAffected[i] = ProductIDT(source.KnownAffected[i])
+			target.KnownAffected[i] = ProductID(source.KnownAffected[i])
 		}
 	}
 	if source.KnownNotAffected != nil {
-		target.KnownNotAffected = make([]ProductIDT, len(source.KnownNotAffected))
+		target.KnownNotAffected = make([]ProductID, len(source.KnownNotAffected))
 		for i := range source.KnownNotAffected {
-			target.KnownNotAffected[i] = ProductIDT(source.KnownNotAffected[i])
+			target.KnownNotAffected[i] = ProductID(source.KnownNotAffected[i])
 		}
 	}
 	if source.LastAffected != nil {
-		target.LastAffected = make([]ProductIDT, len(source.LastAffected))
+		target.LastAffected = make([]ProductID, len(source.LastAffected))
 		for i := range source.LastAffected {
-			target.LastAffected[i] = ProductIDT(source.LastAffected[i])
+			target.LastAffected[i] = ProductID(source.LastAffected[i])
 		}
 	}
 	if source.Recommended != nil {
-		target.Recommended = make([]ProductIDT, len(source.Recommended))
+		target.Recommended = make([]ProductID, len(source.Recommended))
 		for i := range source.Recommended {
-			target.Recommended[i] = ProductIDT(source.Recommended[i])
+			target.Recommended[i] = ProductID(source.Recommended[i])
 		}
 	}
 	if source.UnderInvestigation != nil {
-		target.UnderInvestigation = make([]ProductIDT, len(source.UnderInvestigation))
+		target.UnderInvestigation = make([]ProductID, len(source.UnderInvestigation))
 		for i := range source.UnderInvestigation {
-			target.UnderInvestigation[i] = ProductIDT(source.UnderInvestigation[i])
+			target.UnderInvestigation[i] = ProductID(source.UnderInvestigation[i])
 		}
 	}
 	if v == version21 {
@@ -789,28 +789,28 @@ func fromBareCSAFVulnerabilitiesElemProductStatus(source *bare.CSAFVulnerabiliti
 	return target, nil
 }
 
-func fromBareCSAFVulnerabilitiesElemRemediationsElem(source *bare.CSAFVulnerabilitiesElemRemediationsElem, v version) (CSAFVulnerabilitiesElemRemediationsElem, error) {
-	var target CSAFVulnerabilitiesElemRemediationsElem
+func fromBareRemediation(source *bare.CSAFVulnerabilitiesElemRemediationsElem, v version) (Remediation, error) {
+	var target Remediation
 	var err error
-	target.Category = CSAFVulnerabilitiesElemRemediationsElemCategory(source.Category)
+	target.Category = RemediationCategory(source.Category)
 	target.Date = source.Date
 	target.Details = source.Details
 	target.Entitlements = source.Entitlements
-	if source.GroupIds != nil {
-		target.GroupIds = make([]ProductGroupIDT, len(source.GroupIds))
-		for i := range source.GroupIds {
-			target.GroupIds[i] = ProductGroupIDT(source.GroupIds[i])
+	if source.GroupIDs != nil {
+		target.GroupIDs = make([]ProductGroupID, len(source.GroupIDs))
+		for i := range source.GroupIDs {
+			target.GroupIDs[i] = ProductGroupID(source.GroupIDs[i])
 		}
 	}
-	if source.ProductIds != nil {
-		target.ProductIds = make([]ProductIDT, len(source.ProductIds))
-		for i := range source.ProductIds {
-			target.ProductIds[i] = ProductIDT(source.ProductIds[i])
+	if source.ProductIDs != nil {
+		target.ProductIDs = make([]ProductID, len(source.ProductIDs))
+		for i := range source.ProductIDs {
+			target.ProductIDs[i] = ProductID(source.ProductIDs[i])
 		}
 	}
 	if source.RestartRequired != nil {
-		target.RestartRequired = new(CSAFVulnerabilitiesElemRemediationsElemRestartRequired)
-		*target.RestartRequired, err = fromBareCSAFVulnerabilitiesElemRemediationsElemRestartRequired(source.RestartRequired, v)
+		target.RestartRequired = new(RestartRequired)
+		*target.RestartRequired, err = fromBareRestartRequired(source.RestartRequired, v)
 		if err != nil {
 			return target, fmt.Errorf("restart_required.%w", err)
 		}
@@ -820,37 +820,37 @@ func fromBareCSAFVulnerabilitiesElemRemediationsElem(source *bare.CSAFVulnerabil
 	return target, nil
 }
 
-func fromBareCSAFVulnerabilitiesElemRemediationsElemRestartRequired(source *bare.CSAFVulnerabilitiesElemRemediationsElemRestartRequired, v version) (CSAFVulnerabilitiesElemRemediationsElemRestartRequired, error) {
-	var target CSAFVulnerabilitiesElemRemediationsElemRestartRequired
-	target.Category = CSAFVulnerabilitiesElemRemediationsElemRestartRequiredCategory(source.Category)
+func fromBareRestartRequired(source *bare.CSAFVulnerabilitiesElemRemediationsElemRestartRequired, v version) (RestartRequired, error) {
+	var target RestartRequired
+	target.Category = RestartRequiredCategory(source.Category)
 	target.Details = source.Details
 	*source = bare.CSAFVulnerabilitiesElemRemediationsElemRestartRequired{}
 	return target, nil
 }
 
-func fromBareCSAFVulnerabilitiesElemThreatsElem(source *bare.CSAFVulnerabilitiesElemThreatsElem, v version) (CSAFVulnerabilitiesElemThreatsElem, error) {
-	var target CSAFVulnerabilitiesElemThreatsElem
-	target.Category = CSAFVulnerabilitiesElemThreatsElemCategory(source.Category)
+func fromBareThreat(source *bare.CSAFVulnerabilitiesElemThreatsElem, v version) (Threat, error) {
+	var target Threat
+	target.Category = ThreatCategory(source.Category)
 	target.Date = source.Date
 	target.Details = source.Details
-	if source.GroupIds != nil {
-		target.GroupIds = make([]ProductGroupIDT, len(source.GroupIds))
-		for i := range source.GroupIds {
-			target.GroupIds[i] = ProductGroupIDT(source.GroupIds[i])
+	if source.GroupIDs != nil {
+		target.GroupIDs = make([]ProductGroupID, len(source.GroupIDs))
+		for i := range source.GroupIDs {
+			target.GroupIDs[i] = ProductGroupID(source.GroupIDs[i])
 		}
 	}
-	if source.ProductIds != nil {
-		target.ProductIds = make([]ProductIDT, len(source.ProductIds))
-		for i := range source.ProductIds {
-			target.ProductIds[i] = ProductIDT(source.ProductIds[i])
+	if source.ProductIDs != nil {
+		target.ProductIDs = make([]ProductID, len(source.ProductIDs))
+		for i := range source.ProductIDs {
+			target.ProductIDs[i] = ProductID(source.ProductIDs[i])
 		}
 	}
 	*source = bare.CSAFVulnerabilitiesElemThreatsElem{}
 	return target, nil
 }
 
-func decodeBareCSAFVulnerabilitiesElemMetricsElem(data json.RawMessage) (CSAFVulnerabilitiesElemMetricsElem, error) {
-	var target CSAFVulnerabilitiesElemMetricsElem
+func decodeBareMetric(data json.RawMessage) (Metric, error) {
+	var target Metric
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return target, err
@@ -875,18 +875,18 @@ func decodeBareCSAFVulnerabilitiesElemMetricsElem(data json.RawMessage) (CSAFVul
 	return target, nil
 }
 
-func decodeBareSliceCSAFVulnerabilitiesElemMetricsElem(data json.RawMessage) ([]CSAFVulnerabilitiesElemMetricsElem, error) {
-	var target []CSAFVulnerabilitiesElemMetricsElem
+func decodeBareSliceMetric(data json.RawMessage) ([]Metric, error) {
+	var target []Metric
 	var values []json.RawMessage
 	if err := json.Unmarshal(data, &values); err != nil {
 		return target, err
 	}
 	if values != nil {
-		target = make([]CSAFVulnerabilitiesElemMetricsElem, len(values))
+		target = make([]Metric, len(values))
 	}
 	for i, raw := range values {
-		var value CSAFVulnerabilitiesElemMetricsElem
-		converted, err := decodeBareCSAFVulnerabilitiesElemMetricsElem(raw)
+		var value Metric
+		converted, err := decodeBareMetric(raw)
 		if err != nil {
 			return target, fmt.Errorf("[%d]: %w", i, err)
 		}

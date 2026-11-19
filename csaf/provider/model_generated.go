@@ -10,37 +10,37 @@ import (
 	"github.com/gocsaf/csaf/v3/csaf/types"
 )
 
-// Provider contains common fields and optional version-specific details.
-type Provider struct {
-	CanonicalURL            ProviderURLT                    `json:"canonical_url"`
-	Distributions           []ProviderDistributionsElem     `json:"distributions,omitempty"`
-	LastUpdated             types.DateTime                  `json:"last_updated"`
-	ListOnCSAFAggregators   bool                            `json:"list_on_CSAF_aggregators"`
-	MetadataVersion         MetadataVersion                 `json:"metadata_version"`
-	MirrorOnCSAFAggregators bool                            `json:"mirror_on_CSAF_aggregators"`
-	PublicOpenpgpKeys       []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty"`
-	Publisher               ProviderPublisher               `json:"publisher"`
-	Role                    ProviderRole                    `json:"role"`
+// ProviderMetadata contains common fields and optional version-specific details.
+type ProviderMetadata struct {
+	CanonicalURL            ProviderURL     `json:"canonical_url"`
+	Distributions           []Distribution  `json:"distributions,omitempty"`
+	LastUpdated             types.DateTime  `json:"last_updated"`
+	ListOnCSAFAggregators   bool            `json:"list_on_CSAF_aggregators"`
+	MetadataVersion         MetadataVersion `json:"metadata_version"`
+	MirrorOnCSAFAggregators bool            `json:"mirror_on_CSAF_aggregators"`
+	PublicOpenPGPKeys       []OpenPGPKey    `json:"public_openpgp_keys,omitempty"`
+	Publisher               Publisher       `json:"publisher"`
+	Role                    MetadataRole    `json:"role"`
 	*provider21Details
 }
 
 // provider21Details contains fields specific to CSAF 2.1.
 type provider21Details struct {
-	Schema          ProviderSchema  `json:"$schema"`
+	Schema          SchemaURI       `json:"$schema"`
 	MaintainedFrom  *types.DateTime `json:"maintained_from,omitempty"`
 	MaintainedUntil *types.DateTime `json:"maintained_until,omitempty"`
 }
 
 // Schema reports whether the matching version details are present.
-func (v *Provider) Schema() (ProviderSchema, bool) {
+func (v *ProviderMetadata) Schema() (SchemaURI, bool) {
 	if v == nil || v.provider21Details == nil {
-		return ProviderSchema(""), false
+		return SchemaURI(""), false
 	}
 	return v.provider21Details.Schema, true
 }
 
 // SetSchema updates the value if matching version details are present.
-func (v *Provider) SetSchema(value ProviderSchema) bool {
+func (v *ProviderMetadata) SetSchema(value SchemaURI) bool {
 	if v == nil || v.provider21Details == nil {
 		return false
 	}
@@ -49,7 +49,7 @@ func (v *Provider) SetSchema(value ProviderSchema) bool {
 }
 
 // MaintainedFrom reports whether the matching version details are present.
-func (v *Provider) MaintainedFrom() (*types.DateTime, bool) {
+func (v *ProviderMetadata) MaintainedFrom() (*types.DateTime, bool) {
 	if v == nil || v.provider21Details == nil {
 		return nil, false
 	}
@@ -57,7 +57,7 @@ func (v *Provider) MaintainedFrom() (*types.DateTime, bool) {
 }
 
 // SetMaintainedFrom updates the value if matching version details are present.
-func (v *Provider) SetMaintainedFrom(value *types.DateTime) bool {
+func (v *ProviderMetadata) SetMaintainedFrom(value *types.DateTime) bool {
 	if v == nil || v.provider21Details == nil {
 		return false
 	}
@@ -66,7 +66,7 @@ func (v *Provider) SetMaintainedFrom(value *types.DateTime) bool {
 }
 
 // MaintainedUntil reports whether the matching version details are present.
-func (v *Provider) MaintainedUntil() (*types.DateTime, bool) {
+func (v *ProviderMetadata) MaintainedUntil() (*types.DateTime, bool) {
 	if v == nil || v.provider21Details == nil {
 		return nil, false
 	}
@@ -74,7 +74,7 @@ func (v *Provider) MaintainedUntil() (*types.DateTime, bool) {
 }
 
 // SetMaintainedUntil updates the value if matching version details are present.
-func (v *Provider) SetMaintainedUntil(value *types.DateTime) bool {
+func (v *ProviderMetadata) SetMaintainedUntil(value *types.DateTime) bool {
 	if v == nil || v.provider21Details == nil {
 		return false
 	}
@@ -82,20 +82,20 @@ func (v *Provider) SetMaintainedUntil(value *types.DateTime) bool {
 	return true
 }
 
-// ProviderDistributionsElem contains common fields and optional version-specific details.
-type ProviderDistributionsElem struct {
-	Rolie *ProviderDistributionsElemRolie `json:"rolie,omitempty"`
+// Distribution contains common fields and optional version-specific details.
+type Distribution struct {
+	ROLIE *ROLIE `json:"rolie,omitempty"`
 	*providerDistributionsElem20Details
 	*providerDistributionsElem21Details
 }
 
 // providerDistributionsElem20Details contains fields specific to CSAF 2.0.
 type providerDistributionsElem20Details struct {
-	DirectoryURL *URLT `json:"directory_url,omitempty"`
+	DirectoryURL *URL `json:"directory_url,omitempty"`
 }
 
 // DirectoryURL reports whether the matching version details are present.
-func (v *ProviderDistributionsElem) DirectoryURL() (*URLT, bool) {
+func (v *Distribution) DirectoryURL() (*URL, bool) {
 	if v == nil || v.providerDistributionsElem20Details == nil {
 		return nil, false
 	}
@@ -103,7 +103,7 @@ func (v *ProviderDistributionsElem) DirectoryURL() (*URLT, bool) {
 }
 
 // SetDirectoryURL updates the value if matching version details are present.
-func (v *ProviderDistributionsElem) SetDirectoryURL(value *URLT) bool {
+func (v *Distribution) SetDirectoryURL(value *URL) bool {
 	if v == nil || v.providerDistributionsElem20Details == nil {
 		return false
 	}
@@ -113,11 +113,11 @@ func (v *ProviderDistributionsElem) SetDirectoryURL(value *URLT) bool {
 
 // providerDistributionsElem21Details contains fields specific to CSAF 2.1.
 type providerDistributionsElem21Details struct {
-	Directory *ProviderDistributionsElemDirectory `json:"directory,omitempty"`
+	Directory *Directory `json:"directory,omitempty"`
 }
 
 // Directory reports whether the matching version details are present.
-func (v *ProviderDistributionsElem) Directory() (*ProviderDistributionsElemDirectory, bool) {
+func (v *Distribution) Directory() (*Directory, bool) {
 	if v == nil || v.providerDistributionsElem21Details == nil {
 		return nil, false
 	}
@@ -125,7 +125,7 @@ func (v *ProviderDistributionsElem) Directory() (*ProviderDistributionsElemDirec
 }
 
 // SetDirectory updates the value if matching version details are present.
-func (v *ProviderDistributionsElem) SetDirectory(value *ProviderDistributionsElemDirectory) bool {
+func (v *Distribution) SetDirectory(value *Directory) bool {
 	if v == nil || v.providerDistributionsElem21Details == nil {
 		return false
 	}
@@ -133,18 +133,18 @@ func (v *ProviderDistributionsElem) SetDirectory(value *ProviderDistributionsEle
 	return true
 }
 
-// ProviderDistributionsElemRolie contains common fields and optional version-specific details.
-type ProviderDistributionsElemRolie struct {
-	Categories []JsonURLT                                `json:"categories,omitempty"`
-	Feeds      []ProviderDistributionsElemRolieFeedsElem `json:"feeds"`
-	Services   []JsonURLT                                `json:"services,omitempty"`
+// ROLIE contains common fields and optional version-specific details.
+type ROLIE struct {
+	Categories []JSONURL `json:"categories,omitempty"`
+	Feeds      []Feed    `json:"feeds"`
+	Services   []JSONURL `json:"services,omitempty"`
 }
 
-// ProviderDistributionsElemRolieFeedsElem contains common fields and optional version-specific details.
-type ProviderDistributionsElemRolieFeedsElem struct {
-	Summary  *string   `json:"summary,omitempty"`
-	TLPLabel TLPLabelT `json:"tlp_label"`
-	URL      JsonURLT  `json:"url"`
+// Feed contains common fields and optional version-specific details.
+type Feed struct {
+	Summary  *string  `json:"summary,omitempty"`
+	TLPLabel TLPLabel `json:"tlp_label"`
+	URL      JSONURL  `json:"url"`
 	*providerDistributionsElemRolieFeedsElem21Details
 }
 
@@ -154,7 +154,7 @@ type providerDistributionsElemRolieFeedsElem21Details struct {
 }
 
 // LastUpdated reports whether the matching version details are present.
-func (v *ProviderDistributionsElemRolieFeedsElem) LastUpdated() (types.DateTime, bool) {
+func (v *Feed) LastUpdated() (types.DateTime, bool) {
 	if v == nil || v.providerDistributionsElemRolieFeedsElem21Details == nil {
 		return types.DateTime(""), false
 	}
@@ -162,7 +162,7 @@ func (v *ProviderDistributionsElemRolieFeedsElem) LastUpdated() (types.DateTime,
 }
 
 // SetLastUpdated updates the value if matching version details are present.
-func (v *ProviderDistributionsElemRolieFeedsElem) SetLastUpdated(value types.DateTime) bool {
+func (v *Feed) SetLastUpdated(value types.DateTime) bool {
 	if v == nil || v.providerDistributionsElemRolieFeedsElem21Details == nil {
 		return false
 	}
@@ -170,18 +170,18 @@ func (v *ProviderDistributionsElemRolieFeedsElem) SetLastUpdated(value types.Dat
 	return true
 }
 
-// ProviderPublicOpenpgpKeysElem contains common fields and optional version-specific details.
-type ProviderPublicOpenpgpKeysElem struct {
+// OpenPGPKey contains common fields and optional version-specific details.
+type OpenPGPKey struct {
 	Fingerprint *string `json:"fingerprint,omitempty"`
-	URL         URLT    `json:"url"`
+	URL         URL     `json:"url"`
 }
 
-// ProviderPublisher contains common fields and optional version-specific details.
-type ProviderPublisher struct {
-	Category         PublisherTCategory `json:"category"`
-	IssuingAuthority *string            `json:"issuing_authority,omitempty"`
-	Name             string             `json:"name"`
-	Namespace        string             `json:"namespace"`
+// Publisher contains common fields and optional version-specific details.
+type Publisher struct {
+	Category         PublisherCategory `json:"category"`
+	IssuingAuthority *string           `json:"issuing_authority,omitempty"`
+	Name             string            `json:"name"`
+	Namespace        string            `json:"namespace"`
 	*providerPublisher20Details
 	*providerPublisher21Details
 }
@@ -192,7 +192,7 @@ type providerPublisher20Details struct {
 }
 
 // ContactDetails reports whether the matching version details are present.
-func (v *ProviderPublisher) ContactDetails() (*string, bool) {
+func (v *Publisher) ContactDetails() (*string, bool) {
 	if v == nil || v.providerPublisher20Details == nil {
 		return nil, false
 	}
@@ -200,7 +200,7 @@ func (v *ProviderPublisher) ContactDetails() (*string, bool) {
 }
 
 // SetContactDetails updates the value if matching version details are present.
-func (v *ProviderPublisher) SetContactDetails(value *string) bool {
+func (v *Publisher) SetContactDetails(value *string) bool {
 	if v == nil || v.providerPublisher20Details == nil {
 		return false
 	}
@@ -210,11 +210,11 @@ func (v *ProviderPublisher) SetContactDetails(value *string) bool {
 
 // providerPublisher21Details contains fields specific to CSAF 2.1.
 type providerPublisher21Details struct {
-	Contact *ContactT `json:"contact,omitempty"`
+	Contact *Contact `json:"contact,omitempty"`
 }
 
 // Contact reports whether the matching version details are present.
-func (v *ProviderPublisher) Contact() (*ContactT, bool) {
+func (v *Publisher) Contact() (*Contact, bool) {
 	if v == nil || v.providerPublisher21Details == nil {
 		return nil, false
 	}
@@ -222,7 +222,7 @@ func (v *ProviderPublisher) Contact() (*ContactT, bool) {
 }
 
 // SetContact updates the value if matching version details are present.
-func (v *ProviderPublisher) SetContact(value *ContactT) bool {
+func (v *Publisher) SetContact(value *Contact) bool {
 	if v == nil || v.providerPublisher21Details == nil {
 		return false
 	}
@@ -230,36 +230,36 @@ func (v *ProviderPublisher) SetContact(value *ContactT) bool {
 	return true
 }
 
-type ProviderURLT string
+type ProviderURL string
 
-type JsonURLT string
+type JSONURL string
 
-// TLPLabelT contains the values of all versions. Check validates them per version.
-type TLPLabelT string
+// TLPLabel contains the values of all versions. Check validates them per version.
+type TLPLabel string
 
-const TLPLabelTAMBER TLPLabelT = "AMBER"
-
-// Only valid in 2.1.
-const TLPLabelTAMBERSTRICT TLPLabelT = "AMBER+STRICT"
+const TLPLabelAmber TLPLabel = "AMBER"
 
 // Only valid in 2.1.
-const TLPLabelTCLEAR TLPLabelT = "CLEAR"
-const TLPLabelTGREEN TLPLabelT = "GREEN"
-const TLPLabelTRED TLPLabelT = "RED"
+const TLPLabelAmberStrict TLPLabel = "AMBER+STRICT"
+
+// Only valid in 2.1.
+const TLPLabelClear TLPLabel = "CLEAR"
+const TLPLabelGreen TLPLabel = "GREEN"
+const TLPLabelRed TLPLabel = "RED"
 
 // Only valid in 2.0.
-const TLPLabelTUNLABELED TLPLabelT = "UNLABELED"
+const TLPLabelUnlabeled TLPLabel = "UNLABELED"
 
 // Only valid in 2.0.
-const TLPLabelTWHITE TLPLabelT = "WHITE"
+const TLPLabelWhite TLPLabel = "WHITE"
 
-func (value TLPLabelT) validIn(v version) bool {
+func (value TLPLabel) validIn(v version) bool {
 	switch value {
-	case TLPLabelTAMBER, TLPLabelTGREEN, TLPLabelTRED:
+	case TLPLabelAmber, TLPLabelGreen, TLPLabelRed:
 		return true
-	case TLPLabelTUNLABELED, TLPLabelTWHITE:
+	case TLPLabelUnlabeled, TLPLabelWhite:
 		return v == version20
-	case TLPLabelTAMBERSTRICT, TLPLabelTCLEAR:
+	case TLPLabelAmberStrict, TLPLabelClear:
 		return v == version21
 	}
 	return false
@@ -284,66 +284,66 @@ func (value MetadataVersion) validIn(v version) bool {
 	return false
 }
 
-type URLT string
+type URL string
 
-// PublisherTCategory contains the values of all versions. Check validates them per version.
-type PublisherTCategory string
+// PublisherCategory contains the values of all versions. Check validates them per version.
+type PublisherCategory string
 
-const PublisherTCategoryCoordinator PublisherTCategory = "coordinator"
-const PublisherTCategoryDiscoverer PublisherTCategory = "discoverer"
+const PublisherCategoryCoordinator PublisherCategory = "coordinator"
+const PublisherCategoryDiscoverer PublisherCategory = "discoverer"
 
 // Only valid in 2.1.
-const PublisherTCategoryMultiplier PublisherTCategory = "multiplier"
-const PublisherTCategoryOther PublisherTCategory = "other"
-const PublisherTCategoryTranslator PublisherTCategory = "translator"
-const PublisherTCategoryUser PublisherTCategory = "user"
-const PublisherTCategoryVendor PublisherTCategory = "vendor"
+const PublisherCategoryMultiplier PublisherCategory = "multiplier"
+const PublisherCategoryOther PublisherCategory = "other"
+const PublisherCategoryTranslator PublisherCategory = "translator"
+const PublisherCategoryUser PublisherCategory = "user"
+const PublisherCategoryVendor PublisherCategory = "vendor"
 
-func (value PublisherTCategory) validIn(v version) bool {
+func (value PublisherCategory) validIn(v version) bool {
 	switch value {
-	case PublisherTCategoryCoordinator, PublisherTCategoryDiscoverer, PublisherTCategoryOther, PublisherTCategoryTranslator, PublisherTCategoryUser, PublisherTCategoryVendor:
+	case PublisherCategoryCoordinator, PublisherCategoryDiscoverer, PublisherCategoryOther, PublisherCategoryTranslator, PublisherCategoryUser, PublisherCategoryVendor:
 		return true
-	case PublisherTCategoryMultiplier:
+	case PublisherCategoryMultiplier:
 		return v == version21
 	}
 	return false
 }
 
-// ProviderRole contains the values of all versions. Check validates them per version.
-type ProviderRole string
+// MetadataRole contains the values of all versions. Check validates them per version.
+type MetadataRole string
 
-const ProviderRoleCSAFProvider ProviderRole = "csaf_provider"
-const ProviderRoleCSAFPublisher ProviderRole = "csaf_publisher"
-const ProviderRoleCSAFTrustedProvider ProviderRole = "csaf_trusted_provider"
+const MetadataRoleProvider MetadataRole = "csaf_provider"
+const MetadataRolePublisher MetadataRole = "csaf_publisher"
+const MetadataRoleTrustedProvider MetadataRole = "csaf_trusted_provider"
 
-func (value ProviderRole) validIn(v version) bool {
+func (value MetadataRole) validIn(v version) bool {
 	switch value {
-	case ProviderRoleCSAFProvider, ProviderRoleCSAFPublisher, ProviderRoleCSAFTrustedProvider:
+	case MetadataRoleProvider, MetadataRolePublisher, MetadataRoleTrustedProvider:
 		return true
 	}
 	return false
 }
 
-type ProviderSchema string
+type SchemaURI string
 
-const ProviderSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaProviderJson ProviderSchema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json"
+const SchemaURI21 SchemaURI = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json"
 
-func (value ProviderSchema) validIn(v version) bool {
+func (value SchemaURI) validIn(v version) bool {
 	switch value {
-	case ProviderSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaProviderJson:
+	case SchemaURI21:
 		return v == version21
 	}
 	return false
 }
 
-type ProviderDistributionsElemDirectory struct {
-	TLPLabel TLPLabelT `json:"tlp_label"`
-	URL      URLT      `json:"url"`
+type Directory struct {
+	TLPLabel TLPLabel `json:"tlp_label"`
+	URL      URL      `json:"url"`
 }
 
-type ContactT struct {
+type Contact struct {
 	Details             *string `json:"details,omitempty,omitzero"`
 	Email               *string `json:"email,omitempty,omitzero"`
-	PublicOpenpgpKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`
+	PublicOpenPGPKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`
 	URL                 *string `json:"url,omitempty,omitzero"`
 }

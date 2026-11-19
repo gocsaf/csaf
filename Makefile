@@ -45,7 +45,7 @@ all:
 	@echo or set BUILDTAG to a specific tag
 
 generate_bare:
-	go run ./internal/generate/bare -shared-names internal/generate/bare/names.json
+	go run ./internal/generate/bare -bare-names internal/generate/bare/names.json -shared-names internal/generate/bare/names.json
 
 generate_v20:
 	@set -eu; \

@@ -42,7 +42,7 @@ type CSAFDocumentAcknowledgmentsElem struct {
 	Names        []string `json:"names,omitempty"`
 	Organization *string  `json:"organization,omitempty"`
 	Summary      *string  `json:"summary,omitempty"`
-	Urls         []string `json:"urls,omitempty"`
+	URLs         []string `json:"urls,omitempty"`
 }
 
 type CSAFDocumentAggregateSeverity struct {
@@ -64,8 +64,8 @@ type CSAFDocumentDistributionTLP struct {
 type CSAFDocumentNotesElem struct {
 	Audience   *string         `json:"audience,omitempty"`
 	Category   string          `json:"category"`
-	GroupIds   json.RawMessage `json:"group_ids,omitempty"`
-	ProductIds json.RawMessage `json:"product_ids,omitempty"`
+	GroupIDs   json.RawMessage `json:"group_ids,omitempty"`
+	ProductIDs json.RawMessage `json:"product_ids,omitempty"`
 	Text       string          `json:"text"`
 	Title      *string         `json:"title,omitempty"`
 }
@@ -139,12 +139,12 @@ type CSAFProductTreeBranchesElemProductProductIdentificationHelper struct {
 	CPE           *string                                                                         `json:"cpe,omitempty"`
 	Hashes        []CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem       `json:"hashes,omitempty"`
 	ModelNumbers  []string                                                                        `json:"model_numbers,omitempty"`
-	Purl          json.RawMessage                                                                 `json:"purl,omitempty"`
-	Purls         json.RawMessage                                                                 `json:"purls,omitempty"`
-	SbomUrls      []string                                                                        `json:"sbom_urls,omitempty"`
+	PURL          json.RawMessage                                                                 `json:"purl,omitempty"`
+	PURLs         json.RawMessage                                                                 `json:"purls,omitempty"`
+	SBOMURLs      []string                                                                        `json:"sbom_urls,omitempty"`
 	SerialNumbers []string                                                                        `json:"serial_numbers,omitempty"`
-	Skus          []string                                                                        `json:"skus,omitempty"`
-	XGenericUris  []CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem `json:"x_generic_uris,omitempty"`
+	SKUs          []string                                                                        `json:"skus,omitempty"`
+	XGenericURIs  []CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisElem `json:"x_generic_uris,omitempty"`
 }
 
 type CSAFProductTreeBranchesElemProductProductIdentificationHelperHashesElem struct {
@@ -164,7 +164,7 @@ type CSAFProductTreeBranchesElemProductProductIdentificationHelperXGenericUrisEl
 
 type CSAFProductTreeProductGroupsElem struct {
 	GroupID    string   `json:"group_id"`
-	ProductIds []string `json:"product_ids"`
+	ProductIDs []string `json:"product_ids"`
 	Summary    *string  `json:"summary,omitempty"`
 }
 
@@ -172,13 +172,13 @@ type CSAFVulnerabilitiesElem struct {
 	Acknowledgments             []CSAFDocumentAcknowledgmentsElem         `json:"acknowledgments,omitempty"`
 	CVE                         *string                                   `json:"cve,omitempty"`
 	CWE                         json.RawMessage                           `json:"cwe,omitempty"`
-	Cwes                        json.RawMessage                           `json:"cwes,omitempty"`
+	CWEs                        json.RawMessage                           `json:"cwes,omitempty"`
 	DisclosureDate              json.RawMessage                           `json:"disclosure_date,omitempty"`
 	DiscoveryDate               *types.DateTime                           `json:"discovery_date,omitempty"`
-	DlVulnID                    json.RawMessage                           `json:"dl_vuln_id,omitempty"`
+	DLVulnID                    json.RawMessage                           `json:"dl_vuln_id,omitempty"`
 	FirstKnownExploitationDates json.RawMessage                           `json:"first_known_exploitation_dates,omitempty"`
 	Flags                       []CSAFVulnerabilitiesElemFlagsElem        `json:"flags,omitempty"`
-	Ids                         []CSAFVulnerabilitiesElemIdsElem          `json:"ids,omitempty"`
+	IDs                         []CSAFVulnerabilitiesElemIdsElem          `json:"ids,omitempty"`
 	Involvements                json.RawMessage                           `json:"involvements,omitempty"`
 	Metrics                     json.RawMessage                           `json:"metrics,omitempty"`
 	Notes                       []CSAFDocumentNotesElem                   `json:"notes,omitempty"`
@@ -194,14 +194,14 @@ type CSAFVulnerabilitiesElem struct {
 
 type CSAFVulnerabilitiesElemFlagsElem struct {
 	Date       *types.DateTime `json:"date,omitempty"`
-	GroupIds   []string        `json:"group_ids,omitempty"`
+	GroupIDs   []string        `json:"group_ids,omitempty"`
 	Label      string          `json:"label"`
-	ProductIds []string        `json:"product_ids,omitempty"`
+	ProductIDs []string        `json:"product_ids,omitempty"`
 }
 
 type CSAFVulnerabilitiesElemIdsElem struct {
-	GroupIds   json.RawMessage `json:"group_ids,omitempty"`
-	ProductIds json.RawMessage `json:"product_ids,omitempty"`
+	GroupIDs   json.RawMessage `json:"group_ids,omitempty"`
+	ProductIDs json.RawMessage `json:"product_ids,omitempty"`
 	SystemName string          `json:"system_name"`
 	Text       string          `json:"text"`
 }
@@ -223,8 +223,8 @@ type CSAFVulnerabilitiesElemRemediationsElem struct {
 	Date            *types.DateTime                                         `json:"date,omitempty"`
 	Details         string                                                  `json:"details"`
 	Entitlements    []string                                                `json:"entitlements,omitempty"`
-	GroupIds        []string                                                `json:"group_ids,omitempty"`
-	ProductIds      []string                                                `json:"product_ids,omitempty"`
+	GroupIDs        []string                                                `json:"group_ids,omitempty"`
+	ProductIDs      []string                                                `json:"product_ids,omitempty"`
 	RestartRequired *CSAFVulnerabilitiesElemRemediationsElemRestartRequired `json:"restart_required,omitempty"`
 	URL             *string                                                 `json:"url,omitempty"`
 }
@@ -238,6 +238,6 @@ type CSAFVulnerabilitiesElemThreatsElem struct {
 	Category   string          `json:"category"`
 	Date       *types.DateTime `json:"date,omitempty"`
 	Details    string          `json:"details"`
-	GroupIds   []string        `json:"group_ids,omitempty"`
-	ProductIds []string        `json:"product_ids,omitempty"`
+	GroupIDs   []string        `json:"group_ids,omitempty"`
+	ProductIDs []string        `json:"product_ids,omitempty"`
 }

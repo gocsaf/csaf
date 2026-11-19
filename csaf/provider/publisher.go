@@ -19,7 +19,7 @@ import (
 // DecodePublisher decodes a publisher JSON object for the specified CSAF
 // version. Since PMD uses the publisher definition from that CSAF version,
 // this function can also decode an advisory's publisher.
-func DecodePublisher(metadataVersion string, data []byte) (ProviderPublisher, error) {
+func DecodePublisher(metadataVersion string, data []byte) (Publisher, error) {
 	var v version
 	switch metadataVersion {
 	case "2.0":
@@ -27,26 +27,26 @@ func DecodePublisher(metadataVersion string, data []byte) (ProviderPublisher, er
 	case "2.1":
 		v = version21
 	default:
-		return ProviderPublisher{}, fmt.Errorf("unsupported provider metadata version %q", metadataVersion)
+		return Publisher{}, fmt.Errorf("unsupported provider metadata version %q", metadataVersion)
 	}
 	var b bare.ProviderPublisher
 	if err := json.Unmarshal(data, &b); err != nil {
-		return ProviderPublisher{}, fmt.Errorf("publisher: %w", err)
+		return Publisher{}, fmt.Errorf("publisher: %w", err)
 	}
-	p, err := fromBareProviderPublisher(&b, v)
+	p, err := fromBarePublisher(&b, v)
 	if err != nil {
-		return ProviderPublisher{}, fmt.Errorf("publisher: %w", err)
+		return Publisher{}, fmt.Errorf("publisher: %w", err)
 	}
 	if err := p.Check(v); err != nil {
-		return ProviderPublisher{}, fmt.Errorf("publisher: %w", err)
+		return Publisher{}, fmt.Errorf("publisher: %w", err)
 	}
 	return p, nil
 }
 
-// Equal returns true if two [ProviderPublisher] instances are equal.
+// Equal returns true if two [Publisher] instances are equal.
 // Compares non-version specific fields, as well as version specific
 // details (ContactDetails v2.0, Contact v2.1)
-func (p *ProviderPublisher) Equal(o *ProviderPublisher) bool {
+func (p *Publisher) Equal(o *Publisher) bool {
 	if p.Category != o.Category ||
 		p.Name != o.Name ||
 		p.Namespace != o.Namespace ||
@@ -62,17 +62,17 @@ func (p *ProviderPublisher) Equal(o *ProviderPublisher) bool {
 		pc.equal(oc)
 }
 
-// equal compares two [ContactT] instances field by field.
-func (c *ContactT) equal(o *ContactT) bool {
+// equal compares two [Contact] instances field by field.
+func (c *Contact) equal(o *Contact) bool {
 	if c == nil {
-		c = &ContactT{}
+		c = &Contact{}
 	}
 	if o == nil {
-		o = &ContactT{}
+		o = &Contact{}
 	}
 	return deref(c.Details) == deref(o.Details) &&
 		deref(c.Email) == deref(o.Email) &&
-		deref(c.PublicOpenpgpKeyURL) == deref(o.PublicOpenpgpKeyURL) &&
+		deref(c.PublicOpenPGPKeyURL) == deref(o.PublicOpenPGPKeyURL) &&
 		deref(c.URL) == deref(o.URL)
 }
 
@@ -88,16 +88,16 @@ func deref(s *string) string {
 // of the feed. If the feed already has a key with
 // given fingerprint the URL updated.
 // If there is no such key it is append to the list of keys.
-func (pmd *Provider) SetPGP(fingerprint, url string) {
-	for i := range pmd.PublicOpenpgpKeys {
-		key := &pmd.PublicOpenpgpKeys[i]
+func (pmd *ProviderMetadata) SetPGP(fingerprint, url string) {
+	for i := range pmd.PublicOpenPGPKeys {
+		key := &pmd.PublicOpenPGPKeys[i]
 		if key.Fingerprint != nil && strings.EqualFold(*key.Fingerprint, fingerprint) {
-			key.URL = URLT(url)
+			key.URL = URL(url)
 			return
 		}
 	}
-	pmd.PublicOpenpgpKeys = append(pmd.PublicOpenpgpKeys, ProviderPublicOpenpgpKeysElem{
+	pmd.PublicOpenPGPKeys = append(pmd.PublicOpenPGPKeys, OpenPGPKey{
 		Fingerprint: &fingerprint,
-		URL:         URLT(url),
+		URL:         URL(url),
 	})
 }

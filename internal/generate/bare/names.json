@@ -1,5 +1,26 @@
 {
   "advisory": {
+    "": {
+      "struct_name": "Advisory"
+    },
+    "/$schema": {
+      "constants": {
+        "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json": "SchemaURI21"
+      },
+      "type_name": "SchemaURI"
+    },
+    "/document": {
+      "struct_name": "Document"
+    },
+    "/document/acknowledgments": {
+      "struct_name": "Acknowledgment"
+    },
+    "/document/acknowledgments/*/urls": {
+      "name": "URLs"
+    },
+    "/document/aggregate_severity": {
+      "struct_name": "AggregateSeverity"
+    },
     "/document/csaf_version": {
       "name": "CSAFVersion",
       "type_name": "Version",
@@ -8,14 +29,533 @@
         "2.1": "CSAFVersion21"
       }
     },
-    "/vulnerabilities/*/scores": {
-      "type": "Scores"
+    "/document/distribution": {
+      "struct_name": "Distribution"
+    },
+    "/document/distribution/sharing_group": {
+      "struct_name": "SharingGroup"
+    },
+    "/document/distribution/tlp": {
+      "struct_name": "TLP"
+    },
+    "/document/distribution/tlp/label": {
+      "type_name": "TLPLabel",
+      "constants": {
+        "AMBER": "TLPLabelAmber",
+        "AMBER+STRICT": "TLPLabelAmberStrict",
+        "CLEAR": "TLPLabelClear",
+        "GREEN": "TLPLabelGreen",
+        "RED": "TLPLabelRed",
+        "WHITE": "TLPLabelWhite"
+      }
+    },
+    "/document/involvement": {
+      "struct_name": "DocumentInvolvement"
+    },
+    "/document/involvement/actions": {
+      "struct_name": "Action"
+    },
+    "/document/involvement/actions/*/action_id": {
+      "type_name": "ActionID"
+    },
+    "/document/involvement/actions/*/category": {
+      "type_name": "ActionCategory",
+      "constants": {
+        "assessment": "ActionCategoryAssessment",
+        "confirmation": "ActionCategoryConfirmation",
+        "coordination": "ActionCategoryCoordination",
+        "discovery": "ActionCategoryDiscovery",
+        "dispute": "ActionCategoryDispute",
+        "embargo": "ActionCategoryEmbargo",
+        "exploitation": "ActionCategoryExploitation",
+        "fix_deployment": "ActionCategoryFixDeployment",
+        "fix_release": "ActionCategoryFixRelease",
+        "notification": "ActionCategoryNotification",
+        "observation": "ActionCategoryObservation"
+      }
+    },
+    "/document/involvement/actions/*/dl_vuln_ids": {
+      "name": "DLVulnIDs"
+    },
+    "/document/involvement/actions/*/group_ids": {
+      "name": "GroupIDs",
+      "type_name": "ProductGroupIDs"
+    },
+    "/document/involvement/actions/*/product_ids": {
+      "name": "ProductIDs",
+      "type_name": "ProductIDs"
+    },
+    "/document/involvement/actions/*/referenced_action_ids": {
+      "name": "ReferencedActionIDs"
+    },
+    "/document/involvement/actions/*/status": {
+      "type_name": "ActionStatus",
+      "constants": {
+        "attempted": "ActionStatusAttempted",
+        "completed": "ActionStatusCompleted",
+        "deferred": "ActionStatusDeferred",
+        "discontinued": "ActionStatusDiscontinued",
+        "in_progress": "ActionStatusInProgress",
+        "outstanding": "ActionStatusOutstanding",
+        "planned": "ActionStatusPlanned"
+      }
+    },
+    "/document/involvement/entities": {
+      "struct_name": "Entity"
+    },
+    "/document/involvement/entities/*/category": {
+      "type_name": "EntityCategory",
+      "constants": {
+        "adversary": "EntityCategoryAdversary",
+        "coordinator": "EntityCategoryCoordinator",
+        "discoverer": "EntityCategoryDiscoverer",
+        "multiplier": "EntityCategoryMultiplier",
+        "other": "EntityCategoryOther",
+        "public": "EntityCategoryPublic",
+        "reporting_authority": "EntityCategoryReportingAuthority",
+        "user": "EntityCategoryUser",
+        "vendor": "EntityCategoryVendor"
+      }
+    },
+    "/document/involvement/entities/*/contact": {
+      "struct_name": "Contact"
+    },
+    "/document/involvement/entities/*/contact/public_openpgp_key_url": {
+      "name": "PublicOpenPGPKeyURL"
+    },
+    "/document/involvement/entities/*/entity_id": {
+      "type_name": "EntityID"
+    },
+    "/document/involvement/entity_groups": {
+      "struct_name": "EntityGroup"
+    },
+    "/document/involvement/entity_groups/*/entity_group_id": {
+      "type_name": "EntityGroupID"
+    },
+    "/document/involvement/entity_groups/*/entity_ids": {
+      "name": "EntityIDs"
+    },
+    "/document/lang": {
+      "type_name": "Lang"
+    },
+    "/document/notes": {
+      "struct_name": "Note"
+    },
+    "/document/notes/*/category": {
+      "type_name": "NoteCategory",
+      "constants": {
+        "description": "NoteCategoryDescription",
+        "details": "NoteCategoryDetails",
+        "faq": "NoteCategoryFAQ",
+        "general": "NoteCategoryGeneral",
+        "legal_disclaimer": "NoteCategoryLegalDisclaimer",
+        "other": "NoteCategoryOther",
+        "summary": "NoteCategorySummary"
+      }
+    },
+    "/document/notes/*/group_ids": {
+      "name": "GroupIDs"
+    },
+    "/document/notes/*/product_ids": {
+      "name": "ProductIDs"
+    },
+    "/document/publisher": {
+      "struct_name": "Publisher"
+    },
+    "/document/publisher/category": {
+      "type_name": "PublisherCategory",
+      "constants": {
+        "coordinator": "PublisherCategoryCoordinator",
+        "discoverer": "PublisherCategoryDiscoverer",
+        "multiplier": "PublisherCategoryMultiplier",
+        "other": "PublisherCategoryOther",
+        "translator": "PublisherCategoryTranslator",
+        "user": "PublisherCategoryUser",
+        "vendor": "PublisherCategoryVendor"
+      }
+    },
+    "/document/references": {
+      "struct_name": "Reference"
+    },
+    "/document/references/*/category": {
+      "type_name": "ReferenceCategory",
+      "constants": {
+        "external": "ReferenceCategoryExternal",
+        "self": "ReferenceCategorySelf"
+      }
+    },
+    "/document/tracking": {
+      "struct_name": "Tracking"
+    },
+    "/document/tracking/generator": {
+      "struct_name": "Generator"
+    },
+    "/document/tracking/generator/engine": {
+      "struct_name": "Engine"
+    },
+    "/document/tracking/revision_history": {
+      "struct_name": "Revision"
+    },
+    "/document/tracking/revision_history/*/number": {
+      "type_name": "RevisionNumber"
+    },
+    "/document/tracking/status": {
+      "type_name": "TrackingStatus",
+      "constants": {
+        "draft": "TrackingStatusDraft",
+        "final": "TrackingStatusFinal",
+        "interim": "TrackingStatusInterim"
+      }
+    },
+    "/document/x_extensions": {
+      "struct_name": "Extension",
+      "type_name": "Extensions"
+    },
+    "/document/x_extensions/*/$schema": {
+      "type_name": "ExtensionSchema"
+    },
+    "/document/x_extensions/*/category": {
+      "type_name": "ExtensionCategory",
+      "constants": {
+        "essential": "ExtensionCategoryEssential",
+        "significant": "ExtensionCategorySignificant",
+        "supplementary": "ExtensionCategorySupplementary"
+      }
+    },
+    "/document/x_extensions/*/content": {
+      "type_name": "ExtensionContent"
+    },
+    "/product_tree": {
+      "struct_name": "ProductTree"
+    },
+    "/product_tree/branches": {
+      "struct_name": "Branch"
+    },
+    "/product_tree/branches/*/category": {
+      "type_name": "BranchCategory",
+      "constants": {
+        "architecture": "BranchCategoryArchitecture",
+        "host_name": "BranchCategoryHostName",
+        "language": "BranchCategoryLanguage",
+        "legacy": "BranchCategoryLegacy",
+        "patch_level": "BranchCategoryPatchLevel",
+        "platform": "BranchCategoryPlatform",
+        "product_family": "BranchCategoryProductFamily",
+        "product_name": "BranchCategoryProductName",
+        "product_version": "BranchCategoryProductVersion",
+        "product_version_range": "BranchCategoryProductVersionRange",
+        "service_pack": "BranchCategoryServicePack",
+        "specification": "BranchCategorySpecification",
+        "vendor": "BranchCategoryVendor"
+      }
+    },
+    "/product_tree/branches/*/product": {
+      "struct_name": "FullProductName"
+    },
+    "/product_tree/branches/*/product/product_id": {
+      "type_name": "ProductID"
+    },
+    "/product_tree/branches/*/product/product_identification_helper": {
+      "struct_name": "ProductIdentificationHelper"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/hashes": {
+      "struct_name": "Hashes"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/hashes/*/file_hashes": {
+      "struct_name": "FileHash"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/purl": {
+      "name": "PURL"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/purls": {
+      "name": "PURLs"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/sbom_urls": {
+      "name": "SBOMURLs"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/skus": {
+      "name": "SKUs"
+    },
+    "/product_tree/branches/*/product/product_identification_helper/x_generic_uris": {
+      "name": "XGenericURIs",
+      "struct_name": "XGenericURI"
+    },
+    "/product_tree/product_groups": {
+      "struct_name": "ProductGroup"
+    },
+    "/product_tree/product_groups/*/group_id": {
+      "type_name": "ProductGroupID"
+    },
+    "/product_tree/product_groups/*/product_ids": {
+      "name": "ProductIDs"
+    },
+    "/product_tree/product_paths": {
+      "struct_name": "ProductPath"
+    },
+    "/product_tree/product_paths/*/full_product_name": {
+      "struct_name": "FullProductName21"
+    },
+    "/product_tree/product_paths/*/full_product_name/product_identification_helper": {
+      "struct_name": "ProductIdentificationHelper21"
+    },
+    "/product_tree/product_paths/*/full_product_name/product_identification_helper/hashes": {
+      "struct_name": "Hashes21"
+    },
+    "/product_tree/product_paths/*/full_product_name/product_identification_helper/hashes/*/file_hashes": {
+      "struct_name": "FileHash21"
+    },
+    "/product_tree/product_paths/*/full_product_name/product_identification_helper/purls": {
+      "name": "PURLs"
+    },
+    "/product_tree/product_paths/*/full_product_name/product_identification_helper/sbom_urls": {
+      "name": "SBOMURLs"
+    },
+    "/product_tree/product_paths/*/full_product_name/product_identification_helper/skus": {
+      "name": "SKUs"
+    },
+    "/product_tree/product_paths/*/full_product_name/product_identification_helper/x_generic_uris": {
+      "name": "XGenericURIs",
+      "struct_name": "XGenericURI21"
+    },
+    "/product_tree/product_paths/*/subpaths": {
+      "struct_name": "Subpath"
+    },
+    "/product_tree/product_paths/*/subpaths/*/category": {
+      "type_name": "SubpathCategory",
+      "constants": {
+        "default_component_of": "SubpathCategoryDefaultComponentOf",
+        "external_component_of": "SubpathCategoryExternalComponentOf",
+        "installed_on": "SubpathCategoryInstalledOn",
+        "installed_with": "SubpathCategoryInstalledWith",
+        "optional_component_of": "SubpathCategoryOptionalComponentOf"
+      }
+    },
+    "/product_tree/relationships": {
+      "struct_name": "Relationship"
+    },
+    "/product_tree/relationships/*/category": {
+      "type_name": "RelationshipCategory",
+      "constants": {
+        "default_component_of": "RelationshipCategoryDefaultComponentOf",
+        "external_component_of": "RelationshipCategoryExternalComponentOf",
+        "installed_on": "RelationshipCategoryInstalledOn",
+        "installed_with": "RelationshipCategoryInstalledWith",
+        "optional_component_of": "RelationshipCategoryOptionalComponentOf"
+      }
+    },
+    "/product_tree/relationships/*/full_product_name": {
+      "struct_name": "FullProductName20"
+    },
+    "/product_tree/relationships/*/full_product_name/product_identification_helper": {
+      "struct_name": "ProductIdentificationHelper20"
+    },
+    "/product_tree/relationships/*/full_product_name/product_identification_helper/hashes": {
+      "struct_name": "Hashes20"
+    },
+    "/product_tree/relationships/*/full_product_name/product_identification_helper/hashes/*/file_hashes": {
+      "struct_name": "FileHash20"
+    },
+    "/product_tree/relationships/*/full_product_name/product_identification_helper/purl": {
+      "name": "PURL"
+    },
+    "/product_tree/relationships/*/full_product_name/product_identification_helper/sbom_urls": {
+      "name": "SBOMURLs"
+    },
+    "/product_tree/relationships/*/full_product_name/product_identification_helper/skus": {
+      "name": "SKUs"
+    },
+    "/product_tree/relationships/*/full_product_name/product_identification_helper/x_generic_uris": {
+      "name": "XGenericURIs",
+      "struct_name": "XGenericURI20"
+    },
+    "/vulnerabilities": {
+      "struct_name": "Vulnerability"
+    },
+    "/vulnerabilities/*/cwe": {
+      "struct_name": "CWE"
+    },
+    "/vulnerabilities/*/cwes": {
+      "name": "CWEs",
+      "struct_name": "CWE21"
+    },
+    "/vulnerabilities/*/dl_vuln_id": {
+      "name": "DLVulnID",
+      "type_name": "DLVulnID"
+    },
+    "/vulnerabilities/*/first_known_exploitation_dates": {
+      "struct_name": "FirstKnownExploitationDate"
+    },
+    "/vulnerabilities/*/first_known_exploitation_dates/*/group_ids": {
+      "name": "GroupIDs"
+    },
+    "/vulnerabilities/*/first_known_exploitation_dates/*/product_ids": {
+      "name": "ProductIDs"
+    },
+    "/vulnerabilities/*/flags": {
+      "struct_name": "Flag"
+    },
+    "/vulnerabilities/*/flags/*/group_ids": {
+      "name": "GroupIDs"
+    },
+    "/vulnerabilities/*/flags/*/label": {
+      "type_name": "FlagLabel",
+      "constants": {
+        "component_not_present": "FlagLabelComponentNotPresent",
+        "inline_mitigations_already_exist": "FlagLabelInlineMitigationsAlreadyExist",
+        "vulnerable_code_cannot_be_controlled_by_adversary": "FlagLabelVulnerableCodeCannotBeControlledByAdversary",
+        "vulnerable_code_not_in_execute_path": "FlagLabelVulnerableCodeNotInExecutePath",
+        "vulnerable_code_not_present": "FlagLabelVulnerableCodeNotPresent"
+      }
+    },
+    "/vulnerabilities/*/flags/*/product_ids": {
+      "name": "ProductIDs"
+    },
+    "/vulnerabilities/*/ids": {
+      "name": "IDs",
+      "struct_name": "VulnerabilityID"
+    },
+    "/vulnerabilities/*/ids/*/group_ids": {
+      "name": "GroupIDs"
+    },
+    "/vulnerabilities/*/ids/*/product_ids": {
+      "name": "ProductIDs"
+    },
+    "/vulnerabilities/*/involvements": {
+      "struct_name": "Involvement"
+    },
+    "/vulnerabilities/*/involvements/*/party": {
+      "type_name": "InvolvementParty",
+      "constants": {
+        "coordinator": "InvolvementPartyCoordinator",
+        "discoverer": "InvolvementPartyDiscoverer",
+        "other": "InvolvementPartyOther",
+        "user": "InvolvementPartyUser",
+        "vendor": "InvolvementPartyVendor"
+      }
+    },
+    "/vulnerabilities/*/involvements/*/status": {
+      "type_name": "InvolvementStatus",
+      "constants": {
+        "completed": "InvolvementStatusCompleted",
+        "contact_attempted": "InvolvementStatusContactAttempted",
+        "disputed": "InvolvementStatusDisputed",
+        "in_progress": "InvolvementStatusInProgress",
+        "not_contacted": "InvolvementStatusNotContacted",
+        "open": "InvolvementStatusOpen"
+      }
+    },
+    "/vulnerabilities/*/metrics": {
+      "struct_name": "Metric"
     },
     "/vulnerabilities/*/metrics/*/content": {
       "type": "MetricContent"
+    },
+    "/vulnerabilities/*/product_status": {
+      "struct_name": "ProductStatus"
+    },
+    "/vulnerabilities/*/remediations": {
+      "struct_name": "Remediation"
+    },
+    "/vulnerabilities/*/remediations/*/category": {
+      "type_name": "RemediationCategory",
+      "constants": {
+        "fix_planned": "RemediationCategoryFixPlanned",
+        "mitigation": "RemediationCategoryMitigation",
+        "no_fix_planned": "RemediationCategoryNoFixPlanned",
+        "none_available": "RemediationCategoryNoneAvailable",
+        "optional_patch": "RemediationCategoryOptionalPatch",
+        "vendor_fix": "RemediationCategoryVendorFix",
+        "workaround": "RemediationCategoryWorkaround"
+      }
+    },
+    "/vulnerabilities/*/remediations/*/group_ids": {
+      "name": "GroupIDs"
+    },
+    "/vulnerabilities/*/remediations/*/product_ids": {
+      "name": "ProductIDs"
+    },
+    "/vulnerabilities/*/remediations/*/restart_required": {
+      "struct_name": "RestartRequired"
+    },
+    "/vulnerabilities/*/remediations/*/restart_required/category": {
+      "type_name": "RestartRequiredCategory",
+      "constants": {
+        "connected": "RestartRequiredCategoryConnected",
+        "dependencies": "RestartRequiredCategoryDependencies",
+        "machine": "RestartRequiredCategoryMachine",
+        "none": "RestartRequiredCategoryNone",
+        "parent": "RestartRequiredCategoryParent",
+        "service": "RestartRequiredCategoryService",
+        "system": "RestartRequiredCategorySystem",
+        "vulnerable_component": "RestartRequiredCategoryVulnerableComponent",
+        "zone": "RestartRequiredCategoryZone"
+      }
+    },
+    "/vulnerabilities/*/scores": {
+      "type": "Scores"
+    },
+    "/vulnerabilities/*/threats": {
+      "struct_name": "Threat"
+    },
+    "/vulnerabilities/*/threats/*/category": {
+      "type_name": "ThreatCategory",
+      "constants": {
+        "exploit_status": "ThreatCategoryExploitStatus",
+        "impact": "ThreatCategoryImpact",
+        "target_set": "ThreatCategoryTargetSet"
+      }
+    },
+    "/vulnerabilities/*/threats/*/group_ids": {
+      "name": "GroupIDs"
+    },
+    "/vulnerabilities/*/threats/*/product_ids": {
+      "name": "ProductIDs"
     }
   },
   "provider": {
+    "": {
+      "struct_name": "ProviderMetadata"
+    },
+    "/$schema": {
+      "constants": {
+        "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json": "SchemaURI21"
+      },
+      "type_name": "SchemaURI"
+    },
+    "/canonical_url": {
+      "type_name": "ProviderURL"
+    },
+    "/distributions": {
+      "struct_name": "Distribution"
+    },
+    "/distributions/*/directory": {
+      "struct_name": "Directory"
+    },
+    "/distributions/*/directory/tlp_label": {
+      "type_name": "TLPLabel",
+      "constants": {
+        "AMBER": "TLPLabelAmber",
+        "AMBER+STRICT": "TLPLabelAmberStrict",
+        "CLEAR": "TLPLabelClear",
+        "GREEN": "TLPLabelGreen",
+        "RED": "TLPLabelRed",
+        "WHITE": "TLPLabelWhite",
+        "UNLABELED": "TLPLabelUnlabeled"
+      }
+    },
+    "/distributions/*/directory/url": {
+      "type_name": "URL"
+    },
+    "/distributions/*/rolie": {
+      "name": "ROLIE",
+      "struct_name": "ROLIE"
+    },
+    "/distributions/*/rolie/feeds": {
+      "struct_name": "Feed"
+    },
+    "/distributions/*/rolie/feeds/*/url": {
+      "type_name": "JSONURL"
+    },
     "/metadata_version": {
       "name": "MetadataVersion",
       "type_name": "MetadataVersion",
@@ -23,9 +563,58 @@
         "2.0": "MetadataVersion20",
         "2.1": "MetadataVersion21"
       }
+    },
+    "/public_openpgp_keys": {
+      "name": "PublicOpenPGPKeys",
+      "struct_name": "OpenPGPKey"
+    },
+    "/publisher": {
+      "struct_name": "Publisher"
+    },
+    "/publisher/category": {
+      "type_name": "PublisherCategory",
+      "constants": {
+        "coordinator": "PublisherCategoryCoordinator",
+        "discoverer": "PublisherCategoryDiscoverer",
+        "multiplier": "PublisherCategoryMultiplier",
+        "other": "PublisherCategoryOther",
+        "translator": "PublisherCategoryTranslator",
+        "user": "PublisherCategoryUser",
+        "vendor": "PublisherCategoryVendor"
+      }
+    },
+    "/publisher/contact": {
+      "struct_name": "Contact"
+    },
+    "/publisher/contact/public_openpgp_key_url": {
+      "name": "PublicOpenPGPKeyURL"
+    },
+    "/role": {
+      "type_name": "MetadataRole",
+      "constants": {
+        "csaf_provider": "MetadataRoleProvider",
+        "csaf_publisher": "MetadataRolePublisher",
+        "csaf_trusted_provider": "MetadataRoleTrustedProvider"
+      }
     }
   },
   "aggregator": {
+    "/$schema": {
+      "constants": {
+        "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json": "SchemaURI21"
+      },
+      "type_name": "SchemaURI"
+    },
+    "/aggregator": {
+      "struct_name": "AggregatorInfo"
+    },
+    "/aggregator/category": {
+      "type_name": "Category",
+      "constants": {
+        "aggregator": "CategoryAggregator",
+        "lister": "CategoryLister"
+      }
+    },
     "/aggregator_version": {
       "name": "Version",
       "type_name": "AggregatorVersion",
@@ -33,6 +622,53 @@
         "2.0": "AggregatorVersion20",
         "2.1": "AggregatorVersion21"
       }
+    },
+    "/canonical_url": {
+      "type_name": "AggregatorURL"
+    },
+    "/csaf_providers": {
+      "struct_name": "ProviderEntry"
+    },
+    "/csaf_providers/*/metadata": {
+      "struct_name": "EntryMetadata"
+    },
+    "/csaf_providers/*/metadata/publisher": {
+      "struct_name": "Publisher"
+    },
+    "/csaf_providers/*/metadata/publisher/category": {
+      "type_name": "PublisherCategory",
+      "constants": {
+        "coordinator": "PublisherCategoryCoordinator",
+        "discoverer": "PublisherCategoryDiscoverer",
+        "multiplier": "PublisherCategoryMultiplier",
+        "other": "PublisherCategoryOther",
+        "translator": "PublisherCategoryTranslator",
+        "user": "PublisherCategoryUser",
+        "vendor": "PublisherCategoryVendor"
+      }
+    },
+    "/csaf_providers/*/metadata/publisher/contact": {
+      "struct_name": "Contact"
+    },
+    "/csaf_providers/*/metadata/publisher/contact/public_openpgp_key_url": {
+      "name": "PublicOpenPGPKeyURL"
+    },
+    "/csaf_providers/*/metadata/role": {
+      "type_name": "MetadataRole",
+      "constants": {
+        "csaf_provider": "MetadataRoleProvider",
+        "csaf_publisher": "MetadataRolePublisher",
+        "csaf_trusted_provider": "MetadataRoleTrustedProvider"
+      }
+    },
+    "/csaf_providers/*/metadata/url": {
+      "type_name": "ProviderURL"
+    },
+    "/csaf_providers/*/mirrors": {
+      "type_name": "Mirrors"
+    },
+    "/csaf_publishers": {
+      "struct_name": "PublisherEntry"
     }
   }
 }

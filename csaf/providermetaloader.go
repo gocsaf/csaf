@@ -84,7 +84,7 @@ type LoadedProviderMetadata struct {
 	// Messages are the error message happened while loading.
 	Messages ProviderMetadataLoadMessages
 	// Model is CSAF v2.0 or v2.1 typed pmd
-	Model *provider.Provider
+	Model *provider.ProviderMetadata
 }
 
 // Add appends a message to the list of loading messages.
@@ -429,7 +429,7 @@ func (pmdl *ProviderMetadataLoader) loadFromURL(ctx context.Context, path string
 }
 
 // decodePMD decodes raw bytes into a typed pmd model after successful validation.
-func decodePMD(raw []byte) (*provider.Provider, error) {
+func decodePMD(raw []byte) (*provider.ProviderMetadata, error) {
 	var bpmd bare.Provider
 	if err := json.Unmarshal(raw, &bpmd); err != nil {
 		return nil, err
@@ -441,7 +441,7 @@ func decodePMD(raw []byte) (*provider.Provider, error) {
 const maintenanceWarningWindow = 90 * 24 * time.Hour
 
 // checkMaintenanceWindow makes a v2.1 PMD check on the maintenance window defined by maintained_from/maintained_until fields.
-func checkMaintenanceWindow(pmd *provider.Provider, path string, now time.Time) error {
+func checkMaintenanceWindow(pmd *provider.ProviderMetadata, path string, now time.Time) error {
 	if from, _ := pmd.MaintainedFrom(); from != nil {
 		t, err := from.Time()
 		if err != nil {

@@ -97,7 +97,7 @@ type AdvisoryFileProcessor struct {
 	AgeAccept            func(time.Time) bool
 	Log                  func(loglevel slog.Level, format string, args ...any)
 	client               util.Client
-	pmd                  *provider.Provider
+	pmd                  *provider.ProviderMetadata
 	pmdURL               *url.URL
 	StreamingROLIEParser bool
 }
@@ -106,7 +106,7 @@ type AdvisoryFileProcessor struct {
 // for a given metadata document.
 func NewAdvisoryFileProcessor(
 	client util.Client,
-	pmd *provider.Provider,
+	pmd *provider.ProviderMetadata,
 	pmdURL *url.URL,
 ) *AdvisoryFileProcessor {
 	return &AdvisoryFileProcessor{
@@ -123,7 +123,7 @@ type advisoryDir struct {
 }
 
 // getAdvisoryDirs returns list of dir based distribution elements.
-func getAdvisoryDirs(pmd *provider.Provider) []advisoryDir {
+func getAdvisoryDirs(pmd *provider.ProviderMetadata) []advisoryDir {
 	var dirs []advisoryDir
 	for i := range pmd.Distributions {
 		dist := &pmd.Distributions[i]
@@ -168,9 +168,9 @@ func (afp *AdvisoryFileProcessor) ProcessWithContext(
 
 	// Check if we have ROLIE feeds.
 	// if both present, prefer ROLIE
-	var feeds [][]provider.ProviderDistributionsElemRolieFeedsElem
+	var feeds [][]provider.Feed
 	for i := range afp.pmd.Distributions {
-		if r := afp.pmd.Distributions[i].Rolie; r != nil && len(r.Feeds) > 0 {
+		if r := afp.pmd.Distributions[i].ROLIE; r != nil && len(r.Feeds) > 0 {
 			feeds = append(feeds, r.Feeds)
 		}
 	}
@@ -345,7 +345,7 @@ func (afp *AdvisoryFileProcessor) loadChanges(
 
 func (afp *AdvisoryFileProcessor) processROLIE(
 	ctx context.Context,
-	labeledFeeds []provider.ProviderDistributionsElemRolieFeedsElem,
+	labeledFeeds []provider.Feed,
 	fn func(TLPLabel, []AdvisoryFile) error,
 ) error {
 	for i := range labeledFeeds {

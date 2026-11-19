@@ -17,7 +17,7 @@ import (
 // from the version packages must provide their own Check() error method.
 // Local checks do not validate schema formats, exact lengths or conditional
 // constraints. Zero-valued numbers and booleans are accepted.
-func (source *Provider) Check() error {
+func (source *ProviderMetadata) Check() error {
 	if source == nil {
 		return errors.New("nil document")
 	}
@@ -56,8 +56,8 @@ func (source *Provider) Check() error {
 	if source.MetadataVersion != "" && !source.MetadataVersion.validIn(v) {
 		return fmt.Errorf("metadata_version: invalid value %q", source.MetadataVersion)
 	}
-	for i := range source.PublicOpenpgpKeys {
-		if err := source.PublicOpenpgpKeys[i].Check(v); err != nil {
+	for i := range source.PublicOpenPGPKeys {
+		if err := source.PublicOpenPGPKeys[i].Check(v); err != nil {
 			return fmt.Errorf("public_openpgp_keys[%d].%w", i, err)
 		}
 	}
@@ -75,7 +75,7 @@ func (source *Provider) Check() error {
 	return nil
 }
 
-func (source *ProviderDistributionsElem) Check(v version) error {
+func (source *Distribution) Check(v version) error {
 	if source.providerDistributionsElem20Details != nil && source.providerDistributionsElem21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -95,8 +95,8 @@ func (source *ProviderDistributionsElem) Check(v version) error {
 			return errors.New("version 2.1 details are missing")
 		}
 	}
-	if source.Rolie != nil {
-		if err := source.Rolie.Check(v); err != nil {
+	if source.ROLIE != nil {
+		if err := source.ROLIE.Check(v); err != nil {
 			return fmt.Errorf("rolie.%w", err)
 		}
 	}
@@ -113,7 +113,7 @@ func (source *ProviderDistributionsElem) Check(v version) error {
 	return nil
 }
 
-func (source *ProviderDistributionsElemRolie) Check(v version) error {
+func (source *ROLIE) Check(v version) error {
 	if len(source.Feeds) == 0 {
 		return errors.New("feeds: required value is missing or empty")
 	}
@@ -125,7 +125,7 @@ func (source *ProviderDistributionsElemRolie) Check(v version) error {
 	return nil
 }
 
-func (source *ProviderDistributionsElemRolieFeedsElem) Check(v version) error {
+func (source *Feed) Check(v version) error {
 	switch {
 	case v == version20 && source.providerDistributionsElemRolieFeedsElem21Details != nil:
 		return errors.New("version 2.1 details are present in version 2.0")
@@ -149,7 +149,7 @@ func (source *ProviderDistributionsElemRolieFeedsElem) Check(v version) error {
 	return nil
 }
 
-func (source *ProviderPublicOpenpgpKeysElem) Check(v version) error {
+func (source *OpenPGPKey) Check(v version) error {
 	switch v {
 	case version21:
 		if source.Fingerprint == nil {
@@ -165,7 +165,7 @@ func (source *ProviderPublicOpenpgpKeysElem) Check(v version) error {
 	return nil
 }
 
-func (source *ProviderPublisher) Check(v version) error {
+func (source *Publisher) Check(v version) error {
 	if source.providerPublisher20Details != nil && source.providerPublisher21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -224,7 +224,7 @@ func (source *providerDistributionsElem20Details) Check(v version) error {
 	return nil
 }
 
-func (source *ProviderDistributionsElemDirectory) Check(v version) error {
+func (source *Directory) Check(v version) error {
 	if source.TLPLabel == "" {
 		return errors.New("tlp_label: required value is missing or empty")
 	}
@@ -257,7 +257,7 @@ func (source *providerPublisher20Details) Check(v version) error {
 	return nil
 }
 
-func (source *ContactT) Check(v version) error {
+func (source *Contact) Check(v version) error {
 	return nil
 }
 

@@ -36,20 +36,20 @@ func timestamp(t time.Time) types.DateTime {
 }
 
 // newProviderMetadata creates the version specific PMD for [versionTree].
-func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (*provider.Provider, error) {
+func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (*provider.ProviderMetadata, error) {
 	pmd, err := provider.NewProviderMetadata(vtr.version)
 	if err != nil {
 		return nil, err
 	}
 	ts := timestamp(now)
-	pmd.CanonicalURL = provider.ProviderURLT(vtr.pmdURL())
+	pmd.CanonicalURL = provider.ProviderURL(vtr.pmdURL())
 	pmd.LastUpdated = ts
 	pmd.Role = roleTrustedProvider
 	pmd.ListOnCSAFAggregators = true
 	pmd.MirrorOnCSAFAggregators = true
 	vtr.cfg.ProviderMetaData.apply(pmd)
 
-	var feeds []provider.ProviderDistributionsElemRolieFeedsElem
+	var feeds []provider.Feed
 	for _, t := range vtr.feedTLPs() {
 		feed, err := pmd.NewFeed()
 		if err != nil {
@@ -57,8 +57,8 @@ func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (
 		}
 		summary := "TLP:" + t.label() + " advisories"
 		feed.Summary = &summary
-		feed.TLPLabel = provider.TLPLabelT(t.label())
-		feed.URL = provider.JsonURLT(vtr.feedURL(t))
+		feed.TLPLabel = provider.TLPLabel(t.label())
+		feed.URL = provider.JSONURL(vtr.feedURL(t))
 		feed.SetLastUpdated(ts)
 		feeds = append(feeds, feed)
 	}
@@ -67,7 +67,7 @@ func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (
 		if err != nil {
 			return nil, err
 		}
-		dist.Rolie = &provider.ProviderDistributionsElemRolie{Feeds: feeds}
+		dist.ROLIE = &provider.ROLIE{Feeds: feeds}
 		pmd.Distributions = append(pmd.Distributions, dist)
 	}
 
@@ -80,12 +80,12 @@ func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (
 			url := vtr.url(string(t))
 			switch vtr.version {
 			case csafVersion20:
-				u := provider.URLT(url)
+				u := provider.URL(url)
 				dist.SetDirectoryURL(&u)
 			case csafVersion21:
-				dist.SetDirectory(&provider.ProviderDistributionsElemDirectory{
-					TLPLabel: provider.TLPLabelT(t.label()),
-					URL:      provider.URLT(url),
+				dist.SetDirectory(&provider.Directory{
+					TLPLabel: provider.TLPLabel(t.label()),
+					URL:      provider.URL(url),
 				})
 			}
 			pmd.Distributions = append(pmd.Distributions, dist)
@@ -98,7 +98,7 @@ func (vtr *versionTree) newProviderMetadata(fingerprint string, now time.Time) (
 
 // apply applies configuration values to PMD
 // version specific values are no-ops for wrong version PMD
-func (pmdc *providerMetadataConfig) apply(pmd *provider.Provider) {
+func (pmdc *providerMetadataConfig) apply(pmd *provider.ProviderMetadata) {
 	if pmdc.ListOnCSAFAggregators != nil {
 		pmd.ListOnCSAFAggregators = *pmdc.ListOnCSAFAggregators
 	}
@@ -115,7 +115,7 @@ func (pmdc *providerMetadataConfig) apply(pmd *provider.Provider) {
 	}
 	if pc := pmdc.Publisher; pc != nil {
 		p := &pmd.Publisher
-		p.Category = provider.PublisherTCategory(pc.Category)
+		p.Category = provider.PublisherCategory(pc.Category)
 		p.IssuingAuthority = pc.IssuingAuthority
 		p.Name = pc.Name
 		p.Namespace = pc.Namespace
@@ -126,13 +126,13 @@ func (pmdc *providerMetadataConfig) apply(pmd *provider.Provider) {
 
 // setLastUpdated sets last_updated for CSAF 2.1 feeds
 // no-op for 2.0 PMDs
-func setLastUpdated(pmd *provider.Provider, feedURL string, ts types.DateTime) error {
+func setLastUpdated(pmd *provider.ProviderMetadata, feedURL string, ts types.DateTime) error {
 	if pmd.MetadataVersion != csafVersion21 {
 		return nil
 	}
 	found := false
 	for i := range pmd.Distributions {
-		if r := pmd.Distributions[i].Rolie; r != nil {
+		if r := pmd.Distributions[i].ROLIE; r != nil {
 			for j := range r.Feeds {
 				if string(r.Feeds[j].URL) == feedURL {
 					r.Feeds[j].SetLastUpdated(ts)
@@ -148,7 +148,7 @@ func setLastUpdated(pmd *provider.Provider, feedURL string, ts types.DateTime) e
 }
 
 // checkMaintenanceWindow makes a v2.1 PMD check on the maintenance window defined by maintained_from/maintained_until fields.
-func checkMaintenanceWindow(pmd *provider.Provider, now time.Time) []string {
+func checkMaintenanceWindow(pmd *provider.ProviderMetadata, now time.Time) []string {
 	var warnings []string
 	if from, _ := pmd.MaintainedFrom(); from != nil {
 		t, err := from.Time()
@@ -170,7 +170,7 @@ func checkMaintenanceWindow(pmd *provider.Provider, now time.Time) []string {
 }
 
 // loadPMD loads the PMD of the [versionTree].
-func (vtr *versionTree) loadPMD() (*provider.Provider, error) {
+func (vtr *versionTree) loadPMD() (*provider.ProviderMetadata, error) {
 	path := vtr.pmdPath()
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -200,7 +200,7 @@ func (vtr *versionTree) loadPMD() (*provider.Provider, error) {
 }
 
 // writePMD writes PMD to specified path after check and validation.
-func writePMD(path string, pmd *provider.Provider) error {
+func writePMD(path string, pmd *provider.ProviderMetadata) error {
 	if err := pmd.Check(); err != nil {
 		return fmt.Errorf("invalid PMD: %w", err)
 	}

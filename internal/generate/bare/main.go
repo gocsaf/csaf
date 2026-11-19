@@ -141,9 +141,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sharedNames, err := readNames(*sharedPath)
-	if err != nil {
-		log.Fatal(err)
+	sharedNames := bareNames
+	if *sharedPath != *barePath {
+		sharedNames, err = readNames(*sharedPath)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	outputs, err := generateModels(bareNames, sharedNames)
 	if err != nil {
@@ -157,6 +160,10 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	bareNames.report("bare", os.Stderr)
-	sharedNames.report("shared", os.Stderr)
+	if sharedNames == bareNames {
+		sharedNames.report("bare/shared", os.Stderr)
+	} else {
+		bareNames.report("bare", os.Stderr)
+		sharedNames.report("shared", os.Stderr)
+	}
 }

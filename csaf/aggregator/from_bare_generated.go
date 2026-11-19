@@ -30,13 +30,13 @@ func FromBare(source *bare.Aggregator) (*Aggregator, error) {
 		return nil, errors.New("nil source")
 	}
 	var v version
-	switch source.AggregatorVersion {
+	switch source.Version {
 	case "2.0":
 		v = version20
 	case "2.1":
 		v = version21
 	default:
-		return nil, fmt.Errorf("unsupported version %q", source.AggregatorVersion)
+		return nil, fmt.Errorf("unsupported version %q", source.Version)
 	}
 	result, err := fromBareAggregator(source, v)
 	if err != nil {
@@ -48,25 +48,25 @@ func FromBare(source *bare.Aggregator) (*Aggregator, error) {
 func fromBareAggregator(source *bare.Aggregator, v version) (Aggregator, error) {
 	var target Aggregator
 	var err error
-	target.Aggregator, err = fromBareAggregatorAggregator(&source.Aggregator, v)
+	target.Aggregator, err = fromBareAggregatorInfo(&source.Aggregator, v)
 	if err != nil {
 		return target, fmt.Errorf("aggregator.%w", err)
 	}
-	target.Version = AggregatorVersion(source.AggregatorVersion)
-	target.CanonicalURL = AggregatorURLT(source.CanonicalURL)
+	target.Version = AggregatorVersion(source.Version)
+	target.CanonicalURL = AggregatorURL(source.CanonicalURL)
 	if source.CSAFProviders != nil {
-		target.CSAFProviders = make([]AggregatorCSAFProvidersElem, len(source.CSAFProviders))
+		target.CSAFProviders = make([]ProviderEntry, len(source.CSAFProviders))
 		for i := range source.CSAFProviders {
-			target.CSAFProviders[i], err = fromBareAggregatorCSAFProvidersElem(&source.CSAFProviders[i], v)
+			target.CSAFProviders[i], err = fromBareProviderEntry(&source.CSAFProviders[i], v)
 			if err != nil {
 				return target, fmt.Errorf("csaf_providers[%d].%w", i, err)
 			}
 		}
 	}
 	if source.CSAFPublishers != nil {
-		target.CSAFPublishers = make([]AggregatorCSAFPublishersElem, len(source.CSAFPublishers))
+		target.CSAFPublishers = make([]PublisherEntry, len(source.CSAFPublishers))
 		for i := range source.CSAFPublishers {
-			target.CSAFPublishers[i], err = fromBareAggregatorCSAFPublishersElem(&source.CSAFPublishers[i], v)
+			target.CSAFPublishers[i], err = fromBarePublisherEntry(&source.CSAFPublishers[i], v)
 			if err != nil {
 				return target, fmt.Errorf("csaf_publishers[%d].%w", i, err)
 			}
@@ -96,9 +96,9 @@ func fromBareAggregator(source *bare.Aggregator, v version) (Aggregator, error) 
 	return target, nil
 }
 
-func fromBareAggregatorAggregator(source *bare.AggregatorAggregator, v version) (AggregatorAggregator, error) {
-	var target AggregatorAggregator
-	target.Category = AggregatorAggregatorCategory(source.Category)
+func fromBareAggregatorInfo(source *bare.AggregatorAggregator, v version) (AggregatorInfo, error) {
+	var target AggregatorInfo
+	target.Category = Category(source.Category)
 	target.ContactDetails = source.ContactDetails
 	target.IssuingAuthority = source.IssuingAuthority
 	target.Name = source.Name
@@ -107,43 +107,43 @@ func fromBareAggregatorAggregator(source *bare.AggregatorAggregator, v version) 
 	return target, nil
 }
 
-func fromBareAggregatorCSAFProvidersElem(source *bare.AggregatorCSAFProvidersElem, v version) (AggregatorCSAFProvidersElem, error) {
-	var target AggregatorCSAFProvidersElem
+func fromBareProviderEntry(source *bare.AggregatorCSAFProvidersElem, v version) (ProviderEntry, error) {
+	var target ProviderEntry
 	var err error
-	target.Metadata, err = fromBareAggregatorCSAFProvidersElemMetadata(&source.Metadata, v)
+	target.Metadata, err = fromBareEntryMetadata(&source.Metadata, v)
 	if err != nil {
 		return target, fmt.Errorf("metadata.%w", err)
 	}
 	if source.Mirrors != nil {
-		target.Mirrors = make([]ProviderURLT, len(source.Mirrors))
+		target.Mirrors = make([]ProviderURL, len(source.Mirrors))
 		for i := range source.Mirrors {
-			target.Mirrors[i] = ProviderURLT(source.Mirrors[i])
+			target.Mirrors[i] = ProviderURL(source.Mirrors[i])
 		}
 	}
 	*source = bare.AggregatorCSAFProvidersElem{}
 	return target, nil
 }
 
-func fromBareAggregatorCSAFProvidersElemMetadata(source *bare.AggregatorCSAFProvidersElemMetadata, v version) (AggregatorCSAFProvidersElemMetadata, error) {
-	var target AggregatorCSAFProvidersElemMetadata
+func fromBareEntryMetadata(source *bare.AggregatorCSAFProvidersElemMetadata, v version) (EntryMetadata, error) {
+	var target EntryMetadata
 	var err error
 	target.LastUpdated = source.LastUpdated
-	target.Publisher, err = fromBareAggregatorCSAFProvidersElemMetadataPublisher(&source.Publisher, v)
+	target.Publisher, err = fromBarePublisher(&source.Publisher, v)
 	if err != nil {
 		return target, fmt.Errorf("publisher.%w", err)
 	}
 	if source.Role != nil {
-		target.Role = new(RoleT)
-		*target.Role = RoleT(*source.Role)
+		target.Role = new(MetadataRole)
+		*target.Role = MetadataRole(*source.Role)
 	}
-	target.URL = ProviderURLT(source.URL)
+	target.URL = ProviderURL(source.URL)
 	*source = bare.AggregatorCSAFProvidersElemMetadata{}
 	return target, nil
 }
 
-func fromBareAggregatorCSAFProvidersElemMetadataPublisher(source *bare.AggregatorCSAFProvidersElemMetadataPublisher, v version) (AggregatorCSAFProvidersElemMetadataPublisher, error) {
-	var target AggregatorCSAFProvidersElemMetadataPublisher
-	target.Category = PublisherTCategory(source.Category)
+func fromBarePublisher(source *bare.AggregatorCSAFProvidersElemMetadataPublisher, v version) (Publisher, error) {
+	var target Publisher
+	target.Category = PublisherCategory(source.Category)
 	target.IssuingAuthority = source.IssuingAuthority
 	target.Name = source.Name
 	target.Namespace = source.Namespace
@@ -169,17 +169,17 @@ func fromBareAggregatorCSAFProvidersElemMetadataPublisher(source *bare.Aggregato
 	return target, nil
 }
 
-func fromBareAggregatorCSAFPublishersElem(source *bare.AggregatorCSAFPublishersElem, v version) (AggregatorCSAFPublishersElem, error) {
-	var target AggregatorCSAFPublishersElem
+func fromBarePublisherEntry(source *bare.AggregatorCSAFPublishersElem, v version) (PublisherEntry, error) {
+	var target PublisherEntry
 	var err error
-	target.Metadata, err = fromBareAggregatorCSAFProvidersElemMetadata(&source.Metadata, v)
+	target.Metadata, err = fromBareEntryMetadata(&source.Metadata, v)
 	if err != nil {
 		return target, fmt.Errorf("metadata.%w", err)
 	}
 	if source.Mirrors != nil {
-		target.Mirrors = make([]ProviderURLT, len(source.Mirrors))
+		target.Mirrors = make([]ProviderURL, len(source.Mirrors))
 		for i := range source.Mirrors {
-			target.Mirrors[i] = ProviderURLT(source.Mirrors[i])
+			target.Mirrors[i] = ProviderURL(source.Mirrors[i])
 		}
 	}
 	target.UpdateInterval = source.UpdateInterval

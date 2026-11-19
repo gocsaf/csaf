@@ -49,15 +49,15 @@ type worker struct {
 	expr     *util.PathEval
 	signRing *crypto.KeyRing
 
-	client           util.ClientWithContext      // client per provider
-	provider         *provider                   // current provider
-	metadataProvider any                         // current metadata provider
-	metadataModel    *csafprovider.Provider      // typed metadata provider model
-	loc              string                      // URL of current provider-metadata.json
-	dir              string                      // Directory to store data to.
-	summaries        map[string][]summary        // the summaries of the advisories.
-	categories       map[string]util.Set[string] // the categories per label.
-	log              *slog.Logger                // the structured logger, supplied with the worker number.
+	client           util.ClientWithContext         // client per provider
+	provider         *provider                      // current provider
+	metadataProvider any                            // current metadata provider
+	metadataModel    *csafprovider.ProviderMetadata // typed metadata provider model
+	loc              string                         // URL of current provider-metadata.json
+	dir              string                         // Directory to store data to.
+	summaries        map[string][]summary           // the summaries of the advisories.
+	categories       map[string]util.Set[string]    // the categories per label.
+	log              *slog.Logger                   // the structured logger, supplied with the worker number.
 	pool             misc.BufferPool
 }
 

@@ -25,7 +25,7 @@ const (
 // FromBare converts source to a structured representation.
 // Source must be exclusively owned. It is consumed and emptied on success.
 // On error it may be partially consumed and must not be reused.
-func FromBare(source *bare.Provider) (*Provider, error) {
+func FromBare(source *bare.Provider) (*ProviderMetadata, error) {
 	if source == nil {
 		return nil, errors.New("nil source")
 	}
@@ -38,21 +38,21 @@ func FromBare(source *bare.Provider) (*Provider, error) {
 	default:
 		return nil, fmt.Errorf("unsupported version %q", source.MetadataVersion)
 	}
-	result, err := fromBareProvider(source, v)
+	result, err := fromBareProviderMetadata(source, v)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
-	var target Provider
+func fromBareProviderMetadata(source *bare.Provider, v version) (ProviderMetadata, error) {
+	var target ProviderMetadata
 	var err error
-	target.CanonicalURL = ProviderURLT(source.CanonicalURL)
+	target.CanonicalURL = ProviderURL(source.CanonicalURL)
 	if source.Distributions != nil {
-		target.Distributions = make([]ProviderDistributionsElem, len(source.Distributions))
+		target.Distributions = make([]Distribution, len(source.Distributions))
 		for i := range source.Distributions {
-			target.Distributions[i], err = fromBareProviderDistributionsElem(&source.Distributions[i], v)
+			target.Distributions[i], err = fromBareDistribution(&source.Distributions[i], v)
 			if err != nil {
 				return target, fmt.Errorf("distributions[%d].%w", i, err)
 			}
@@ -62,20 +62,20 @@ func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
 	target.ListOnCSAFAggregators = source.ListOnCSAFAggregators
 	target.MetadataVersion = MetadataVersion(source.MetadataVersion)
 	target.MirrorOnCSAFAggregators = source.MirrorOnCSAFAggregators
-	if source.PublicOpenpgpKeys != nil {
-		target.PublicOpenpgpKeys = make([]ProviderPublicOpenpgpKeysElem, len(source.PublicOpenpgpKeys))
-		for i := range source.PublicOpenpgpKeys {
-			target.PublicOpenpgpKeys[i], err = fromBareProviderPublicOpenpgpKeysElem(&source.PublicOpenpgpKeys[i], v)
+	if source.PublicOpenPGPKeys != nil {
+		target.PublicOpenPGPKeys = make([]OpenPGPKey, len(source.PublicOpenPGPKeys))
+		for i := range source.PublicOpenPGPKeys {
+			target.PublicOpenPGPKeys[i], err = fromBareOpenPGPKey(&source.PublicOpenPGPKeys[i], v)
 			if err != nil {
 				return target, fmt.Errorf("public_openpgp_keys[%d].%w", i, err)
 			}
 		}
 	}
-	target.Publisher, err = fromBareProviderPublisher(&source.Publisher, v)
+	target.Publisher, err = fromBarePublisher(&source.Publisher, v)
 	if err != nil {
 		return target, fmt.Errorf("publisher.%w", err)
 	}
-	target.Role = ProviderRole(source.Role)
+	target.Role = MetadataRole(source.Role)
 	if v == version21 {
 		details := &provider21Details{}
 		if len(source.Schema) > 0 {
@@ -99,12 +99,12 @@ func fromBareProvider(source *bare.Provider, v version) (Provider, error) {
 	return target, nil
 }
 
-func fromBareProviderDistributionsElem(source *bare.ProviderDistributionsElem, v version) (ProviderDistributionsElem, error) {
-	var target ProviderDistributionsElem
+func fromBareDistribution(source *bare.ProviderDistributionsElem, v version) (Distribution, error) {
+	var target Distribution
 	var err error
-	if source.Rolie != nil {
-		target.Rolie = new(ProviderDistributionsElemRolie)
-		*target.Rolie, err = fromBareProviderDistributionsElemRolie(source.Rolie, v)
+	if source.ROLIE != nil {
+		target.ROLIE = new(ROLIE)
+		*target.ROLIE, err = fromBareROLIE(source.ROLIE, v)
 		if err != nil {
 			return target, fmt.Errorf("rolie.%w", err)
 		}
@@ -131,39 +131,39 @@ func fromBareProviderDistributionsElem(source *bare.ProviderDistributionsElem, v
 	return target, nil
 }
 
-func fromBareProviderDistributionsElemRolie(source *bare.ProviderDistributionsElemRolie, v version) (ProviderDistributionsElemRolie, error) {
-	var target ProviderDistributionsElemRolie
+func fromBareROLIE(source *bare.ProviderDistributionsElemRolie, v version) (ROLIE, error) {
+	var target ROLIE
 	var err error
 	if source.Categories != nil {
-		target.Categories = make([]JsonURLT, len(source.Categories))
+		target.Categories = make([]JSONURL, len(source.Categories))
 		for i := range source.Categories {
-			target.Categories[i] = JsonURLT(source.Categories[i])
+			target.Categories[i] = JSONURL(source.Categories[i])
 		}
 	}
 	if source.Feeds != nil {
-		target.Feeds = make([]ProviderDistributionsElemRolieFeedsElem, len(source.Feeds))
+		target.Feeds = make([]Feed, len(source.Feeds))
 		for i := range source.Feeds {
-			target.Feeds[i], err = fromBareProviderDistributionsElemRolieFeedsElem(&source.Feeds[i], v)
+			target.Feeds[i], err = fromBareFeed(&source.Feeds[i], v)
 			if err != nil {
 				return target, fmt.Errorf("feeds[%d].%w", i, err)
 			}
 		}
 	}
 	if source.Services != nil {
-		target.Services = make([]JsonURLT, len(source.Services))
+		target.Services = make([]JSONURL, len(source.Services))
 		for i := range source.Services {
-			target.Services[i] = JsonURLT(source.Services[i])
+			target.Services[i] = JSONURL(source.Services[i])
 		}
 	}
 	*source = bare.ProviderDistributionsElemRolie{}
 	return target, nil
 }
 
-func fromBareProviderDistributionsElemRolieFeedsElem(source *bare.ProviderDistributionsElemRolieFeedsElem, v version) (ProviderDistributionsElemRolieFeedsElem, error) {
-	var target ProviderDistributionsElemRolieFeedsElem
+func fromBareFeed(source *bare.ProviderDistributionsElemRolieFeedsElem, v version) (Feed, error) {
+	var target Feed
 	target.Summary = source.Summary
-	target.TLPLabel = TLPLabelT(source.TLPLabel)
-	target.URL = JsonURLT(source.URL)
+	target.TLPLabel = TLPLabel(source.TLPLabel)
+	target.URL = JSONURL(source.URL)
 	if v == version21 {
 		details := &providerDistributionsElemRolieFeedsElem21Details{}
 		if len(source.LastUpdated) > 0 {
@@ -177,17 +177,17 @@ func fromBareProviderDistributionsElemRolieFeedsElem(source *bare.ProviderDistri
 	return target, nil
 }
 
-func fromBareProviderPublicOpenpgpKeysElem(source *bare.ProviderPublicOpenpgpKeysElem, v version) (ProviderPublicOpenpgpKeysElem, error) {
-	var target ProviderPublicOpenpgpKeysElem
+func fromBareOpenPGPKey(source *bare.ProviderPublicOpenpgpKeysElem, v version) (OpenPGPKey, error) {
+	var target OpenPGPKey
 	target.Fingerprint = source.Fingerprint
-	target.URL = URLT(source.URL)
+	target.URL = URL(source.URL)
 	*source = bare.ProviderPublicOpenpgpKeysElem{}
 	return target, nil
 }
 
-func fromBareProviderPublisher(source *bare.ProviderPublisher, v version) (ProviderPublisher, error) {
-	var target ProviderPublisher
-	target.Category = PublisherTCategory(source.Category)
+func fromBarePublisher(source *bare.ProviderPublisher, v version) (Publisher, error) {
+	var target Publisher
+	target.Category = PublisherCategory(source.Category)
 	target.IssuingAuthority = source.IssuingAuthority
 	target.Name = source.Name
 	target.Namespace = source.Namespace

@@ -22,7 +22,7 @@ type Provider struct {
 	MaintainedUntil         json.RawMessage                 `json:"maintained_until,omitempty"`
 	MetadataVersion         string                          `json:"metadata_version"`
 	MirrorOnCSAFAggregators bool                            `json:"mirror_on_CSAF_aggregators"`
-	PublicOpenpgpKeys       []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty"`
+	PublicOpenPGPKeys       []ProviderPublicOpenpgpKeysElem `json:"public_openpgp_keys,omitempty"`
 	Publisher               ProviderPublisher               `json:"publisher"`
 	Role                    string                          `json:"role"`
 }
@@ -30,7 +30,7 @@ type Provider struct {
 type ProviderDistributionsElem struct {
 	Directory    json.RawMessage                 `json:"directory,omitempty"`
 	DirectoryURL json.RawMessage                 `json:"directory_url,omitempty"`
-	Rolie        *ProviderDistributionsElemRolie `json:"rolie,omitempty"`
+	ROLIE        *ProviderDistributionsElemRolie `json:"rolie,omitempty"`
 }
 
 type ProviderDistributionsElemRolie struct {

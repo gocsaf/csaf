@@ -37,12 +37,24 @@ var modelRoots = map[string][3]modelRoot{
 	"v21":    {{"csaf/v21", "CSAF"}, {"csaf/v21", "Provider"}, {"csaf/v21", "Aggregator"}},
 	"legacy": {{"csaf", "Advisory"}, {"csaf", "ProviderMetadata"}, {"csaf", "Aggregator"}},
 	"bare":   {{"internal/bare", "CSAF"}, {"internal/bare", "Provider"}, {"internal/bare", "Aggregator"}},
-	"shared": {{"csaf/advisory", "CSAF"}, {"csaf/provider", "Provider"}, {"csaf/aggregator", "Aggregator"}},
+	"shared": {{"csaf/advisory", "Advisory"}, {"csaf/provider", "ProviderMetadata"}, {"csaf/aggregator", "Aggregator"}},
 }
 
 func exportModel(repo, variant string) (*document, error) {
 	roots := modelRoots[variant]
 	e := &exporter{repo: repo, packages: make(map[string]*sourcePackage)}
+	if variant == "shared" {
+		// The generator also supports running without name overrides.
+		for i, defaultName := range [...]string{"CSAF", "Provider"} {
+			pkg, err := e.loadPackage(roots[i].dir)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", roots[i].dir, err)
+			}
+			if _, ok := pkg.types[roots[i].name]; !ok {
+				roots[i].name = defaultName
+			}
+		}
+	}
 	result := &document{}
 	var err error
 	result.Advisory, err = e.exportRoot(roots[0])

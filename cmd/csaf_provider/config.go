@@ -58,12 +58,12 @@ type providerMetadataConfig struct {
 }
 
 type publisherConfig struct {
-	Category         string             `toml:"category"`
-	Name             string             `toml:"name"`
-	Namespace        string             `toml:"namespace"`
-	Contact          *provider.ContactT `toml:"contact"`
-	ContactDetails   *string            `toml:"contact_details"`
-	IssuingAuthority *string            `toml:"issuing_authority"`
+	Category         string            `toml:"category"`
+	Name             string            `toml:"name"`
+	Namespace        string            `toml:"namespace"`
+	Contact          *provider.Contact `toml:"contact"`
+	ContactDetails   *string           `toml:"contact_details"`
+	IssuingAuthority *string           `toml:"issuing_authority"`
 }
 
 // configs contains the config values for the provider.

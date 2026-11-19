@@ -12,32 +12,32 @@ import (
 
 // Aggregator contains common fields and optional version-specific details.
 type Aggregator struct {
-	Aggregator     AggregatorAggregator           `json:"aggregator"`
-	Version        AggregatorVersion              `json:"aggregator_version"`
-	CanonicalURL   AggregatorURLT                 `json:"canonical_url"`
-	CSAFProviders  []AggregatorCSAFProvidersElem  `json:"csaf_providers"`
-	CSAFPublishers []AggregatorCSAFPublishersElem `json:"csaf_publishers,omitempty"`
-	LastUpdated    types.DateTime                 `json:"last_updated"`
+	Aggregator     AggregatorInfo    `json:"aggregator"`
+	Version        AggregatorVersion `json:"aggregator_version"`
+	CanonicalURL   AggregatorURL     `json:"canonical_url"`
+	CSAFProviders  []ProviderEntry   `json:"csaf_providers"`
+	CSAFPublishers []PublisherEntry  `json:"csaf_publishers,omitempty"`
+	LastUpdated    types.DateTime    `json:"last_updated"`
 	*aggregator21Details
 }
 
 // aggregator21Details contains fields specific to CSAF 2.1.
 type aggregator21Details struct {
-	Schema          AggregatorSchema `json:"$schema"`
-	MaintainedFrom  *types.DateTime  `json:"maintained_from,omitempty"`
-	MaintainedUntil *types.DateTime  `json:"maintained_until,omitempty"`
+	Schema          SchemaURI       `json:"$schema"`
+	MaintainedFrom  *types.DateTime `json:"maintained_from,omitempty"`
+	MaintainedUntil *types.DateTime `json:"maintained_until,omitempty"`
 }
 
 // Schema reports whether the matching version details are present.
-func (v *Aggregator) Schema() (AggregatorSchema, bool) {
+func (v *Aggregator) Schema() (SchemaURI, bool) {
 	if v == nil || v.aggregator21Details == nil {
-		return AggregatorSchema(""), false
+		return SchemaURI(""), false
 	}
 	return v.aggregator21Details.Schema, true
 }
 
 // SetSchema updates the value if matching version details are present.
-func (v *Aggregator) SetSchema(value AggregatorSchema) bool {
+func (v *Aggregator) SetSchema(value SchemaURI) bool {
 	if v == nil || v.aggregator21Details == nil {
 		return false
 	}
@@ -79,35 +79,35 @@ func (v *Aggregator) SetMaintainedUntil(value *types.DateTime) bool {
 	return true
 }
 
-// AggregatorAggregator contains common fields and optional version-specific details.
-type AggregatorAggregator struct {
-	Category         AggregatorAggregatorCategory `json:"category"`
-	ContactDetails   *string                      `json:"contact_details,omitempty"`
-	IssuingAuthority *string                      `json:"issuing_authority,omitempty"`
-	Name             string                       `json:"name"`
-	Namespace        string                       `json:"namespace"`
+// AggregatorInfo contains common fields and optional version-specific details.
+type AggregatorInfo struct {
+	Category         Category `json:"category"`
+	ContactDetails   *string  `json:"contact_details,omitempty"`
+	IssuingAuthority *string  `json:"issuing_authority,omitempty"`
+	Name             string   `json:"name"`
+	Namespace        string   `json:"namespace"`
 }
 
-// AggregatorCSAFProvidersElem contains common fields and optional version-specific details.
-type AggregatorCSAFProvidersElem struct {
-	Metadata AggregatorCSAFProvidersElemMetadata `json:"metadata"`
-	Mirrors  MirrorsT                            `json:"mirrors,omitempty"`
+// ProviderEntry contains common fields and optional version-specific details.
+type ProviderEntry struct {
+	Metadata EntryMetadata `json:"metadata"`
+	Mirrors  Mirrors       `json:"mirrors,omitempty"`
 }
 
-// AggregatorCSAFProvidersElemMetadata contains common fields and optional version-specific details.
-type AggregatorCSAFProvidersElemMetadata struct {
-	LastUpdated types.DateTime                               `json:"last_updated"`
-	Publisher   AggregatorCSAFProvidersElemMetadataPublisher `json:"publisher"`
-	Role        *RoleT                                       `json:"role,omitempty"`
-	URL         ProviderURLT                                 `json:"url"`
+// EntryMetadata contains common fields and optional version-specific details.
+type EntryMetadata struct {
+	LastUpdated types.DateTime `json:"last_updated"`
+	Publisher   Publisher      `json:"publisher"`
+	Role        *MetadataRole  `json:"role,omitempty"`
+	URL         ProviderURL    `json:"url"`
 }
 
-// AggregatorCSAFProvidersElemMetadataPublisher contains common fields and optional version-specific details.
-type AggregatorCSAFProvidersElemMetadataPublisher struct {
-	Category         PublisherTCategory `json:"category"`
-	IssuingAuthority *string            `json:"issuing_authority,omitempty"`
-	Name             string             `json:"name"`
-	Namespace        string             `json:"namespace"`
+// Publisher contains common fields and optional version-specific details.
+type Publisher struct {
+	Category         PublisherCategory `json:"category"`
+	IssuingAuthority *string           `json:"issuing_authority,omitempty"`
+	Name             string            `json:"name"`
+	Namespace        string            `json:"namespace"`
 	*aggregatorCSAFProvidersElemMetadataPublisher20Details
 	*aggregatorCSAFProvidersElemMetadataPublisher21Details
 }
@@ -118,7 +118,7 @@ type aggregatorCSAFProvidersElemMetadataPublisher20Details struct {
 }
 
 // ContactDetails reports whether the matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadataPublisher) ContactDetails() (*string, bool) {
+func (v *Publisher) ContactDetails() (*string, bool) {
 	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher20Details == nil {
 		return nil, false
 	}
@@ -126,7 +126,7 @@ func (v *AggregatorCSAFProvidersElemMetadataPublisher) ContactDetails() (*string
 }
 
 // SetContactDetails updates the value if matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContactDetails(value *string) bool {
+func (v *Publisher) SetContactDetails(value *string) bool {
 	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher20Details == nil {
 		return false
 	}
@@ -136,11 +136,11 @@ func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContactDetails(value *
 
 // aggregatorCSAFProvidersElemMetadataPublisher21Details contains fields specific to CSAF 2.1.
 type aggregatorCSAFProvidersElemMetadataPublisher21Details struct {
-	Contact *ContactT `json:"contact,omitempty"`
+	Contact *Contact `json:"contact,omitempty"`
 }
 
 // Contact reports whether the matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadataPublisher) Contact() (*ContactT, bool) {
+func (v *Publisher) Contact() (*Contact, bool) {
 	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
 		return nil, false
 	}
@@ -148,7 +148,7 @@ func (v *AggregatorCSAFProvidersElemMetadataPublisher) Contact() (*ContactT, boo
 }
 
 // SetContact updates the value if matching version details are present.
-func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContact(value *ContactT) bool {
+func (v *Publisher) SetContact(value *Contact) bool {
 	if v == nil || v.aggregatorCSAFProvidersElemMetadataPublisher21Details == nil {
 		return false
 	}
@@ -156,22 +156,22 @@ func (v *AggregatorCSAFProvidersElemMetadataPublisher) SetContact(value *Contact
 	return true
 }
 
-// AggregatorCSAFPublishersElem contains common fields and optional version-specific details.
-type AggregatorCSAFPublishersElem struct {
-	Metadata       AggregatorCSAFProvidersElemMetadata `json:"metadata"`
-	Mirrors        MirrorsT                            `json:"mirrors"`
-	UpdateInterval string                              `json:"update_interval"`
+// PublisherEntry contains common fields and optional version-specific details.
+type PublisherEntry struct {
+	Metadata       EntryMetadata `json:"metadata"`
+	Mirrors        Mirrors       `json:"mirrors"`
+	UpdateInterval string        `json:"update_interval"`
 }
 
-// AggregatorAggregatorCategory contains the values of all versions. Check validates them per version.
-type AggregatorAggregatorCategory string
+// Category contains the values of all versions. Check validates them per version.
+type Category string
 
-const AggregatorAggregatorCategoryAggregator AggregatorAggregatorCategory = "aggregator"
-const AggregatorAggregatorCategoryLister AggregatorAggregatorCategory = "lister"
+const CategoryAggregator Category = "aggregator"
+const CategoryLister Category = "lister"
 
-func (value AggregatorAggregatorCategory) validIn(v version) bool {
+func (value Category) validIn(v version) bool {
 	switch value {
-	case AggregatorAggregatorCategoryAggregator, AggregatorAggregatorCategoryLister:
+	case CategoryAggregator, CategoryLister:
 		return true
 	}
 	return false
@@ -196,65 +196,65 @@ func (value AggregatorVersion) validIn(v version) bool {
 	return false
 }
 
-type AggregatorURLT string
+type AggregatorURL string
 
-// PublisherTCategory contains the values of all versions. Check validates them per version.
-type PublisherTCategory string
+// PublisherCategory contains the values of all versions. Check validates them per version.
+type PublisherCategory string
 
-const PublisherTCategoryCoordinator PublisherTCategory = "coordinator"
-const PublisherTCategoryDiscoverer PublisherTCategory = "discoverer"
+const PublisherCategoryCoordinator PublisherCategory = "coordinator"
+const PublisherCategoryDiscoverer PublisherCategory = "discoverer"
 
 // Only valid in 2.1.
-const PublisherTCategoryMultiplier PublisherTCategory = "multiplier"
-const PublisherTCategoryOther PublisherTCategory = "other"
-const PublisherTCategoryTranslator PublisherTCategory = "translator"
-const PublisherTCategoryUser PublisherTCategory = "user"
-const PublisherTCategoryVendor PublisherTCategory = "vendor"
+const PublisherCategoryMultiplier PublisherCategory = "multiplier"
+const PublisherCategoryOther PublisherCategory = "other"
+const PublisherCategoryTranslator PublisherCategory = "translator"
+const PublisherCategoryUser PublisherCategory = "user"
+const PublisherCategoryVendor PublisherCategory = "vendor"
 
-func (value PublisherTCategory) validIn(v version) bool {
+func (value PublisherCategory) validIn(v version) bool {
 	switch value {
-	case PublisherTCategoryCoordinator, PublisherTCategoryDiscoverer, PublisherTCategoryOther, PublisherTCategoryTranslator, PublisherTCategoryUser, PublisherTCategoryVendor:
+	case PublisherCategoryCoordinator, PublisherCategoryDiscoverer, PublisherCategoryOther, PublisherCategoryTranslator, PublisherCategoryUser, PublisherCategoryVendor:
 		return true
-	case PublisherTCategoryMultiplier:
+	case PublisherCategoryMultiplier:
 		return v == version21
 	}
 	return false
 }
 
-// RoleT contains the values of all versions. Check validates them per version.
-type RoleT string
+// MetadataRole contains the values of all versions. Check validates them per version.
+type MetadataRole string
 
-const RoleTCSAFProvider RoleT = "csaf_provider"
-const RoleTCSAFPublisher RoleT = "csaf_publisher"
-const RoleTCSAFTrustedProvider RoleT = "csaf_trusted_provider"
+const MetadataRoleProvider MetadataRole = "csaf_provider"
+const MetadataRolePublisher MetadataRole = "csaf_publisher"
+const MetadataRoleTrustedProvider MetadataRole = "csaf_trusted_provider"
 
-func (value RoleT) validIn(v version) bool {
+func (value MetadataRole) validIn(v version) bool {
 	switch value {
-	case RoleTCSAFProvider, RoleTCSAFPublisher, RoleTCSAFTrustedProvider:
+	case MetadataRoleProvider, MetadataRolePublisher, MetadataRoleTrustedProvider:
 		return true
 	}
 	return false
 }
 
-type ProviderURLT string
+type ProviderURL string
 
-type MirrorsT []ProviderURLT
+type Mirrors []ProviderURL
 
-type AggregatorSchema string
+type SchemaURI string
 
-const AggregatorSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaAggregatorJson AggregatorSchema = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json"
+const SchemaURI21 SchemaURI = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json"
 
-func (value AggregatorSchema) validIn(v version) bool {
+func (value SchemaURI) validIn(v version) bool {
 	switch value {
-	case AggregatorSchemaHttpsDocsOasisOpenOrgCSAFCSAFV21SchemaAggregatorJson:
+	case SchemaURI21:
 		return v == version21
 	}
 	return false
 }
 
-type ContactT struct {
+type Contact struct {
 	Details             *string `json:"details,omitempty,omitzero"`
 	Email               *string `json:"email,omitempty,omitzero"`
-	PublicOpenpgpKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`
+	PublicOpenPGPKeyURL *string `json:"public_openpgp_key_url,omitempty,omitzero" toml:"public_openpgp_key_url"`
 	URL                 *string `json:"url,omitempty,omitzero"`
 }

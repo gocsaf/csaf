@@ -72,7 +72,7 @@ func (source *Aggregator) Check() error {
 	return nil
 }
 
-func (source *AggregatorAggregator) Check(v version) error {
+func (source *AggregatorInfo) Check(v version) error {
 	if source.Category == "" {
 		return errors.New("category: required value is missing or empty")
 	}
@@ -88,14 +88,14 @@ func (source *AggregatorAggregator) Check(v version) error {
 	return nil
 }
 
-func (source *AggregatorCSAFProvidersElem) Check(v version) error {
+func (source *ProviderEntry) Check(v version) error {
 	if err := source.Metadata.Check(v); err != nil {
 		return fmt.Errorf("metadata.%w", err)
 	}
 	return nil
 }
 
-func (source *AggregatorCSAFProvidersElemMetadata) Check(v version) error {
+func (source *EntryMetadata) Check(v version) error {
 	switch v {
 	case version21:
 		if source.Role == nil {
@@ -122,7 +122,7 @@ func (source *AggregatorCSAFProvidersElemMetadata) Check(v version) error {
 	return nil
 }
 
-func (source *AggregatorCSAFProvidersElemMetadataPublisher) Check(v version) error {
+func (source *Publisher) Check(v version) error {
 	if source.aggregatorCSAFProvidersElemMetadataPublisher20Details != nil && source.aggregatorCSAFProvidersElemMetadataPublisher21Details != nil {
 		return errors.New("both version details are present")
 	}
@@ -167,7 +167,7 @@ func (source *AggregatorCSAFProvidersElemMetadataPublisher) Check(v version) err
 	return nil
 }
 
-func (source *AggregatorCSAFPublishersElem) Check(v version) error {
+func (source *PublisherEntry) Check(v version) error {
 	if len(source.Mirrors) == 0 {
 		return errors.New("mirrors: required value is missing or empty")
 	}
@@ -194,7 +194,7 @@ func (source *aggregatorCSAFProvidersElemMetadataPublisher20Details) Check(v ver
 	return nil
 }
 
-func (source *ContactT) Check(v version) error {
+func (source *Contact) Check(v version) error {
 	return nil
 }
 
