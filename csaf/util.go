@@ -84,8 +84,7 @@ func (pt *ProductTree) FindProductIdentificationHelpers(
 
 	// Iterate over relationships
 	for _, rel := range pt.Relationships {
-		if fpn := rel.FullProductName; fpn != nil &&
-			fpn.ProductID == id && fpn.ProductIdentificationHelper != nil {
+		if fpn := rel.FullProductName; fpn.ProductID == id && fpn.ProductIdentificationHelper != nil {
 			visit(fpn.ProductIdentificationHelper)
 		}
 	}

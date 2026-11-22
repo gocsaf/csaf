@@ -73,8 +73,8 @@ func visitFullProductNames(
 	}
 
 	// Iterate over relationships
-	for _, rel := range adv.ProductTree.Relationships {
-		if fpn := rel.FullProductName; fpn != nil && fpn.ProductID != "" {
+	for i := range adv.ProductTree.Relationships {
+		if fpn := &adv.ProductTree.Relationships[i].FullProductName; fpn.ProductID != "" {
 			visit(fpn)
 		}
 	}

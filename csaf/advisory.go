@@ -382,10 +382,10 @@ var csafRelationshipCategoryPattern = alternativesUnmarshal(
 
 // Relationship establishes a link between two existing FullProductName elements.
 type Relationship struct {
-	Category                  *RelationshipCategory `json:"category"`                     // required
-	FullProductName           *FullProductName      `json:"full_product_name"`            // required
-	ProductReference          *ProductID            `json:"product_reference"`            // required
-	RelatesToProductReference *ProductID            `json:"relates_to_product_reference"` // required
+	Category                  RelationshipCategory `json:"category"`                     // required
+	FullProductName           FullProductName      `json:"full_product_name"`            // required
+	ProductReference          ProductID            `json:"product_reference"`            // required
+	RelatesToProductReference ProductID            `json:"relates_to_product_reference"` // required
 }
 
 // Relationships is a list of Relationship.
@@ -1135,17 +1135,15 @@ func (b *Branch) Validate() error {
 // Validate validates a single Relationship.
 func (r *Relationship) Validate() error {
 	switch {
-	case r.Category == nil:
-		return errors.New("'category' is missing")
-	case r.ProductReference == nil:
-		return errors.New("'product_reference' is missing")
-	case r.RelatesToProductReference == nil:
-		return errors.New("'relates_to_product_reference' is missing")
+	case r.Category == "":
+		return errors.New("'category' is missing or empty")
+	case r.ProductReference == "":
+		return errors.New("'product_reference' is missing or empty")
+	case r.RelatesToProductReference == "":
+		return errors.New("'relates_to_product_reference' is missing or empty")
 	}
-	if r.FullProductName != nil {
-		if err := r.FullProductName.Validate(); err != nil {
-			return fmt.Errorf("'product' is invalid: %w", err)
-		}
+	if err := r.FullProductName.Validate(); err != nil {
+		return fmt.Errorf("'full_product_name' is invalid: %w", err)
 	}
 	return nil
 }

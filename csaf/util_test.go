@@ -129,7 +129,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			name: "product tree with matching relationships",
 			fields: fields{
 				Relationships: Relationships{{
-					FullProductName: &FullProductName{
+					FullProductName: FullProductName{
 						ProductID: ProductID("CSAFPID-0001"),
 						ProductIdentificationHelper: &ProductIdentificationHelper{
 							CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
@@ -148,7 +148,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			name: "product tree with no matching relationships",
 			fields: fields{
 				Relationships: Relationships{{
-					FullProductName: &FullProductName{
+					FullProductName: FullProductName{
 						ProductID: ProductID("CSAFPID-0001"),
 						ProductIdentificationHelper: &ProductIdentificationHelper{
 							CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
