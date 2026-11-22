@@ -72,10 +72,10 @@ func (pmdc *providerMetadataConfig) apply(pmd *csaf.ProviderMetadata) {
 		return
 	}
 	if pmdc.ListOnCSAFAggregators != nil {
-		pmd.ListOnCSAFAggregators = pmdc.ListOnCSAFAggregators
+		pmd.ListOnCSAFAggregators = *pmdc.ListOnCSAFAggregators
 	}
 	if pmdc.MirrorOnCSAFAggregators != nil {
-		pmd.MirrorOnCSAFAggregators = pmdc.MirrorOnCSAFAggregators
+		pmd.MirrorOnCSAFAggregators = *pmdc.MirrorOnCSAFAggregators
 	}
 	if pmdc.Publisher != nil {
 		pmd.Publisher = *pmdc.Publisher

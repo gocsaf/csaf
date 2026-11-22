@@ -156,10 +156,10 @@ var providerURLPattern = patternUnmarshal(`/provider-metadata\.json$`)
 type ProviderMetadata struct {
 	CanonicalURL            ProviderURL     `json:"canonical_url"` // required
 	Distributions           []Distribution  `json:"distributions,omitempty"`
-	LastUpdated             *TimeStamp      `json:"last_updated"` // required
-	ListOnCSAFAggregators   *bool           `json:"list_on_CSAF_aggregators"`
+	LastUpdated             *TimeStamp      `json:"last_updated"`               // required
+	ListOnCSAFAggregators   bool            `json:"list_on_CSAF_aggregators"`   // required
 	MetadataVersion         MetadataVersion `json:"metadata_version"`           // required
-	MirrorOnCSAFAggregators *bool           `json:"mirror_on_CSAF_aggregators"` // required
+	MirrorOnCSAFAggregators bool            `json:"mirror_on_CSAF_aggregators"` // required
 	PGPKeys                 []PGPKey        `json:"public_openpgp_keys,omitzero"`
 	Publisher               Publisher       `json:"publisher"` // required
 	Role                    MetadataRole    `json:"role"`      // required
@@ -448,18 +448,10 @@ func (ts TimeStamp) MarshalText() ([]byte, error) {
 	return []byte(time.Time(ts).Format(time.RFC3339)), nil
 }
 
-// Defaults fills the correct default values into the provider metadata.
+// Defaults fills the default role and metadata version into the provider metadata.
 func (pmd *ProviderMetadata) Defaults() {
 	if pmd.Role == "" {
 		pmd.Role = MetadataRoleTrustedProvider
-	}
-	if pmd.ListOnCSAFAggregators == nil {
-		t := true
-		pmd.ListOnCSAFAggregators = &t
-	}
-	if pmd.MirrorOnCSAFAggregators == nil {
-		t := true
-		pmd.MirrorOnCSAFAggregators = &t
 	}
 	if pmd.MetadataVersion == "" {
 		pmd.MetadataVersion = MetadataVersion20
@@ -626,7 +618,10 @@ func (pmd *ProviderMetadata) SetPGP(fingerprint, url string) {
 // Valid default values are set and the feed is considered to
 // be updated recently.
 func NewProviderMetadata(canonicalURL string) *ProviderMetadata {
-	pm := new(ProviderMetadata)
+	pm := &ProviderMetadata{
+		ListOnCSAFAggregators:   true,
+		MirrorOnCSAFAggregators: true,
+	}
 	pm.Defaults()
 	pm.SetLastUpdated(time.Now())
 	pm.CanonicalURL = ProviderURL(canonicalURL)
@@ -688,7 +683,10 @@ func (pmd *ProviderMetadata) WriteTo(w io.Writer) (int64, error) {
 // LoadProviderMetadata loads a metadata provider from a reader.
 func LoadProviderMetadata(r io.Reader) (*ProviderMetadata, error) {
 
-	var pmd ProviderMetadata
+	pmd := ProviderMetadata{
+		ListOnCSAFAggregators:   true,
+		MirrorOnCSAFAggregators: true,
+	}
 	if err := misc.StrictJSONParse(r, &pmd); err != nil {
 		return nil, err
 	}
