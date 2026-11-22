@@ -24,9 +24,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/csaf"
-	"github.com/gocsaf/csaf/v3/internal/misc"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/csaf"
+	"github.com/gocsaf/csaf/v4/internal/misc"
+	"github.com/gocsaf/csaf/v4/util"
 )
 
 type interimJob struct {

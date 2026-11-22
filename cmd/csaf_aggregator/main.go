@@ -15,7 +15,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gocsaf/csaf/v3/internal/options"
+	"github.com/gocsaf/csaf/v4/internal/options"
 
 	"github.com/gofrs/flock"
 )

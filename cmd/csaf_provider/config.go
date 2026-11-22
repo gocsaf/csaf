@@ -19,7 +19,7 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/gocsaf/csaf/v3/csaf"
+	"github.com/gocsaf/csaf/v4/csaf"
 )
 
 const (

@@ -19,10 +19,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/internal/certs"
-	"github.com/gocsaf/csaf/v3/internal/filter"
-	"github.com/gocsaf/csaf/v3/internal/models"
-	"github.com/gocsaf/csaf/v3/internal/options"
+	"github.com/gocsaf/csaf/v4/internal/certs"
+	"github.com/gocsaf/csaf/v4/internal/filter"
+	"github.com/gocsaf/csaf/v4/internal/models"
+	"github.com/gocsaf/csaf/v4/internal/options"
 )
 
 const (

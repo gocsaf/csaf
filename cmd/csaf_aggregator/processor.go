@@ -17,9 +17,9 @@ import (
 	"os/signal"
 	"path/filepath"
 
-	"github.com/gocsaf/csaf/v3/csaf"
-	"github.com/gocsaf/csaf/v3/internal/misc"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/csaf"
+	"github.com/gocsaf/csaf/v4/internal/misc"
+	"github.com/gocsaf/csaf/v4/util"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 )

@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/csaf"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/csaf"
+	"github.com/gocsaf/csaf/v4/util"
 )
 
 // mergeCategories merges the given categories into the old ones.

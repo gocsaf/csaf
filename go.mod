@@ -1,4 +1,4 @@
-module github.com/gocsaf/csaf/v3
+module github.com/gocsaf/csaf/v4
 
 go 1.26.10
 

@@ -16,9 +16,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gocsaf/csaf/v3/internal/options"
-	"github.com/gocsaf/csaf/v3/internal/testutil"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/internal/options"
+	"github.com/gocsaf/csaf/v4/internal/testutil"
+	"github.com/gocsaf/csaf/v4/util"
 )
 
 func checkIfFileExists(path string, t *testing.T) bool {

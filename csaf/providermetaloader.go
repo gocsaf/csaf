@@ -19,8 +19,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/gocsaf/csaf/v3/internal/misc"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/internal/misc"
+	"github.com/gocsaf/csaf/v4/util"
 )
 
 // ProviderMetadataLoader helps load provider-metadata.json from

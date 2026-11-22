@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v4/internal/misc"
 	bolt "go.etcd.io/bbolt"
 )
 

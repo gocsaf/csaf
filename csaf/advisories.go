@@ -19,9 +19,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocsaf/csaf/v3/internal/misc"
-	"github.com/gocsaf/csaf/v3/internal/models"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/internal/misc"
+	"github.com/gocsaf/csaf/v4/internal/models"
+	"github.com/gocsaf/csaf/v4/util"
 )
 
 // AdvisoryFile constructs the urls of a remote file.

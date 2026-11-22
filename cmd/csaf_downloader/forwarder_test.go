@@ -24,8 +24,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gocsaf/csaf/v3/internal/options"
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/internal/options"
+	"github.com/gocsaf/csaf/v4/util"
 )
 
 func TestValidationStatusUpdate(t *testing.T) {

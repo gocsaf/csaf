@@ -13,7 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/util"
 )
 
 type lazyTransaction struct {

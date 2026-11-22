@@ -15,7 +15,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/gocsaf/csaf/v3/util"
+	"github.com/gocsaf/csaf/v4/util"
 
 	"github.com/BurntSushi/toml"
 	"github.com/jessevdk/go-flags"

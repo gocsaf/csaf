@@ -15,7 +15,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/gocsaf/csaf/v3/internal/misc"
+	"github.com/gocsaf/csaf/v4/internal/misc"
 )
 
 // Acknowledgment reflects the 'acknowledgment' object in the list of acknowledgments.
