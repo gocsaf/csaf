@@ -150,8 +150,8 @@ type FullProductNames []FullProductName
 // version ranges.
 type Branch struct {
 	Branches Branches         `json:"branches,omitempty"`
-	Category *BranchCategory  `json:"category"` // required
-	Name     *string          `json:"name"`     // required
+	Category BranchCategory   `json:"category"` // required
+	Name     string           `json:"name"`     // required
 	Product  *FullProductName `json:"product,omitempty"`
 }
 
@@ -1119,10 +1119,10 @@ func (fpns FullProductNames) Validate() error {
 // Validate validates a single Branch.
 func (b *Branch) Validate() error {
 	switch {
-	case b.Category == nil:
-		return errors.New("'category' is missing")
-	case b.Name == nil:
-		return errors.New("'name' is missing")
+	case b.Category == "":
+		return errors.New("'category' is missing or empty")
+	case b.Name == "":
+		return errors.New("'name' is missing or empty")
 	}
 	if b.Product != nil {
 		if err := b.Product.Validate(); err != nil {

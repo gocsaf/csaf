@@ -71,7 +71,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			name: "product tree with matching branches",
 			fields: fields{
 				Branches: Branches{{
-					Name: &[]string{"beta"}[0],
+					Name: "beta",
 					Product: &FullProductName{
 						ProductID: ProductID("CSAFPID-0001"),
 						ProductIdentificationHelper: &ProductIdentificationHelper{
@@ -79,7 +79,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 						},
 					},
 					Branches: Branches{{
-						Name: &[]string{"beta-2"}[0],
+						Name: "beta-2",
 						Product: &FullProductName{
 							ProductID: ProductID("CSAFPID-0001"),
 							ProductIdentificationHelper: &ProductIdentificationHelper{
@@ -102,7 +102,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			name: "product tree with no matching branches",
 			fields: fields{
 				Branches: Branches{{
-					Name: &[]string{"beta"}[0],
+					Name: "beta",
 					Product: &FullProductName{
 						ProductID: ProductID("CSAFPID-0001"),
 						ProductIdentificationHelper: &ProductIdentificationHelper{
@@ -110,7 +110,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 						},
 					},
 					Branches: Branches{{
-						Name: &[]string{"beta-2"}[0],
+						Name: "beta-2",
 						Product: &FullProductName{
 							ProductID: ProductID("CSAFPID-0001"),
 							ProductIdentificationHelper: &ProductIdentificationHelper{
