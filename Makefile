@@ -12,12 +12,26 @@ SHELL = /bin/bash
 BUILD = go build
 MKDIR = mkdir -p
 
-.PHONY: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 tag_checked_out mostlyclean
+.PHONY: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 tag_checked_out mostlyclean man
 
 all:
-	@echo choose a target from: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 mostlyclean
+	@echo choose a target from: build build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64 man mostlyclean
 	@echo prepend \`make BUILDTAG=1\` to checkout the highest git tag before building
 	@echo or set BUILDTAG to a specific tag
+
+# Regenerate the manual pages under docs/man. They are committed, so anyone
+# packaging csaf installs them as files and runs nothing at build time. The
+# date comes from SOURCE_DATE_EPOCH, so the output is reproducible.
+CMDS = csaf_aggregator csaf_checker csaf_downloader csaf_provider \
+       csaf_uploader csaf_validator
+SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct)
+
+man:
+	$(MKDIR) docs/man
+	for cmd in $(CMDS); do \
+	  SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
+	    go run ./cmd/$$cmd --man > docs/man/$$cmd.1; \
+	done
 
 # Build all binaries
 build: build_linux build_linux_arm64 build_win build_win_arm64 build_mac_amd64 build_mac_arm64

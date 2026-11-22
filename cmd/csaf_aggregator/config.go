@@ -144,6 +144,12 @@ var configPaths = []string{
 // from a configuration file.
 func parseArgsConfig() ([]string, *config, error) {
 	p := options.Parser[config]{
+		ShortDescription: "build a CSAF aggregator from other providers",
+		LongDescription: "Collects the advisories of the providers named in its " +
+			"configuration file and writes out the directory tree of a CSAF " +
+			"aggregator or of a lister, including the aggregator metadata, the " +
+			"ROLIE feeds and the index files. It takes no arguments: the list " +
+			"of providers comes from the configuration file.",
 		DefaultConfigLocations: configPaths,
 		ConfigLocation: func(cfg *config) string {
 			return cfg.Config
