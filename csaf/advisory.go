@@ -1077,6 +1077,11 @@ func (xgus XGenericURIs) Validate() error {
 
 // Validate validates a ProductIdentificationHelper.
 func (pih *ProductIdentificationHelper) Validate() error {
+	if pih.CPE == nil && pih.PURL == nil && len(pih.Hashes) == 0 &&
+		len(pih.ModelNumbers) == 0 && len(pih.SBOMURLs) == 0 &&
+		len(pih.SerialNumbers) == 0 && len(pih.SKUs) == 0 && len(pih.XGenericURIs) == 0 {
+		return errors.New("at least one product identification helper field must be set")
+	}
 	for i, hashes := range pih.Hashes {
 		if err := hashes.Validate(); err != nil {
 			return fmt.Errorf("'hashes' is invalid: %d. entry is invalid: %w", i+1, err)
