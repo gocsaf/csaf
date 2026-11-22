@@ -396,10 +396,10 @@ type Branches []*Branch
 
 // ProductTree contains product names that can be referenced elsewhere in the document.
 type ProductTree struct {
-	Branches         Branches          `json:"branches,omitempty"`
-	FullProductNames *FullProductNames `json:"full_product_names,omitempty"`
-	ProductGroups    ProductGroups     `json:"product_groups,omitempty"`
-	RelationShips    *Relationships    `json:"relationships,omitempty"`
+	Branches         Branches         `json:"branches,omitempty"`
+	FullProductNames FullProductNames `json:"full_product_names,omitempty"`
+	ProductGroups    ProductGroups    `json:"product_groups,omitempty"`
+	Relationships    Relationships    `json:"relationships,omitempty"`
 }
 
 // CVE holds the MITRE standard Common Vulnerabilities and Exposures (CVE) tracking number for a vulnerability.
@@ -1206,15 +1206,11 @@ func (pt *ProductTree) Validate() error {
 	if err := pt.Branches.Validate(); err != nil {
 		return fmt.Errorf("'branches' is invalid: %w", err)
 	}
-	if pt.FullProductNames != nil {
-		if err := pt.FullProductNames.Validate(); err != nil {
-			return fmt.Errorf("'full_product_names is invalid: %w", err)
-		}
+	if err := pt.FullProductNames.Validate(); err != nil {
+		return fmt.Errorf("'full_product_names is invalid: %w", err)
 	}
-	if pt.RelationShips != nil {
-		if err := pt.RelationShips.Validate(); err != nil {
-			return fmt.Errorf("'relationships' is invalid: %w", err)
-		}
+	if err := pt.Relationships.Validate(); err != nil {
+		return fmt.Errorf("'relationships' is invalid: %w", err)
 	}
 	if err := pt.ProductGroups.Validate(); err != nil {
 		return fmt.Errorf("'product_groups' is invalid: %w", err)

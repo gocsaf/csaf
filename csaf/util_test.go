@@ -16,8 +16,8 @@ import (
 func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 	type fields struct {
 		Branches         Branches
-		FullProductNames *FullProductNames
-		RelationShips    *Relationships
+		FullProductNames FullProductNames
+		Relationships    Relationships
 	}
 	type args struct {
 		id ProductID
@@ -38,7 +38,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 		{
 			name: "product tree with matching full product names",
 			fields: fields{
-				FullProductNames: &FullProductNames{{
+				FullProductNames: FullProductNames{{
 					ProductID: &[]ProductID{"CSAFPID-0001"}[0],
 					ProductIdentificationHelper: &ProductIdentificationHelper{
 						CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
@@ -55,7 +55,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 		{
 			name: "product tree with no matching full product names",
 			fields: fields{
-				FullProductNames: &FullProductNames{{
+				FullProductNames: FullProductNames{{
 					ProductID: &[]ProductID{"CSAFPID-0001"}[0],
 					ProductIdentificationHelper: &ProductIdentificationHelper{
 						CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
@@ -128,7 +128,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 		{
 			name: "product tree with matching relationships",
 			fields: fields{
-				RelationShips: &Relationships{{
+				Relationships: Relationships{{
 					FullProductName: &FullProductName{
 						ProductID: &[]ProductID{"CSAFPID-0001"}[0],
 						ProductIdentificationHelper: &ProductIdentificationHelper{
@@ -147,7 +147,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 		{
 			name: "product tree with no matching relationships",
 			fields: fields{
-				RelationShips: &Relationships{{
+				Relationships: Relationships{{
 					FullProductName: &FullProductName{
 						ProductID: &[]ProductID{"CSAFPID-0001"}[0],
 						ProductIdentificationHelper: &ProductIdentificationHelper{
@@ -171,7 +171,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			pt := &ProductTree{
 				Branches:         test.fields.Branches,
 				FullProductNames: test.fields.FullProductNames,
-				RelationShips:    test.fields.RelationShips,
+				Relationships:    test.fields.Relationships,
 			}
 			if got := pt.CollectProductIdentificationHelpers(test.args.id); !reflect.DeepEqual(got, test.want) {
 				tt.Errorf("ProductTree.FindProductIdentificationHelpers() = %v, want %v",
