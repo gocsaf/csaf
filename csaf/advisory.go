@@ -112,12 +112,12 @@ var pURLPattern = patternUnmarshal("^pkg:[A-Za-z\\.\\-\\+][A-Za-z0-9\\.\\-\\+]*/
 
 // XGenericURI represents an identifier for a product.
 type XGenericURI struct {
-	Namespace *string `json:"namespace"` //  required
-	URI       *string `json:"uri"`       //  required
+	Namespace string `json:"namespace"` // required
+	URI       string `json:"uri"`       // required
 }
 
 // XGenericURIs is a list of XGenericURI.
-type XGenericURIs []*XGenericURI
+type XGenericURIs []XGenericURI
 
 // ProductIdentificationHelper bundles product identifier information.
 // Supported formats for SBOMs are SPDX, CycloneDX, and SWID
@@ -1056,10 +1056,10 @@ func (xgu *XGenericURI) Validate() error {
 	switch {
 	case xgu == nil:
 		return errors.New("is nil")
-	case xgu.Namespace == nil:
-		return errors.New("'namespace' is missing")
-	case xgu.URI == nil:
-		return errors.New("'uri' is missing")
+	case xgu.Namespace == "":
+		return errors.New("'namespace' is missing or empty")
+	case xgu.URI == "":
+		return errors.New("'uri' is missing or empty")
 	default:
 		return nil
 	}
@@ -1067,6 +1067,9 @@ func (xgu *XGenericURI) Validate() error {
 
 // Validate validates a list of XGenericURIs.
 func (xgus XGenericURIs) Validate() error {
+	if xgus != nil && len(xgus) == 0 {
+		return errors.New("generic URIs is empty")
+	}
 	for i, xgu := range xgus {
 		if err := xgu.Validate(); err != nil {
 			return fmt.Errorf("%d. generic uri is invalid: %w", i+1, err)
@@ -1081,6 +1084,35 @@ func (pih *ProductIdentificationHelper) Validate() error {
 		len(pih.ModelNumbers) == 0 && len(pih.SBOMURLs) == 0 &&
 		len(pih.SerialNumbers) == 0 && len(pih.SKUs) == 0 && len(pih.XGenericURIs) == 0 {
 		return errors.New("at least one product identification helper field must be set")
+	}
+	if pih.Hashes != nil && len(pih.Hashes) == 0 {
+		return errors.New("'hashes' is empty")
+	}
+	if pih.SBOMURLs != nil && len(pih.SBOMURLs) == 0 {
+		return errors.New("'sbom_urls' is empty")
+	}
+	for _, list := range []struct {
+		name   string
+		values []string
+		unique bool
+	}{
+		{"model_numbers", pih.ModelNumbers, true},
+		{"serial_numbers", pih.SerialNumbers, true},
+		{"skus", pih.SKUs, false},
+	} {
+		if list.values != nil && len(list.values) == 0 {
+			return fmt.Errorf("'%s' is empty", list.name)
+		}
+		seen := make(map[string]bool, len(list.values))
+		for i, value := range list.values {
+			if value == "" {
+				return fmt.Errorf("'%s': %d. entry is empty", list.name, i+1)
+			}
+			if list.unique && seen[value] {
+				return fmt.Errorf("'%s': %d. entry is a duplicate: %q", list.name, i+1, value)
+			}
+			seen[value] = true
+		}
 	}
 	for i, hashes := range pih.Hashes {
 		if err := hashes.Validate(); err != nil {
