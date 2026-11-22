@@ -80,7 +80,7 @@ var csafBranchCategoryPattern = alternativesUnmarshal(
 type ProductID string
 
 // Products is a list of one or more unique ProductID elements.
-type Products []*ProductID
+type Products []ProductID
 
 // FileHashValue represents the value of a hash.
 type FileHashValue string
@@ -414,8 +414,8 @@ var weaknessIDPattern = patternUnmarshal("^CWE-[1-9]\\d{0,5}$")
 
 // CWE holds the MITRE standard Common Weakness Enumeration (CWE) for the weakness associated.
 type CWE struct {
-	ID   *WeaknessID `json:"id"`   // required
-	Name *string     `json:"name"` // required
+	ID   WeaknessID `json:"id"`   // required
+	Name string     `json:"name"` // required
 }
 
 // FlagLabel is the label of a flag for a vulnerability.
@@ -445,24 +445,23 @@ var csafFlagLabelPattern = alternativesUnmarshal(
 // machine readable flag. For example, this could be a machine readable justification
 // code why a product is not affected.
 type Flag struct {
-	Date     *string         `json:"date,omitempty"`
-	GroupIDs ProductGroupIDs `json:"group_ids,omitempty"`
-	Label    *FlagLabel      `json:"label"` // required
-	//revive:disable-next-line:var-naming  until new major version w fix
-	ProductIds *Products `json:"product_ids,omitempty"`
+	Date       *string         `json:"date,omitempty"`
+	GroupIDs   ProductGroupIDs `json:"group_ids,omitempty"`
+	Label      FlagLabel       `json:"label"` // required
+	ProductIDs Products        `json:"product_ids,omitempty"`
 }
 
 // Flags is a list if Flag elements.
-type Flags []*Flag
+type Flags []Flag
 
 // VulnerabilityID is the identifier of a vulnerability.
 type VulnerabilityID struct {
-	SystemName *string `json:"system_name"` // required
-	Text       *string `json:"text"`        // required
+	SystemName string `json:"system_name"` // required
+	Text       string `json:"text"`        // required
 }
 
 // VulnerabilityIDs is a list of VulnerabilityID elements.
-type VulnerabilityIDs []*VulnerabilityID
+type VulnerabilityIDs []VulnerabilityID
 
 // InvolvementParty is the party of an involvement.
 type InvolvementParty string
@@ -519,26 +518,26 @@ var csafInvolvementStatusPattern = alternativesUnmarshal(
 // The ordered tuple of the values of party and date (if present) SHALL be unique within the involvements
 // of a vulnerability.
 type Involvement struct {
-	Date    *string            `json:"date,omitempty"`
-	Party   *InvolvementParty  `json:"party"`  // required
-	Status  *InvolvementStatus `json:"status"` // required
-	Summary *string            `json:"summary,omitempty"`
+	Date    *string           `json:"date,omitempty"`
+	Party   InvolvementParty  `json:"party"`  // required
+	Status  InvolvementStatus `json:"status"` // required
+	Summary *string           `json:"summary,omitempty"`
 }
 
 // Involvements is a list of Involvement elements.
-type Involvements []*Involvement
+type Involvements []Involvement
 
 // ProductStatus contains different lists of ProductIDs which provide details on
 // the status of the referenced product related to the current vulnerability.
 type ProductStatus struct {
-	FirstAffected      *Products `json:"first_affected,omitempty"`
-	FirstFixed         *Products `json:"first_fixed,omitempty"`
-	Fixed              *Products `json:"fixed,omitempty"`
-	KnownAffected      *Products `json:"known_affected,omitempty"`
-	KnownNotAffected   *Products `json:"known_not_affected,omitempty"`
-	LastAffected       *Products `json:"last_affected,omitempty"`
-	Recommended        *Products `json:"recommended,omitempty"`
-	UnderInvestigation *Products `json:"under_investigation,omitempty"`
+	FirstAffected      Products `json:"first_affected,omitempty"`
+	FirstFixed         Products `json:"first_fixed,omitempty"`
+	Fixed              Products `json:"fixed,omitempty"`
+	KnownAffected      Products `json:"known_affected,omitempty"`
+	KnownNotAffected   Products `json:"known_not_affected,omitempty"`
+	LastAffected       Products `json:"last_affected,omitempty"`
+	Recommended        Products `json:"recommended,omitempty"`
+	UnderInvestigation Products `json:"under_investigation,omitempty"`
 }
 
 // RemediationCategory is the category of a remediation.
@@ -602,26 +601,24 @@ var csafRestartRequiredCategoryPattern = alternativesUnmarshal(
 // RestartRequired provides information on category of restart is required by this remediation to become
 // effective.
 type RestartRequired struct {
-	Category *RestartRequiredCategory `json:"category"` // required
-	Details  *string                  `json:"details,omitempty"`
+	Category RestartRequiredCategory `json:"category"` // required
+	Details  *string                 `json:"details,omitempty"`
 }
 
 // Remediation specifies details on how to handle (and presumably, fix) a vulnerability.
 type Remediation struct {
-	Category     *RemediationCategory `json:"category"` // required
-	Date         *string              `json:"date,omitempty"`
-	Details      *string              `json:"details"` // required
-	Entitlements []*string            `json:"entitlements,omitempty"`
-	//revive:disable:var-naming until new major version w fix
-	GroupIDs   ProductGroupIDs `json:"group_ids,omitempty"`
-	ProductIds *Products       `json:"product_ids,omitempty"`
-	//revive:enable
-	RestartRequired *RestartRequired `json:"restart_required,omitempty"`
-	URL             *string          `json:"url,omitempty"`
+	Category        RemediationCategory `json:"category"` // required
+	Date            *string             `json:"date,omitempty"`
+	Details         string              `json:"details"` // required
+	Entitlements    []string            `json:"entitlements,omitempty"`
+	GroupIDs        ProductGroupIDs     `json:"group_ids,omitempty"`
+	ProductIDs      Products            `json:"product_ids,omitempty"`
+	RestartRequired *RestartRequired    `json:"restart_required,omitempty"`
+	URL             *string             `json:"url,omitempty"`
 }
 
 // Remediations is a list of Remediation elements.
-type Remediations []*Remediation
+type Remediations []Remediation
 
 // CVSSVersion2 is the version of a CVSS2 item.
 type CVSSVersion2 string
@@ -716,13 +713,13 @@ type CVSS3 struct {
 // Score specifies information about (at least one) score of the vulnerability and for which
 // products the given value applies. A Score item has at least 2 properties.
 type Score struct {
-	CVSS2    *CVSS2    `json:"cvss_v2,omitempty"`
-	CVSS3    *CVSS3    `json:"cvss_v3,omitempty"`
-	Products *Products `json:"products"` // required
+	CVSS2    *CVSS2   `json:"cvss_v2,omitempty"`
+	CVSS3    *CVSS3   `json:"cvss_v3,omitempty"`
+	Products Products `json:"products"` // required
 }
 
 // Scores is a list of Score elements.
-type Scores []*Score
+type Scores []Score
 
 // ThreatCategory is the category of a threat.
 type ThreatCategory string
@@ -743,17 +740,15 @@ var csafThreatCategoryPattern = alternativesUnmarshal(
 
 // Threat contains information about a vulnerability that can change with time.
 type Threat struct {
-	Category *ThreatCategory `json:"category"` // required
-	Date     *string         `json:"date,omitempty"`
-	Details  *string         `json:"details"` // required
-	//revive:disable:var-naming until new major version w fix
+	Category   ThreatCategory  `json:"category"` // required
+	Date       *string         `json:"date,omitempty"`
+	Details    string          `json:"details"` // required
 	GroupIDs   ProductGroupIDs `json:"group_ids,omitempty"`
-	ProductIds *Products       `json:"product_ids,omitempty"`
-	//revive:enable
+	ProductIDs Products        `json:"product_ids,omitempty"`
 }
 
 // Threats is a list of Threat elements.
-type Threats []*Threat
+type Threats []Threat
 
 // Notes is a list of Note.
 type Notes []Note
@@ -781,7 +776,7 @@ type Vulnerability struct {
 }
 
 // Vulnerabilities is a list of Vulnerability
-type Vulnerabilities []*Vulnerability
+type Vulnerabilities []Vulnerability
 
 // Advisory represents a CSAF advisory.
 type Advisory struct {
@@ -1225,6 +1220,42 @@ func (rs Relationships) Validate() error {
 	return nil
 }
 
+// Validate validates a list of product IDs.
+func (ps Products) Validate() error {
+	if ps != nil && len(ps) == 0 {
+		return errors.New("product ID list is empty")
+	}
+	seen := make(map[ProductID]bool, len(ps))
+	for i, id := range ps {
+		if id == "" {
+			return fmt.Errorf("%d. product ID is empty", i+1)
+		}
+		if seen[id] {
+			return fmt.Errorf("%d. product ID is a duplicate: %q", i+1, id)
+		}
+		seen[id] = true
+	}
+	return nil
+}
+
+// Validate validates a list of product group IDs.
+func (ids ProductGroupIDs) Validate() error {
+	if ids != nil && len(ids) == 0 {
+		return errors.New("product group ID list is empty")
+	}
+	seen := make(map[ProductGroupID]bool, len(ids))
+	for i, id := range ids {
+		if id == "" {
+			return fmt.Errorf("%d. product group ID is empty", i+1)
+		}
+		if seen[id] {
+			return fmt.Errorf("%d. product group ID is a duplicate: %q", i+1, id)
+		}
+		seen[id] = true
+	}
+	return nil
+}
+
 // Validate validates a single ProductGroup.
 func (pg *ProductGroup) Validate() error {
 	if pg.GroupID == "" {
@@ -1233,15 +1264,8 @@ func (pg *ProductGroup) Validate() error {
 	if len(pg.ProductIDs) < 2 {
 		return errors.New("'product_ids' must contain at least two unique elements")
 	}
-	seen := make(map[ProductID]bool, len(pg.ProductIDs))
-	for i, id := range pg.ProductIDs {
-		if id == nil || *id == "" {
-			return fmt.Errorf("%d. product ID is missing or empty", i+1)
-		}
-		if seen[*id] {
-			return fmt.Errorf("%d. product ID is a duplicate: %q", i+1, *id)
-		}
-		seen[*id] = true
+	if err := pg.ProductIDs.Validate(); err != nil {
+		return fmt.Errorf("'product_ids' is invalid: %w", err)
 	}
 	return nil
 }
@@ -1278,14 +1302,23 @@ func (pt *ProductTree) Validate() error {
 
 // Validate validates a single Flag.
 func (f *Flag) Validate() error {
-	if f.Label == nil {
-		return errors.New("'label' is missing")
+	if f.Label == "" {
+		return errors.New("'label' is missing or empty")
+	}
+	if err := f.ProductIDs.Validate(); err != nil {
+		return fmt.Errorf("'product_ids' is invalid: %w", err)
+	}
+	if err := f.GroupIDs.Validate(); err != nil {
+		return fmt.Errorf("'group_ids' is invalid: %w", err)
 	}
 	return nil
 }
 
 // Validate validates a list of Flag elements.
 func (fs Flags) Validate() error {
+	if fs != nil && len(fs) == 0 {
+		return errors.New("list is empty")
+	}
 	for i, f := range fs {
 		if err := f.Validate(); err != nil {
 			return fmt.Errorf("%d. flag is invalid: %w", i+1, err)
@@ -1297,10 +1330,10 @@ func (fs Flags) Validate() error {
 // Validate validates a CWE.
 func (cwe *CWE) Validate() error {
 	switch {
-	case cwe.ID == nil:
-		return errors.New("'id' is missing")
-	case cwe.Name == nil:
-		return errors.New("'name' is missing")
+	case cwe.ID == "":
+		return errors.New("'id' is missing or empty")
+	case cwe.Name == "":
+		return errors.New("'name' is missing or empty")
 	}
 	return nil
 }
@@ -1308,16 +1341,19 @@ func (cwe *CWE) Validate() error {
 // Validate validates a single VulnerabilityID.
 func (id *VulnerabilityID) Validate() error {
 	switch {
-	case id.SystemName == nil:
-		return errors.New("'system_name' is missing")
-	case id.Text == nil:
-		return errors.New("'text' is missing")
+	case id.SystemName == "":
+		return errors.New("'system_name' is missing or empty")
+	case id.Text == "":
+		return errors.New("'text' is missing or empty")
 	}
 	return nil
 }
 
 // Validate validates a list of VulnerabilityID elements.
 func (ids VulnerabilityIDs) Validate() error {
+	if ids != nil && len(ids) == 0 {
+		return errors.New("list is empty")
+	}
 	for i, id := range ids {
 		if err := id.Validate(); err != nil {
 			return fmt.Errorf("%d. vulnerability id is invalid: %w", i+1, err)
@@ -1329,16 +1365,21 @@ func (ids VulnerabilityIDs) Validate() error {
 // Validate validates a single Involvement.
 func (iv *Involvement) Validate() error {
 	switch {
-	case iv.Party == nil:
-		return errors.New("'party' is missing")
-	case iv.Status == nil:
-		return errors.New("'status' is missing")
+	case iv.Party == "":
+		return errors.New("'party' is missing or empty")
+	case iv.Status == "":
+		return errors.New("'status' is missing or empty")
+	case iv.Summary != nil && *iv.Summary == "":
+		return errors.New("'summary' is empty")
 	}
 	return nil
 }
 
 // Validate validates a list of Involvement elements.
 func (ivs Involvements) Validate() error {
+	if ivs != nil && len(ivs) == 0 {
+		return errors.New("list is empty")
+	}
 	for i, iv := range ivs {
 		if err := iv.Validate(); err != nil {
 			return fmt.Errorf("%d. involvement is invalid: %w", i+1, err)
@@ -1349,8 +1390,11 @@ func (ivs Involvements) Validate() error {
 
 // Validate validates a RestartRequired.
 func (rr *RestartRequired) Validate() error {
-	if rr.Category == nil {
-		return errors.New("'category' is missing")
+	if rr.Category == "" {
+		return errors.New("'category' is missing or empty")
+	}
+	if rr.Details != nil && *rr.Details == "" {
+		return errors.New("'details' is empty")
 	}
 	return nil
 }
@@ -1385,8 +1429,14 @@ func (c *CVSS3) Validate() error {
 
 // Validate validates a single Score.
 func (s *Score) Validate() error {
-	if s.Products == nil {
-		return errors.New("'products' is missing")
+	if len(s.Products) == 0 {
+		return errors.New("'products' is missing or empty")
+	}
+	if err := s.Products.Validate(); err != nil {
+		return fmt.Errorf("'products' is invalid: %w", err)
+	}
+	if s.CVSS2 == nil && s.CVSS3 == nil {
+		return errors.New("at least one of 'cvss_v2' or 'cvss_v3' must be set")
 	}
 	if s.CVSS2 != nil {
 		if err := s.CVSS2.Validate(); err != nil {
@@ -1403,6 +1453,9 @@ func (s *Score) Validate() error {
 
 // Validate validates a list of Score elements.
 func (ss Scores) Validate() error {
+	if ss != nil && len(ss) == 0 {
+		return errors.New("list is empty")
+	}
 	for i, s := range ss {
 		if err := s.Validate(); err != nil {
 			return fmt.Errorf("%d. score is invalid: %w", i+1, err)
@@ -1411,13 +1464,55 @@ func (ss Scores) Validate() error {
 	return nil
 }
 
+// Validate validates the product status lists.
+func (ps *ProductStatus) Validate() error {
+	populated := false
+	for _, list := range []struct {
+		name     string
+		products Products
+	}{
+		{"first_affected", ps.FirstAffected},
+		{"first_fixed", ps.FirstFixed},
+		{"fixed", ps.Fixed},
+		{"known_affected", ps.KnownAffected},
+		{"known_not_affected", ps.KnownNotAffected},
+		{"last_affected", ps.LastAffected},
+		{"recommended", ps.Recommended},
+		{"under_investigation", ps.UnderInvestigation},
+	} {
+		if err := list.products.Validate(); err != nil {
+			return fmt.Errorf("'%s' is invalid: %w", list.name, err)
+		}
+		populated = populated || len(list.products) > 0
+	}
+	if !populated {
+		return errors.New("at least one product status field must be set")
+	}
+	return nil
+}
+
 // Validate validates a single Remediation.
 func (r *Remediation) Validate() error {
 	switch {
-	case r.Category == nil:
-		return errors.New("'category' is missing")
-	case r.Details == nil:
-		return errors.New("'details' is missing")
+	case r.Category == "":
+		return errors.New("'category' is missing or empty")
+	case r.Details == "":
+		return errors.New("'details' is missing or empty")
+	case r.URL != nil && *r.URL == "":
+		return errors.New("'url' is empty")
+	case r.Entitlements != nil && len(r.Entitlements) == 0:
+		return errors.New("'entitlements' is empty")
+	}
+	for i, entitlement := range r.Entitlements {
+		if entitlement == "" {
+			return fmt.Errorf("%d. entitlement is empty", i+1)
+		}
+	}
+	if err := r.ProductIDs.Validate(); err != nil {
+		return fmt.Errorf("'product_ids' is invalid: %w", err)
+	}
+	if err := r.GroupIDs.Validate(); err != nil {
+		return fmt.Errorf("'group_ids' is invalid: %w", err)
 	}
 	if r.RestartRequired != nil {
 		if err := r.RestartRequired.Validate(); err != nil {
@@ -1429,6 +1524,9 @@ func (r *Remediation) Validate() error {
 
 // Validate validates a list of Remediation elements.
 func (rms Remediations) Validate() error {
+	if rms != nil && len(rms) == 0 {
+		return errors.New("list is empty")
+	}
 	for i, r := range rms {
 		if err := r.Validate(); err != nil {
 			return fmt.Errorf("%d. remediation is invalid: %w", i+1, err)
@@ -1440,16 +1538,25 @@ func (rms Remediations) Validate() error {
 // Validate validates a single Threat.
 func (t *Threat) Validate() error {
 	switch {
-	case t.Category == nil:
-		return errors.New("'category' is missing")
-	case t.Details == nil:
-		return errors.New("'details' is missing")
+	case t.Category == "":
+		return errors.New("'category' is missing or empty")
+	case t.Details == "":
+		return errors.New("'details' is missing or empty")
+	}
+	if err := t.ProductIDs.Validate(); err != nil {
+		return fmt.Errorf("'product_ids' is invalid: %w", err)
+	}
+	if err := t.GroupIDs.Validate(); err != nil {
+		return fmt.Errorf("'group_ids' is invalid: %w", err)
 	}
 	return nil
 }
 
 // Validate validates a list of Threat elements.
 func (ts Threats) Validate() error {
+	if ts != nil && len(ts) == 0 {
+		return errors.New("list is empty")
+	}
 	for i, t := range ts {
 		if err := t.Validate(); err != nil {
 			return fmt.Errorf("%d. threat is invalid: %w", i+1, err)
@@ -1460,6 +1567,16 @@ func (ts Threats) Validate() error {
 
 // Validate validates a single Vulnerability.
 func (v *Vulnerability) Validate() error {
+	if len(v.Acknowledgments) == 0 && v.CVE == nil && v.CWE == nil &&
+		v.DiscoveryDate == nil && len(v.Flags) == 0 && len(v.IDs) == 0 &&
+		len(v.Involvements) == 0 && len(v.Notes) == 0 && v.ProductStatus == nil &&
+		len(v.References) == 0 && v.ReleaseDate == nil && len(v.Remediations) == 0 &&
+		len(v.Scores) == 0 && len(v.Threats) == 0 && v.Title == nil {
+		return errors.New("at least one vulnerability field must be set")
+	}
+	if v.Title != nil && *v.Title == "" {
+		return errors.New("'title' is empty")
+	}
 	if err := v.Acknowledgments.Validate(); err != nil {
 		return fmt.Errorf("'acknowledgments' is invalid: %w", err)
 	}
@@ -1480,6 +1597,11 @@ func (v *Vulnerability) Validate() error {
 	if err := v.Notes.Validate(); err != nil {
 		return fmt.Errorf("'notes' is invalid: %w", err)
 	}
+	if v.ProductStatus != nil {
+		if err := v.ProductStatus.Validate(); err != nil {
+			return fmt.Errorf("'product_status' is invalid: %w", err)
+		}
+	}
 	if err := v.References.Validate(); err != nil {
 		return fmt.Errorf("'references' is invalid: %w", err)
 	}
@@ -1497,6 +1619,9 @@ func (v *Vulnerability) Validate() error {
 
 // Validate validates a list of Vulnerability elements.
 func (vs Vulnerabilities) Validate() error {
+	if vs != nil && len(vs) == 0 {
+		return errors.New("list is empty")
+	}
 	for i, v := range vs {
 		if err := v.Validate(); err != nil {
 			return fmt.Errorf("%d. vulnerability is invalid: %w", i+1, err)
