@@ -18,17 +18,17 @@ import (
 	"github.com/gocsaf/csaf/v3/internal/misc"
 )
 
-// Acknowledgement reflects the 'acknowledgement' object in the list of acknowledgements.
+// Acknowledgment reflects the 'acknowledgment' object in the list of acknowledgments.
 // It must at least have one property.
-type Acknowledgement struct {
+type Acknowledgment struct {
 	Names        []*string `json:"names,omitempty"`
 	Organization *string   `json:"organization,omitempty"`
 	Summary      *string   `json:"summary,omitempty"`
 	URLs         []*string `json:"urls,omitempty"`
 }
 
-// Acknowledgements is a list of Acknowledgement elements.
-type Acknowledgements []*Acknowledgement
+// Acknowledgments is a list of Acknowledgment elements.
+type Acknowledgments []*Acknowledgment
 
 // BranchCategory is the category of a branch.
 type BranchCategory string
@@ -327,7 +327,7 @@ var langPattern = patternUnmarshal("^(([A-Za-z]{2,3}(-[A-Za-z]{3}(-[A-Za-z]{3}){
 
 // Document contains meta-data about an advisory.
 type Document struct {
-	Acknowledgements  *Acknowledgements     `json:"acknowledgements,omitempty"`
+	Acknowledgments   Acknowledgments       `json:"acknowledgments,omitempty"`
 	AggregateSeverity *AggregateSeverity    `json:"aggregate_severity,omitempty"`
 	Category          *DocumentCategory     `json:"category"`     // required
 	CSAFVersion       *Version              `json:"csaf_version"` // required
@@ -762,21 +762,21 @@ type References []*Reference
 
 // Vulnerability contains all fields that are related to a single vulnerability in the document.
 type Vulnerability struct {
-	Acknowledgements Acknowledgements `json:"acknowledgements,omitempty"`
-	CVE              *CVE             `json:"cve,omitempty"`
-	CWE              *CWE             `json:"cwe,omitempty"`
-	DiscoveryDate    *string          `json:"discovery_date,omitempty"`
-	Flags            Flags            `json:"flags,omitempty"`
-	IDs              VulnerabilityIDs `json:"ids,omitempty"` // unique ID elements
-	Involvements     Involvements     `json:"involvements,omitempty"`
-	Notes            Notes            `json:"notes,omitempty"`
-	ProductStatus    *ProductStatus   `json:"product_status,omitempty"`
-	References       References       `json:"references,omitempty"`
-	ReleaseDate      *string          `json:"release_date,omitempty"`
-	Remediations     Remediations     `json:"remediations,omitempty"`
-	Scores           Scores           `json:"scores,omitempty"`
-	Threats          Threats          `json:"threats,omitempty"`
-	Title            *string          `json:"title,omitempty"`
+	Acknowledgments Acknowledgments  `json:"acknowledgments,omitempty"`
+	CVE             *CVE             `json:"cve,omitempty"`
+	CWE             *CWE             `json:"cwe,omitempty"`
+	DiscoveryDate   *string          `json:"discovery_date,omitempty"`
+	Flags           Flags            `json:"flags,omitempty"`
+	IDs             VulnerabilityIDs `json:"ids,omitempty"` // unique ID elements
+	Involvements    Involvements     `json:"involvements,omitempty"`
+	Notes           Notes            `json:"notes,omitempty"`
+	ProductStatus   *ProductStatus   `json:"product_status,omitempty"`
+	References      References       `json:"references,omitempty"`
+	ReleaseDate     *string          `json:"release_date,omitempty"`
+	Remediations    Remediations     `json:"remediations,omitempty"`
+	Scores          Scores           `json:"scores,omitempty"`
+	Threats         Threats          `json:"threats,omitempty"`
+	Title           *string          `json:"title,omitempty"`
 }
 
 // Vulnerabilities is a list of Vulnerability
