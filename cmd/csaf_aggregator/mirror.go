@@ -179,8 +179,7 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 		return err
 	}
 
-	la := csaf.TimeStamp(lastUpdate)
-	pm.LastUpdated = &la
+	pm.LastUpdated = csaf.NewDateTime(lastUpdate)
 
 	return util.WriteToFile(fname, pm)
 }
@@ -318,14 +317,14 @@ func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error
 	}
 
 	var (
-		lastUpdated = csaf.TimeStamp(lastUpdatedT)
+		lastUpdated = csaf.NewDateTime(lastUpdatedT)
 		role        = csaf.MetadataRole(roleS)
 		providerURL = csaf.ProviderURL(urlS)
 	)
 
 	return &csaf.AggregatorCSAFProvider{
 		Metadata: csaf.AggregatorCSAFProviderMetadata{
-			LastUpdated: &lastUpdated,
+			LastUpdated: lastUpdated,
 			Publisher:   pub,
 			Role:        &role,
 			URL:         providerURL,

@@ -183,7 +183,7 @@ func (p *processor) full(ctx context.Context) error {
 	canonicalURL := csaf.AggregatorURL(
 		p.cfg.Domain + "/.well-known/csaf-aggregator/aggregator.json")
 
-	lastUpdated := csaf.TimeStamp(time.Now().UTC())
+	lastUpdated := csaf.NewDateTime(time.Now().UTC())
 
 	agg := csaf.Aggregator{
 		Aggregator:     p.cfg.Aggregator,
@@ -191,7 +191,7 @@ func (p *processor) full(ctx context.Context) error {
 		CanonicalURL:   canonicalURL,
 		CSAFProviders:  providers,
 		CSAFPublishers: publishers,
-		LastUpdated:    &lastUpdated,
+		LastUpdated:    lastUpdated,
 	}
 
 	web := filepath.Join(p.cfg.Web, ".well-known", "csaf-aggregator")

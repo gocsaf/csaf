@@ -156,7 +156,7 @@ var providerURLPattern = patternUnmarshal(`/provider-metadata\.json$`)
 type ProviderMetadata struct {
 	CanonicalURL            ProviderURL     `json:"canonical_url"` // required
 	Distributions           []Distribution  `json:"distributions,omitempty"`
-	LastUpdated             *TimeStamp      `json:"last_updated"`               // required
+	LastUpdated             DateTime        `json:"last_updated"`               // required
 	ListOnCSAFAggregators   bool            `json:"list_on_CSAF_aggregators"`   // required
 	MetadataVersion         MetadataVersion `json:"metadata_version"`           // required
 	MirrorOnCSAFAggregators bool            `json:"mirror_on_CSAF_aggregators"` // required
@@ -208,7 +208,7 @@ var aggregatorURLPattern = patternUnmarshal(`/aggregator\.json$`)
 
 // AggregatorCSAFProviderMetadata reflects 'csaf_providers.metadata' in an aggregator.
 type AggregatorCSAFProviderMetadata struct {
-	LastUpdated *TimeStamp    `json:"last_updated"` // required
+	LastUpdated DateTime      `json:"last_updated"` // required
 	Publisher   Publisher     `json:"publisher"`    // required
 	Role        *MetadataRole `json:"role,omitempty"`
 	URL         ProviderURL   `json:"url"` // required
@@ -234,7 +234,7 @@ type Aggregator struct {
 	CanonicalURL   AggregatorURL             `json:"canonical_url"`      // required
 	CSAFProviders  []AggregatorCSAFProvider  `json:"csaf_providers"`     // required
 	CSAFPublishers []AggregatorCSAFPublisher `json:"csaf_publishers,omitempty"`
-	LastUpdated    *TimeStamp                `json:"last_updated"` // required
+	LastUpdated    DateTime                  `json:"last_updated"` // required
 }
 
 // Validate validates the current state of the AggregatorCategory.
@@ -280,7 +280,7 @@ func (acpm *AggregatorCSAFProviderMetadata) Validate() error {
 	if acpm == nil {
 		return errors.New("aggregator.csaf_providers[].metadata is mandatory")
 	}
-	if acpm.LastUpdated == nil {
+	if acpm.LastUpdated == "" {
 		return errors.New("aggregator.csaf_providers[].metadata.last_updated is mandatory")
 	}
 	if err := acpm.Publisher.Validate(); err != nil {
@@ -316,8 +316,8 @@ func (a *Aggregator) Validate() error {
 			return err
 		}
 	}
-	if a.LastUpdated == nil {
-		return errors.New("aggregator.LastUpdate == nil")
+	if a.LastUpdated == "" {
+		return errors.New("aggregator.last_updated is mandatory")
 	}
 	return nil
 }
@@ -565,7 +565,7 @@ func (pmd *ProviderMetadata) Validate() error {
 	switch {
 	case pmd.CanonicalURL == "":
 		return errors.New("canonical_url is mandatory")
-	case pmd.LastUpdated == nil:
+	case pmd.LastUpdated == "":
 		return errors.New("last_updated is mandatory")
 	case pmd.MetadataVersion == "":
 		return errors.New("metadata_version is mandatory")
@@ -592,8 +592,7 @@ func (pmd *ProviderMetadata) Validate() error {
 
 // SetLastUpdated updates the last updated timestamp of the feed.
 func (pmd *ProviderMetadata) SetLastUpdated(t time.Time) {
-	ts := TimeStamp(t.UTC())
-	pmd.LastUpdated = &ts
+	pmd.LastUpdated = NewDateTime(t.UTC())
 }
 
 // SetPGP sets the fingerprint and URL of the OpenPGP key

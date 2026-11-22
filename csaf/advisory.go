@@ -271,8 +271,8 @@ type Engine struct {
 // These items will reference when the document was actually created,
 // including the date it was generated and the entity that generated it.
 type Generator struct {
-	Date   *string `json:"date,omitempty"`
-	Engine Engine  `json:"engine"` // required
+	Date   *DateTime `json:"date,omitempty"`
+	Engine Engine    `json:"engine"` // required
 }
 
 // TrackingID is a unique identifier for the document.
@@ -282,7 +282,7 @@ var trackingIDPattern = patternUnmarshal("^[\\S](.*[\\S])?$")
 
 // Revision contains information about one revision of the document.
 type Revision struct {
-	Date          string         `json:"date"` // required
+	Date          DateTime       `json:"date"` // required
 	LegacyVersion *string        `json:"legacy_version,omitempty"`
 	Number        RevisionNumber `json:"number"`  // required
 	Summary       string         `json:"summary"` // required
@@ -311,10 +311,10 @@ type Revisions []Revision
 // Tracking holds information that is necessary to track a CSAF document.
 type Tracking struct {
 	Aliases            []string       `json:"aliases,omitempty"`    // unique elements
-	CurrentReleaseDate string         `json:"current_release_date"` // required
+	CurrentReleaseDate DateTime       `json:"current_release_date"` // required
 	Generator          *Generator     `json:"generator,omitempty"`
 	ID                 TrackingID     `json:"id"`                   // required
-	InitialReleaseDate string         `json:"initial_release_date"` // required
+	InitialReleaseDate DateTime       `json:"initial_release_date"` // required
 	RevisionHistory    Revisions      `json:"revision_history"`     // required
 	Status             TrackingStatus `json:"status"`               // required
 	Version            RevisionNumber `json:"version"`              // required
@@ -445,7 +445,7 @@ var csafFlagLabelPattern = alternativesUnmarshal(
 // machine readable flag. For example, this could be a machine readable justification
 // code why a product is not affected.
 type Flag struct {
-	Date       *string         `json:"date,omitempty"`
+	Date       *DateTime       `json:"date,omitempty"`
 	GroupIDs   ProductGroupIDs `json:"group_ids,omitempty"`
 	Label      FlagLabel       `json:"label"` // required
 	ProductIDs Products        `json:"product_ids,omitempty"`
@@ -518,7 +518,7 @@ var csafInvolvementStatusPattern = alternativesUnmarshal(
 // The ordered tuple of the values of party and date (if present) SHALL be unique within the involvements
 // of a vulnerability.
 type Involvement struct {
-	Date    *string           `json:"date,omitempty"`
+	Date    *DateTime         `json:"date,omitempty"`
 	Party   InvolvementParty  `json:"party"`  // required
 	Status  InvolvementStatus `json:"status"` // required
 	Summary *string           `json:"summary,omitempty"`
@@ -608,7 +608,7 @@ type RestartRequired struct {
 // Remediation specifies details on how to handle (and presumably, fix) a vulnerability.
 type Remediation struct {
 	Category        RemediationCategory `json:"category"` // required
-	Date            *string             `json:"date,omitempty"`
+	Date            *DateTime           `json:"date,omitempty"`
 	Details         string              `json:"details"` // required
 	Entitlements    []string            `json:"entitlements,omitempty"`
 	GroupIDs        ProductGroupIDs     `json:"group_ids,omitempty"`
@@ -741,7 +741,7 @@ var csafThreatCategoryPattern = alternativesUnmarshal(
 // Threat contains information about a vulnerability that can change with time.
 type Threat struct {
 	Category   ThreatCategory  `json:"category"` // required
-	Date       *string         `json:"date,omitempty"`
+	Date       *DateTime       `json:"date,omitempty"`
 	Details    string          `json:"details"` // required
 	GroupIDs   ProductGroupIDs `json:"group_ids,omitempty"`
 	ProductIDs Products        `json:"product_ids,omitempty"`
@@ -761,14 +761,14 @@ type Vulnerability struct {
 	Acknowledgments Acknowledgments  `json:"acknowledgments,omitempty"`
 	CVE             *CVE             `json:"cve,omitempty"`
 	CWE             *CWE             `json:"cwe,omitempty"`
-	DiscoveryDate   *string          `json:"discovery_date,omitempty"`
+	DiscoveryDate   *DateTime        `json:"discovery_date,omitempty"`
 	Flags           Flags            `json:"flags,omitempty"`
 	IDs             VulnerabilityIDs `json:"ids,omitempty"` // unique ID elements
 	Involvements    Involvements     `json:"involvements,omitempty"`
 	Notes           Notes            `json:"notes,omitempty"`
 	ProductStatus   *ProductStatus   `json:"product_status,omitempty"`
 	References      References       `json:"references,omitempty"`
-	ReleaseDate     *string          `json:"release_date,omitempty"`
+	ReleaseDate     *DateTime        `json:"release_date,omitempty"`
 	Remediations    Remediations     `json:"remediations,omitempty"`
 	Scores          Scores           `json:"scores,omitempty"`
 	Threats         Threats          `json:"threats,omitempty"`
