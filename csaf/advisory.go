@@ -655,15 +655,15 @@ var cvss3VectorStringPattern = patternUnmarshal(`^CVSS:3[.][01]/((AV:[NALP]|AC:[
 
 // CVSS2 holding a CVSS v2.0 value
 type CVSS2 struct {
-	Version                    *CVSSVersion2                    `json:"version"`      // required
-	VectorString               *CVSS2VectorString               `json:"vectorString"` // required
+	Version                    CVSSVersion2                     `json:"version"`      // required
+	VectorString               CVSS2VectorString                `json:"vectorString"` // required
 	AccessVector               *CVSS20AccessVector              `json:"accessVector,omitempty"`
 	AccessComplexity           *CVSS20AccessComplexity          `json:"accessComplexity,omitempty"`
 	Authentication             *CVSS20Authentication            `json:"authentication,omitempty"`
 	ConfidentialityImpact      *CVSS20Cia                       `json:"confidentialityImpact,omitempty"`
 	IntegrityImpact            *CVSS20Cia                       `json:"integrityImpact,omitempty"`
 	AvailabilityImpact         *CVSS20Cia                       `json:"availabilityImpact,omitempty"`
-	BaseScore                  *float64                         `json:"baseScore"` // required
+	BaseScore                  float64                          `json:"baseScore"` // required
 	Exploitability             *CVSS20Exploitability            `json:"exploitability,omitempty"`
 	RemediationLevel           *CVSS20RemediationLevel          `json:"remediationLevel,omitempty"`
 	ReportConfidence           *CVSS20ReportConfidence          `json:"reportConfidence,omitempty"`
@@ -678,18 +678,18 @@ type CVSS2 struct {
 
 // CVSS3 holding a CVSS v3.x value
 type CVSS3 struct {
-	Version                       *CVSSVersion3                    `json:"version"`      // required
-	VectorString                  *CVSS3VectorString               `json:"vectorString"` // required
+	Version                       CVSSVersion3                     `json:"version"`      // required
+	VectorString                  CVSS3VectorString                `json:"vectorString"` // required
 	AttackVector                  *CVSS3AttackVector               `json:"attackVector,omitempty"`
 	AttackComplexity              *CVSS3AttackComplexity           `json:"attackComplexity,omitempty"`
 	PrivilegesRequired            *CVSS3PrivilegesRequired         `json:"privilegesRequired,omitempty"`
 	UserInteraction               *CVSS3UserInteraction            `json:"userInteraction,omitempty"`
 	Scope                         *CVSS3Scope                      `json:"scope,omitempty"`
 	ConfidentialityImpact         *CVSS3Cia                        `json:"confidentialityImpact,omitempty"`
-	IntegrityImpact               CVSS3Cia                         `json:"integrityImpact,omitempty"`
+	IntegrityImpact               *CVSS3Cia                        `json:"integrityImpact,omitempty"`
 	AvailabilityImpact            *CVSS3Cia                        `json:"availabilityImpact,omitempty"`
-	BaseScore                     *float64                         `json:"baseScore"`    // required
-	BaseSeverity                  *CVSS3Severity                   `json:"baseSeverity"` // required
+	BaseScore                     float64                          `json:"baseScore"`    // required
+	BaseSeverity                  CVSS3Severity                    `json:"baseSeverity"` // required
 	ExploitCodeMaturity           *CVSS3ExploitCodeMaturity        `json:"exploitCodeMaturity,omitempty"`
 	RemediationLevel              *CVSS3RemediationLevel           `json:"remediationLevel,omitempty"`
 	ReportConfidence              *CVSS3Confidence                 `json:"reportConfidence,omitempty"`
@@ -706,7 +706,7 @@ type CVSS3 struct {
 	ModifiedConfidentialityImpact *CVSS3ModifiedCia                `json:"modifiedConfidentialityImpact,omitempty"`
 	ModifiedIntegrityImpact       *CVSS3ModifiedCia                `json:"modifiedIntegrityImpact,omitempty"`
 	ModifiedAvailabilityImpact    *CVSS3ModifiedCia                `json:"modifiedAvailabilityImpact,omitempty"`
-	EenvironmentalScore           *float64                         `json:"environmentalScore,omitempty"`
+	EnvironmentalScore            *float64                         `json:"environmentalScore,omitempty"`
 	EnvironmentalSeverity         *CVSS3Severity                   `json:"environmentalSeverity,omitempty"`
 }
 
@@ -1402,12 +1402,10 @@ func (rr *RestartRequired) Validate() error {
 // Validate validates a CVSS2
 func (c *CVSS2) Validate() error {
 	switch {
-	case c.Version == nil:
-		return errors.New("'version' is missing")
-	case c.VectorString == nil:
-		return errors.New("'vectorString' is missing")
-	case c.BaseScore == nil:
-		return errors.New("'baseScore' is missing")
+	case c.Version == "":
+		return errors.New("'version' is missing or empty")
+	case c.VectorString == "":
+		return errors.New("'vectorString' is missing or empty")
 	}
 	return nil
 }
@@ -1415,14 +1413,12 @@ func (c *CVSS2) Validate() error {
 // Validate validates a CVSS3
 func (c *CVSS3) Validate() error {
 	switch {
-	case c.Version == nil:
-		return errors.New("'version' is missing")
-	case c.VectorString == nil:
-		return errors.New("'vectorString' is missing")
-	case c.BaseScore == nil:
-		return errors.New("'baseScore' is missing")
-	case c.BaseSeverity == nil:
-		return errors.New("'baseSeverity' is missing")
+	case c.Version == "":
+		return errors.New("'version' is missing or empty")
+	case c.VectorString == "":
+		return errors.New("'vectorString' is missing or empty")
+	case c.BaseSeverity == "":
+		return errors.New("'baseSeverity' is missing or empty")
 	}
 	return nil
 }
