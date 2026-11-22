@@ -21,14 +21,14 @@ import (
 // Acknowledgment reflects the 'acknowledgment' object in the list of acknowledgments.
 // It must at least have one property.
 type Acknowledgment struct {
-	Names        []*string `json:"names,omitempty"`
-	Organization *string   `json:"organization,omitempty"`
-	Summary      *string   `json:"summary,omitempty"`
-	URLs         []*string `json:"urls,omitempty"`
+	Names        []string `json:"names,omitempty"`
+	Organization *string  `json:"organization,omitempty"`
+	Summary      *string  `json:"summary,omitempty"`
+	URLs         []string `json:"urls,omitempty"`
 }
 
 // Acknowledgments is a list of Acknowledgment elements.
-type Acknowledgments []*Acknowledgment
+type Acknowledgments []Acknowledgment
 
 // BranchCategory is the category of a branch.
 type BranchCategory string
@@ -790,6 +790,49 @@ type Advisory struct {
 	Vulnerabilities Vulnerabilities `json:"vulnerabilities,omitempty"`
 }
 
+// Validate validates a single Acknowledgment.
+func (a *Acknowledgment) Validate() error {
+	if len(a.Names) == 0 && a.Organization == nil && a.Summary == nil && len(a.URLs) == 0 {
+		return errors.New("at least one acknowledgment field must be set")
+	}
+	if a.Names != nil && len(a.Names) == 0 {
+		return errors.New("'names' is empty")
+	}
+	for i, name := range a.Names {
+		if name == "" {
+			return fmt.Errorf("%d. name is empty", i+1)
+		}
+	}
+	if a.Organization != nil && *a.Organization == "" {
+		return errors.New("'organization' is empty")
+	}
+	if a.Summary != nil && *a.Summary == "" {
+		return errors.New("'summary' is empty")
+	}
+	if a.URLs != nil && len(a.URLs) == 0 {
+		return errors.New("'urls' is empty")
+	}
+	for i, url := range a.URLs {
+		if url == "" {
+			return fmt.Errorf("%d. URL is empty", i+1)
+		}
+	}
+	return nil
+}
+
+// Validate validates a list of Acknowledgment elements.
+func (as Acknowledgments) Validate() error {
+	if as != nil && len(as) == 0 {
+		return errors.New("acknowledgments is empty")
+	}
+	for i, a := range as {
+		if err := a.Validate(); err != nil {
+			return fmt.Errorf("%d. acknowledgment is invalid: %w", i+1, err)
+		}
+	}
+	return nil
+}
+
 // Validate validates a AggregateSeverity.
 func (as *AggregateSeverity) Validate() error {
 	if as.Text == nil {
@@ -949,6 +992,9 @@ func (doc *Document) Validate() error {
 		return errors.New("'title' is missing")
 	case doc.Tracking == nil:
 		return errors.New("'tracking' is missing")
+	}
+	if err := doc.Acknowledgments.Validate(); err != nil {
+		return fmt.Errorf("'acknowledgments' is invalid: %w", err)
 	}
 	if err := doc.Tracking.Validate(); err != nil {
 		return fmt.Errorf("'tracking' is invalid: %w", err)
@@ -1360,6 +1406,9 @@ func (ts Threats) Validate() error {
 
 // Validate validates a single Vulnerability.
 func (v *Vulnerability) Validate() error {
+	if err := v.Acknowledgments.Validate(); err != nil {
+		return fmt.Errorf("'acknowledgments' is invalid: %w", err)
+	}
 	if v.CWE != nil {
 		if err := v.CWE.Validate(); err != nil {
 			return fmt.Errorf("'cwe' is invalid: %w", err)
