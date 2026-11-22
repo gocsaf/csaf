@@ -47,8 +47,9 @@ func visitFullProductNames(
 	visit func(*csaf.FullProductName),
 ) {
 	// Iterate over all full product names
-	for _, fpn := range adv.ProductTree.FullProductNames {
-		if fpn != nil && fpn.ProductID != nil {
+	for i := range adv.ProductTree.FullProductNames {
+		fpn := &adv.ProductTree.FullProductNames[i]
+		if fpn.ProductID != nil {
 			visit(fpn)
 		}
 	}
@@ -73,10 +74,8 @@ func visitFullProductNames(
 
 	// Iterate over relationships
 	for _, rel := range adv.ProductTree.Relationships {
-		if rel != nil {
-			if fpn := rel.FullProductName; fpn != nil && fpn.ProductID != nil {
-				visit(fpn)
-			}
+		if fpn := rel.FullProductName; fpn != nil && fpn.ProductID != nil {
+			visit(fpn)
 		}
 	}
 }

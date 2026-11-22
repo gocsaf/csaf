@@ -140,7 +140,7 @@ type FullProductName struct {
 }
 
 // FullProductNames is a list of FullProductName.
-type FullProductNames []*FullProductName
+type FullProductNames []FullProductName
 
 // Branch reflects the 'branch' object in the list of branches.
 // It may contain either the property Branches OR Product.
@@ -389,7 +389,7 @@ type Relationship struct {
 }
 
 // Relationships is a list of Relationship.
-type Relationships []*Relationship
+type Relationships []Relationship
 
 // Branches is a list of Branch.
 type Branches []*Branch
@@ -1106,7 +1106,7 @@ func (fpn *FullProductName) Validate() error {
 	return nil
 }
 
-// Validate validates a list of Relationship elements.
+// Validate validates a list of FullProductName elements.
 func (fpns FullProductNames) Validate() error {
 	for i, f := range fpns {
 		if err := f.Validate(); err != nil {
