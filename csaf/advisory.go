@@ -124,11 +124,11 @@ type XGenericURIs []*XGenericURI
 type ProductIdentificationHelper struct {
 	CPE           *CPE         `json:"cpe,omitempty"`
 	Hashes        []Hashes     `json:"hashes,omitempty"`
-	ModelNumbers  []*string    `json:"model_numbers,omitempty"` // unique elements
+	ModelNumbers  []string     `json:"model_numbers,omitempty"` // unique elements
 	PURL          *PURL        `json:"purl,omitempty"`
-	SBOMURLs      []*string    `json:"sbom_urls,omitempty"`
-	SerialNumbers []*string    `json:"serial_numbers,omitempty"` // unique elements
-	SKUs          []*string    `json:"skus,omitempty"`
+	SBOMURLs      []string     `json:"sbom_urls,omitempty"`
+	SerialNumbers []string     `json:"serial_numbers,omitempty"` // unique elements
+	SKUs          []string     `json:"skus,omitempty"`
 	XGenericURIs  XGenericURIs `json:"x_generic_uris,omitempty"`
 }
 
