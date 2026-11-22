@@ -90,14 +90,14 @@ var fileHashValuePattern = patternUnmarshal(`^[0-9a-fA-F]{32,}$`)
 // FileHash is checksum hash.
 // Values for 'algorithm' are derived from the currently supported digests OpenSSL. Leading dashes were removed.
 type FileHash struct {
-	Algorithm *string        `json:"algorithm"` // required, default: sha256
-	Value     *FileHashValue `json:"value"`     // required
+	Algorithm string        `json:"algorithm"` // required, default: sha256
+	Value     FileHashValue `json:"value"`     // required
 }
 
 // Hashes is a list of hashes.
 type Hashes struct {
-	FileHashes []*FileHash `json:"file_hashes"` // required
-	FileName   *string     `json:"filename"`    // required
+	FileHashes []FileHash `json:"file_hashes"` // required
+	FileName   string     `json:"filename"`    // required
 }
 
 // CPE represents a Common Platform Enumeration in an advisory.
@@ -123,7 +123,7 @@ type XGenericURIs []*XGenericURI
 // Supported formats for SBOMs are SPDX, CycloneDX, and SWID
 type ProductIdentificationHelper struct {
 	CPE           *CPE         `json:"cpe,omitempty"`
-	Hashes        *Hashes      `json:"hashes,omitempty"`
+	Hashes        []Hashes     `json:"hashes,omitempty"`
 	ModelNumbers  []*string    `json:"model_numbers,omitempty"` // unique elements
 	PURL          *PURL        `json:"purl,omitempty"`
 	SBOMURLs      []*string    `json:"sbom_urls,omitempty"`
@@ -979,10 +979,10 @@ func (fh *FileHash) Validate() error {
 	switch {
 	case fh == nil:
 		return errors.New("is nil")
-	case fh.Algorithm == nil:
-		return errors.New("'algorithm' is missing")
-	case fh.Value == nil:
-		return errors.New("'value' is missing")
+	case fh.Algorithm == "":
+		return errors.New("'algorithm' is missing or empty")
+	case fh.Value == "":
+		return errors.New("'value' is missing or empty")
 	default:
 		return nil
 	}
@@ -991,10 +991,10 @@ func (fh *FileHash) Validate() error {
 // Validate validates a list of file hashes.
 func (hs *Hashes) Validate() error {
 	switch {
-	case hs.FileHashes == nil:
-		return errors.New("'hashes' is missing")
-	case hs.FileName == nil:
-		return errors.New("'filename' is missing")
+	case len(hs.FileHashes) == 0:
+		return errors.New("'file_hashes' is missing or empty")
+	case hs.FileName == "":
+		return errors.New("'filename' is missing or empty")
 	}
 	for i, fh := range hs.FileHashes {
 		if err := fh.Validate(); err != nil {
@@ -1030,9 +1030,9 @@ func (xgus XGenericURIs) Validate() error {
 
 // Validate validates a ProductIdentificationHelper.
 func (pih *ProductIdentificationHelper) Validate() error {
-	if pih.Hashes != nil {
-		if err := pih.Hashes.Validate(); err != nil {
-			return fmt.Errorf("'hashes' is invalid: %w", err)
+	for i, hashes := range pih.Hashes {
+		if err := hashes.Validate(); err != nil {
+			return fmt.Errorf("'hashes' is invalid: %d. entry is invalid: %w", i+1, err)
 		}
 	}
 	if pih.XGenericURIs != nil {
