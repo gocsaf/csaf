@@ -186,10 +186,10 @@ var csafNoteCategoryPattern = alternativesUnmarshal(
 
 // Note reflects the 'Note' object of an advisory.
 type Note struct {
-	Audience     *string       `json:"audience,omitempty"`
-	NoteCategory *NoteCategory `json:"category"` // required
-	Text         *string       `json:"text"`     // required
-	Title        *string       `json:"title,omitempty"`
+	Audience     *string      `json:"audience,omitempty"`
+	NoteCategory NoteCategory `json:"category"` // required
+	Text         string       `json:"text"`     // required
+	Title        *string      `json:"title,omitempty"`
 }
 
 // ReferenceCategory is the category of a note.
@@ -210,16 +210,16 @@ var csafReferenceCategoryPattern = alternativesUnmarshal(
 // resources that are related and considered related to either a surrounding part of
 // or the entire document and to be of value to the document consumer.
 type Reference struct {
-	ReferenceCategory *string `json:"category"` // optional, default: external
-	Summary           *string `json:"summary"`  // required
-	URL               *string `json:"url"`      // required
+	ReferenceCategory *ReferenceCategory `json:"category,omitempty"` // optional, default: external
+	Summary           string             `json:"summary"`            // required
+	URL               string             `json:"url"`                // required
 }
 
 // AggregateSeverity stands for the urgency with which the vulnerabilities of an advisory
 // (not a specific one) should be addressed.
 type AggregateSeverity struct {
 	Namespace *string `json:"namespace,omitempty"`
-	Text      *string `json:"text"` // required
+	Text      string  `json:"text"` // required
 }
 
 // DocumentCategory represents a category of a document.
@@ -249,11 +249,11 @@ type DocumentDistribution struct {
 
 // DocumentPublisher provides information about the publishing entity.
 type DocumentPublisher struct {
-	Category         *Category `json:"category"` // required
-	ContactDetails   *string   `json:"contact_details,omitempty"`
-	IssuingAuthority *string   `json:"issuing_authority,omitempty"`
-	Name             *string   `json:"name"`      // required
-	Namespace        *string   `json:"namespace"` // required
+	Category         Category `json:"category"` // required
+	ContactDetails   *string  `json:"contact_details,omitempty"`
+	IssuingAuthority *string  `json:"issuing_authority,omitempty"`
+	Name             string   `json:"name"`      // required
+	Namespace        string   `json:"namespace"` // required
 }
 
 // RevisionNumber specifies a version string to denote clearly the evolution of the content of the document.
@@ -263,7 +263,7 @@ var versionPattern = patternUnmarshal("^(0|[1-9][0-9]*)$|^((0|[1-9]\\d*)\\.(0|[1
 
 // Engine contains information about the engine that generated the CSAF document.
 type Engine struct {
-	Name    *string `json:"name"` // required
+	Name    string  `json:"name"` // required
 	Version *string `json:"version,omitempty"`
 }
 
@@ -272,7 +272,7 @@ type Engine struct {
 // including the date it was generated and the entity that generated it.
 type Generator struct {
 	Date   *string `json:"date,omitempty"`
-	Engine *Engine `json:"engine"` // required
+	Engine Engine  `json:"engine"` // required
 }
 
 // TrackingID is a unique identifier for the document.
@@ -282,10 +282,10 @@ var trackingIDPattern = patternUnmarshal("^[\\S](.*[\\S])?$")
 
 // Revision contains information about one revision of the document.
 type Revision struct {
-	Date          *string         `json:"date"` // required
-	LegacyVersion *string         `json:"legacy_version,omitempty"`
-	Number        *RevisionNumber `json:"number"`  // required
-	Summary       *string         `json:"summary"` // required
+	Date          string         `json:"date"` // required
+	LegacyVersion *string        `json:"legacy_version,omitempty"`
+	Number        RevisionNumber `json:"number"`  // required
+	Summary       string         `json:"summary"` // required
 }
 
 // TrackingStatus is the category of a publisher.
@@ -306,18 +306,18 @@ var csafTrackingStatusPattern = alternativesUnmarshal(
 	string(CSAFTrackingStatusInterim))
 
 // Revisions is a list of Revision.
-type Revisions []*Revision
+type Revisions []Revision
 
 // Tracking holds information that is necessary to track a CSAF document.
 type Tracking struct {
-	Aliases            []*string       `json:"aliases,omitempty"`    // unique elements
-	CurrentReleaseDate *string         `json:"current_release_date"` // required
-	Generator          *Generator      `json:"generator"`
-	ID                 *TrackingID     `json:"id"`                   // required
-	InitialReleaseDate *string         `json:"initial_release_date"` // required
-	RevisionHistory    Revisions       `json:"revision_history"`     // required
-	Status             *TrackingStatus `json:"status"`               // required
-	Version            *RevisionNumber `json:"version"`              // required
+	Aliases            []string       `json:"aliases,omitempty"`    // unique elements
+	CurrentReleaseDate string         `json:"current_release_date"` // required
+	Generator          *Generator     `json:"generator,omitempty"`
+	ID                 TrackingID     `json:"id"`                   // required
+	InitialReleaseDate string         `json:"initial_release_date"` // required
+	RevisionHistory    Revisions      `json:"revision_history"`     // required
+	Status             TrackingStatus `json:"status"`               // required
+	Version            RevisionNumber `json:"version"`              // required
 }
 
 // Lang is a language identifier, corresponding to IETF BCP 47 / RFC 5646.
@@ -329,16 +329,16 @@ var langPattern = patternUnmarshal("^(([A-Za-z]{2,3}(-[A-Za-z]{3}(-[A-Za-z]{3}){
 type Document struct {
 	Acknowledgments   Acknowledgments       `json:"acknowledgments,omitempty"`
 	AggregateSeverity *AggregateSeverity    `json:"aggregate_severity,omitempty"`
-	Category          *DocumentCategory     `json:"category"`     // required
-	CSAFVersion       *Version              `json:"csaf_version"` // required
+	Category          DocumentCategory      `json:"category"`     // required
+	CSAFVersion       Version               `json:"csaf_version"` // required
 	Distribution      *DocumentDistribution `json:"distribution,omitempty"`
 	Lang              *Lang                 `json:"lang,omitempty"`
 	Notes             Notes                 `json:"notes,omitempty"`
-	Publisher         *DocumentPublisher    `json:"publisher"` // required
+	Publisher         DocumentPublisher     `json:"publisher"` // required
 	References        References            `json:"references,omitempty"`
 	SourceLang        *Lang                 `json:"source_lang,omitempty"`
-	Title             *string               `json:"title"`    // required
-	Tracking          *Tracking             `json:"tracking"` // required
+	Title             string                `json:"title"`    // required
+	Tracking          Tracking              `json:"tracking"` // required
 }
 
 // ProductGroupID is a reference token for product group instances.
@@ -756,10 +756,10 @@ type Threat struct {
 type Threats []*Threat
 
 // Notes is a list of Note.
-type Notes []*Note
+type Notes []Note
 
 // References is a list of Reference.
-type References []*Reference
+type References []Reference
 
 // Vulnerability contains all fields that are related to a single vulnerability in the document.
 type Vulnerability struct {
@@ -785,7 +785,7 @@ type Vulnerabilities []*Vulnerability
 
 // Advisory represents a CSAF advisory.
 type Advisory struct {
-	Document        *Document       `json:"document"` // required
+	Document        Document        `json:"document"` // required
 	ProductTree     *ProductTree    `json:"product_tree,omitempty"`
 	Vulnerabilities Vulnerabilities `json:"vulnerabilities,omitempty"`
 }
@@ -835,8 +835,8 @@ func (as Acknowledgments) Validate() error {
 
 // Validate validates a AggregateSeverity.
 func (as *AggregateSeverity) Validate() error {
-	if as.Text == nil {
-		return errors.New("'text' is missing")
+	if as.Text == "" {
+		return errors.New("'text' is missing or empty")
 	}
 	return nil
 }
@@ -845,6 +845,9 @@ func (as *AggregateSeverity) Validate() error {
 func (dd *DocumentDistribution) Validate() error {
 	if dd.Text == nil && dd.TLP == nil {
 		return errors.New("needs at least properties 'text' or 'tlp'")
+	}
+	if dd.Text != nil && *dd.Text == "" {
+		return errors.New("'text' is empty")
 	}
 	return nil
 }
@@ -864,10 +867,14 @@ func (n *Note) Validate() error {
 	switch {
 	case n == nil:
 		return errors.New("is nil")
-	case n.NoteCategory == nil:
-		return errors.New("'note_category' is missing")
-	case n.Text == nil:
-		return errors.New("'text' is missing")
+	case n.NoteCategory == "":
+		return errors.New("'category' is missing or empty")
+	case n.Text == "":
+		return errors.New("'text' is missing or empty")
+	case n.Audience != nil && *n.Audience == "":
+		return errors.New("'audience' is empty")
+	case n.Title != nil && *n.Title == "":
+		return errors.New("'title' is empty")
 	default:
 		return nil
 	}
@@ -876,12 +883,16 @@ func (n *Note) Validate() error {
 // Validate validates a DocumentPublisher.
 func (p *DocumentPublisher) Validate() error {
 	switch {
-	case p.Category == nil:
-		return errors.New("'document' is missing")
-	case p.Name == nil:
-		return errors.New("'name' is missing")
-	case p.Namespace == nil:
-		return errors.New("'namespace' is missing")
+	case p.Category == "":
+		return errors.New("'category' is missing or empty")
+	case p.Name == "":
+		return errors.New("'name' is missing or empty")
+	case p.Namespace == "":
+		return errors.New("'namespace' is missing or empty")
+	case p.ContactDetails != nil && *p.ContactDetails == "":
+		return errors.New("'contact_details' is empty")
+	case p.IssuingAuthority != nil && *p.IssuingAuthority == "":
+		return errors.New("'issuing_authority' is empty")
 	default:
 		return nil
 	}
@@ -890,10 +901,10 @@ func (p *DocumentPublisher) Validate() error {
 // Validate validates a single reference.
 func (r *Reference) Validate() error {
 	switch {
-	case r.Summary == nil:
-		return errors.New("summary' is missing")
-	case r.URL == nil:
-		return errors.New("'url' is missing")
+	case r.Summary == "":
+		return errors.New("'summary' is missing or empty")
+	case r.URL == "":
+		return errors.New("'url' is missing or empty")
 	default:
 		return nil
 	}
@@ -912,12 +923,14 @@ func (rs References) Validate() error {
 // Validate validates a single revision.
 func (r *Revision) Validate() error {
 	switch {
-	case r.Date == nil:
-		return errors.New("'date' is missing")
-	case r.Number == nil:
-		return errors.New("'number' is missing")
-	case r.Summary == nil:
-		return errors.New("'summary' is missing")
+	case r.Date == "":
+		return errors.New("'date' is missing or empty")
+	case r.Number == "":
+		return errors.New("'number' is missing or empty")
+	case r.Summary == "":
+		return errors.New("'summary' is missing or empty")
+	case r.LegacyVersion != nil && *r.LegacyVersion == "":
+		return errors.New("'legacy_version' is empty")
 	default:
 		return nil
 	}
@@ -935,17 +948,17 @@ func (rs Revisions) Validate() error {
 
 // Validate validates an Engine.
 func (e *Engine) Validate() error {
-	if e.Name == nil {
-		return errors.New("'name' is missing")
+	if e.Name == "" {
+		return errors.New("'name' is missing or empty")
+	}
+	if e.Version != nil && *e.Version == "" {
+		return errors.New("'version' is empty")
 	}
 	return nil
 }
 
 // Validate validates a Generator.
 func (g *Generator) Validate() error {
-	if g.Engine == nil {
-		return errors.New("'engine' is missing")
-	}
 	if err := g.Engine.Validate(); err != nil {
 		return fmt.Errorf("'engine' is invalid: %w", err)
 	}
@@ -955,18 +968,23 @@ func (g *Generator) Validate() error {
 // Validate validates a single Tracking.
 func (t *Tracking) Validate() error {
 	switch {
-	case t.CurrentReleaseDate == nil:
-		return errors.New("'current_release_date' is missing")
-	case t.ID == nil:
-		return errors.New("'id' is missing")
-	case t.InitialReleaseDate == nil:
-		return errors.New("'initial_release_date' is missing")
-	case t.RevisionHistory == nil:
-		return errors.New("'revision_history' is missing")
-	case t.Status == nil:
-		return errors.New("'status' is missing")
-	case t.Version == nil:
-		return errors.New("'version' is missing")
+	case t.CurrentReleaseDate == "":
+		return errors.New("'current_release_date' is missing or empty")
+	case t.ID == "":
+		return errors.New("'id' is missing or empty")
+	case t.InitialReleaseDate == "":
+		return errors.New("'initial_release_date' is missing or empty")
+	case len(t.RevisionHistory) == 0:
+		return errors.New("'revision_history' is missing or empty")
+	case t.Status == "":
+		return errors.New("'status' is missing or empty")
+	case t.Version == "":
+		return errors.New("'version' is missing or empty")
+	}
+	for i, alias := range t.Aliases {
+		if alias == "" {
+			return fmt.Errorf("%d. alias is empty", i+1)
+		}
 	}
 	if err := t.RevisionHistory.Validate(); err != nil {
 		return fmt.Errorf("'revision_history' is invalid: %w", err)
@@ -982,16 +1000,12 @@ func (t *Tracking) Validate() error {
 // Validate validates a Document.
 func (doc *Document) Validate() error {
 	switch {
-	case doc.Category == nil:
-		return errors.New("'category' is missing")
-	case doc.CSAFVersion == nil:
-		return errors.New("'csaf_version' is missing")
-	case doc.Publisher == nil:
-		return errors.New("'publisher' is missing")
-	case doc.Title == nil:
-		return errors.New("'title' is missing")
-	case doc.Tracking == nil:
-		return errors.New("'tracking' is missing")
+	case doc.Category == "":
+		return errors.New("'category' is missing or empty")
+	case doc.CSAFVersion == "":
+		return errors.New("'csaf_version' is missing or empty")
+	case doc.Title == "":
+		return errors.New("'title' is missing or empty")
 	}
 	if err := doc.Acknowledgments.Validate(); err != nil {
 		return fmt.Errorf("'acknowledgments' is invalid: %w", err)
@@ -1494,9 +1508,6 @@ func (vs Vulnerabilities) Validate() error {
 // Validate checks if the advisory is valid.
 // Returns an error if the validation fails otherwise nil.
 func (adv *Advisory) Validate() error {
-	if adv.Document == nil {
-		return errors.New("'document' is missing")
-	}
 	if err := adv.Document.Validate(); err != nil {
 		return fmt.Errorf("'document' is invalid: %w", err)
 	}
