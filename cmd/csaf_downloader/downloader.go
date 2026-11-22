@@ -356,13 +356,13 @@ func (d *downloader) loadOpenPGPKeys(
 
 	for i := range keys {
 		key := &keys[i]
-		if key.URL == nil {
+		if key.URL == "" {
 			continue
 		}
-		u, err := url.Parse(*key.URL)
+		u, err := url.Parse(key.URL)
 		if err != nil {
 			slog.Warn("Invalid URL",
-				"url", *key.URL,
+				"url", key.URL,
 				"error", err)
 			continue
 		}
@@ -397,7 +397,7 @@ func (d *downloader) loadOpenPGPKeys(
 			continue
 		}
 
-		if !strings.EqualFold(ckey.GetFingerprint(), string(key.Fingerprint)) {
+		if key.Fingerprint != nil && !strings.EqualFold(ckey.GetFingerprint(), string(*key.Fingerprint)) {
 			slog.Warn(
 				"Fingerprint of public OpenPGP key does not match remotely loaded",
 				"url", u, "fingerprint", key.Fingerprint, "remote-fingerprint", ckey.GetFingerprint())

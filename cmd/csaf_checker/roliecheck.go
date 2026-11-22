@@ -231,12 +231,12 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 	for _, fs := range feeds {
 		for i := range fs {
 			feed := &fs[i]
-			if feed.URL == nil {
+			if feed.URL == "" {
 				continue
 			}
-			feedBase, err := url.Parse(string(*feed.URL))
+			feedBase, err := url.Parse(string(feed.URL))
 			if err != nil {
-				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
+				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", feed.URL, err)
 				continue
 			}
 			feedURL := feedBase.String()
@@ -257,7 +257,7 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 	for _, fs := range feeds {
 		for i := range fs {
 			feed := &fs[i]
-			if feed.URL == nil {
+			if feed.URL == "" {
 				continue
 			}
 			files := advisories[feed]
@@ -265,9 +265,9 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 				continue
 			}
 
-			feedURL, err := url.Parse(string(*feed.URL))
+			feedURL, err := url.Parse(string(feed.URL))
 			if err != nil {
-				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
+				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", feed.URL, err)
 				continue
 			}
 
@@ -277,7 +277,10 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 				continue
 			}
 
-			label := defaults(feed.TLPLabel, csaf.TLPLabelUnlabeled)
+			label := feed.TLPLabel
+			if label == "" {
+				label = csaf.TLPLabelUnlabeled
+			}
 			if err := p.categoryCheck(ctx, feedBase, label); err != nil {
 				if err != errContinue {
 					return err
@@ -311,7 +314,7 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 	for _, fs := range feeds {
 		for i := range fs {
 			feed := &fs[i]
-			if feed.URL == nil {
+			if feed.URL == "" {
 				continue
 			}
 			files := advisories[feed]
@@ -319,14 +322,17 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 				continue
 			}
 
-			feedBase, err := url.Parse(string(*feed.URL))
+			feedBase, err := url.Parse(string(feed.URL))
 			if err != nil {
-				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", *feed.URL, err)
+				p.badProviderMetadata.error("Invalid URL %s in feed: %v.", feed.URL, err)
 				continue
 			}
 
 			makeAbs := makeAbsolute(feedBase)
-			label := defaults(feed.TLPLabel, csaf.TLPLabelUnlabeled)
+			label := feed.TLPLabel
+			if label == "" {
+				label = csaf.TLPLabelUnlabeled
+			}
 
 			switch label {
 			case csaf.TLPLabelUnlabeled:
@@ -344,7 +350,7 @@ func (p *processor) processROLIEFeeds(ctx context.Context, feeds [][]csaf.Feed) 
 				u, err := url.Parse(adv.URL())
 				if err != nil {
 					p.badProviderMetadata.error(
-						"Invalid URL %s in feed: %v.", *feed.URL, err)
+						"Invalid URL %s in feed: %v.", feed.URL, err)
 					continue
 				}
 				advisories.Add(makeAbs(u).String())
@@ -470,7 +476,7 @@ func (p *processor) serviceCheck(ctx context.Context, feeds [][]csaf.Feed) error
 	}
 	for _, r := range feeds {
 		for _, s := range r {
-			ffeeds.Add(string(*s.URL))
+			ffeeds.Add(string(s.URL))
 		}
 	}
 

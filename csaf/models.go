@@ -53,9 +53,9 @@ var jsonURLPattern = patternUnmarshal(`\.json$`)
 
 // Feed is CSAF feed.
 type Feed struct {
-	Summary  string    `json:"summary"`
-	TLPLabel *TLPLabel `json:"tlp_label"` // required
-	URL      *JSONURL  `json:"url"`       // required
+	Summary  *string  `json:"summary,omitempty"`
+	TLPLabel TLPLabel `json:"tlp_label"` // required
+	URL      JSONURL  `json:"url"`       // required
 }
 
 // ROLIE is the ROLIE extension of the CSAF feed.
@@ -67,8 +67,8 @@ type ROLIE struct {
 
 // Distribution is a distribution of a CSAF feed.
 type Distribution struct {
-	DirectoryURL string `json:"directory_url,omitempty"`
-	Rolie        *ROLIE `json:"rolie,omitempty"`
+	DirectoryURL *string `json:"directory_url,omitempty"`
+	Rolie        *ROLIE  `json:"rolie,omitempty"`
 }
 
 // TimeStamp represents a time stamp in a CSAF feed.
@@ -83,8 +83,8 @@ var fingerprintPattern = patternUnmarshal(`^[0-9a-fA-F]{40,}$`)
 // PGPKey is location and the fingerprint of the key
 // used to sign the CSAF documents.
 type PGPKey struct {
-	Fingerprint Fingerprint `json:"fingerprint,omitempty"`
-	URL         *string     `json:"url"` // required
+	Fingerprint *Fingerprint `json:"fingerprint,omitempty"`
+	URL         string       `json:"url"` // required
 }
 
 // Category is the category of the CSAF feed.
@@ -115,11 +115,11 @@ var csafCategoryPattern = alternativesUnmarshal(
 
 // Publisher is the publisher of the feed.
 type Publisher struct {
-	Category         *Category `json:"category" toml:"category"`   // required
-	Name             *string   `json:"name" toml:"name"`           // required
-	Namespace        *string   `json:"namespace" toml:"namespace"` // required
-	ContactDetails   string    `json:"contact_details,omitempty" toml:"contact_details"`
-	IssuingAuthority string    `json:"issuing_authority,omitempty" toml:"issuing_authority"`
+	Category         Category `json:"category" toml:"category"`   // required
+	Name             string   `json:"name" toml:"name"`           // required
+	Namespace        string   `json:"namespace" toml:"namespace"` // required
+	ContactDetails   *string  `json:"contact_details,omitempty" toml:"contact_details"`
+	IssuingAuthority *string  `json:"issuing_authority,omitempty" toml:"issuing_authority"`
 }
 
 // MetadataVersion is the metadata version of the feed.
@@ -154,15 +154,15 @@ var providerURLPattern = patternUnmarshal(`/provider-metadata\.json$`)
 
 // ProviderMetadata contains the metadata of the provider.
 type ProviderMetadata struct {
-	CanonicalURL            *ProviderURL     `json:"canonical_url"` // required
-	Distributions           []Distribution   `json:"distributions,omitempty"`
-	LastUpdated             *TimeStamp       `json:"last_updated"` // required
-	ListOnCSAFAggregators   *bool            `json:"list_on_CSAF_aggregators"`
-	MetadataVersion         *MetadataVersion `json:"metadata_version"`           // required
-	MirrorOnCSAFAggregators *bool            `json:"mirror_on_CSAF_aggregators"` // required
-	PGPKeys                 []PGPKey         `json:"public_openpgp_keys,omitempty"`
-	Publisher               *Publisher       `json:"publisher,omitempty"` // required
-	Role                    *MetadataRole    `json:"role"`                // required
+	CanonicalURL            ProviderURL     `json:"canonical_url"` // required
+	Distributions           []Distribution  `json:"distributions,omitempty"`
+	LastUpdated             *TimeStamp      `json:"last_updated"` // required
+	ListOnCSAFAggregators   *bool           `json:"list_on_CSAF_aggregators"`
+	MetadataVersion         MetadataVersion `json:"metadata_version"`           // required
+	MirrorOnCSAFAggregators *bool           `json:"mirror_on_CSAF_aggregators"` // required
+	PGPKeys                 []PGPKey        `json:"public_openpgp_keys,omitzero"`
+	Publisher               Publisher       `json:"publisher"` // required
+	Role                    MetadataRole    `json:"role"`      // required
 }
 
 // AggregatorCategory is the category of the aggregator.
@@ -194,11 +194,11 @@ var aggregatorVersionPattern = alternativesUnmarshal(
 
 // AggregatorInfo reflects the 'aggregator' object in the aggregator.
 type AggregatorInfo struct {
-	Category         *AggregatorCategory `json:"category,omitempty" toml:"category"` // required
-	Name             string              `json:"name" toml:"name"`                   // required
-	ContactDetails   string              `json:"contact_details,omitempty" toml:"contact_details"`
-	IssuingAuthority string              `json:"issuing_authority,omitempty" toml:"issuing_authority"`
-	Namespace        string              `json:"namespace" toml:"namespace"` // required
+	Category         AggregatorCategory `json:"category" toml:"category"` // required
+	Name             string             `json:"name" toml:"name"`         // required
+	ContactDetails   *string            `json:"contact_details,omitempty" toml:"contact_details"`
+	IssuingAuthority *string            `json:"issuing_authority,omitempty" toml:"issuing_authority"`
+	Namespace        string             `json:"namespace" toml:"namespace"` // required
 }
 
 // AggregatorURL is the URL of the aggregator document.
@@ -208,38 +208,38 @@ var aggregatorURLPattern = patternUnmarshal(`/aggregator\.json$`)
 
 // AggregatorCSAFProviderMetadata reflects 'csaf_providers.metadata' in an aggregator.
 type AggregatorCSAFProviderMetadata struct {
-	LastUpdated *TimeStamp    `json:"last_updated,omitempty"` // required
-	Publisher   *Publisher    `json:"publisher,omitempty"`    // required
+	LastUpdated *TimeStamp    `json:"last_updated"` // required
+	Publisher   Publisher     `json:"publisher"`    // required
 	Role        *MetadataRole `json:"role,omitempty"`
-	URL         *ProviderURL  `json:"url,omitempty"` // required
+	URL         ProviderURL   `json:"url"` // required
 }
 
 // AggregatorCSAFProvider reflects one 'csaf_trusted_provider' in an aggregator.
 type AggregatorCSAFProvider struct {
-	Metadata *AggregatorCSAFProviderMetadata `json:"metadata,omitempty"` // required
-	Mirrors  []ProviderURL                   `json:"mirrors,omitempty"`  // required
+	Metadata AggregatorCSAFProviderMetadata `json:"metadata"` // required
+	Mirrors  []ProviderURL                  `json:"mirrors,omitempty"`
 }
 
 // AggregatorCSAFPublisher reflects one publisher in an aggregator.
 type AggregatorCSAFPublisher struct {
-	Metadata       *AggregatorCSAFProviderMetadata `json:"metadata,omitempty"`        // required
-	Mirrors        []ProviderURL                   `json:"mirrors,omitempty"`         // required
-	UpdateInterval string                          `json:"update_interval,omitempty"` // required
+	Metadata       AggregatorCSAFProviderMetadata `json:"metadata"`        // required
+	Mirrors        []ProviderURL                  `json:"mirrors"`         // required
+	UpdateInterval string                         `json:"update_interval"` // required
 }
 
 // Aggregator is the CSAF Aggregator.
 type Aggregator struct {
-	Aggregator     *AggregatorInfo            `json:"aggregator,omitempty"`         // required
-	Version        *AggregatorVersion         `json:"aggregator_version,omitempty"` // required
-	CanonicalURL   *AggregatorURL             `json:"canonical_url,omitempty"`      // required
-	CSAFProviders  []*AggregatorCSAFProvider  `json:"csaf_providers,omitempty"`     // required
-	CSAFPublishers []*AggregatorCSAFPublisher `json:"csaf_publishers,omitempty"`
-	LastUpdated    *TimeStamp                 `json:"last_updated,omitempty"` // required
+	Aggregator     AggregatorInfo            `json:"aggregator"`         // required
+	Version        AggregatorVersion         `json:"aggregator_version"` // required
+	CanonicalURL   AggregatorURL             `json:"canonical_url"`      // required
+	CSAFProviders  []AggregatorCSAFProvider  `json:"csaf_providers"`     // required
+	CSAFPublishers []AggregatorCSAFPublisher `json:"csaf_publishers,omitempty"`
+	LastUpdated    *TimeStamp                `json:"last_updated"` // required
 }
 
 // Validate validates the current state of the AggregatorCategory.
 func (ac *AggregatorCategory) Validate() error {
-	if ac == nil {
+	if ac == nil || *ac == "" {
 		return errors.New("aggregator.aggregator.category is mandatory")
 	}
 	return nil
@@ -247,7 +247,7 @@ func (ac *AggregatorCategory) Validate() error {
 
 // Validate validates the current state of the AggregatorVersion.
 func (av *AggregatorVersion) Validate() error {
-	if av == nil {
+	if av == nil || *av == "" {
 		return errors.New("aggregator.aggregator_version is mandatory")
 	}
 	return nil
@@ -255,7 +255,7 @@ func (av *AggregatorVersion) Validate() error {
 
 // Validate validates the current state of the AggregatorURL.
 func (au *AggregatorURL) Validate() error {
-	if au == nil {
+	if au == nil || *au == "" {
 		return errors.New("aggregator.aggregator_url is mandatory")
 	}
 	return nil
@@ -283,13 +283,10 @@ func (acpm *AggregatorCSAFProviderMetadata) Validate() error {
 	if acpm.LastUpdated == nil {
 		return errors.New("aggregator.csaf_providers[].metadata.last_updated is mandatory")
 	}
-	if acpm.Publisher == nil {
-		return errors.New("aggregator.csaf_providers[].metadata.publisher is mandatory")
-	}
 	if err := acpm.Publisher.Validate(); err != nil {
 		return err
 	}
-	if acpm.URL == nil {
+	if acpm.URL == "" {
 		return errors.New("aggregator.csaf_providers[].metadata.url is mandatory")
 	}
 	return nil
@@ -453,9 +450,8 @@ func (ts TimeStamp) MarshalText() ([]byte, error) {
 
 // Defaults fills the correct default values into the provider metadata.
 func (pmd *ProviderMetadata) Defaults() {
-	if pmd.Role == nil {
-		role := MetadataRoleTrustedProvider
-		pmd.Role = &role
+	if pmd.Role == "" {
+		pmd.Role = MetadataRoleTrustedProvider
 	}
 	if pmd.ListOnCSAFAggregators == nil {
 		t := true
@@ -465,9 +461,8 @@ func (pmd *ProviderMetadata) Defaults() {
 		t := true
 		pmd.MirrorOnCSAFAggregators = &t
 	}
-	if pmd.MetadataVersion == nil {
-		mdv := MetadataVersion20
-		pmd.MetadataVersion = &mdv
+	if pmd.MetadataVersion == "" {
+		pmd.MetadataVersion = MetadataVersion20
 	}
 }
 
@@ -476,20 +471,20 @@ func (pmd *ProviderMetadata) Defaults() {
 func (pmd *ProviderMetadata) AddDirectoryDistribution(url string) {
 	// Avoid duplicates.
 	for i := range pmd.Distributions {
-		if pmd.Distributions[i].DirectoryURL == url {
+		if directoryURL := pmd.Distributions[i].DirectoryURL; directoryURL != nil && *directoryURL == url {
 			return
 		}
 	}
-	pmd.Distributions = append(pmd.Distributions, Distribution{DirectoryURL: url})
+	pmd.Distributions = append(pmd.Distributions, Distribution{DirectoryURL: &url})
 }
 
 // Validate checks if the feed is valid.
 // Returns an error if the validation fails otherwise nil.
 func (f *Feed) Validate() error {
 	switch {
-	case f.TLPLabel == nil:
+	case f.TLPLabel == "":
 		return errors.New("feed[].tlp_label is mandatory")
-	case f.URL == nil:
+	case f.URL == "":
 		return errors.New("feed[].url is mandatory")
 	}
 	return nil
@@ -515,11 +510,11 @@ func (p *Publisher) Validate() error {
 	switch {
 	case p == nil:
 		return errors.New("publisher is mandatory")
-	case p.Category == nil:
+	case p.Category == "":
 		return errors.New("publisher.category is mandatory")
-	case p.Name == nil:
+	case p.Name == "":
 		return errors.New("publisher.name is mandatory")
-	case p.Namespace == nil:
+	case p.Namespace == "":
 		return errors.New("publisher.namespace is mandatory")
 	}
 	return nil
@@ -544,18 +539,18 @@ func (p *Publisher) Equals(o *Publisher) bool {
 	case o == nil:
 		return false
 	default:
-		return strPtrEquals((*string)(p.Category), (*string)(o.Category)) &&
-			strPtrEquals(p.Name, o.Name) &&
-			strPtrEquals(p.Namespace, o.Namespace) &&
-			p.ContactDetails == o.ContactDetails &&
-			p.IssuingAuthority == o.IssuingAuthority
+		return p.Category == o.Category &&
+			p.Name == o.Name &&
+			p.Namespace == o.Namespace &&
+			strPtrEquals(p.ContactDetails, o.ContactDetails) &&
+			strPtrEquals(p.IssuingAuthority, o.IssuingAuthority)
 	}
 }
 
 // Validate checks if the PGPKey is valid.
 // Returns an error if the validation fails otherwise nil.
 func (pk *PGPKey) Validate() error {
-	if pk.URL == nil {
+	if pk.URL == "" {
 		return errors.New("pgp_key[].url is mandatory")
 	}
 	return nil
@@ -576,11 +571,11 @@ func (d *Distribution) Validate() error {
 // Returns an error if the validation fails otherwise nil.
 func (pmd *ProviderMetadata) Validate() error {
 	switch {
-	case pmd.CanonicalURL == nil:
+	case pmd.CanonicalURL == "":
 		return errors.New("canonical_url is mandatory")
 	case pmd.LastUpdated == nil:
 		return errors.New("last_updated is mandatory")
-	case pmd.MetadataVersion == nil:
+	case pmd.MetadataVersion == "":
 		return errors.New("metadata_version is mandatory")
 	}
 
@@ -615,14 +610,15 @@ func (pmd *ProviderMetadata) SetLastUpdated(t time.Time) {
 // If there is no such key it is append to the list of keys.
 func (pmd *ProviderMetadata) SetPGP(fingerprint, url string) {
 	for i := range pmd.PGPKeys {
-		if strings.EqualFold(string(pmd.PGPKeys[i].Fingerprint), fingerprint) {
-			pmd.PGPKeys[i].URL = &url
+		if fp := pmd.PGPKeys[i].Fingerprint; fp != nil && strings.EqualFold(string(*fp), fingerprint) {
+			pmd.PGPKeys[i].URL = url
 			return
 		}
 	}
+	fp := Fingerprint(fingerprint)
 	pmd.PGPKeys = append(pmd.PGPKeys, PGPKey{
-		Fingerprint: Fingerprint(fingerprint),
-		URL:         &url,
+		Fingerprint: &fp,
+		URL:         url,
 	})
 }
 
@@ -633,8 +629,7 @@ func NewProviderMetadata(canonicalURL string) *ProviderMetadata {
 	pm := new(ProviderMetadata)
 	pm.Defaults()
 	pm.SetLastUpdated(time.Now())
-	cu := ProviderURL(canonicalURL)
-	pm.CanonicalURL = &cu
+	pm.CanonicalURL = ProviderURL(canonicalURL)
 	return pm
 }
 
@@ -664,11 +659,11 @@ func NewProviderMetadataPrefix(prefix string, tlps []TLPLabel) *ProviderMetadata
 		feed := "csaf-feed-tlp-" + lt + ".json"
 		url := JSONURL(prefix + "/" + lt + "/" + feed)
 
-		t := t
+		summary := "TLP:" + string(t) + " advisories"
 		feeds[i] = Feed{
-			Summary:  "TLP:" + string(t) + " advisories",
-			TLPLabel: &t,
-			URL:      &url,
+			Summary:  &summary,
+			TLPLabel: t,
+			URL:      url,
 		}
 	}
 

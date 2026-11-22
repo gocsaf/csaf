@@ -161,14 +161,12 @@ func (w *worker) writeProviderMetadata(ctx context.Context) error {
 		role = csaf.MetadataRoleProvider
 	}
 
-	pm.Role = &role
-
-	pm.Publisher = new(csaf.Publisher)
+	pm.Role = role
 
 	var lastUpdate time.Time
 
 	if err := w.expr.Match([]util.PathEvalMatcher{
-		{Expr: `$.publisher`, Action: util.ReMarshalMatcher(pm.Publisher)},
+		{Expr: `$.publisher`, Action: util.ReMarshalMatcher(&pm.Publisher)},
 		{Expr: `$.last_updated`, Action: util.TimeMatcher(&lastUpdate, time.RFC3339)},
 		{Expr: `$.public_openpgp_keys`, Action: util.ReMarshalMatcher(&pm.PGPKeys)},
 	}, w.metadataProvider); err != nil {
@@ -205,17 +203,20 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 
 	for i := range pm.PGPKeys {
 		pgpKey := &pm.PGPKeys[i]
-		if pgpKey.URL == nil {
+		if pgpKey.URL == "" {
 			w.log.Warn("Ignoring PGP key without URL", "fingerprint", pgpKey.Fingerprint)
 			continue
 		}
-		if _, err := hex.DecodeString(string(pgpKey.Fingerprint)); err != nil {
-			w.log.Warn("Ignoring PGP key with invalid fingerprint", "url", *pgpKey.URL)
+		if pgpKey.Fingerprint == nil {
+			continue
+		}
+		if _, err := hex.DecodeString(string(*pgpKey.Fingerprint)); err != nil {
+			w.log.Warn("Ignoring PGP key with invalid fingerprint", "url", pgpKey.URL)
 			continue
 		}
 
 		// Fetch remote key.
-		res, err := w.client.GetWithContext(ctx, *pgpKey.URL)
+		res, err := w.client.GetWithContext(ctx, pgpKey.URL)
 		if err != nil {
 			os.RemoveAll(openPGPFolder)
 			return err
@@ -225,10 +226,10 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 			os.RemoveAll(openPGPFolder)
 			res.Body.Close()
 			return fmt.Errorf("cannot fetch PGP key %s: %s (%d)",
-				*pgpKey.URL, res.Status, res.StatusCode)
+				pgpKey.URL, res.Status, res.StatusCode)
 		}
 
-		fingerprint := strings.ToUpper(string(pgpKey.Fingerprint))
+		fingerprint := strings.ToUpper(string(*pgpKey.Fingerprint))
 
 		localFile := filepath.Join(openPGPFolder, fingerprint+".asc")
 
@@ -252,7 +253,7 @@ func (w *worker) mirrorPGPKeys(ctx context.Context, pm *csaf.ProviderMetadata) e
 
 		// replace the URL
 		u := localKeyURL(fingerprint)
-		pgpKey.URL = &u
+		pgpKey.URL = u
 	}
 
 	// If we have public key configured copy it into the new folder
@@ -323,11 +324,11 @@ func (w *worker) createAggregatorProvider() (*csaf.AggregatorCSAFProvider, error
 	)
 
 	return &csaf.AggregatorCSAFProvider{
-		Metadata: &csaf.AggregatorCSAFProviderMetadata{
+		Metadata: csaf.AggregatorCSAFProviderMetadata{
 			LastUpdated: &lastUpdated,
-			Publisher:   &pub,
+			Publisher:   pub,
 			Role:        &role,
-			URL:         &providerURL,
+			URL:         providerURL,
 		},
 	}, nil
 }

@@ -244,8 +244,7 @@ func (c *config) atLeastNMirrors(n int) bool {
 
 // runAsMirror determines if the aggregator should run in mirror mode.
 func (c *config) runAsMirror() bool {
-	return c.Aggregator.Category != nil &&
-		*c.Aggregator.Category == csaf.AggregatorAggregator
+	return c.Aggregator.Category == csaf.AggregatorAggregator
 }
 
 func (c *config) privateOpenPGPKey() (*crypto.Key, error) {

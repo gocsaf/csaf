@@ -1735,13 +1735,13 @@ func (p *processor) checkPGPKeys(ctx context.Context, _ string) error {
 
 	for i := range keys {
 		key := &keys[i]
-		if key.URL == nil {
-			p.badPGPs.error("Missing URL for fingerprint %x.", key.Fingerprint)
+		if key.URL == "" {
+			p.badPGPs.error("Missing URL for public OpenPGP key.")
 			continue
 		}
-		up, err := url.Parse(*key.URL)
+		up, err := url.Parse(key.URL)
 		if err != nil {
-			p.badPGPs.error("Invalid URL '%s': %v", *key.URL, err)
+			p.badPGPs.error("Invalid URL '%s': %v", key.URL, err)
 			continue
 		}
 
@@ -1749,7 +1749,7 @@ func (p *processor) checkPGPKeys(ctx context.Context, _ string) error {
 		u := up.String()
 		p.checkTLS(u)
 
-		res, err := client.GetWithContext(ctx, *key.URL)
+		res, err := client.GetWithContext(ctx, key.URL)
 		if err != nil {
 			p.badPGPs.error("Fetching public OpenPGP key %s failed: %v.", u, err)
 			continue
@@ -1766,14 +1766,14 @@ func (p *processor) checkPGPKeys(ctx context.Context, _ string) error {
 				p.badPGPs.error("Reading public OpenPGP key %s failed: %v", u, err)
 				return
 			}
-			if !strings.EqualFold(
+			if key.Fingerprint != nil && !strings.EqualFold(
 				ckey.GetFingerprint(),
-				string(key.Fingerprint),
+				string(*key.Fingerprint),
 			) {
 				p.badPGPs.error(
 					"Given Fingerprint (%q) of public OpenPGP key %q "+
 						"does not match remotely loaded (%q).",
-					string(key.Fingerprint), u, ckey.GetFingerprint())
+					string(*key.Fingerprint), u, ckey.GetFingerprint())
 				return
 			}
 			if p.keys == nil {

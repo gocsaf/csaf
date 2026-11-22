@@ -298,12 +298,12 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 ) error {
 	for i := range labeledFeeds {
 		feed := &labeledFeeds[i]
-		if feed.URL == nil {
+		if feed.URL == "" {
 			continue
 		}
-		feedURL, err := url.Parse(string(*feed.URL))
+		feedURL, err := url.Parse(string(feed.URL))
 		if err != nil {
-			slog.Error("Invalid URL in feed", "feed", *feed.URL, "err", err)
+			slog.Error("Invalid URL in feed", "feed", feed.URL, "err", err)
 			continue
 		}
 		slog.Info("Got feed URL", "feed", feedURL)
@@ -341,10 +341,8 @@ func (afp *AdvisoryFileProcessor) processROLIE(
 			continue
 		}
 
-		var label TLPLabel
-		if feed.TLPLabel != nil {
-			label = *feed.TLPLabel
-		} else {
+		label := feed.TLPLabel
+		if label == "" {
 			label = "unknown"
 		}
 
