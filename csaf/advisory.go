@@ -1207,6 +1207,9 @@ func (pgs ProductGroups) Validate() error {
 
 // Validate validates a ProductTree.
 func (pt *ProductTree) Validate() error {
+	if len(pt.Branches) == 0 && len(pt.FullProductNames) == 0 && len(pt.ProductGroups) == 0 && len(pt.Relationships) == 0 {
+		return errors.New("at least one product tree field must be set")
+	}
 	if err := pt.Branches.Validate(); err != nil {
 		return fmt.Errorf("'branches' is invalid: %w", err)
 	}
