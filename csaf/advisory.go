@@ -235,10 +235,20 @@ const CSAFVersion20 Version = "2.0"
 
 var csafVersionPattern = alternativesUnmarshal(string(CSAFVersion20))
 
+// DocumentTLPLabel is the traffic light policy of a CSAF 2.0 advisory.
+type DocumentTLPLabel string
+
+var documentTLPLabelPattern = alternativesUnmarshal(
+	TLPLabelWhite,
+	TLPLabelGreen,
+	TLPLabelAmber,
+	TLPLabelRed,
+)
+
 // TLP provides details about the TLP classification of the document.
 type TLP struct {
-	DocumentTLPLabel *TLPLabel `json:"label"` // required
-	URL              *string   `json:"url,omitempty"`
+	DocumentTLPLabel DocumentTLPLabel `json:"label"` // required
+	URL              *string          `json:"url,omitempty"`
 }
 
 // DocumentDistribution describes rules for sharing a document.
@@ -836,6 +846,14 @@ func (as *AggregateSeverity) Validate() error {
 	return nil
 }
 
+// Validate validates a TLP classification.
+func (tlp *TLP) Validate() error {
+	if tlp.DocumentTLPLabel == "" {
+		return errors.New("'label' is missing or empty")
+	}
+	return nil
+}
+
 // Validate validates a DocumentDistribution.
 func (dd *DocumentDistribution) Validate() error {
 	if dd.Text == nil && dd.TLP == nil {
@@ -843,6 +861,11 @@ func (dd *DocumentDistribution) Validate() error {
 	}
 	if dd.Text != nil && *dd.Text == "" {
 		return errors.New("'text' is empty")
+	}
+	if dd.TLP != nil {
+		if err := dd.TLP.Validate(); err != nil {
+			return fmt.Errorf("'tlp' is invalid: %w", err)
+		}
 	}
 	return nil
 }
@@ -1678,6 +1701,15 @@ func SaveAdvisory(adv *Advisory, fname string) error {
 	err = enc.Encode(adv)
 	if e := w.Close(); err != nil {
 		err = e
+	}
+	return err
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaller interface.
+func (label *DocumentTLPLabel) UnmarshalText(data []byte) error {
+	s, err := documentTLPLabelPattern(data)
+	if err == nil {
+		*label = DocumentTLPLabel(s)
 	}
 	return err
 }
