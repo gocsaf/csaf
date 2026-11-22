@@ -57,19 +57,16 @@ func visitFullProductNames(
 	// Iterate over branches recursively
 	var recBranch func(b *csaf.Branch)
 	recBranch = func(b *csaf.Branch) {
-		if b == nil {
-			return
-		}
 		if fpn := b.Product; fpn != nil && fpn.ProductID != "" {
 			visit(fpn)
 
 		}
-		for _, c := range b.Branches {
-			recBranch(c)
+		for i := range b.Branches {
+			recBranch(&b.Branches[i])
 		}
 	}
-	for _, b := range adv.ProductTree.Branches {
-		recBranch(b)
+	for i := range adv.ProductTree.Branches {
+		recBranch(&adv.ProductTree.Branches[i])
 	}
 
 	// Iterate over relationships

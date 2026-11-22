@@ -66,20 +66,17 @@ func (pt *ProductTree) FindProductIdentificationHelpers(
 	// Iterate over branches recursively
 	var recBranch func(b *Branch)
 	recBranch = func(b *Branch) {
-		if b == nil {
-			return
-		}
 		if fpn := b.Product; fpn != nil &&
 			fpn.ProductID == id &&
 			fpn.ProductIdentificationHelper != nil {
 			visit(fpn.ProductIdentificationHelper)
 		}
-		for _, c := range b.Branches {
-			recBranch(c)
+		for i := range b.Branches {
+			recBranch(&b.Branches[i])
 		}
 	}
-	for _, b := range pt.Branches {
-		recBranch(b)
+	for i := range pt.Branches {
+		recBranch(&pt.Branches[i])
 	}
 
 	// Iterate over relationships

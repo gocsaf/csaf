@@ -392,7 +392,7 @@ type Relationship struct {
 type Relationships []Relationship
 
 // Branches is a list of Branch.
-type Branches []*Branch
+type Branches []Branch
 
 // ProductTree contains product names that can be referenced elsewhere in the document.
 type ProductTree struct {
