@@ -1123,6 +1123,12 @@ func (b *Branch) Validate() error {
 		return errors.New("'category' is missing or empty")
 	case b.Name == "":
 		return errors.New("'name' is missing or empty")
+	case b.Branches == nil && b.Product == nil:
+		return errors.New("'branches' or 'product' is required")
+	case b.Branches != nil && b.Product != nil:
+		return errors.New("'branches' and 'product' must not both be set")
+	case b.Branches != nil && len(b.Branches) == 0:
+		return errors.New("'branches' is empty")
 	}
 	if b.Product != nil {
 		if err := b.Product.Validate(); err != nil {
