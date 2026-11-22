@@ -57,7 +57,7 @@ func (pt *ProductTree) FindProductIdentificationHelpers(
 ) {
 	// Iterate over all full product names
 	for _, fpn := range pt.FullProductNames {
-		if fpn.ProductID != nil && *fpn.ProductID == id &&
+		if fpn.ProductID == id &&
 			fpn.ProductIdentificationHelper != nil {
 			visit(fpn.ProductIdentificationHelper)
 		}
@@ -70,7 +70,7 @@ func (pt *ProductTree) FindProductIdentificationHelpers(
 			return
 		}
 		if fpn := b.Product; fpn != nil &&
-			fpn.ProductID != nil && *fpn.ProductID == id &&
+			fpn.ProductID == id &&
 			fpn.ProductIdentificationHelper != nil {
 			visit(fpn.ProductIdentificationHelper)
 		}
@@ -84,8 +84,8 @@ func (pt *ProductTree) FindProductIdentificationHelpers(
 
 	// Iterate over relationships
 	for _, rel := range pt.Relationships {
-		if fpn := rel.FullProductName; fpn != nil && fpn.ProductID != nil &&
-			*fpn.ProductID == id && fpn.ProductIdentificationHelper != nil {
+		if fpn := rel.FullProductName; fpn != nil &&
+			fpn.ProductID == id && fpn.ProductIdentificationHelper != nil {
 			visit(fpn.ProductIdentificationHelper)
 		}
 	}

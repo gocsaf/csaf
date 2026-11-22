@@ -39,7 +39,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			name: "product tree with matching full product names",
 			fields: fields{
 				FullProductNames: FullProductNames{{
-					ProductID: &[]ProductID{"CSAFPID-0001"}[0],
+					ProductID: ProductID("CSAFPID-0001"),
 					ProductIdentificationHelper: &ProductIdentificationHelper{
 						CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
 					},
@@ -56,7 +56,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			name: "product tree with no matching full product names",
 			fields: fields{
 				FullProductNames: FullProductNames{{
-					ProductID: &[]ProductID{"CSAFPID-0001"}[0],
+					ProductID: ProductID("CSAFPID-0001"),
 					ProductIdentificationHelper: &ProductIdentificationHelper{
 						CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
 					},
@@ -73,7 +73,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 				Branches: Branches{{
 					Name: &[]string{"beta"}[0],
 					Product: &FullProductName{
-						ProductID: &[]ProductID{"CSAFPID-0001"}[0],
+						ProductID: ProductID("CSAFPID-0001"),
 						ProductIdentificationHelper: &ProductIdentificationHelper{
 							CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
 						},
@@ -81,7 +81,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 					Branches: Branches{{
 						Name: &[]string{"beta-2"}[0],
 						Product: &FullProductName{
-							ProductID: &[]ProductID{"CSAFPID-0001"}[0],
+							ProductID: ProductID("CSAFPID-0001"),
 							ProductIdentificationHelper: &ProductIdentificationHelper{
 								CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta-2:*:*:*:*:*:*"}[0],
 							},
@@ -104,7 +104,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 				Branches: Branches{{
 					Name: &[]string{"beta"}[0],
 					Product: &FullProductName{
-						ProductID: &[]ProductID{"CSAFPID-0001"}[0],
+						ProductID: ProductID("CSAFPID-0001"),
 						ProductIdentificationHelper: &ProductIdentificationHelper{
 							CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
 						},
@@ -112,7 +112,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 					Branches: Branches{{
 						Name: &[]string{"beta-2"}[0],
 						Product: &FullProductName{
-							ProductID: &[]ProductID{"CSAFPID-0001"}[0],
+							ProductID: ProductID("CSAFPID-0001"),
 							ProductIdentificationHelper: &ProductIdentificationHelper{
 								CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta-2:*:*:*:*:*:*"}[0],
 							},
@@ -130,7 +130,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			fields: fields{
 				Relationships: Relationships{{
 					FullProductName: &FullProductName{
-						ProductID: &[]ProductID{"CSAFPID-0001"}[0],
+						ProductID: ProductID("CSAFPID-0001"),
 						ProductIdentificationHelper: &ProductIdentificationHelper{
 							CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
 						},
@@ -149,7 +149,7 @@ func TestProductTree_FindProductIdentificationHelpers(t *testing.T) {
 			fields: fields{
 				Relationships: Relationships{{
 					FullProductName: &FullProductName{
-						ProductID: &[]ProductID{"CSAFPID-0001"}[0],
+						ProductID: ProductID("CSAFPID-0001"),
 						ProductIdentificationHelper: &ProductIdentificationHelper{
 							CPE: &[]CPE{"cpe:2.3:a:microsoft:internet_explorer:1.0.0:beta:*:*:*:*:*:*"}[0],
 						},

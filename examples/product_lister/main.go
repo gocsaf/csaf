@@ -49,7 +49,7 @@ func visitFullProductNames(
 	// Iterate over all full product names
 	for i := range adv.ProductTree.FullProductNames {
 		fpn := &adv.ProductTree.FullProductNames[i]
-		if fpn.ProductID != nil {
+		if fpn.ProductID != "" {
 			visit(fpn)
 		}
 	}
@@ -60,7 +60,7 @@ func visitFullProductNames(
 		if b == nil {
 			return
 		}
-		if fpn := b.Product; fpn != nil && fpn.ProductID != nil {
+		if fpn := b.Product; fpn != nil && fpn.ProductID != "" {
 			visit(fpn)
 
 		}
@@ -74,7 +74,7 @@ func visitFullProductNames(
 
 	// Iterate over relationships
 	for _, rel := range adv.ProductTree.Relationships {
-		if fpn := rel.FullProductName; fpn != nil && fpn.ProductID != nil {
+		if fpn := rel.FullProductName; fpn != nil && fpn.ProductID != "" {
 			visit(fpn)
 		}
 	}
@@ -110,7 +110,7 @@ func printProductIDMapping(adv *csaf.Advisory) error {
 
 	productIDMap := map[csaf.ProductID][]productNameHelperMapping{}
 	visitFullProductNames(adv, func(fpn *csaf.FullProductName) {
-		productIDMap[*fpn.ProductID] = append(productIDMap[*fpn.ProductID], productNameHelperMapping{
+		productIDMap[fpn.ProductID] = append(productIDMap[fpn.ProductID], productNameHelperMapping{
 			FullProductName:             fpn,
 			ProductIdentificationHelper: fpn.ProductIdentificationHelper,
 		})
@@ -122,7 +122,7 @@ func printProductIDMapping(adv *csaf.Advisory) error {
 func printProductIdentHelperMapping(adv *csaf.Advisory) error {
 	type productIdentIDMapping struct {
 		ProductNameHelperMapping csaf.ProductIdentificationHelper `json:"product_identification_helper"`
-		ProductID                *csaf.ProductID                  `json:"product_id"`
+		ProductID                csaf.ProductID                   `json:"product_id"`
 	}
 
 	productIdentMap := []productIdentIDMapping{}

@@ -134,8 +134,8 @@ type ProductIdentificationHelper struct {
 
 // FullProductName is the full name of a product.
 type FullProductName struct {
-	Name                        *string                      `json:"name"`       // required
-	ProductID                   *ProductID                   `json:"product_id"` // required
+	Name                        string                       `json:"name"`       // required
+	ProductID                   ProductID                    `json:"product_id"` // required
 	ProductIdentificationHelper *ProductIdentificationHelper `json:"product_identification_helper,omitempty"`
 }
 
@@ -1093,10 +1093,10 @@ func (pih *ProductIdentificationHelper) Validate() error {
 // Validate validates a FullProductName.
 func (fpn *FullProductName) Validate() error {
 	switch {
-	case fpn.Name == nil:
-		return errors.New("'name' is missing")
-	case fpn.ProductID == nil:
-		return errors.New("'product_id' is missing")
+	case fpn.Name == "":
+		return errors.New("'name' is missing or empty")
+	case fpn.ProductID == "":
+		return errors.New("'product_id' is missing or empty")
 	}
 	if fpn.ProductIdentificationHelper != nil {
 		if err := fpn.ProductIdentificationHelper.Validate(); err != nil {
