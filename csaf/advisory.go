@@ -346,15 +346,16 @@ type ProductGroupID string
 
 // ProductGroup is a group of products in the document that belong to one group.
 type ProductGroup struct {
-	GroupID    *string   `json:"group_id"`    // required
-	ProductIDs *Products `json:"product_ids"` // required, two or more unique elements
-	Summary    *string   `json:"summary,omitempty"`
+	GroupID    ProductGroupID `json:"group_id"`    // required
+	ProductIDs Products       `json:"product_ids"` // required, two or more unique elements
+	Summary    *string        `json:"summary,omitempty"`
 }
 
-// ProductGroups is a list of ProductGroupIDs
-type ProductGroups struct {
-	ProductGroupIDs []*ProductGroupID `json:"product_group_ids"` // unique elements
-}
+// ProductGroups is a list of ProductGroup elements.
+type ProductGroups []ProductGroup
+
+// ProductGroupIDs is a list of unique ProductGroupID elements.
+type ProductGroupIDs []ProductGroupID
 
 // RelationshipCategory is the category of a relationship.
 type RelationshipCategory string
@@ -397,7 +398,7 @@ type Branches []*Branch
 type ProductTree struct {
 	Branches         Branches          `json:"branches,omitempty"`
 	FullProductNames *FullProductNames `json:"full_product_names,omitempty"`
-	ProductGroups    *ProductGroups    `json:"product_groups,omitempty"`
+	ProductGroups    ProductGroups     `json:"product_groups,omitempty"`
 	RelationShips    *Relationships    `json:"relationships,omitempty"`
 }
 
@@ -444,9 +445,9 @@ var csafFlagLabelPattern = alternativesUnmarshal(
 // machine readable flag. For example, this could be a machine readable justification
 // code why a product is not affected.
 type Flag struct {
-	Date     *string        `json:"date,omitempty"`
-	GroupIDs *ProductGroups `json:"group_ids,omitempty"`
-	Label    *FlagLabel     `json:"label"` // required
+	Date     *string         `json:"date,omitempty"`
+	GroupIDs ProductGroupIDs `json:"group_ids,omitempty"`
+	Label    *FlagLabel      `json:"label"` // required
 	//revive:disable-next-line:var-naming  until new major version w fix
 	ProductIds *Products `json:"product_ids,omitempty"`
 }
@@ -612,8 +613,8 @@ type Remediation struct {
 	Details      *string              `json:"details"` // required
 	Entitlements []*string            `json:"entitlements,omitempty"`
 	//revive:disable:var-naming until new major version w fix
-	GroupIds   *ProductGroups `json:"group_ids,omitempty"`
-	ProductIds *Products      `json:"product_ids,omitempty"`
+	GroupIDs   ProductGroupIDs `json:"group_ids,omitempty"`
+	ProductIds *Products       `json:"product_ids,omitempty"`
 	//revive:enable
 	RestartRequired *RestartRequired `json:"restart_required,omitempty"`
 	URL             *string          `json:"url,omitempty"`
@@ -746,8 +747,8 @@ type Threat struct {
 	Date     *string         `json:"date,omitempty"`
 	Details  *string         `json:"details"` // required
 	//revive:disable:var-naming until new major version w fix
-	GroupIds   *ProductGroups `json:"group_ids,omitempty"`
-	ProductIds *Products      `json:"product_ids,omitempty"`
+	GroupIDs   ProductGroupIDs `json:"group_ids,omitempty"`
+	ProductIds *Products       `json:"product_ids,omitempty"`
 	//revive:enable
 }
 
@@ -1123,6 +1124,37 @@ func (rs Relationships) Validate() error {
 	return nil
 }
 
+// Validate validates a single ProductGroup.
+func (pg *ProductGroup) Validate() error {
+	if pg.GroupID == "" {
+		return errors.New("'group_id' is missing or empty")
+	}
+	if len(pg.ProductIDs) < 2 {
+		return errors.New("'product_ids' must contain at least two unique elements")
+	}
+	seen := make(map[ProductID]bool, len(pg.ProductIDs))
+	for i, id := range pg.ProductIDs {
+		if id == nil || *id == "" {
+			return fmt.Errorf("%d. product ID is missing or empty", i+1)
+		}
+		if seen[*id] {
+			return fmt.Errorf("%d. product ID is a duplicate: %q", i+1, *id)
+		}
+		seen[*id] = true
+	}
+	return nil
+}
+
+// Validate validates a list of ProductGroup elements.
+func (pgs ProductGroups) Validate() error {
+	for i, pg := range pgs {
+		if err := pg.Validate(); err != nil {
+			return fmt.Errorf("%d. product group is invalid: %w", i+1, err)
+		}
+	}
+	return nil
+}
+
 // Validate validates a ProductTree.
 func (pt *ProductTree) Validate() error {
 	if err := pt.Branches.Validate(); err != nil {
@@ -1137,6 +1169,9 @@ func (pt *ProductTree) Validate() error {
 		if err := pt.RelationShips.Validate(); err != nil {
 			return fmt.Errorf("'relationships' is invalid: %w", err)
 		}
+	}
+	if err := pt.ProductGroups.Validate(); err != nil {
+		return fmt.Errorf("'product_groups' is invalid: %w", err)
 	}
 	return nil
 }
