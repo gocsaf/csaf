@@ -474,7 +474,11 @@ func cleanupFilename(tr *tar.Reader) (*tar.Header, string, error) {
 	return header, cleanFilename, nil
 }
 
-func (c *controller) getDataFromFile(tr *tar.Reader, pe *util.PathEval, rv csaf.RemoteValidator) ([]byte, any, *csaf.AdvisorySummary, string, error) {
+func (c *controller) getDataFromFile(
+	tr *tar.Reader,
+	pe *util.PathEval,
+	rv csaf.RemoteValidator,
+) ([]byte, any, *csaf.AdvisorySummary, string, error) {
 	header, cleanFilename, err := cleanupFilename(tr)
 	if err != nil {
 		return nil, nil, nil, "", err
