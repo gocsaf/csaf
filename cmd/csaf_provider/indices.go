@@ -11,6 +11,7 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -190,12 +191,7 @@ func updateChanges(dir string, summaries []summaryPath) error {
 		}
 	}
 	c.Flush()
-	err1 := c.Error()
-	err2 := o.Close()
-	if err1 != nil {
-		return err1
-	}
-	return err2
+	return errors.Join(c.Error(), o.Close())
 }
 
 func updateIndices(dir string, summaries []summaryPath) error {
