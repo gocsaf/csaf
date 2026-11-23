@@ -116,10 +116,12 @@ func updateChanges(dir string, summaries []SummaryPath) error {
 		r.ReuseRecord = true
 		replaced := false
 
+		/* XXX: What is this for?
 		paths := []string{}
 		for _, summary := range summaries {
 			paths = append(paths, summary.Filename)
 		}
+		*/
 
 		for {
 			record, err := r.Read()
@@ -130,9 +132,13 @@ func updateChanges(dir string, summaries []SummaryPath) error {
 				return nil, err
 			}
 			// Check if new is already in.
-			if index, found := slices.BinarySearchFunc(summaries, SummaryPath{Filename: record[pathColumn]}, func(a, b SummaryPath) int {
-				return strings.Compare(a.Filename, b.Filename)
-			}); found {
+			if index, found := slices.BinarySearchFunc(
+				summaries,
+				SummaryPath{Filename: record[pathColumn]},
+				func(a, b SummaryPath) int {
+					return strings.Compare(a.Filename, b.Filename)
+				},
+			); found {
 				summaryEntry := summaries[index]
 				releaseDate := summaryEntry.Summary.CurrentReleaseDate
 				// Identical -> no change at all.
