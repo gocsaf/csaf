@@ -73,7 +73,7 @@ func (c *controller) loadCSAF(r *http.Request) (string, []byte, error) {
 }
 
 func (c *controller) handleSignature(
-	r *http.Request,
+	_ *http.Request,
 	data []byte,
 	sigText string,
 	passwd string,
@@ -301,79 +301,73 @@ func (c *controller) upload(r *http.Request) (any, error) {
 	var warnings []string
 	warn := func(msg string) { warnings = append(warnings, msg) }
 
-	if err := doTransaction(
-		c.cfg, t,
-		func(folder string, pmd *csaf.ProviderMetadata) error {
+	transaction := func(folder string, pmd *csaf.ProviderMetadata) error {
+		// extend the ROLIE feed.
+		ts := string(t)
+		feedName := "csaf-feed-tlp-" + ts + ".json"
 
-			// extend the ROLIE feed.
-			ts := string(t)
-			feedName := "csaf-feed-tlp-" + ts + ".json"
+		feed := filepath.Join(folder, feedName)
+		rolie, err := c.getROLIE(t, feedName, feed)
+		if err != nil {
+			return err
+		}
+		if err := c.extendROLIE(rolie, newCSAF, t, ex); err != nil {
+			return err
+		}
+		c.finalizeROLIE(rolie, feed)
 
-			feed := filepath.Join(folder, feedName)
-			rolie, err := c.getROLIE(t, feedName, feed)
-			if err != nil {
+		// if we have found dynamic categories merge them into
+		// the existing once.
+		if len(dynamicCategories) > 0 {
+			if err := c.mergeCategories(folder, t, dynamicCategories); err != nil {
 				return err
 			}
-			if err := c.extendROLIE(rolie, newCSAF, t, ex); err != nil {
+		}
+
+		year := strconv.Itoa(ex.InitialReleaseDate.Year())
+
+		subDir, err := c.createYearlySubfolder(folder, year)
+		if err != nil {
+			return err
+		}
+
+		fname := filepath.Join(subDir, newCSAF)
+
+		if err := writeHashedFile(fname, newCSAF, data, armored); err != nil {
+			return err
+		}
+
+		summaries := []SummaryPath{{
+			Filename: fname,
+			Summary:  *ex,
+		}}
+
+		// Only write index.txt and changes.csv if configured.
+		if c.cfg.WriteIndices {
+			if err := updateIndices(folder, summaries); err != nil {
 				return err
 			}
-			c.finalizeROLIE(rolie, feed)
+		}
 
-			// if we have found dynamic categories merge them into
-			// the existing once.
-			if len(dynamicCategories) > 0 {
-				if err := c.mergeCategories(folder, t, dynamicCategories); err != nil {
-					return err
-				}
+		// Take over publisher
+		switch {
+		case pmd.Publisher == nil:
+			warn("Publisher in provider metadata is not initialized. Forgot to configure?")
+			if c.cfg.DynamicProviderMetaData {
+				warn("Taking publisher from CSAF")
+				pmd.Publisher = ex.Publisher
 			}
+		case !pmd.Publisher.Equals(ex.Publisher):
+			warn("Publishers in provider metadata and CSAF do not match.")
+		}
 
-			year := strconv.Itoa(ex.InitialReleaseDate.Year())
+		fingerprint := strings.ToUpper(key.GetFingerprint())
+		pmd.SetPGP(fingerprint, c.cfg.openPGPPublicURL(fingerprint))
 
-			subDir, err := c.createYearlySubfolder(folder, year)
-			if err != nil {
-				return err
-			}
+		return nil
+	}
 
-			fname := filepath.Join(subDir, newCSAF)
-
-			if err := writeHashedFile(fname, newCSAF, data, armored); err != nil {
-				return err
-			}
-
-			summaries := []SummaryPath{
-				SummaryPath{
-					Filename: fname,
-					Summary:  *ex,
-				},
-			}
-
-			// Only write index.txt and changes.csv if configured.
-			if c.cfg.WriteIndices {
-				if err := updateIndices(
-					folder, summaries,
-				); err != nil {
-					return err
-				}
-			}
-
-			// Take over publisher
-			switch {
-			case pmd.Publisher == nil:
-				warn("Publisher in provider metadata is not initialized. Forgot to configure?")
-				if c.cfg.DynamicProviderMetaData {
-					warn("Taking publisher from CSAF")
-					pmd.Publisher = ex.Publisher
-				}
-			case !pmd.Publisher.Equals(ex.Publisher):
-				warn("Publishers in provider metadata and CSAF do not match.")
-			}
-
-			fingerprint := strings.ToUpper(key.GetFingerprint())
-			pmd.SetPGP(fingerprint, c.cfg.openPGPPublicURL(fingerprint))
-
-			return nil
-		},
-	); err != nil {
+	if err := doTransaction(c.cfg, t, transaction); err != nil {
 		return nil, err
 	}
 
@@ -442,9 +436,8 @@ func (c *controller) readSignature(tr *tar.Reader) ([]byte, error) {
 	if errors.Is(err, io.EOF) {
 		if c.cfg.UploadSignature {
 			return nil, fmt.Errorf("signature is missing: %w", err)
-		} else {
-			return nil, nil
 		}
+		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("extracting header of signature file failed: %w", err)
@@ -560,126 +553,124 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 	feedName := "csaf-feed-tlp-" + ts + ".json"
 
 	index := 0
-	if err := doTransaction(
-		c.cfg, t,
-		func(folder string, pmd *csaf.ProviderMetadata) error {
-			feed := filepath.Join(folder, feedName)
-			rolie, err := c.getROLIE(t, feedName, feed)
+
+	transaction := func(folder string, pmd *csaf.ProviderMetadata) error {
+		feed := filepath.Join(folder, feedName)
+		rolie, err := c.getROLIE(t, feedName, feed)
+		if err != nil {
+			return err
+		}
+
+		for {
+			var warnings []string
+			warn := func(msg string) { warnings = append(warnings, msg) }
+
+			if index > 0 {
+				data, content, ex, cleanFilename, err = c.getDataFromFile(tarReader, pe, rv)
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				if err != nil {
+					return err
+				}
+			}
+
+			summaries = append(summaries, SummaryPath{
+				Filename: cleanFilename,
+				Summary:  *ex,
+			})
+
+			// Check if we have to search for dynamic categories.
+			dynamicCategories := c.getDynamicCategories(content, pe)
+
+			// Extract real TLP from document.
+			if index > 0 {
+				docTLP := tlp(strings.ToLower(ex.TLPLabel))
+				if !docTLP.valid() || t == tlpCSAF {
+					return fmt.Errorf(
+						"valid TLP label missing in ID %s (found '%s')", ex.ID, t)
+				} else if docTLP != t {
+					return fmt.Errorf("ID %s does not have correct TLP (wanted: %s, got: %s)", ex.ID, t, docTLP)
+				}
+			}
+
+			signature, err := c.readSignature(tarReader)
 			if err != nil {
 				return err
 			}
 
-			for {
-				var warnings []string
-				warn := func(msg string) { warnings = append(warnings, msg) }
-
-				if index > 0 {
-					data, content, ex, cleanFilename, err = c.getDataFromFile(tarReader, pe, rv)
-					if errors.Is(err, io.EOF) {
-						break
-					}
-					if err != nil {
-						return err
-					}
-				}
-
-				summaries = append(summaries, SummaryPath{
-					Filename: cleanFilename,
-					Summary:  *ex,
-				})
-
-				// Check if we have to search for dynamic categories.
-				dynamicCategories := c.getDynamicCategories(content, pe)
-
-				// Extract real TLP from document.
-				if index > 0 {
-					docTLP := tlp(strings.ToLower(ex.TLPLabel))
-					if !docTLP.valid() || t == tlpCSAF {
-						return fmt.Errorf(
-							"valid TLP label missing in ID %s (found '%s')", ex.ID, t)
-					} else if docTLP != t {
-						return fmt.Errorf("ID %s does not have correct TLP (wanted: %s, got: %s)", ex.ID, t, docTLP)
-					}
-				}
-
-				signature, err := c.readSignature(tarReader)
-				if err != nil {
-					return err
-				}
-
-				armored, key, err := c.handleSignature(r, data, string(signature), passphrase)
-				if err != nil {
-					return err
-				}
-
-				// extend the ROLIE feed.
-				if err := c.extendROLIE(rolie, cleanFilename, t, ex); err != nil {
-					return err
-				}
-
-				// If we have found dynamic categories merge them into
-				// the existing once.
-				if len(dynamicCategories) > 0 {
-					if err := c.mergeCategories(folder, t, dynamicCategories); err != nil {
-						return err
-					}
-				}
-
-				// Create yearly subfolder
-				year := strconv.Itoa(ex.InitialReleaseDate.Year())
-
-				subDir, err := c.createYearlySubfolder(folder, year)
-				if err != nil {
-					return err
-				}
-
-				fname := filepath.Join(subDir, cleanFilename)
-
-				if err := writeHashedFile(fname, cleanFilename, data, armored); err != nil {
-					return err
-				}
-
-				if index == 0 {
-					fingerprint := strings.ToUpper(key.GetFingerprint())
-					pmd.SetPGP(fingerprint, c.cfg.openPGPPublicURL(fingerprint))
-
-					if pmd.Publisher == nil {
-						warn("Publisher in provider metadata is not initialized. Forgot to configure?")
-						// Take over publisher
-						if c.cfg.DynamicProviderMetaData {
-							warn("Taking publisher from CSAF")
-							pmd.Publisher = ex.Publisher
-						}
-					}
-				} else if !pmd.Publisher.Equals(ex.Publisher) {
-					warn("Publishers in provider metadata and CSAF do not match.")
-				}
-
-				fileResult := FileResult{
-					Name:        cleanFilename,
-					ReleaseDate: ex.CurrentReleaseDate.Format(dateFormat),
-					Warnings:    warnings,
-				}
-				result.FileResults = append(result.FileResults, fileResult)
-				index++
-			}
-
-			err = c.finalizeROLIE(rolie, feed)
+			armored, key, err := c.handleSignature(r, data, string(signature), passphrase)
 			if err != nil {
 				return err
 			}
 
-			// Only write index.txt and changes.csv if configured.
-			if c.cfg.WriteIndices {
-				if err := updateIndices(
-					folder, summaries,
-				); err != nil {
+			// extend the ROLIE feed.
+			if err := c.extendROLIE(rolie, cleanFilename, t, ex); err != nil {
+				return err
+			}
+
+			// If we have found dynamic categories merge them into
+			// the existing once.
+			if len(dynamicCategories) > 0 {
+				if err := c.mergeCategories(folder, t, dynamicCategories); err != nil {
 					return err
 				}
 			}
 
-			return nil
-		}); err != nil {
+			// Create yearly subfolder
+			year := strconv.Itoa(ex.InitialReleaseDate.Year())
+
+			subDir, err := c.createYearlySubfolder(folder, year)
+			if err != nil {
+				return err
+			}
+
+			fname := filepath.Join(subDir, cleanFilename)
+
+			if err := writeHashedFile(fname, cleanFilename, data, armored); err != nil {
+				return err
+			}
+
+			if index == 0 {
+				fingerprint := strings.ToUpper(key.GetFingerprint())
+				pmd.SetPGP(fingerprint, c.cfg.openPGPPublicURL(fingerprint))
+
+				if pmd.Publisher == nil {
+					warn("Publisher in provider metadata is not initialized. Forgot to configure?")
+					// Take over publisher
+					if c.cfg.DynamicProviderMetaData {
+						warn("Taking publisher from CSAF")
+						pmd.Publisher = ex.Publisher
+					}
+				}
+			} else if !pmd.Publisher.Equals(ex.Publisher) {
+				warn("Publishers in provider metadata and CSAF do not match.")
+			}
+
+			fileResult := FileResult{
+				Name:        cleanFilename,
+				ReleaseDate: ex.CurrentReleaseDate.Format(dateFormat),
+				Warnings:    warnings,
+			}
+			result.FileResults = append(result.FileResults, fileResult)
+			index++
+		}
+
+		err = c.finalizeROLIE(rolie, feed)
+		if err != nil {
+			return err
+		}
+
+		// Only write index.txt and changes.csv if configured.
+		if c.cfg.WriteIndices {
+			if err := updateIndices(folder, summaries); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	if err := doTransaction(c.cfg, t, transaction); err != nil {
 		return nil, err
 	}
 
