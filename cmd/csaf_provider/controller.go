@@ -70,6 +70,7 @@ func (c *controller) bind(pim *pathInfoMux) {
 	}
 	pim.handleFunc("/api/upload", c.auth(api(c.upload)))
 	pim.handleFunc("/api/create", c.auth(api(c.create)))
+	pim.handleFunc("/api/resign", c.auth(api(c.resign)))
 }
 
 // authenticate checks if the incoming request conforms with the

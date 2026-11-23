@@ -7,7 +7,7 @@ We recommend using the prebuild binaries from [the latest release](https://githu
 csaf_uploader [OPTIONS] advisories...
 
 Application Options:
-  -a, --action=[upload|create]              Action to perform (default: upload)
+  -a, --action=[upload|create|resign]       Action to perform (default: upload)
   -u, --url=URL                             URL of the CSAF provider (default:
                                             https://localhost/cgi-bin/csaf_provider.go)
   -t, --tlp=[csaf|white|green|amber|red]    TLP of the feed (default: csaf)
@@ -40,6 +40,15 @@ may not lead to the desired result.
 ```bash
 ./csaf_uploader -a create  -u https://localhost/cgi-bin/csaf_provider.go
 ```
+
+Re-sign all CSAF advisories currently advertised by the provider:
+
+```bash
+./csaf_uploader -a resign -u https://localhost/cgi-bin/csaf_provider.go
+```
+
+The provider uses its configured OpenPGP keys. Advisories that cannot be
+read are skipped and reported as warnings.
 
 E.g. uploading a csaf-document
 

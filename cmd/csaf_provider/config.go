@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -138,6 +139,24 @@ func loadCryptoKeyFromFile(filename string) (*crypto.Key, error) {
 	}
 	defer f.Close()
 	return crypto.NewKeyFromArmoredReader(f)
+}
+
+// loadSigningKey loads the configured private key and unlocks it when the
+// provider is configured to accept a passphrase and the request supplies one.
+func (c *controller) loadSigningKey(r *http.Request) (*crypto.Key, error) {
+	key, err := loadCryptoKeyFromFile(c.cfg.OpenPGPPrivateKey)
+	if err != nil {
+		return nil, err
+	}
+	if !c.cfg.NoPassphrase {
+		if passphrase := r.FormValue("passphrase"); passphrase != "" {
+			key, err = key.Unlock([]byte(passphrase))
+			if err != nil {
+				return nil, fmt.Errorf("could not unlock OpenPGP private key: %w", err)
+			}
+		}
+	}
+	return key, nil
 }
 
 // openPGPPublicURL constructs the public OpenPGP key URL for a given key.

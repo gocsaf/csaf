@@ -31,8 +31,8 @@ const (
 
 // The supported flag config of the uploader command line
 type config struct {
-	//lint:ignore SA5008 We are using choice twice: upload, create.
-	Action string `short:"a" long:"action" choice:"upload" choice:"create" description:"Action to perform" toml:"action"`
+	//lint:ignore SA5008 We are using choice: upload, create, resign.
+	Action string `short:"a" long:"action" choice:"upload" choice:"create" choice:"resign" description:"Action to perform" toml:"action"`
 	URL    string `short:"u" long:"url" description:"URL of the CSAF provider" value-name:"URL" toml:"url"`
 	//lint:ignore SA5008 We are using choice many times: csaf, white, green, amber, red.
 	TLP                string        `short:"t" long:"tlp" choice:"csaf" choice:"white" choice:"green" choice:"amber" choice:"red" description:"TLP of the feed" toml:"tlp"`

@@ -18,6 +18,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -295,7 +296,48 @@ func (p *processor) signExternally(data []byte) (string, error) {
 	return output.String(), nil
 }
 
+func (p *processor) resign() error {
+	form := url.Values{}
+	if p.cfg.Passphrase != nil && *p.cfg.Passphrase != "" {
+		form.Set("passphrase", *p.cfg.Passphrase)
+	}
+	req, err := http.NewRequest(http.MethodPost, p.cfg.URL+"/api/resign", strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-CSAF-PROVIDER-AUTH", p.cfg.cachedAuth)
+	resp, err := p.httpClient().Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	var result struct {
+		Discovered int      `json:"discovered"`
+		Signed     int      `json:"signed"`
+		Skipped    int      `json:"skipped"`
+		Warnings   []string `json:"warnings"`
+		Errors     []string `json:"errors"`
+	}
+	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("resign failed: %s (%s)", resp.Status, strings.Join(result.Errors, ", "))
+	}
+	fmt.Printf("Discovered: %d, signed: %d, skipped: %d\n", result.Discovered, result.Signed, result.Skipped)
+	writeStrings("Warnings:", result.Warnings)
+	return nil
+}
+
 func (p *processor) run(args []string) error {
+	// (Re-)sign all local advisories of this provider
+	if p.cfg.Action == "resign" {
+		if len(args) != 0 {
+			return errors.New("resign does not accept any arguments")
+		}
+		return p.resign()
+	}
 
 	if p.cfg.Action == "create" {
 		if err := p.create(); err != nil {

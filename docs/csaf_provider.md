@@ -5,7 +5,7 @@ explain how to wire this up with nginx and where the config file lives.
 
 We recommend using the prebuild binaries from [the latest release](https://github.com/gocsaf/csaf/releases/latest).
 
-When installed, two endpoints are offered,
+When installed, the following endpoints are offered,
 and you should use the [csaf_uploader](../docs/csaf_uploader.md)
 to access them:
 
@@ -24,6 +24,12 @@ folder match the ones mentioned in the `provider-metadata.json`.
 ### /api/upload
 Called for each upload of a document and will update
 the CSAF structure in the file system accordingly.
+
+### /api/resign
+Re-signs every advisory referenced by the provider metadata using the
+provider's configured OpenPGP keys. Files that cannot be
+read are skipped and returned as warnings.
+The configured public OpenPGP-key is added to the provider metadata if not listed.
 
 
 ## Provider options
