@@ -340,13 +340,12 @@ func (c *controller) upload(r *http.Request) (any, error) {
 			return err
 		}
 
-		summaries := []summaryPath{{
-			Filename: fname,
-			Summary:  *ex,
-		}}
-
 		// Only write index.txt and changes.csv if configured.
 		if c.cfg.WriteIndices {
+			summaries := []summaryPath{{
+				Filename: fname,
+				Summary:  *ex,
+			}}
 			if err := updateIndices(folder, summaries); err != nil {
 				return err
 			}
@@ -666,6 +665,9 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 
 		// Only write index.txt and changes.csv if configured.
 		if c.cfg.WriteIndices {
+			slices.SortFunc(summaries, func(a, b summaryPath) int {
+				return strings.Compare(a.Filename, b.Filename)
+			})
 			if err := updateIndices(folder, summaries); err != nil {
 				return err
 			}
