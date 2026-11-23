@@ -340,7 +340,7 @@ func (c *controller) upload(r *http.Request) (any, error) {
 			return err
 		}
 
-		summaries := []SummaryPath{{
+		summaries := []summaryPath{{
 			Filename: fname,
 			Summary:  *ex,
 		}}
@@ -522,7 +522,7 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 	passphrase := metadata.Passphrase
 	t := tlp(strings.ToLower(metadata.TLP))
 
-	summaries := []SummaryPath{}
+	summaries := []summaryPath{}
 	result := Result{}
 	pe := util.NewPathEval()
 
@@ -578,7 +578,7 @@ func (c *controller) bulkUpload(r *http.Request) (any, error) {
 				}
 			}
 
-			summaries = append(summaries, SummaryPath{
+			summaries = append(summaries, summaryPath{
 				Filename: cleanFilename,
 				Summary:  *ex,
 			})

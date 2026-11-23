@@ -23,12 +23,12 @@ import (
 	"github.com/gocsaf/csaf/v3/util"
 )
 
-type SummaryPath struct {
+type summaryPath struct {
 	Filename string
 	Summary  csaf.AdvisorySummary
 }
 
-func updateIndex(dir string, summaries []SummaryPath) error {
+func updateIndex(dir string, summaries []summaryPath) error {
 	index := filepath.Join(dir, "index.txt")
 
 	lines, err := func() ([]string, error) {
@@ -84,7 +84,7 @@ func updateIndex(dir string, summaries []SummaryPath) error {
 	return f.Close()
 }
 
-func updateChanges(dir string, summaries []SummaryPath) error {
+func updateChanges(dir string, summaries []summaryPath) error {
 	type change struct {
 		time time.Time
 		path string
@@ -134,8 +134,8 @@ func updateChanges(dir string, summaries []SummaryPath) error {
 			// Check if new is already in.
 			if index, found := slices.BinarySearchFunc(
 				summaries,
-				SummaryPath{Filename: record[pathColumn]},
-				func(a, b SummaryPath) int {
+				summaryPath{Filename: record[pathColumn]},
+				func(a, b summaryPath) int {
 					return strings.Compare(a.Filename, b.Filename)
 				},
 			); found {
@@ -198,7 +198,7 @@ func updateChanges(dir string, summaries []SummaryPath) error {
 	return err2
 }
 
-func updateIndices(dir string, summaries []SummaryPath) error {
+func updateIndices(dir string, summaries []summaryPath) error {
 	if err := updateIndex(dir, summaries); err != nil {
 		return err
 	}
