@@ -7,14 +7,14 @@ require (
 	github.com/Intevation/gval v1.3.0
 	github.com/Intevation/jsonpath v0.2.1
 	github.com/ProtonMail/gopenpgp/v2 v2.11.1
-	github.com/PuerkitoBio/goquery v1.13.0
-	github.com/gofrs/flock v0.13.1
+	github.com/PuerkitoBio/goquery v1.14.0
+	github.com/gofrs/flock v0.13.2
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	go.etcd.io/bbolt v1.5.0
-	golang.org/x/crypto v0.58.0
-	golang.org/x/term v0.47.0
+	golang.org/x/crypto v0.59.0
+	golang.org/x/term v0.48.0
 	golang.org/x/time v0.16.0
 )
 
@@ -25,7 +25,7 @@ require (
 	github.com/cloudflare/circl v1.6.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/shopspring/decimal v1.6.0 // indirect
-	golang.org/x/net v0.61.0 // indirect
-	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/net v0.63.0 // indirect
+	golang.org/x/sys v0.50.0 // indirect
+	golang.org/x/text v0.44.0 // indirect
 )
