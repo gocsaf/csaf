@@ -23,7 +23,7 @@ CVSS_V20_SCHEMA_ID := https://www.first.org/cvss/cvss-v2.0.json
 CVSS_V30_SCHEMA_ID := https://www.first.org/cvss/cvss-v3.0.json
 CVSS_V31_SCHEMA_ID := https://www.first.org/cvss/cvss-v3.1.json
 
-OASIS_SCHEMA_BASE := https://raw.githubusercontent.com/oasis-tcs/csaf/29b1e27aa126b820cbd6eee1830ca27ef02793d1/csaf_2.1/json_schema
+OASIS_SCHEMA_BASE := https://raw.githubusercontent.com/oasis-tcs/csaf/e8fdccc765bca69456a91daa6a847288803164c1/csaf_2.1/json_schema
 CSAF_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json
 AGGREGATOR_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.1/schema/aggregator.json
 PROVIDER_SCHEMA_ID := https://docs.oasis-open.org/csaf/csaf/v2.1/schema/provider.json
