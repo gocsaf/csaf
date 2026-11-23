@@ -253,6 +253,9 @@ func (c *controller) upload(r *http.Request) (any, error) {
 	var validator csaf.RemoteValidator
 	if c.cfg.RemoteValidator != nil {
 		validator, err = c.cfg.RemoteValidator.Open()
+		if err != nil {
+			return nil, fmt.Errorf("opening remote validator failed: %w", err)
+		}
 	}
 
 	if err = c.runValidations(content, validator); err != nil {
