@@ -167,22 +167,18 @@ func (p *processor) createSignature(filename string, data []byte) (string, error
 	return "", nil
 }
 
-type UploadMetadata struct {
+type uploadMetadata struct {
 	Passphrase string `json:"passphrase,omitempty"`
 	TLP        string `json:"tlp,omitempty"`
 }
 
 func (p *processor) createMetadata() ([]byte, error) {
-	var metadata UploadMetadata
+	var metadata uploadMetadata
 	metadata.TLP = p.cfg.TLP
 	if p.cfg.keyRing == nil && p.cfg.Passphrase != nil {
 		metadata.Passphrase = *p.cfg.Passphrase
 	}
-	marshalled, err := json.Marshal(metadata)
-	if err != nil {
-		return nil, err
-	}
-	return marshalled, nil
+	return json.Marshal(metadata)
 }
 
 // process attemps to upload files to the server via tar stream.
@@ -267,7 +263,8 @@ func (p *processor) process(files []string) error {
 			if err != nil {
 				log.Printf("failed to create signature %v", err)
 				return
-			} else if signature != "" {
+			}
+			if signature != "" {
 				header := &tar.Header{
 					Name: filename + ".asc",
 					Size: int64(len(signature)),
