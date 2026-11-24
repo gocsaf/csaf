@@ -195,6 +195,8 @@ func (p *processor) process(files []string) error {
 		Size: int64(len(metadata)),
 	}
 
+	pipeErr := make(chan error, 1)
+
 	go func() {
 		gzipWriter := gzip.NewWriter(pw)
 		tarWriter := tar.NewWriter(gzipWriter)
@@ -202,44 +204,46 @@ func (p *processor) process(files []string) error {
 		defer gzipWriter.Close()
 		defer tarWriter.Close()
 		if err := tarWriter.WriteHeader(header); err != nil {
-			log.Printf("failed to write metadata header to tar writer %v", err)
+			pipeErr <- fmt.Errorf(
+				"failed to write metadata header to tar writer %w", err)
 			return
 		}
 		metadataReader := bytes.NewReader(metadata)
 
 		if _, err := io.Copy(tarWriter, metadataReader); err != nil {
-			log.Printf("failed to write metadata to tar writer %v", err)
+			pipeErr <- fmt.Errorf(
+				"failed to write metadata to tar writer %w", err)
 			return
 		}
 
 		for _, filename := range files {
 			// Check file name
 			if bn := filepath.Base(filename); !util.ConformingFileName(bn) {
-				err = fmt.Errorf("%q is not a conforming file name", bn)
+				pipeErr <- fmt.Errorf("%q is not a conforming file name", bn)
 				return
 			}
 
-			file, err := os.Open(filename)
+			//file, err := os.Open(filename)
 			if err != nil {
-				log.Printf("failed to open file %v", err)
+				pipeErr <- fmt.Errorf("failed to open file %w", err)
 				return
 			}
-			defer file.Close()
+			//defer file.Close()
 
 			fileContent, err := os.ReadFile(filename)
 			if err != nil {
-				log.Printf("could not read file %v", err)
+				pipeErr <- fmt.Errorf("could not read file %w", err)
 				return
 			}
 
 			if err = p.checkFile(filename, fileContent); err != nil {
-				log.Printf("failed to check file %v", err)
+				pipeErr <- fmt.Errorf("failed to check file %w", err)
 				return
 			}
 
-			fi, err := file.Stat()
+			fi, err := os.Stat(filename)
 			if err != nil {
-				log.Printf("failed to read file information %v", err)
+				pipeErr <- fmt.Errorf("failed to read file information %w", err)
 				return
 			}
 
@@ -250,18 +254,18 @@ func (p *processor) process(files []string) error {
 				ModTime: fi.ModTime(),
 			}
 			if err := tarWriter.WriteHeader(header); err != nil {
-				log.Printf("failed to write file header to tar writer %v", err)
+				pipeErr <- fmt.Errorf("failed to write file header to tar writer %w", err)
 				return
 			}
 
-			if _, err := io.Copy(tarWriter, file); err != nil {
-				log.Printf("failed to write file to tar writer %v", err)
+			if _, err := io.Copy(tarWriter, bytes.NewReader(fileContent)); err != nil {
+				pipeErr <- fmt.Errorf("failed to write file to tar writer %w", err)
 				return
 			}
 
 			signature, err := p.createSignature(filename, fileContent)
 			if err != nil {
-				log.Printf("failed to create signature %v", err)
+				pipeErr <- fmt.Errorf("failed to create signature %w", err)
 				return
 			}
 			if signature != "" {
@@ -271,13 +275,13 @@ func (p *processor) process(files []string) error {
 				}
 
 				if err := tarWriter.WriteHeader(header); err != nil {
-					log.Printf("failed to write signature header to tar writer %v", err)
+					pipeErr <- fmt.Errorf(
+						"failed to write signature header to tar writer %w", err)
 					return
 				}
 
-				signatureReader := bytes.NewReader([]byte(signature))
-				if _, err := io.Copy(tarWriter, signatureReader); err != nil {
-					log.Printf("failed to write signature to tar writer %v", err)
+				if _, err := io.Copy(tarWriter, strings.NewReader(signature)); err != nil {
+					pipeErr <- fmt.Errorf("failed to write signature to tar writer %w", err)
 					return
 				}
 			}
@@ -286,8 +290,7 @@ func (p *processor) process(files []string) error {
 
 	req, err := http.NewRequest("POST", p.cfg.URL+"/api/bulk_upload", pr)
 	if err != nil {
-		log.Printf("failed to create request %v", err)
-		return err
+		return errors.Join(fmt.Errorf("failed to create request %w", err), <-pipeErr)
 	}
 
 	req.Header.Set("X-CSAF-PROVIDER-AUTH", p.cfg.cachedAuth)
@@ -295,8 +298,9 @@ func (p *processor) process(files []string) error {
 
 	resp, err := p.httpClient().Do(req)
 	if err != nil {
-		log.Printf("failed to send request %v", err)
-		return err
+		return errors.Join(
+			fmt.Errorf("failed to send request %w", err),
+			<-pipeErr)
 	}
 
 	var uploadErr error
@@ -309,9 +313,13 @@ func (p *processor) process(files []string) error {
 	if !strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
 		var sb strings.Builder
 		if _, err := io.Copy(&sb, resp.Body); err != nil {
-			return fmt.Errorf("reading non-JSON reply from server failed: %v", err)
+			return errors.Join(
+				fmt.Errorf("reading non-JSON reply from server failed: %w", err),
+				<-pipeErr)
 		}
-		return fmt.Errorf("non-JSON reply from server: %v", sb.String())
+		return errors.Join(
+			fmt.Errorf("non-JSON reply from server: %v", sb.String()),
+			<-pipeErr)
 	}
 
 	type FileResult struct {
@@ -326,7 +334,7 @@ func (p *processor) process(files []string) error {
 	var result Result
 
 	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
-		return err
+		return errors.Join(err, <-pipeErr)
 	}
 
 	for _, result := range result.FileResults {
@@ -342,7 +350,7 @@ func (p *processor) process(files []string) error {
 
 	writeStrings("Errors:", result.Errors)
 
-	return uploadErr
+	return errors.Join(uploadErr, <-pipeErr)
 }
 
 func (p *processor) signExternally(data []byte) (string, error) {
