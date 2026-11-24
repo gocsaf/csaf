@@ -1,0 +1,25 @@
+# This file is Free Software under the Apache-2.0 License
+# without warranty, see README.md and LICENSES/Apache-2.0.txt for details.
+
+# SPDX-License-Identifier: Apache-2.0
+
+# SPDX-FileCopyrightText: 2026 German Federal Office for Information Security (BSI) <https://www.bsi.bund.de>
+# Software-Engineering: 2026 Intevation GmbH <https://intevation.de>
+
+name: Check for AI co-authorships
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  ai-coauthorship-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: Intevation/ai-contribution-action@main
+        with:
+          comment-on-detection: true
