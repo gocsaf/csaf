@@ -127,18 +127,18 @@ func run(opts *options, files []string) error {
 
 		// Validate against Schema.
 		validationErrs, err := csaf.ValidateCSAF(doc)
-		if err != nil {
+		switch {
+		case err != nil:
+			exitCode |= exitCodeSchemaInvalid
 			log.Printf("error: validating %q against schema failed: %v\n",
 				file, err)
-
-		}
-		if len(validationErrs) > 0 {
+		case len(validationErrs) > 0:
 			exitCode |= exitCodeSchemaInvalid
 			fmt.Printf("schema validation errors of %q\n", file)
 			for _, vErr := range validationErrs {
 				fmt.Printf("  * %s\n", vErr)
 			}
-		} else {
+		default:
 			fmt.Printf("%q passes the schema validation.\n", file)
 		}
 
