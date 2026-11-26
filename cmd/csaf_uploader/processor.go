@@ -167,22 +167,18 @@ func (p *processor) createSignature(filename string, data []byte) (string, error
 	return "", nil
 }
 
-type UploadMetadata struct {
+type uploadMetadata struct {
 	Passphrase string `json:"passphrase,omitempty"`
 	TLP        string `json:"tlp,omitempty"`
 }
 
 func (p *processor) createMetadata() ([]byte, error) {
-	var metadata UploadMetadata
+	var metadata uploadMetadata
 	metadata.TLP = p.cfg.TLP
 	if p.cfg.keyRing == nil && p.cfg.Passphrase != nil {
 		metadata.Passphrase = *p.cfg.Passphrase
 	}
-	marshalled, err := json.Marshal(metadata)
-	if err != nil {
-		return nil, err
-	}
-	return marshalled, nil
+	return json.Marshal(metadata)
 }
 
 // process attemps to upload files to the server via tar stream.
@@ -199,6 +195,8 @@ func (p *processor) process(files []string) error {
 		Size: int64(len(metadata)),
 	}
 
+	pipeErr := make(chan error, 1)
+
 	go func() {
 		gzipWriter := gzip.NewWriter(pw)
 		tarWriter := tar.NewWriter(gzipWriter)
@@ -206,44 +204,46 @@ func (p *processor) process(files []string) error {
 		defer gzipWriter.Close()
 		defer tarWriter.Close()
 		if err := tarWriter.WriteHeader(header); err != nil {
-			log.Printf("failed to write metadata header to tar writer %v", err)
+			pipeErr <- fmt.Errorf(
+				"failed to write metadata header to tar writer %w", err)
 			return
 		}
 		metadataReader := bytes.NewReader(metadata)
 
 		if _, err := io.Copy(tarWriter, metadataReader); err != nil {
-			log.Printf("failed to write metadata to tar writer %v", err)
+			pipeErr <- fmt.Errorf(
+				"failed to write metadata to tar writer %w", err)
 			return
 		}
 
 		for _, filename := range files {
 			// Check file name
 			if bn := filepath.Base(filename); !util.ConformingFileName(bn) {
-				err = fmt.Errorf("%q is not a conforming file name", bn)
+				pipeErr <- fmt.Errorf("%q is not a conforming file name", bn)
 				return
 			}
 
-			file, err := os.Open(filename)
+			//file, err := os.Open(filename)
 			if err != nil {
-				log.Printf("failed to open file %v", err)
+				pipeErr <- fmt.Errorf("failed to open file %w", err)
 				return
 			}
-			defer file.Close()
+			//defer file.Close()
 
 			fileContent, err := os.ReadFile(filename)
 			if err != nil {
-				log.Printf("could not read file %v", err)
+				pipeErr <- fmt.Errorf("could not read file %w", err)
 				return
 			}
 
 			if err = p.checkFile(filename, fileContent); err != nil {
-				log.Printf("failed to check file %v", err)
+				pipeErr <- fmt.Errorf("failed to check file %w", err)
 				return
 			}
 
-			fi, err := file.Stat()
+			fi, err := os.Stat(filename)
 			if err != nil {
-				log.Printf("failed to read file information %v", err)
+				pipeErr <- fmt.Errorf("failed to read file information %w", err)
 				return
 			}
 
@@ -254,33 +254,34 @@ func (p *processor) process(files []string) error {
 				ModTime: fi.ModTime(),
 			}
 			if err := tarWriter.WriteHeader(header); err != nil {
-				log.Printf("failed to write file header to tar writer %v", err)
+				pipeErr <- fmt.Errorf("failed to write file header to tar writer %w", err)
 				return
 			}
 
-			if _, err := io.Copy(tarWriter, file); err != nil {
-				log.Printf("failed to write file to tar writer %v", err)
+			if _, err := io.Copy(tarWriter, bytes.NewReader(fileContent)); err != nil {
+				pipeErr <- fmt.Errorf("failed to write file to tar writer %w", err)
 				return
 			}
 
 			signature, err := p.createSignature(filename, fileContent)
 			if err != nil {
-				log.Printf("failed to create signature %v", err)
+				pipeErr <- fmt.Errorf("failed to create signature %w", err)
 				return
-			} else if signature != "" {
+			}
+			if signature != "" {
 				header := &tar.Header{
 					Name: filename + ".asc",
 					Size: int64(len(signature)),
 				}
 
 				if err := tarWriter.WriteHeader(header); err != nil {
-					log.Printf("failed to write signature header to tar writer %v", err)
+					pipeErr <- fmt.Errorf(
+						"failed to write signature header to tar writer %w", err)
 					return
 				}
 
-				signatureReader := bytes.NewReader([]byte(signature))
-				if _, err := io.Copy(tarWriter, signatureReader); err != nil {
-					log.Printf("failed to write signature to tar writer %v", err)
+				if _, err := io.Copy(tarWriter, strings.NewReader(signature)); err != nil {
+					pipeErr <- fmt.Errorf("failed to write signature to tar writer %w", err)
 					return
 				}
 			}
@@ -289,8 +290,7 @@ func (p *processor) process(files []string) error {
 
 	req, err := http.NewRequest("POST", p.cfg.URL+"/api/bulk_upload", pr)
 	if err != nil {
-		log.Printf("failed to create request %v", err)
-		return err
+		return errors.Join(fmt.Errorf("failed to create request %w", err), <-pipeErr)
 	}
 
 	req.Header.Set("X-CSAF-PROVIDER-AUTH", p.cfg.cachedAuth)
@@ -298,8 +298,9 @@ func (p *processor) process(files []string) error {
 
 	resp, err := p.httpClient().Do(req)
 	if err != nil {
-		log.Printf("failed to send request %v", err)
-		return err
+		return errors.Join(
+			fmt.Errorf("failed to send request %w", err),
+			<-pipeErr)
 	}
 
 	defer resp.Body.Close()
@@ -313,14 +314,17 @@ func (p *processor) process(files []string) error {
 	if !strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
 		var sb strings.Builder
 		if _, err := io.Copy(&sb, resp.Body); err != nil {
-			return fmt.Errorf("reading non-JSON reply from server failed: %v", err)
+			return errors.Join(
+				fmt.Errorf("reading non-JSON reply from server failed: %w", err),
+				<-pipeErr)
 		}
 		return errors.Join(
 			fmt.Errorf("non-JSON reply from server: %v", sb.String()),
-			uploadErr)
+			uploadErr,
+			<-pipeErr)
 	}
 
-	return errors.Join(dumpUploadResults(resp.Body), uploadErr)
+	return errors.Join(dumpUploadResults(resp.Body), uploadErr, <-pipeErr)
 }
 
 func dumpUploadResults(r io.Reader) error {
@@ -332,6 +336,9 @@ func dumpUploadResults(r io.Reader) error {
 	var result struct {
 		FileResults []FileResult `json:"file_results"`
 		Errors      []string     `json:"errors"`
+	}
+	if err := misc.StrictJSONParse(r, &result); err != nil {
+		return err
 	}
 	if err := misc.StrictJSONParse(r, &result); err != nil {
 		return err
