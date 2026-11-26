@@ -119,7 +119,7 @@
     "messages": [
       {
         "type": 2,
-        "text": "Fetching index.txt failed: {{.URL}}/index.txt not found."
+        "text": "Directory based distribution was not used."
       }
     ]
   },
@@ -129,7 +129,7 @@
     "messages": [
       {
         "type": 2,
-        "text": "Fetching changes.csv failed: {{.URL}}/changes.csv not found."
+        "text": "Directory based distribution was not used."
       }
     ]
   },

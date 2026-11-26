@@ -1321,22 +1321,11 @@ func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 		}
 	}
 
-	// Not found -> fall back to PMD url
 	if len(dirURLs) == 0 {
-		// XXX: Is this _really_ a good fallback?
-		// The assumption that we have a directory besides the PMD if we
-		// don't have an explicit list of directories should
-		// be checked against the standard.
-		// I guess this is not valid assumption.
-		pmdURL, err := url.Parse(p.pmdURL)
-		if err != nil {
-			return err
-		}
-		baseURL, err := util.BaseURL(pmdURL)
-		if err != nil {
-			return err
-		}
-		dirURLs = []string{baseURL}
+		p.badIndices.use()
+		p.badIndices.error("Directory based distribution was not used.")
+		p.badChanges.use()
+		p.badChanges.error("Directory based distribution was not used.")
 	}
 
 	for _, base := range dirURLs {
