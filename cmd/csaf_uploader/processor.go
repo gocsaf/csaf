@@ -302,10 +302,11 @@ func (p *processor) process(files []string) error {
 		return err
 	}
 
+	defer resp.Body.Close()
+
 	var uploadErr error
 	if resp.StatusCode != http.StatusOK {
-		uploadErr := fmt.Errorf("upload failed: %s", resp.Status)
-		fmt.Printf("HTTPS %s\n", uploadErr)
+		uploadErr = fmt.Errorf("upload failed: %s", resp.Status)
 	}
 
 	// We expect a JSON answer so all other is not valid.
@@ -314,24 +315,27 @@ func (p *processor) process(files []string) error {
 		if _, err := io.Copy(&sb, resp.Body); err != nil {
 			return fmt.Errorf("reading non-JSON reply from server failed: %v", err)
 		}
-		return fmt.Errorf("non-JSON reply from server: %v", sb.String())
+		return errors.Join(
+			fmt.Errorf("non-JSON reply from server: %v", sb.String()),
+			uploadErr)
 	}
 
+	return errors.Join(dumpUploadResults(resp.Body), uploadErr)
+}
+
+func dumpUploadResults(r io.Reader) error {
 	type FileResult struct {
 		Name        string   `json:"name"`
 		ReleaseDate string   `json:"release_date"`
 		Warnings    []string `json:"warnings"`
 	}
-	type Result struct {
+	var result struct {
 		FileResults []FileResult `json:"file_results"`
 		Errors      []string     `json:"errors"`
 	}
-	var result Result
-
-	if err := misc.StrictJSONParse(resp.Body, &result); err != nil {
+	if err := misc.StrictJSONParse(r, &result); err != nil {
 		return err
 	}
-
 	for _, result := range result.FileResults {
 		if result.Name != "" {
 			fmt.Printf("Name: %s\n", result.Name)
@@ -339,13 +343,10 @@ func (p *processor) process(files []string) error {
 		if result.ReleaseDate != "" {
 			fmt.Printf("Release date: %s\n", result.ReleaseDate)
 		}
-
 		writeStrings("Warnings:", result.Warnings)
 	}
-
 	writeStrings("Errors:", result.Errors)
-
-	return uploadErr
+	return nil
 }
 
 func (p *processor) signExternally(data []byte) (string, error) {

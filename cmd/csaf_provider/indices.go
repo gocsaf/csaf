@@ -140,7 +140,7 @@ func updateChanges(dir string, summaries []summaryPath) error {
 					return strings.Compare(a.Filename, b.Filename)
 				},
 			); found {
-				summaryEntry := summaries[index]
+				summaryEntry := &summaries[index]
 				releaseDate := summaryEntry.Summary.CurrentReleaseDate
 				// Identical -> no change at all.
 				if record[timeColumn] == releaseDate.Format(dateFormat) {
