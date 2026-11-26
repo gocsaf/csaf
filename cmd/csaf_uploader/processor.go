@@ -340,9 +340,6 @@ func dumpUploadResults(r io.Reader) error {
 	if err := misc.StrictJSONParse(r, &result); err != nil {
 		return err
 	}
-	if err := misc.StrictJSONParse(r, &result); err != nil {
-		return err
-	}
 	for _, result := range result.FileResults {
 		if result.Name != "" {
 			fmt.Printf("Name: %s\n", result.Name)
