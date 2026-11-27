@@ -1314,6 +1314,7 @@ func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 			var stripped []string
 			for _, u := range dirURLs {
 				if u != "" {
+					log.Printf("dirURL for directory based provider: %s\n", base)
 					stripped = append(stripped, u)
 				}
 			}
@@ -1340,7 +1341,6 @@ func (p *processor) checkCSAFs(ctx context.Context, _ string) error {
 	}
 
 	for _, base := range dirURLs {
-		log.Printf("dirURL for directory based provider: %s\n", base)
 		if err := p.checkIndex(ctx, base, indexMask); err != nil && err != errContinue {
 			return err
 		}
